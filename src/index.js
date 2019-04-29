@@ -1,6 +1,6 @@
 import 'babel-polyfill'
 
-import React from 'react'
+import React, {useMemo} from 'react'
 import ReactDOM from 'react-dom'
 import { Provider } from 'react-redux'
 
@@ -15,8 +15,38 @@ function getAudioFromURL(url, context) {
     .then(buff => context.decodeAudioData(buff))
 }
 
+function getMinMaxes(buffer){
+  let minMaxes = []
+  for (let frameSize = 2; frameSize < Math.floor(buffer.length / 2); frameSize *= 2) {
+    const frameCount = Math.ceil(buffer.length / frameSize)
+    const mins = new Float32Array(frameCount),
+      maxes = new Float32Array(frameCount)
+
+    const lastMinMax = minMaxes[minMaxes.length - 1]
+
+    const prevMins = lastMinMax ? lastMinMax[0] : buffer,
+      prevMaxes = lastMinMax ? lastMinMax[1] : buffer
+
+    for (let fi = 0; fi < frameCount; fi++) {
+      const start = fi * 2,
+        end = (fi + 1) *2
+      let min = 0,
+        max = 0
+
+      for (let i = start; i < end; i++) {
+        if (prevMaxes[i] > 0 && prevMaxes[i] > max) max = prevMaxes[i]
+        if (prevMins[i] < 0 && prevMins[i] < min) min = prevMins[i]
+      }
+      mins[fi] = min
+      maxes[fi] = max
+    }
+    minMaxes.push([mins, maxes, frameSize])
+  }
+  return minMaxes
+}
+
 async function init() {
-  const groove = require('file-loader!../assets/quant.mp3')
+  const groove = require('file-loader!../assets/shin.mp3')
   const loop = require('file-loader!../assets/loops.mp3')
 
   const context = new AudioContext()
@@ -32,7 +62,7 @@ async function init() {
     start: 136.9 * 44100,
     length: 5.52 * 44100,
     position: 0,
-    alpha: 1.3,
+    alpha: 1,
   })
 
   window.onkeydown = e => {
@@ -45,20 +75,19 @@ async function init() {
       )
 
     if (e.key === 'p')
-    pv.setState(
-      {
-        paused: true
-      },
-      0
-    )
+      pv.setState(
+        {
+          paused: true,
+        },
+        0
+      )
     if (e.key === 'u')
-    pv.setState(
-      {
-        paused: false
-      },
-      0
-    )
-
+      pv.setState(
+        {
+          paused: false,
+        },
+        0
+      )
 
     if (e.key === 'b')
       pv.setState(
@@ -83,15 +112,19 @@ async function init() {
 
   node.connect(context.destination)
 
+  const buffer = a.getChannelData(1), minMaxes = getMinMaxes(buffer)
+
   ReactDOM.render(
     <Provider store={store}>
       <ScrollContainer>
-        {(width, offset) => {
+        {(width, offset, scale, zooming) => {
           return (
             <Waveform
-              buffer={a.getChannelData(1)}
-              scale={300}
+              buffer={buffer}
+              minMaxes={minMaxes}
+              scale={scale}
               start={offset}
+              zooming={zooming}
               end={offset + width}
             />
           )

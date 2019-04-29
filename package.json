@@ -3,6 +3,7 @@
     "@babel/core": "^7.4.3",
     "@babel/preset-env": "^7.4.3",
     "@babel/preset-react": "^7.0.0",
+    "@types/redux": "^3.6.0",
     "babel-loader": "^8.0.5",
     "babel-polyfill": "^6.26.0",
     "ctyled": "^0.0.4",
@@ -16,6 +17,8 @@
     "redux": "^4.0.1",
     "redux-create-reducer": "^2.0.0",
     "redux-devtools-extension": "^2.13.8",
+    "ts-loader": "^5.4.4",
+    "typescript": "^3.4.5",
     "webpack": "^4.30.0",
     "webpack-cli": "^3.3.1",
     "webpack-dev-server": "^3.3.1"

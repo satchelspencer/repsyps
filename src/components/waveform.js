@@ -1,17 +1,16 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useMemo } from 'react'
 import ctyled from 'ctyled'
 import _ from 'lodash'
-import { FFT } from '../dsp/dsp'
-
-var fft = new FFT(512, 44100)
+import getImpulses, { binSize } from '../dsp/impulse-detect'
 
 const Canvas = ctyled.canvas.styles({}).extend`
   position:absolute;
 `
-
 //scale is samples per pixel
 
-function WaveformChunk({ buffer, scale, start, end, offset }) {
+function WaveformChunk(props) {
+  let { buffer, impulses, scale, start, end, offset, zooming, minMaxes } = props
+  const height = 200
   const size = (end - start) / scale
   const canvasRef = useRef()
   const ctxt = useRef()
@@ -19,143 +18,109 @@ function WaveformChunk({ buffer, scale, start, end, offset }) {
     ctxt.current = canvasRef.current.getContext('2d')
     ctxt.current.scale(2, 2)
   }, [])
+
   useEffect(() => {
     const ctx = ctxt.current
-    //ctx.imageSmoothingEnabled = false
-    ctx.clearRect(0, 0, 10000, 10000)
-    ctx.strokeStyle = '#b59393'
+    ctx.imageSmoothingEnabled = false
+    ctx.clearRect(0, 0, 1000, height)
+    ctx.strokeStyle = 'black'
     ctx.beginPath()
+
+
+    const minMaxIndex = Math.floor(Math.log2(scale))-1,
+    minMaxSize = Math.pow(2, minMaxIndex+1),
+    minMax = minMaxes[minMaxIndex]
+
+    //console.log(minMaxIndex, minMaxSize, minMax)
+
     for (let i = 0; i < size; i++) {
-      let maxp = 0,
-        maxn = 0
-      let sump = 0,
-        pcount = 0,
-        sumn = 0,
-        ncount = 0
 
-      const step = Math.ceil(scale / 20)
-
-      for (let j = 0; j < scale; j += Math.ceil(Math.random() * step)) {
-        let sample = buffer[start + i * scale + j]
-        if (sample > 0) {
-          if (sample > maxp) maxp = sample
-          sump += sample
-          pcount++
-        }
-        if (sample < 0) {
-          if (sample < maxn) maxn = sample
-          sumn += sample
-          ncount++
-        }
-      }
-      const avgp = sump / pcount,
-        avgn = sumn / ncount
-
-      if (avgp) ctx.lineTo(i, avgp * 100 + 100)
-      if (avgn) ctx.lineTo(i, avgn * 100 + 100)
+      let iStart = start + i*scale
+      const minMaxSample = Math.floor(iStart/minMaxSize)
+      const maxp = minMax[1][minMaxSample], maxn = minMax[0][minMaxSample]
+      
+      if(maxp) ctx.lineTo(i, maxp * (height / 2) + height / 2)
+      if(maxn) ctx.lineTo(i, maxn * (height / 2) + height / 2)
     }
     ctx.stroke()
 
-    const binSize = 512,
-      stepSize = 512
-    let bins = []
-    let lastVari = 0
-    for (let i = start; i < end + stepSize; i += stepSize) {
-      fft.forward(buffer.subarray(i, i + binSize))
-      const mag = new Float64Array(binSize)
-      let sum = 0
-      for (let x = 0; x < binSize; x++) {
-        const m = Math.sqrt(fft.real[x] * fft.real[x] + fft.imag[x] * fft.imag[x])
-        mag[x] = m
-        sum += m
-      }
-      const mean = sum / binSize
-      let diff = 0
-      for (let x = 0; x < binSize; x++) {
-        diff += Math.abs(mean - mag[x])
-      }
-      const vari = diff/binSize
-      const dvari = vari-lastVari
-      lastVari = vari
-      // const x = Math.floor((i - start) / scale)
-      // let max = 0,
-      //   sum = 0
-      // for (let j = 0; j < binSize; j++) {
-      //   const sample = Math.abs(buffer[i + j])
-      //   if (sample > max) max = sample
-      //   sum += sample
-      // }
-      // const avg = sum / binSize
-      // const diff = Math.abs(max - lastMax)
-      // lastMax = max
-      // bins.push(diff)
-      bins.push(Math.max(dvari/2, 0))
-    }
+    ctx.strokeStyle = 'rgba(255,0,0,0.2)'
 
-    bins = bins.map((value, i) => {
-      const scanRange = 5
-      let isMax = true
-      for(let d=-scanRange;d<scanRange;d++){
-        if(bins[i+d] && bins[i+d] > value) isMax = false
+    for (let i = Math.floor(start / binSize); i < Math.floor(end / binSize); i++) {
+      const value = impulses[i],
+        x = (i * binSize - start) / scale
+      if (value > 0.1) {
+        ctx.beginPath()
+        ctx.lineTo(x, 0)
+        ctx.lineTo(x, height)
+        ctx.stroke()
       }
-      return isMax?value:0
-    })
+    }
 
     ctx.strokeStyle = 'cyan'
     ctx.beginPath()
-    bins.forEach((value, i) => {
-      const x = (i * binSize) / scale
-      ctx.lineTo(x, -value * 100 + 100)
-    })
+    for (let i = Math.floor(start / binSize); i < Math.floor(end / binSize); i++) {
+      const value = impulses[i],
+        x = (i * binSize - start) / scale
+      ctx.lineTo(x, -value * (height / 2) + height / 2)
+    }
     ctx.stroke()
-  }, [buffer, scale])
+  }, [buffer, scale, zooming])
   return (
     <Canvas
       inRef={canvasRef}
       width={size * 2}
-      height={400}
+      height={height * 2}
       style={{ width: size, height: '100%', left: offset }}
     />
   )
 }
 
 const WaveformContainer = ctyled.div.styles({
-  height: 10,
-  border: 1,
+  height: 20,
   flex: 'none',
 })
 
-// const WaveformCanvas = ctyled.canvas.attrs({offset: 0}).styles({
-//   bg: true,
-//   color: c => c.invert()
-// }).extend`
-//   position:absolute;
-//   height:100%;
-//   top:0;
-//   left:${(_,{offset}) => offset}px;
-// `
-
-export default function Waveform({ buffer, scale, start, end }) {
+export default function Waveform(props) {
+  let { buffer, scale, start, end, zooming, minMaxes } = props
+  scale = Math.floor(scale)
   const width = buffer.length / scale
+
+  let xdiff = 0
+  if (zooming) {
+    const currentCenter = (start + zooming.width / 2) * scale
+    const samplediff = currentCenter - zooming.center
+    xdiff = samplediff / scale
+  }
+  start -= xdiff
+  end -= xdiff
+
+  //console.log('dx', xdiff)
+
   const chunkSize = 1000,
     chunkLen = chunkSize * scale
 
-  const minRender = (start - chunkSize) / chunkSize,
-    maxRender = (end + chunkSize) / chunkSize
+  const minRender = (start - chunkSize * 1) / chunkSize,
+    maxRender = (end + chunkSize * 1) / chunkSize
+
+  const impulses = useMemo(() => getImpulses(buffer), [buffer])
 
   return (
-    <WaveformContainer style={{ width }}>
+    <WaveformContainer style={{ width, marginLeft: xdiff }}>
       {_.range(Math.ceil(width / chunkSize)).map(i => {
         return (
           i > minRender &&
           i < maxRender && (
             <WaveformChunk
               key={i}
-              buffer={buffer}
+              buffer={props.buffer}
+              impulses={impulses}
+              minMaxes={minMaxes}
               scale={scale}
               start={i * chunkLen}
               end={(i + 1) * chunkLen}
               offset={i * chunkSize}
+              zooming={!!zooming}
             />
           )
         )
