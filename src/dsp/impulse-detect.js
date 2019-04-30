@@ -1,8 +1,9 @@
 import { FFT } from './dsp'
 
-export const binSize = 512
+export const binSize = 256
 
 export default function(buffer) {
+  console.log('jjj')
   const fft = new FFT(binSize, 44100)
   const binCount = Math.floor(buffer.length / binSize)
   let bins = new Float64Array(binCount),
@@ -59,7 +60,7 @@ export default function(buffer) {
   // only use maxes
   for (let i = 0; i < binCount; i++) {
     const value = bins[i]
-    const scanRange = 5
+    const scanRange = 10
     let isMax = true, d = -scanRange
     for (; d < scanRange; d++) {
       if (bins[i + d] && bins[i + d] > value){

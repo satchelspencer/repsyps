@@ -1,12 +1,12 @@
 import 'babel-polyfill'
 
-import React, {useMemo} from 'react'
+import React from 'react'
 import ReactDOM from 'react-dom'
 import { Provider } from 'react-redux'
+import ctyled from 'ctyled'
 
 import pvPlayer from './pv-player'
-import Waveform from './components/waveform'
-import ScrollContainer from './components/scroll-container'
+import Track from './components/waveform'
 import store from './redux/store'
 
 function getAudioFromURL(url, context) {
@@ -46,8 +46,8 @@ function getMinMaxes(buffer){
 }
 
 async function init() {
-  const groove = require('file-loader!../assets/shin.mp3')
-  const loop = require('file-loader!../assets/loops.mp3')
+  const groove = require('file-loader!../assets/marku.mp3')
+  const loop = require('file-loader!../assets/after.mp3')
 
   const context = new AudioContext()
   const bufferSize = 2048,
@@ -114,22 +114,22 @@ async function init() {
 
   const buffer = a.getChannelData(1), minMaxes = getMinMaxes(buffer)
 
+  const loopbuffer = l.getChannelData(1), loopminMaxes = getMinMaxes(loopbuffer)
+
+  const Wrapper = ctyled.div.styles({column: true}).extend`
+    width:100%;
+    height:100%;
+    top:0;
+    left:0;
+    position:absolute;
+  `
+
   ReactDOM.render(
     <Provider store={store}>
-      <ScrollContainer>
-        {(width, offset, scale, zooming) => {
-          return (
-            <Waveform
-              buffer={buffer}
-              minMaxes={minMaxes}
-              scale={scale}
-              start={offset}
-              zooming={zooming}
-              end={offset + width}
-            />
-          )
-        }}
-      </ScrollContainer>
+      <Wrapper>
+        <Track buffer={buffer} minMaxes={minMaxes}/>
+        <Track buffer={loopbuffer} minMaxes={loopminMaxes}/>
+        </Wrapper>
     </Provider>,
     document.getElementById('root')
   )
