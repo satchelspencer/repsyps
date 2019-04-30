@@ -1,10 +1,12 @@
 import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react'
+import {useDispatch} from 'react-redux'
 import ctyled from 'ctyled'
 import _ from 'lodash'
 import getImpulses, { binSize } from '../dsp/impulse-detect'
+import getMinMaxes from '../dsp/min-maxes'
 
 const TrackContainer = ctyled.div.styles({
-  height: 7,
+  height: 10,
   flex: 'none',
   border: 1,
 })
@@ -15,15 +17,20 @@ const TrackCanvas = ctyled.canvas.styles({}).extend`
   height:100%;
 `
 
-export default function Track({ buffer, minMaxes }) {
+export default function Track({ buffer }) {
   const container = useRef(null),
     canvasRef = useRef(null),
     [scale, setScale] = useState(100),
     [start, setStart] = useState(0),
     [width, setWidth] = useState(0),
     [height, setHeight] = useState(0),
+    [center, setCenter] = useState(0),
     handleWheel = useRef(null),
     ctxt = useRef(null)
+
+  const handleMouseMove = useCallback(e => {
+    setCenter(e.clientX - container.current.offsetLeft)
+  }, [])
 
   useEffect(() => {
     ctxt.current = canvasRef.current.getContext('2d')
@@ -34,7 +41,11 @@ export default function Track({ buffer, minMaxes }) {
     handleWheel.current = e => {
       const { deltaX, deltaY, ctrlKey } = e
       if (ctrlKey) {
-        setScale(Math.max(scale + deltaY, 2))
+        const scaleMultiplier = scale / 100,
+          nextScale = Math.max(scale + deltaY * scaleMultiplier, 2),
+          dx = (nextScale - scale) * center
+        setStart(start - dx)
+        setScale(nextScale)
       } else {
         setStart(start + deltaX * scale)
       }
@@ -52,9 +63,11 @@ export default function Track({ buffer, minMaxes }) {
     )
     setWidth(container.current.offsetWidth)
     setHeight(container.current.offsetHeight)
+    setCenter(container.current.offsetWidth / 2)
   }, [container.current])
 
-  const impulses = useMemo(() => getImpulses(buffer), [buffer])
+  const impulses = useMemo(() => getImpulses(buffer), [buffer]),
+    minMaxes = useMemo(() => getMinMaxes(buffer), [buffer])
 
   useEffect(() => {
     if (!width) return
@@ -82,9 +95,9 @@ export default function Track({ buffer, minMaxes }) {
     }
     ctx.stroke()
 
-    const end = (scale*pwidth) + start
+    const end = scale * pwidth + start
 
-    ctx.strokeStyle = 'rgba(255,0,0,0.2)'
+    ctx.strokeStyle = 'rgba(255,0,0,0.8)'
 
     for (let i = Math.floor(start / binSize); i < Math.floor(end / binSize); i++) {
       const value = impulses[i],
@@ -97,7 +110,7 @@ export default function Track({ buffer, minMaxes }) {
       }
     }
 
-    ctx.strokeStyle = 'cyan'
+    ctx.strokeStyle = 'blue'
     ctx.beginPath()
     for (let i = Math.floor(start / binSize); i < Math.floor(end / binSize); i++) {
       const value = impulses[i],
@@ -108,7 +121,7 @@ export default function Track({ buffer, minMaxes }) {
   }, [buffer, scale, start, width, height])
 
   return (
-    <TrackContainer inRef={container}>
+    <TrackContainer inRef={container} onMouseMove={handleMouseMove}>
       {scale}, {start}, {width} {height}
       <TrackCanvas
         inRef={canvasRef}

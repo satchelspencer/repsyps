@@ -15,45 +15,18 @@ function getAudioFromURL(url, context) {
     .then(buff => context.decodeAudioData(buff))
 }
 
-function getMinMaxes(buffer){
-  let minMaxes = []
-  for (let frameSize = 2; frameSize < Math.floor(buffer.length / 2); frameSize *= 2) {
-    const frameCount = Math.ceil(buffer.length / frameSize)
-    const mins = new Float32Array(frameCount),
-      maxes = new Float32Array(frameCount)
-
-    const lastMinMax = minMaxes[minMaxes.length - 1]
-
-    const prevMins = lastMinMax ? lastMinMax[0] : buffer,
-      prevMaxes = lastMinMax ? lastMinMax[1] : buffer
-
-    for (let fi = 0; fi < frameCount; fi++) {
-      const start = fi * 2,
-        end = (fi + 1) *2
-      let min = 0,
-        max = 0
-
-      for (let i = start; i < end; i++) {
-        if (prevMaxes[i] > 0 && prevMaxes[i] > max) max = prevMaxes[i]
-        if (prevMins[i] < 0 && prevMins[i] < min) min = prevMins[i]
-      }
-      mins[fi] = min
-      maxes[fi] = max
-    }
-    minMaxes.push([mins, maxes, frameSize])
-  }
-  return minMaxes
-}
-
 async function init() {
   const groove = require('file-loader!../assets/marku.mp3')
-  const loop = require('file-loader!../assets/after.mp3')
+  const loop = require('file-loader!../assets/da.mp3')
+  const manback = require('file-loader!../assets/manback.mp3')
 
   const context = new AudioContext()
   const bufferSize = 2048,
     frameSize = 2048
   const a = await getAudioFromURL(groove, context),
-    l = await getAudioFromURL(loop, context)
+    l = await getAudioFromURL(loop, context),
+    m = await getAudioFromURL(manback, context)
+    
   const node = context.createScriptProcessor(bufferSize, 2),
     pv = pvPlayer(frameSize)
 
@@ -112,9 +85,11 @@ async function init() {
 
   node.connect(context.destination)
 
-  const buffer = a.getChannelData(1), minMaxes = getMinMaxes(buffer)
+  const buffer = a.getChannelData(1)
 
-  const loopbuffer = l.getChannelData(1), loopminMaxes = getMinMaxes(loopbuffer)
+  const loopbuffer = l.getChannelData(1)
+
+  const manbackbuff = m.getChannelData(1)
 
   const Wrapper = ctyled.div.styles({column: true}).extend`
     width:100%;
@@ -127,8 +102,9 @@ async function init() {
   ReactDOM.render(
     <Provider store={store}>
       <Wrapper>
-        <Track buffer={buffer} minMaxes={minMaxes}/>
-        <Track buffer={loopbuffer} minMaxes={loopminMaxes}/>
+        <Track buffer={buffer}/>
+        <Track buffer={loopbuffer} />
+        <Track buffer={manbackbuff} />
         </Wrapper>
     </Provider>,
     document.getElementById('root')

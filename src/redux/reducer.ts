@@ -1,31 +1,14 @@
 import { combineReducers } from 'redux'
-import { createReducer } from 'redux-create-reducer'
+import { createReducer } from 'deox'
 
-interface AudioChunk {
-  start: number,
-  length: number
-}
+import * as Actions from './actions'
+import * as Types from './types'
 
-interface PlaybackState {
-  playing: boolean
-}
-
-interface TracksState {
-  [trackId: string]: {
-    name: string
-    buffer: AudioBuffer
-  }
-}
-
-interface DisplayState {
-  scale: number
-}
-
-export interface AppState {
-  playback: PlaybackState
-  tracks: TracksState
-}
-
-export default function(state: AppState, action) {
-  return state
-}
+export default combineReducers({
+  tracks: createReducer({} as Types.TracksState, handle => [
+    handle(Actions.addTrack, (state, { payload }) => state),
+    handle(Actions.rmTrack, (state, { payload }) => state),
+    handle(Actions.updateTrackDisplay, (state, { payload }) => state),
+    handle(Actions.updateTrackPlayback, (state, { payload }) => state),
+  ]),
+})
