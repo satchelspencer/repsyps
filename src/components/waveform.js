@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react'
-import {useDispatch} from 'react-redux'
 import ctyled from 'ctyled'
 import _ from 'lodash'
 import getImpulses, { binSize } from '../dsp/impulse-detect'
@@ -17,7 +16,7 @@ const TrackCanvas = ctyled.canvas.styles({}).extend`
   height:100%;
 `
 
-export default function Track({ buffer }) {
+export default function Track({ track }) {
   const container = useRef(null),
     canvasRef = useRef(null),
     [scale, setScale] = useState(100),
@@ -66,7 +65,8 @@ export default function Track({ buffer }) {
     setCenter(container.current.offsetWidth / 2)
   }, [container.current])
 
-  const impulses = useMemo(() => getImpulses(buffer), [buffer]),
+  const buffer = useMemo(() => track.buffer.getChannelData(1), [track.buffer]),
+    impulses = useMemo(() => getImpulses(buffer), [buffer]),
     minMaxes = useMemo(() => getMinMaxes(buffer), [buffer])
 
   useEffect(() => {

@@ -1,5 +1,5 @@
-import PhaseVocoder from './dsp/phase-vocoder'
-import CBuffer from './dsp/cbuffer'
+import PhaseVocoder from '../dsp/phase-vocoder'
+import CBuffer from '../dsp/cbuffer'
 
 export default function pvPlayer(frameSize) {
   const pvL = new PhaseVocoder(frameSize, 44100),

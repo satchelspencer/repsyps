@@ -1,5 +1,5 @@
 export interface PlaybackState {
-  playing: boolean
+  paused: boolean
   start: number //sample count
   length: number //sample count
   alpha: number // ratio of out.len/in.len i.e "2" = half speed
