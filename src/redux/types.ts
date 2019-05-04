@@ -1,9 +1,8 @@
 export interface PlaybackState {
-  paused: boolean
+  on: boolean
   start: number //sample count
-  length: number //sample count
-  alpha: number // ratio of out.len/in.len i.e "2" = half speed
-  position: number //fraction of curent playback though input
+  length?: number //sample count
+  vol: 1
 }
 
 export interface DisplayState {
@@ -16,7 +15,14 @@ export interface TrackState {
   buffer: AudioBuffer
   display: DisplayState
   playback: PlaybackState,
-  nextPlayback?: PlaybackState
+  nextPlayback?: Partial<PlaybackState>,
+  position: number
+}
+
+export interface MixState{
+  frac: number
+  length: number
+  on: boolean
 }
 
 export interface TracksState {
@@ -25,4 +31,5 @@ export interface TracksState {
 
 export interface AppState {
   tracks: TracksState
+  mix: MixState
 }

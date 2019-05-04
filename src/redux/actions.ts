@@ -22,5 +22,21 @@ export const updateTrackDisplay = createAction<{
 export const updateTrackPlayback = createAction<{
   id: string
   playback: Partial<Types.PlaybackState>
-  immediate: boolean
-}>('UPDATE_TRACK_DISPLAY')
+  immediate?: boolean
+  resetNext?: boolean
+}>('UPDATE_TRACK_PLAYBACK')
+
+export const applyNextPlayback = createAction<{
+  id: string
+}>('APPLY_NEXT_PLAYBACK')
+
+export const updateTrackTime = createAction<{
+  trackPositions: {
+    [trackId: string]: number
+  },
+  frac: number
+}>('UPDATE_TIME')
+
+export const updateMixState = createAction<Partial<Types.MixState>>('MIX_STATE_UPDATE')
+
+export const togglePlayback = createAction('TOGGLE_PLAYBACK')

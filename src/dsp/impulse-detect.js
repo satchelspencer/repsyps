@@ -3,7 +3,6 @@ import { FFT } from './dsp'
 export const binSize = 256
 
 export default function(buffer) {
-  console.log('jjj')
   const fft = new FFT(binSize, 44100)
   const binCount = Math.floor(buffer.length / binSize)
   let bins = new Float64Array(binCount),
