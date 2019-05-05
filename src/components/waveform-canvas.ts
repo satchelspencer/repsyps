@@ -1,5 +1,6 @@
 import * as Types from '../redux/types'
 import { binSize } from '../dsp/impulse-detect'
+import {Color} from 'ctyled'
 
 export interface DrawingContext {
   pwidth: number
@@ -7,6 +8,7 @@ export interface DrawingContext {
   scale: number
   start: number
   ctx: CanvasRenderingContext2D
+  color: Color
 }
 
 export function drawWaveform(context: DrawingContext, minMaxes: Float32Array) {
@@ -14,7 +16,7 @@ export function drawWaveform(context: DrawingContext, minMaxes: Float32Array) {
     halfHeight = pheight / 2
 
   ctx.lineWidth = 1
-  ctx.strokeStyle = '#3a3333'
+  ctx.strokeStyle = context.color.fg
   ctx.beginPath()
   const minMaxIndex = Math.floor(Math.log2(scale)) - 1,
     minMaxSize = Math.pow(2, minMaxIndex + 1),

@@ -45,7 +45,8 @@ class PvProcessor extends AudioWorkletProcessor {
         pvL.init()
         pvR.init()
 
-        const alpha = playback.length ? this.time / playback.length : 1
+        const alpha =
+          (playback.length ? this.time / playback.length : 1) * (playback.alpha || 1)
         pvL.set_alpha(alpha)
         pvR.set_alpha(alpha)
 
@@ -58,6 +59,7 @@ class PvProcessor extends AudioWorkletProcessor {
           playback,
           nextPlayback: null,
           position: playback.length ? this.frac * playback.length : 0,
+          out: 0,
         }
         console.log('adding' + ' ' + id + ' ' + this.frac)
       } else if (event.data.type === 'updatePlayback') {
@@ -65,12 +67,17 @@ class PvProcessor extends AudioWorkletProcessor {
           track = this.tracks[id]
         if (immediate) {
           track.playback = { ...track.playback, ...playback }
-          track.position = playback.length ? this.frac * track.playback.length : 0
-          const alpha = playback.length ? this.time / track.playback.length : 1
+          track.position = playback.length
+            ? (this.frac / (track.playback.alpha || 1)) * track.playback.length
+            : 0
+          const alpha =
+            (playback.length ? this.time / track.playback.length : 1) *
+            (track.playback.alpha || 1)
           track.pvL.set_alpha(alpha)
           track.pvR.set_alpha(alpha)
         } else track.nextPlayback = playback
       } else if (event.data.type === 'updateMixState') {
+        console.log('updateMix')
         const { mix } = event.data
         if (mix.frac !== undefined) this.frac = mix.frac
         if (mix.length) this.time = mix.length
@@ -113,12 +120,32 @@ class PvProcessor extends AudioWorkletProcessor {
       if (outputPos === outputLen) return
       const [inputL, inputR] = audio
 
+      const talpha = track.playback.alpha,
+        adjustedFrac = this.frac / talpha,
+        adjPos = track.position / track.playback.alpha,
+        invAlpha = 1 / talpha,
+        fullFrac = track.position / track.playback.length,
+        fullFracRemainder = fullFrac % invAlpha,
+        fullFracDiv = Math.floor(fullFrac / invAlpha),
+        posByFrac = ((fullFracDiv + this.frac) / talpha) * track.playback.length
+
+      //console.log(fullFracRemainder+' '+this.frac)
+      //console.log(fullFracRemainder + ', ' + adjustedFrac+' - '+ fullFracDiv.toString())
+
       if (
+        !track.playback.aperiodic && 
         track.playback.length &&
-        Math.abs(track.position - track.playback.length * this.frac) > 1000
+        this.frac > 0.1 &&
+        this.frac < 0.9 &&
+        track.position - posByFrac > 256
       ) {
-        track.position = track.playback.length * this.frac
-      }
+        console.log('out?')
+        if (track.out > 2) {
+          console.log('correcting')
+          track.position = posByFrac
+          track.out = 0
+        } else track.out++
+      } else track.out = 0
 
       while (outputPos < outputLen) {
         const inputStart = playback.start + track.position,
@@ -142,8 +169,10 @@ class PvProcessor extends AudioWorkletProcessor {
         if (nextPosition < track.position && track.nextPlayback) {
           Object.assign(track.playback, track.nextPlayback)
           track.playback = { ...track.playback, ...track.playback }
-          track.position = this.frac * track.playback.length
-          const alpha = this.time / track.playback.length
+          track.position = track.playback.length
+            ? (this.frac / (track.playback.alpha || 1)) * track.playback.length
+            : 0
+          const alpha = (this.time / track.playback.length) * (track.playback.alpha || 1)
           pvL.set_alpha(alpha)
           pvR.set_alpha(alpha)
           track.nextPlayback = null
@@ -154,7 +183,7 @@ class PvProcessor extends AudioWorkletProcessor {
     })
     this.frac = (this.frac + outputLen / this.time) % 1
     this.frameNumber++
-    if (this.frameNumber % 20 === 0) this.fracUpdate()
+    if (this.frameNumber % 10 === 0) this.fracUpdate()
     return true
   }
 }

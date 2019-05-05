@@ -1,6 +1,13 @@
-import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react'
-import ctyled from 'ctyled'
-import { useDispatch } from 'redux-react-hook'
+import React, {
+  useRef,
+  useEffect,
+  useContext,
+  useMemo,
+  useState,
+  useCallback,
+} from 'react'
+import ctyled, { CtyledContext } from 'ctyled'
+import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 
 import getImpulses, { binSize } from '../dsp/impulse-detect'
@@ -12,7 +19,7 @@ import * as Actions from '../redux/actions'
 const TrackContainer = ctyled.div.styles({
   height: 10,
   flex: 'none',
-  border: 1,
+  lined: true,
 })
 
 const TrackCanvas = ctyled.canvas.styles({}).extend`
@@ -21,9 +28,21 @@ const TrackCanvas = ctyled.canvas.styles({}).extend`
   height:100%;
 `
 
+const TrackControls = ctyled.div.styles({
+  width: 10,
+})
+
+const TrackCanvasWrapper = ctyled.div.styles({
+  flex: 1,
+  bg: true,
+  color: c => c.contrast(0.1).nudge(0.1),
+})
+
 interface WaveformProps {
   track: Types.TrackState
 }
+
+const getMappedState = (state: Types.AppState) => ({ length: state.mix.length })
 
 export default function Track({ track }: WaveformProps) {
   const container = useRef(null),
@@ -35,7 +54,10 @@ export default function Track({ track }: WaveformProps) {
     [center, setCenter] = useState(0),
     handleWheel = useRef(null),
     ctxt = useRef(null),
-    dispatch = useDispatch()
+    dispatch = useDispatch(),
+    { length } = useMappedState(getMappedState),
+    ctyledContext = useContext(CtyledContext)
+
 
   /* ZOOM/PANNING CONTROL */
   const handleMouseMove = useCallback(e => {
@@ -88,7 +110,7 @@ export default function Track({ track }: WaveformProps) {
     const pwidth = width * 2,
       pheight = height * 2,
       ctx = ctxt.current,
-      drawContext = { pwidth, pheight, scale, start, ctx }
+      drawContext = { pwidth, pheight, scale, start, ctx, color: ctyledContext.theme.color }
 
     ctx.clearRect(0, 0, pwidth, pheight)
 
@@ -113,17 +135,24 @@ export default function Track({ track }: WaveformProps) {
           dispatch(
             Actions.updateTrackPlayback({
               id: track.name,
-              playback: { start: pos, length: 0 },
+              playback: { start: pos, length: 0, alpha: null },
               immediate: true,
             })
           )
         } else {
           const start = getTimeFromPosition(clickX, true),
-            end = getTimeFromPosition(x, true)
+            end = getTimeFromPosition(x, true),
+            len = end - start
           dispatch(
             Actions.updateTrackPlayback({
               id: track.name,
-              playback: { start, length: end - start },
+              playback: { 
+                start, 
+                length: len, 
+                alpha: 2
+                // alpha: len / length, 
+                // aperiodic: true 
+              },
               immediate: true,
             })
           )
@@ -136,13 +165,13 @@ export default function Track({ track }: WaveformProps) {
       (x: number, snap: boolean) => {
         let raw = x * 2 * scale + start
         if (snap) {
-          const impulseIndex = Math.floor(raw / 256),
+          const impulseIndex = Math.floor(raw / binSize),
             range = scale / 10
 
           for (let i = 0; i < range; i = -1 * (i + (i > 0 ? 0 : -1))) {
             const impulse = impulses[impulseIndex + i]
             if (impulse > 0) {
-              raw = (impulseIndex + i) * 256
+              raw = (impulseIndex + i) * binSize
               break
             }
           }
@@ -155,18 +184,21 @@ export default function Track({ track }: WaveformProps) {
 
   return (
     <TrackContainer
-      inRef={container}
       onMouseMove={handleMouseMove}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
     >
-      {track.name}: {Math.floor(scale)}, {Math.floor(start)}
-      <TrackCanvas
-        inRef={canvasRef}
-        width={width * 2}
-        height={height * 2}
-        style={{ width: '100%', height: '100%' }}
-      />
+      <TrackControls>
+        {track.name}: {Math.floor(scale)}, {Math.floor(start)}
+      </TrackControls>
+      <TrackCanvasWrapper inRef={container}>
+        <TrackCanvas
+          inRef={canvasRef}
+          width={width * 2}
+          height={height * 2}
+          style={{ width: '100%', height: '100%' }}
+        />
+      </TrackCanvasWrapper>
     </TrackContainer>
   )
 }

@@ -3,7 +3,6 @@ import 'babel-polyfill'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { StoreContext } from 'redux-react-hook'
-import ctyled from 'ctyled'
 
 import App from './components/app'
 import store from './redux/store'
@@ -18,13 +17,13 @@ function getAudioFromURL(url, context) {
 async function init() {
   const context = new AudioContext()
 
-  const marku = await getAudioFromURL(require('file-loader!../assets/after.mp3'), context)
+  const marku = await getAudioFromURL(require('file-loader!../assets/marku.mp3'), context)
 
   const quant = await getAudioFromURL(require('file-loader!../assets/quant.mp3'), context)
 
   store.dispatch(
     Actions.updateMixState({
-      length: 44100 * 4,
+      length: 44100 * 2,
       frac: 0,
       on: false,
     })
@@ -98,6 +97,10 @@ async function init() {
   //     })
   //   )
   // }, 5000)
+
+  const theme = {
+
+  }
 
   ReactDOM.render(
     <StoreContext.Provider value={store}>

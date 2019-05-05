@@ -59,7 +59,7 @@ export default function(buffer) {
   // only use maxes
   for (let i = 0; i < binCount; i++) {
     const value = bins[i]
-    const scanRange = 10
+    const scanRange = 3
     let isMax = true, d = -scanRange
     for (; d < scanRange; d++) {
       if (bins[i + d] && bins[i + d] > value){

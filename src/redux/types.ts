@@ -2,7 +2,9 @@ export interface PlaybackState {
   on: boolean
   start: number //sample count
   length?: number //sample count
-  vol: 1
+  vol: 1,
+  alpha?: number,
+  aperiodic?: boolean
 }
 
 export interface DisplayState {
