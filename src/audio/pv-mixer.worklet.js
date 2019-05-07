@@ -58,7 +58,8 @@ class PvProcessor extends AudioWorkletProcessor {
           audio,
           playback,
           nextPlayback: null,
-          position: playback.length ? this.frac * playback.length : 0,
+          position:
+            playback.length && !playback.aperiodic ? this.frac * playback.length : 0,
           out: 0,
         }
         console.log('adding' + ' ' + id + ' ' + this.frac)
@@ -67,9 +68,10 @@ class PvProcessor extends AudioWorkletProcessor {
           track = this.tracks[id]
         if (immediate) {
           track.playback = { ...track.playback, ...playback }
-          track.position = playback.length
-            ? (this.frac / (track.playback.alpha || 1)) * track.playback.length
-            : 0
+          track.position =
+            playback.length && !playback.aperiodic
+              ? (this.frac / (track.playback.alpha || 1)) * track.playback.length
+              : 0
           const alpha =
             (playback.length ? this.time / track.playback.length : 1) *
             (track.playback.alpha || 1)
@@ -133,7 +135,7 @@ class PvProcessor extends AudioWorkletProcessor {
       //console.log(fullFracRemainder + ', ' + adjustedFrac+' - '+ fullFracDiv.toString())
 
       if (
-        !track.playback.aperiodic && 
+        !track.playback.aperiodic &&
         track.playback.length &&
         this.frac > 0.1 &&
         this.frac < 0.9 &&

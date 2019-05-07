@@ -17,13 +17,13 @@ function getAudioFromURL(url, context) {
 async function init() {
   const context = new AudioContext()
 
-  const marku = await getAudioFromURL(require('file-loader!../assets/marku.mp3'), context)
+  const marku = await getAudioFromURL(require('file-loader!../assets/jeri.mp3'), context)
 
   const quant = await getAudioFromURL(require('file-loader!../assets/quant.mp3'), context)
 
   store.dispatch(
     Actions.updateMixState({
-      length: 44100 * 2,
+      length: 110336,
       frac: 0,
       on: false,
     })

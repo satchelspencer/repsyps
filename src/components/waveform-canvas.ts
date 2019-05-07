@@ -1,6 +1,6 @@
 import * as Types from '../redux/types'
 import { binSize } from '../dsp/impulse-detect'
-import {Color} from 'ctyled'
+import { Color } from 'ctyled'
 
 export interface DrawingContext {
   pwidth: number
@@ -11,7 +11,10 @@ export interface DrawingContext {
   color: Color
 }
 
-export function drawWaveform(context: DrawingContext, minMaxes: Float32Array) {
+export function drawWaveform(
+  context: DrawingContext,
+  minMaxes: [Float32Array, Float32Array, number][]
+) {
   const { pwidth, pheight, scale, start, ctx } = context,
     halfHeight = pheight / 2
 
@@ -76,4 +79,57 @@ export function drawPlayback(context: DrawingContext, track: Types.TrackState) {
     ctx.lineTo(px, pheight)
     ctx.stroke()
   }
+}
+
+function roundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.lineTo(x + width - radius, y)
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+  ctx.lineTo(x + width, y + height - radius)
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+  ctx.lineTo(x + radius, y + height)
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+  ctx.lineTo(x, y + radius)
+  ctx.quadraticCurveTo(x, y, x + radius, y)
+  ctx.closePath()
+}
+
+export function drawBounds(context: DrawingContext, bounds: number[]) {
+  const { pheight, pwidth, scale, start, ctx } = context
+
+  const fheight = pheight / 10,
+    spacing = fheight/4
+  // ctx.fillStyle = 'rgba(0,0,0,0.6 )'
+  // ctx.fillRect(0,0, pwidth, fheight)
+
+  bounds.forEach((sample, i) => {
+    const next = bounds[i + 1]
+    const px = (sample - start) / scale
+    
+    ctx.lineWidth = 3
+    ctx.strokeStyle = 'black'
+    ctx.beginPath()
+    ctx.lineTo(px, 0)
+    ctx.lineTo(px, fheight)
+    ctx.stroke()
+
+    if (next) {
+      ctx.lineWidth = 1
+      const nx = (next - start) / scale
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+      const width = nx-px-(2*spacing)
+      roundedRect(ctx, px+spacing, fheight/4, width, fheight*.5, spacing)
+      ctx.fill()
+      ctx.stroke()
+    }
+  })
 }

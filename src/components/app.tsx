@@ -7,6 +7,7 @@ import { palette } from '../styles/theme'
 import Waveform from './waveform'
 import * as Types from '../redux/types'
 import * as Actions from '../redux/actions'
+import FracIn from './frac-indicator'
 
 const Wrapper = ctyled.div.styles({
   color: c => c.as(palette.gray).absLum(0.9).contrast(0.15),
@@ -43,6 +44,7 @@ export default function() {
   return (
     <HotKeys keyMap={keyMap} handlers={handlers}>
       <Wrapper>
+        <FracIn/>
         {Object.keys(tracks).map(trackId => {
           const track = tracks[trackId]
           return <Waveform key={trackId} track={track} />

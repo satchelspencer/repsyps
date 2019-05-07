@@ -1,4 +1,6 @@
-export default function getMinMaxes(buffer) {
+export default function getMinMaxes(
+  buffer: Float32Array
+): [Float32Array, Float32Array, number][] {
   let minMaxes = []
   for (let frameSize = 2; frameSize < Math.floor(buffer.length / 2); frameSize *= 2) {
     const frameCount = Math.ceil(buffer.length / frameSize)
