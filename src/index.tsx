@@ -18,11 +18,11 @@ async function init() {
   const context = new AudioContext()
 
   const marku = await getAudioFromURL(
-    require('file-loader!../assets/MortalThought.mp3'),
+    require('file-loader!../assets/emcee.mp3'),
     context
   )
 
-  const quant = await getAudioFromURL(require('file-loader!../assets/wtd.mp3'), context)
+  const quant = await getAudioFromURL(require('file-loader!../assets/NoFear.mp3'), context)
 
   store.dispatch(
     Actions.updateMixState({

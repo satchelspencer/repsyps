@@ -148,7 +148,7 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
           spacing
         )
       } else {
-        ctx.lineWidth = 3
+        ctx.lineWidth = 1
         ctx.fillStyle = 'rgba(255,255,255,0.2)'
         ctx.strokeStyle = 'rgba(0,0,0,0.5)'
         roundedRect(

@@ -195,15 +195,17 @@ export default function Track({ track }: WaveformProps) {
         const x = e.clientX - container.current.offsetLeft,
           y = e.clientY - container.current.getBoundingClientRect().y
 
-        if (y < 20 && !track.selected) {
+        if (y < 20 && track.selected) {
           const bound = getBoundIndex(x)
           if (bound !== -1) {
             setMovingBoundIndex(bound)
-            dispatch(Actions.updateMixState({ on: false }))
+            dispatch(
+              Actions.updateTrackPlayback({ id: track.name, playback: { on: false } })
+            )
           }
         }
 
-        if (track.selected) setClickX(x)
+        setClickX(x)
       },
       [track.bounds, scale, start, track.selected]
     ),
@@ -289,7 +291,7 @@ export default function Track({ track }: WaveformProps) {
                 dispatch(
                   Actions.updateTrackPlayback({
                     id: track.name,
-                    playback: { start: pos, length: 0, alpha: null },
+                    playback: { start: pos, length: 0, alpha: null, aperiodic: true },
                   })
                 )
               } else {
@@ -313,7 +315,7 @@ export default function Track({ track }: WaveformProps) {
           }
         } else {
           const next = getNextBoundIndex(x),
-            start = clickX && getNextBoundIndex(clickX)
+            start = (clickX && getNextBoundIndex(clickX)) || next
           if (next !== -1) {
             let playBacks = []
             for (let bi = start; bi <= next; bi++) {
@@ -342,7 +344,7 @@ export default function Track({ track }: WaveformProps) {
         }
         setClickX(null)
       },
-      [clickX, track.bounds, container.current, track.selected]
+      [clickX, track.bounds, container.current, track.selected, track.editing]
     ),
     getTimeFromPosition = useCallback(
       (x: number, snap: boolean) => {

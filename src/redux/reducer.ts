@@ -20,10 +20,12 @@ export default combineReducers({
       }
     }),
     handle(Actions.updateTrackTime, (mixState, { payload }) => {
-      return {
-        ...mixState,
-        frac: payload.frac,
-      }
+      return payload.frac
+        ? {
+            ...mixState,
+            frac: payload.frac,
+          }
+        : mixState
     }),
   ]),
   tracks: createReducer({} as Types.TracksState, handle => [
@@ -102,6 +104,7 @@ export default combineReducers({
             ...payload.playback,
           },
           nextPlayback: payload.nextPlayback || tracks[payload.id].nextPlayback,
+          position: payload.playback.aperiodic ? 0 : tracks[payload.id].position,
         },
       }
     }),

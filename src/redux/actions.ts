@@ -33,7 +33,7 @@ export const updateTrackTime = createAction<{
   trackPositions: {
     [trackId: string]: number
   }
-  frac: number
+  frac?: number
 }>('UPDATE_TIME')
 
 export const setTrackBounds = createAction<{ id: string; bounds: number[] }>(

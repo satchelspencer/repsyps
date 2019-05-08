@@ -65,11 +65,18 @@ class PvProcessor extends AudioWorkletProcessor {
         }
         console.log('adding' + ' ' + id + ' ' + this.frac)
       } else if (event.data.type === 'updatePlayback') {
+        //console.log('updatePlayback')
+        //console.log(JSON.stringify(event.data, null, 2))
         const { id, playback, immediate } = event.data,
           track = this.tracks[id]
         if (immediate) {
+          const hasTimeChange =
+            playback.start !== track.playback.start ||
+            playback.length !== track.playback.length ||
+            playback.alpha !== track.playback.alpha
+
           track.playback = { ...track.playback, ...playback }
-          if (playback.start || playback.length || playback.alpha) {
+          if (hasTimeChange) {
             track.position =
               playback.length && !playback.aperiodic
                 ? (this.frac / (track.playback.alpha || 1)) * track.playback.length
@@ -84,7 +91,16 @@ class PvProcessor extends AudioWorkletProcessor {
       } else if (event.data.type === 'updateMixState') {
         const { mix } = event.data
         if (mix.frac !== undefined) this.frac = mix.frac
-        if (mix.length) this.time = mix.length
+        if (mix.length) {
+          this.time = mix.length
+          Object.keys(this.tracks).forEach((trackId, t) => {
+            const track = this.tracks[trackId]
+            const alpha =
+              (this.time / track.playback.length) * (track.playback.alpha || 1)
+            track.pvL.set_alpha(alpha)
+            track.pvR.set_alpha(alpha)
+          })
+        }
         if (mix.on !== undefined) this.on = mix.on
       }
     }
@@ -95,8 +111,8 @@ class PvProcessor extends AudioWorkletProcessor {
       outputR = outputs[0][1],
       outputLen = outputL.length
 
-    if (!this.on || !this.time) return true
-    //console.log(outputs[0], outputL.length, outputR.length)
+    // console.log(`process? ${this.on}, ${!this.time}`)
+    //if (!this.on || !this.time) return true
 
     Object.keys(this.tracks).forEach((trackId, t) => {
       const {
@@ -121,7 +137,7 @@ class PvProcessor extends AudioWorkletProcessor {
         outputR[outputPos] += tempBuffR.shift() * playback.vol
         outputPos++
       }
-      if (outputPos === outputLen) return
+
       const [inputL, inputR] = audio
 
       const talpha = track.playback.alpha,
@@ -133,9 +149,6 @@ class PvProcessor extends AudioWorkletProcessor {
         fullFracDiv = Math.floor(fullFrac / invAlpha),
         posByFrac = ((fullFracDiv + this.frac) / talpha) * track.playback.length
 
-      //console.log(fullFracRemainder+' '+this.frac)
-      //console.log(fullFracRemainder + ', ' + adjustedFrac+' - '+ fullFracDiv.toString())
-
       if (
         !track.playback.aperiodic &&
         track.playback.length &&
@@ -143,7 +156,6 @@ class PvProcessor extends AudioWorkletProcessor {
         this.frac < 0.9 &&
         track.position - posByFrac > 256
       ) {
-        console.log('out?')
         if (track.out > 2) {
           console.log('correcting')
           track.position = posByFrac
@@ -168,7 +180,7 @@ class PvProcessor extends AudioWorkletProcessor {
             playback,
             nextPlayback
           )
-
+        //console.log(`${trackId} process, ${track.position} => ${playback.start}`)
         pvL.process(inputFrameL, tempBuffL)
         pvR.process(inputFrameR, tempBuffR)
 
