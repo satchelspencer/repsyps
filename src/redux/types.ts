@@ -2,7 +2,7 @@ export interface PlaybackState {
   on: boolean
   start: number //sample count
   length?: number //sample count
-  vol: 1,
+  vol: number,
   alpha?: number,
   aperiodic?: boolean
 }
@@ -17,8 +17,11 @@ export interface TrackState {
   buffer: AudioBuffer
   display: DisplayState
   playback: PlaybackState,
-  nextPlayback?: Partial<PlaybackState>,
-  position: number
+  nextPlayback: Partial<PlaybackState>[],
+  position: number,
+  bounds: number[],
+  selected: boolean,
+  editing: boolean
 }
 
 export interface MixState{

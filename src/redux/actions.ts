@@ -22,8 +22,7 @@ export const updateTrackDisplay = createAction<{
 export const updateTrackPlayback = createAction<{
   id: string
   playback: Partial<Types.PlaybackState>
-  immediate?: boolean
-  resetNext?: boolean
+  nextPlayback?: Partial<Types.PlaybackState>[]
 }>('UPDATE_TRACK_PLAYBACK')
 
 export const applyNextPlayback = createAction<{
@@ -33,9 +32,17 @@ export const applyNextPlayback = createAction<{
 export const updateTrackTime = createAction<{
   trackPositions: {
     [trackId: string]: number
-  },
+  }
   frac: number
 }>('UPDATE_TIME')
+
+export const setTrackBounds = createAction<{ id: string; bounds: number[] }>(
+  'SET_TRACK_BOUNDS'
+)
+
+export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
+
+export const editTrack = createAction<{ id: string; edit: boolean }>('SET_TRACK_EDIT')
 
 export const updateMixState = createAction<Partial<Types.MixState>>('MIX_STATE_UPDATE')
 

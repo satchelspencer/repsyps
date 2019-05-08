@@ -25,12 +25,12 @@ const Wrapper = ctyled.div.styles({
   `
 
 export default function() {
-  const getMappedState = useCallback((state: Types.AppState) => state.tracks, []),
-    tracks = useMappedState(getMappedState),
+  const getMappedState = useCallback((state: Types.AppState) => ({tracks: state.tracks, length: state.mix.length}), []),
+    {tracks, length} = useMappedState(getMappedState),
     dispatch = useDispatch(),
     keyMap = useMemo(
       () => ({
-        playPause: 'space',
+        playPause: 'command+space',
       }),
       []
     ),
@@ -44,7 +44,21 @@ export default function() {
   return (
     <HotKeys keyMap={keyMap} handlers={handlers}>
       <Wrapper>
-        <FracIn/>
+      <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.1"
+                value={length/44100}
+                onChange={e => {
+                  dispatch(
+                    Actions.updateMixState({
+                      length: parseFloat(e.target.value)*44100
+                    })
+                  )
+                }}
+              />
+        {/* <FracIn/> */}
         {Object.keys(tracks).map(trackId => {
           const track = tracks[trackId]
           return <Waveform key={trackId} track={track} />

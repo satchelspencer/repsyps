@@ -67,13 +67,21 @@ export function drawPlayback(context: DrawingContext, track: Types.TrackState) {
 
     ctx.fillRect(sx, 0, sw, pheight)
   }
-  if (track.playback.on) {
+  if (true || track.playback.on) {
     let px = (track.playback.start + track.position - start) / scale
     ctx.fillStyle = 'rgba(0,0,0,0.2)'
     ctx.fillRect(px - 10, 0, 20, pheight)
 
+    const startX = (track.playback.start - start) / scale
+    ctx.lineWidth = 5
+    ctx.strokeStyle = track.selected ? 'rgba(255,0,0,0.5)' : 'rgba(0,0,0,0.5)'
+    ctx.beginPath()
+    ctx.lineTo(startX, 0)
+    ctx.lineTo(startX, pheight)
+    ctx.stroke()
+
     ctx.lineWidth = 3
-    ctx.strokeStyle = 'rgb(255,0,0)'
+    ctx.strokeStyle = track.selected ? 'rgb(255,0,0)' : 'black'
     ctx.beginPath()
     ctx.lineTo(px, 0)
     ctx.lineTo(px, pheight)
@@ -102,34 +110,83 @@ function roundedRect(
   ctx.closePath()
 }
 
-export function drawBounds(context: DrawingContext, bounds: number[]) {
-  const { pheight, pwidth, scale, start, ctx } = context
+export function drawBounds(context: DrawingContext, bounds: number[], editing: boolean) {
+  const { pheight, scale, start, ctx } = context
 
   const fheight = pheight / 10,
-    spacing = fheight/4
+    spacing = fheight / 4
   // ctx.fillStyle = 'rgba(0,0,0,0.6 )'
   // ctx.fillRect(0,0, pwidth, fheight)
 
   bounds.forEach((sample, i) => {
     const next = bounds[i + 1]
     const px = (sample - start) / scale
-    
-    ctx.lineWidth = 3
-    ctx.strokeStyle = 'black'
-    ctx.beginPath()
-    ctx.lineTo(px, 0)
-    ctx.lineTo(px, fheight)
-    ctx.stroke()
+
+    // drag handle
+    if (editing) {
+      ctx.lineWidth = 3
+      ctx.strokeStyle = 'black'
+      ctx.beginPath()
+      ctx.lineTo(px, 0)
+      ctx.lineTo(px, fheight)
+      ctx.stroke()
+    }
 
     if (next) {
-      ctx.lineWidth = 1
-      const nx = (next - start) / scale
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-      const width = nx-px-(2*spacing)
-      roundedRect(ctx, px+spacing, fheight/4, width, fheight*.5, spacing)
+      const nx = (next - start) / scale,
+        width = nx - px
+      if (editing) {
+        ctx.lineWidth = 1
+        ctx.fillStyle = 'rgba(255,255,255,0.9)'
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+        roundedRect(
+          ctx,
+          px + spacing,
+          fheight / 4,
+          width - 2 * spacing,
+          fheight * 0.5,
+          spacing
+        )
+      } else {
+        ctx.lineWidth = 3
+        ctx.fillStyle = 'rgba(255,255,255,0.2)'
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+        roundedRect(
+          ctx,
+          px,
+          fheight / 4,
+          width,
+          pheight - fheight / 2,
+          Math.min(spacing * 2, width / 2)
+        )
+      }
       ctx.fill()
       ctx.stroke()
+    }
+  })
+}
+
+export function drawSelection(context: DrawingContext, clickX: number, center: number) {
+  const { pheight, ctx } = context
+  if (clickX) {
+    ctx.fillStyle = 'rgba(0,0,0,0.1)'
+    ctx.fillRect(clickX * 2, 0, (center - clickX) * 2, pheight)
+  }
+}
+
+export function drawNextPlayback(
+  context: DrawingContext,
+  nextPlayback: Partial<Types.PlaybackState>[]
+) {
+  const { pheight, scale, start, ctx } = context
+  nextPlayback.forEach(playback => {
+    if (playback.length) {
+      ctx.fillStyle = 'rgba(0,0,0,0.1)'
+
+      let sx = (playback.start - start) / scale,
+        sw = playback.length / scale
+
+      ctx.fillRect(sx, 0, sw, pheight)
     }
   })
 }

@@ -17,15 +17,18 @@ function getAudioFromURL(url, context) {
 async function init() {
   const context = new AudioContext()
 
-  const marku = await getAudioFromURL(require('file-loader!../assets/jeri.mp3'), context)
+  const marku = await getAudioFromURL(
+    require('file-loader!../assets/MortalThought.mp3'),
+    context
+  )
 
-  const quant = await getAudioFromURL(require('file-loader!../assets/quant.mp3'), context)
+  const quant = await getAudioFromURL(require('file-loader!../assets/wtd.mp3'), context)
 
   store.dispatch(
     Actions.updateMixState({
       length: 110336,
       frac: 0,
-      on: false,
+      on: true,
     })
   )
 
@@ -37,70 +40,12 @@ async function init() {
     })
   )
   store.dispatch(
-    Actions.updateTrackPlayback({
-      id: 'marku',
-      playback: {
-        on: true,
-        //start: Math.floor((1 * 60 + 23.71) * 44100),
-        //length: Math.floor(3.76 * 44100),
-      },
-      immediate: true,
-    })
-  )
-
-  store.dispatch(
     Actions.addTrack({
       id: 'quant',
       name: 'quant',
       buffer: quant,
     })
   )
-  store.dispatch(
-    Actions.updateTrackPlayback({
-      id: 'quant',
-      playback: {
-        on: false,
-        start: Math.floor((12.33 + 0) * 44100),
-        length: Math.floor(3.68 * 44100),
-      },
-      immediate: true,
-    })
-  )
-
-
-  // store.dispatch(
-  //   Actions.addTrack({
-  //     id: 'quant2',
-  //     name: 'quant',
-  //     buffer: quant,
-  //   })
-  // )
-  // store.dispatch(
-  //   Actions.updateTrackPlayback({
-  //     id: 'quant2',
-  //     playback: {
-  //       on: true,
-  //       start: Math.floor((12.33 - 3.68*2) * 44100),
-  //       length: Math.floor(3.68 * 44100),
-  //     },
-  //     immediate: true,
-  //   })
-  // )
-
-  // setTimeout(() => {
-  //   console.log('ay')
-  //   store.dispatch(
-  //     Actions.updateMixState({
-  //       length: 44100*4,
-  //       frac: 0,
-  //       on: true
-  //     })
-  //   )
-  // }, 5000)
-
-  const theme = {
-
-  }
 
   ReactDOM.render(
     <StoreContext.Provider value={store}>

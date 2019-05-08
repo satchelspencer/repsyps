@@ -5,13 +5,14 @@ import * as _ from 'lodash'
 const frameSize = 2048,
   tempBuffSize = Math.floor(frameSize * 2)
 
-function getModularSubarray(array, sstart, send, playback) {
+function getModularSubarray(array, sstart, send, playback, nextPlayback) {
   const end = playback.length ? playback.start + playback.length : array.length
   if (send <= end || !playback.length) return array.subarray(sstart, send)
   else {
-    const out = new Float32Array(send - sstart),
+    const next = nextPlayback || playback,
+      out = new Float32Array(send - sstart),
       tail = array.subarray(sstart, end),
-      head = array.subarray(playback.start, playback.start + (send - end))
+      head = array.subarray(next.start, next.start + (send - end))
 
     for (let i = 0; i < out.length; i++) {
       if (i < tail.length) out[i] = tail[i]
@@ -68,18 +69,19 @@ class PvProcessor extends AudioWorkletProcessor {
           track = this.tracks[id]
         if (immediate) {
           track.playback = { ...track.playback, ...playback }
-          track.position =
-            playback.length && !playback.aperiodic
-              ? (this.frac / (track.playback.alpha || 1)) * track.playback.length
-              : 0
-          const alpha =
-            (playback.length ? this.time / track.playback.length : 1) *
-            (track.playback.alpha || 1)
-          track.pvL.set_alpha(alpha)
-          track.pvR.set_alpha(alpha)
+          if (playback.start || playback.length || playback.alpha) {
+            track.position =
+              playback.length && !playback.aperiodic
+                ? (this.frac / (track.playback.alpha || 1)) * track.playback.length
+                : 0
+            const alpha =
+              (playback.length ? this.time / track.playback.length : 1) *
+              (track.playback.alpha || 1)
+            track.pvL.set_alpha(alpha)
+            track.pvR.set_alpha(alpha)
+          }
         } else track.nextPlayback = playback
       } else if (event.data.type === 'updateMixState') {
-        console.log('updateMix')
         const { mix } = event.data
         if (mix.frac !== undefined) this.frac = mix.frac
         if (mix.length) this.time = mix.length
@@ -152,8 +154,20 @@ class PvProcessor extends AudioWorkletProcessor {
       while (outputPos < outputLen) {
         const inputStart = playback.start + track.position,
           inputEnd = inputStart + frameSize,
-          inputFrameL = getModularSubarray(inputL, inputStart, inputEnd, playback),
-          inputFrameR = getModularSubarray(inputR, inputStart, inputEnd, playback)
+          inputFrameL = getModularSubarray(
+            inputL,
+            inputStart,
+            inputEnd,
+            playback,
+            nextPlayback
+          ),
+          inputFrameR = getModularSubarray(
+            inputR,
+            inputStart,
+            inputEnd,
+            playback,
+            nextPlayback
+          )
 
         pvL.process(inputFrameL, tempBuffL)
         pvR.process(inputFrameR, tempBuffR)
@@ -171,9 +185,9 @@ class PvProcessor extends AudioWorkletProcessor {
         if (nextPosition < track.position && track.nextPlayback) {
           Object.assign(track.playback, track.nextPlayback)
           track.playback = { ...track.playback, ...track.playback }
-          track.position = track.playback.length
-            ? (this.frac / (track.playback.alpha || 1)) * track.playback.length
-            : 0
+          // track.position = track.playback.length
+          //   ? (this.frac / (track.playback.alpha || 1)) * track.playback.length
+          //   : 0
           const alpha = (this.time / track.playback.length) * (track.playback.alpha || 1)
           pvL.set_alpha(alpha)
           pvR.set_alpha(alpha)

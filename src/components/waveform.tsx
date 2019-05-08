@@ -6,30 +6,44 @@ import React, {
   useState,
   useCallback,
 } from 'react'
+import { HotKeys } from 'react-hotkeys'
 import ctyled, { CtyledContext } from 'ctyled'
 import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 
 import getImpulses, { binSize } from '../dsp/impulse-detect'
 import getMinMaxes from '../dsp/min-maxes'
-import { drawWaveform, drawImpulses, drawPlayback, drawBounds } from './waveform-canvas'
+import {
+  drawWaveform,
+  drawImpulses,
+  drawPlayback,
+  drawBounds,
+  drawSelection,
+  drawNextPlayback,
+} from './waveform-canvas'
 import * as Types from '../redux/types'
 import * as Actions from '../redux/actions'
 
-const TrackContainer = ctyled.div.styles({
+const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
   height: 10,
   flex: 'none',
   lined: true,
+  color: (c, { selected }) => (selected ? c.nudge(0.1) : c),
 })
 
-const TrackCanvas = ctyled.canvas.styles({}).extend`
+const TrackCanvas = ctyled.canvas.attrs({ selected: false }).styles({}).extend`
   position:absolute;
   width:100%;
   height:100%;
+  transition:0.3s all;
+  ${(_, { selected }) => selected && `box-shadow:0 0 5px rgba(0,0,0,0.2) inset;`}
 `
 
 const TrackControls = ctyled.div.styles({
   width: 10,
+  column: true,
+  gutter: 1,
+  bg: true,
 })
 
 const TrackCanvasWrapper = ctyled.div.styles({
@@ -60,7 +74,7 @@ function snapSampleToImpulses(raw: number, scale: number, impulses: Float32Array
   return raw
 }
 
-function inferTimeBase(playback: Types.PlaybackState, impulses: Float32Array) {
+function inferTimeBase(playback: Types.PlaybackState, impulses: Float32Array): number[] {
   const len = impulses.length * binSize
   const bounds = []
   for (
@@ -93,9 +107,8 @@ export default function Track({ track }: WaveformProps) {
     dispatch = useDispatch(),
     { length } = useMappedState(getMappedState),
     ctyledContext = useContext(CtyledContext),
-    [movingBoundIndex, setMovingBoundIndex] = useState(-1)
-
-  const [bounds, setBounds] = useState<number[]>([])
+    [movingBoundIndex, setMovingBoundIndex] = useState(-1),
+    [clickX, setClickX] = useState(null)
 
   /* ZOOM/PANNING CONTROL */
 
@@ -157,19 +170,32 @@ export default function Track({ track }: WaveformProps) {
     ctx.clearRect(0, 0, pwidth, pheight)
 
     drawWaveform(drawContext, minMaxes)
-    drawImpulses(drawContext, impulses)
+    if (track.editing) drawImpulses(drawContext, impulses)
     drawPlayback(drawContext, track)
-    drawBounds(drawContext, bounds)
-  }, [buffer, scale, start, width, height, track.playback, effectivePos, bounds])
+    drawBounds(drawContext, track.bounds, track.editing)
+    drawSelection(drawContext, clickX, center)
+    drawNextPlayback(drawContext, track.nextPlayback)
+  }, [
+    buffer,
+    scale,
+    start,
+    width,
+    height,
+    track.playback,
+    effectivePos,
+    track.bounds,
+    track.editing,
+    track.selected,
+    clickX && center,
+  ])
 
   /* playback/selection */
-  const [clickX, setClickX] = useState(null),
-    handleMouseDown = useCallback(
+  const handleMouseDown = useCallback(
       e => {
         const x = e.clientX - container.current.offsetLeft,
-          y = e.clientY - container.current.offsetTop
+          y = e.clientY - container.current.getBoundingClientRect().y
 
-        if (y < 20) {
+        if (y < 20 && !track.selected) {
           const bound = getBoundIndex(x)
           if (bound !== -1) {
             setMovingBoundIndex(bound)
@@ -177,9 +203,9 @@ export default function Track({ track }: WaveformProps) {
           }
         }
 
-        setClickX(x)
+        if (track.selected) setClickX(x)
       },
-      [bounds, scale, start]
+      [track.bounds, scale, start, track.selected]
     ),
     handleMouseMove = useCallback(
       e => {
@@ -187,11 +213,16 @@ export default function Track({ track }: WaveformProps) {
         setCenter(x)
         if (movingBoundIndex !== -1) {
           const sample = getTimeFromPosition(x, true),
-            newBounds = [...bounds]
+            newBounds = [...track.bounds]
           newBounds[movingBoundIndex] = sample
-          setBounds(newBounds)
-          const oldPos = bounds[movingBoundIndex],
-            nextBound = bounds[movingBoundIndex + 1]
+          dispatch(
+            Actions.setTrackBounds({
+              id: track.name,
+              bounds: newBounds,
+            })
+          )
+          const oldPos = track.bounds[movingBoundIndex],
+            nextBound = track.bounds[movingBoundIndex + 1]
 
           if (track.playback.start === oldPos) {
             const newLen = track.playback.length && nextBound - sample
@@ -203,7 +234,6 @@ export default function Track({ track }: WaveformProps) {
                   length: newLen,
                   alpha: newLen ? newLen / length : null,
                 },
-                immediate: true,
               })
             )
           }
@@ -214,75 +244,105 @@ export default function Track({ track }: WaveformProps) {
               Actions.updateTrackPlayback({
                 id: track.name,
                 playback: { length: newLen, alpha: newLen / length },
-                immediate: true,
               })
             )
           }
         }
       },
-      [movingBoundIndex, bounds, track]
+      [movingBoundIndex, track.bounds, track]
     ),
     handleMouseUp = useCallback(
       e => {
         const x = e.clientX - container.current.offsetLeft,
-          y = e.clientY - container.current.offsetTop,
+          y = e.clientY - container.current.getBoundingClientRect().y,
           dx = x - clickX
-        if (movingBoundIndex !== -1) {
-          //we were dragging a bound
-          setMovingBoundIndex(-1)
-        } else if (y < 20) {
-          const next = getNextBoundIndex(x)
-          if (next !== -1) {
-            const endBound = bounds[next],
-              startBound = bounds[next - 1],
-              newLen = endBound - startBound
-            dispatch(
-              Actions.updateTrackPlayback({
-                id: track.name,
-                playback: {
-                  start: startBound,
-                  length: newLen,
-                  //alpha: newLen ? newLen / length : null,
-                  aperiodic: false,
-                  alpha: 1
-                },
-                immediate: true,
-              })
-            )
+
+        if (track.editing) {
+          if (track.selected) {
+            //if we are selected and in edit mode
+            if (movingBoundIndex !== -1) {
+              //we were dragging a bound
+              setMovingBoundIndex(-1)
+            } else if (y < 20) {
+              const next = getNextBoundIndex(x)
+              if (next !== -1) {
+                const endBound = track.bounds[next],
+                  startBound = track.bounds[next - 1],
+                  newLen = endBound - startBound
+                dispatch(
+                  Actions.updateTrackPlayback({
+                    id: track.name,
+                    playback: {
+                      start: startBound,
+                      length: newLen,
+                      alpha: newLen ? newLen / length : null,
+                      aperiodic: true,
+                    },
+                  })
+                )
+              }
+            } else {
+              //set playback
+              if (dx < 3) {
+                //click to play
+                const pos = getTimeFromPosition(x, true)
+                dispatch(
+                  Actions.updateTrackPlayback({
+                    id: track.name,
+                    playback: { start: pos, length: 0, alpha: null },
+                  })
+                )
+              } else {
+                //dragged selection
+                const start = getTimeFromPosition(clickX, true),
+                  end = getTimeFromPosition(x, true),
+                  len = end - start
+                dispatch(
+                  Actions.updateTrackPlayback({
+                    id: track.name,
+                    playback: {
+                      start,
+                      length: len,
+                      alpha: len / length,
+                      aperiodic: true,
+                    },
+                  })
+                )
+              }
+            }
           }
         } else {
-          //set playback
-          if (!dx) {
-            const pos = getTimeFromPosition(x, true)
-            dispatch(
-              Actions.updateTrackPlayback({
-                id: track.name,
-                playback: { start: pos, length: 0, alpha: null },
-                immediate: true,
+          const next = getNextBoundIndex(x),
+            start = clickX && getNextBoundIndex(clickX)
+          if (next !== -1) {
+            let playBacks = []
+            for (let bi = start; bi <= next; bi++) {
+              const endBound = track.bounds[bi],
+                startBound = track.bounds[bi - 1],
+                newLen = endBound - startBound
+              playBacks.push({
+                start: startBound,
+                length: newLen,
+                alpha: 1,
+                aperiodic: false,
               })
-            )
-          } else {
-            const start = getTimeFromPosition(clickX, true),
-              end = getTimeFromPosition(x, true),
-              len = end - start
+            }
+            // cycle first to end of queue
+            const first = playBacks.shift()
+            playBacks.push(first)
+
             dispatch(
               Actions.updateTrackPlayback({
                 id: track.name,
-                playback: {
-                  start,
-                  length: len,
-                  alpha: len / length,
-                  aperiodic: true,
-                },
-                immediate: true,
+                playback: first,
+                nextPlayback: playBacks,
               })
             )
           }
         }
-
         setClickX(null)
       },
-      [clickX]
+      [clickX, track.bounds, container.current, track.selected]
     ),
     getTimeFromPosition = useCallback(
       (x: number, snap: boolean) => {
@@ -294,47 +354,146 @@ export default function Track({ track }: WaveformProps) {
     getBoundIndex = useCallback(
       x => {
         const sample = getTimeFromPosition(x, false)
-        return _.findIndex(bounds, b => {
+        return _.findIndex(track.bounds, b => {
           return Math.abs(b - sample) < 7 * scale
         })
       },
-      [bounds, scale, start]
+      [track.bounds, scale, start]
     ),
     getNextBoundIndex = useCallback(
       x => {
         const sample = getTimeFromPosition(x, false)
-        return _.findIndex(bounds, b => {
+        return _.findIndex(track.bounds, b => {
           return b >= sample
         })
       },
-      [bounds, scale, start]
+      [track.bounds, scale, start]
+    ),
+    handlers = useMemo(
+      () => ({
+        playPause: () => {
+          dispatch(
+            Actions.updateTrackPlayback({
+              id: track.name,
+              playback: { on: !track.playback.on },
+            })
+          )
+        },
+      }),
+      [track]
     )
 
   return (
-    <TrackContainer>
-      <TrackControls>
-        {track.name}: {Math.floor(scale)}, {Math.floor(start)}
-        <a
-          onClick={() => {
-            setBounds(inferTimeBase(track.playback, impulses))
-          }}
-        >
-          infer
-        </a>
-      </TrackControls>
-      <TrackCanvasWrapper
-        inRef={container}
-        onMouseMove={handleMouseMove}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
+    <HotKeys
+      keyMap={{
+        playPause: 'space',
+      }}
+      handlers={handlers}
+      style={{ outline: 'none' }}
+    >
+      <TrackContainer
+        selected={track.selected}
+        onClick={() => dispatch(Actions.selectTrackExclusive(track.name))}
       >
-        <TrackCanvas
-          inRef={canvasRef}
-          width={width * 2}
-          height={height * 2}
-          style={{ width: '100%', height: '100%' }}
-        />
-      </TrackCanvasWrapper>
-    </TrackContainer>
+        <TrackControls>
+          <span>
+            {track.name}: {Math.floor(scale)}spx
+          </span>
+          <button
+            onClick={() =>
+              dispatch(
+                Actions.editTrack({
+                  id: track.name,
+                  edit: !track.editing,
+                })
+              )
+            }
+            children={track.editing ? 'done' : 'edit'}
+          />
+          {!track.editing && (
+            <>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.02"
+                value={track.playback.vol}
+                onChange={e => {
+                  dispatch(
+                    Actions.updateTrackPlayback({
+                      id: track.name,
+                      playback: { vol: parseFloat(e.target.value) },
+                    })
+                  )
+                }}
+              />
+            </>
+          )}
+          {track.editing && (
+            <>
+              <button
+                onClick={() =>
+                  dispatch(
+                    Actions.setTrackBounds({
+                      id: track.name,
+                      bounds: inferTimeBase(track.playback, impulses),
+                    })
+                  )
+                }
+                children="< infer >"
+              />
+              <button
+                onClick={() => {
+                  const endPoint = track.playback.start + track.playback.length,
+                    inferredBounds = inferTimeBase(track.playback, impulses).filter(
+                      bound => bound <= endPoint
+                    ),
+                    existingBounds = track.bounds.filter(bound => bound > endPoint)
+
+                  dispatch(
+                    Actions.setTrackBounds({
+                      id: track.name,
+                      bounds: _.sortBy([...inferredBounds, ...existingBounds]),
+                    })
+                  )
+                }}
+                children=" < infer"
+              />
+              <button
+                onClick={() => {
+                  const startPoint = track.playback.start,
+                    inferredBounds = inferTimeBase(track.playback, impulses).filter(
+                      bound => bound >= startPoint
+                    ),
+                    existingBounds = track.bounds.filter(bound => bound < startPoint)
+
+                  dispatch(
+                    Actions.setTrackBounds({
+                      id: track.name,
+                      bounds: _.sortBy([...inferredBounds, ...existingBounds]),
+                    })
+                  )
+                }}
+                children="infer > "
+              />
+            </>
+          )}
+        </TrackControls>
+        <TrackCanvasWrapper
+          inRef={container}
+          onMouseMove={handleMouseMove}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+        >
+          <TrackCanvas
+            selected={track.selected}
+            inRef={canvasRef}
+            width={width * 2}
+            height={height * 2}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </TrackCanvasWrapper>
+      </TrackContainer>
+    </HotKeys>
   )
 }

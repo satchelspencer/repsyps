@@ -15,6 +15,7 @@ export default async function init(store: Store<Types.AppState>) {
     let node = new AudioWorkletNode(context, 'pv-mixer-processor', {
       outputChannelCount: [2],
     })
+    const throttlePostMessage = _.throttle(body => node.port.postMessage(body), 200)
     node.port.onmessage = event => {
       if (event.data.type === 'apply_next') {
         store.dispatch(Actions.applyNextPlayback({ id: event.data.id }))
@@ -38,7 +39,7 @@ export default async function init(store: Store<Types.AppState>) {
           if (mixState[key] !== lastMixState[key]) diff[key] = mixState[key]
         })
         if (Object.keys(diff).length)
-          node.port.postMessage({
+          throttlePostMessage({
             type: 'updateMixState',
             mix: diff,
           })
@@ -68,23 +69,24 @@ export default async function init(store: Store<Types.AppState>) {
         const oldTrackPlayback = lastTracks[id],
           newTrack = tracks[id]
         if (oldTrackPlayback.playback !== newTrack.playback)
-          node.port.postMessage({
+          throttlePostMessage({
             type: 'updatePlayback',
             id: id,
             playback: newTrack.playback,
             immediate: true,
           })
-
         if (
           newTrack.nextPlayback &&
           oldTrackPlayback.nextPlayback !== newTrack.nextPlayback
         )
-          node.port.postMessage({
-            type: 'updatePlayback',
-            id: id,
-            playback: newTrack.nextPlayback,
-            immediate: false,
-          })
+          setTimeout(() => {
+            node.port.postMessage({
+              type: 'updatePlayback',
+              id: id,
+              playback: newTrack.nextPlayback[0],
+              immediate: false,
+            })
+          }, 100)
       })
 
       lastTracks = tracks

@@ -27,6 +27,33 @@ export default combineReducers({
     }),
   ]),
   tracks: createReducer({} as Types.TracksState, handle => [
+    handle(Actions.editTrack, (tracks, { payload }) => {
+      return {
+        ...tracks,
+        [payload.id]: {
+          ...tracks[payload.id],
+          editing: payload.edit,
+        },
+      }
+    }),
+    handle(Actions.selectTrackExclusive, (tracks, { payload: id }) => {
+      return _.mapValues(tracks, (track, trackId) => {
+        if (trackId === id) {
+          return { ...track, selected: true }
+        } else if (track.selected) {
+          return { ...track, selected: false }
+        } else return track
+      })
+    }),
+    handle(Actions.setTrackBounds, (tracks, { payload }) => {
+      return {
+        ...tracks,
+        [payload.id]: {
+          ...tracks[payload.id],
+          bounds: payload.bounds,
+        },
+      }
+    }),
     handle(Actions.addTrack, (tracks, { payload }) => {
       if (tracks[payload.id]) return tracks
       else
@@ -44,8 +71,11 @@ export default combineReducers({
               start: 0,
               vol: 1,
             },
-            nextPlayback: null,
+            nextPlayback: [],
             position: 0,
+            bounds: [],
+            selected: false,
+            editing: true,
           },
         }
     }),
@@ -63,40 +93,32 @@ export default combineReducers({
       }
     }),
     handle(Actions.updateTrackPlayback, (tracks, { payload }) => {
-      if (payload.immediate)
-        return {
-          ...tracks,
-          [payload.id]: {
-            ...tracks[payload.id],
-            playback: {
-              ...tracks[payload.id].playback,
-              ...payload.playback,
-            },
-            position: 0,
-            nextPlayback: payload.resetNext ? null : tracks[payload.id].nextPlayback,
-          },
-        }
-      else
-        return {
-          ...tracks,
-          [payload.id]: {
-            ...tracks[payload.id],
-            nextPlayback: {
-              ...payload.playback,
-            },
-          },
-        }
-    }),
-    handle(Actions.applyNextPlayback, (tracks, { payload }) => {
       return {
         ...tracks,
         [payload.id]: {
           ...tracks[payload.id],
           playback: {
             ...tracks[payload.id].playback,
-            ...(tracks[payload.id].nextPlayback || {}),
+            ...payload.playback,
           },
-          nextPlayback: null,
+          nextPlayback: payload.nextPlayback || tracks[payload.id].nextPlayback,
+        },
+      }
+    }),
+    handle(Actions.applyNextPlayback, (tracks, { payload }) => {
+      const nextNextPlayback = [...tracks[payload.id].nextPlayback],
+        first = nextNextPlayback.shift()
+      if (first) nextNextPlayback.push(first)
+
+      return {
+        ...tracks,
+        [payload.id]: {
+          ...tracks[payload.id],
+          playback: {
+            ...tracks[payload.id].playback,
+            ...(first || {}),
+          },
+          nextPlayback: nextNextPlayback,
         },
       }
     }),
