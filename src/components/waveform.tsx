@@ -1,27 +1,20 @@
-import React, {
-  useRef,
-  useEffect,
-  useContext,
-  useMemo,
-  useState,
-  useCallback,
-} from 'react'
-import ctyled, { CtyledContext } from 'ctyled'
+import React, { useRef, useMemo, useState, useCallback } from 'react'
+import ctyled from 'ctyled'
 import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 
-import getImpulses, { BIN_SIZE } from '../dsp/impulse-detect'
-import getMinMaxes from '../dsp/min-maxes'
-import {
-  drawWaveform,
-  drawImpulses,
-  drawPlayback,
-  drawBounds,
-  drawSelection,
-  drawNextPlayback,
-} from './waveform-canvas'
+import getImpulses from '../dsp/impulse-detect'
+import useWaveformCanvas from './waveform-canvas'
 import * as Types from '../redux/types'
 import * as Actions from '../redux/actions'
+import {
+  inferTimeBase,
+  getBoundIndex,
+  getNextBoundIndex,
+  getTimeFromPosition,
+  getContainerPosition,
+} from './waveform-utils'
+import useZoom from './waveform-zoom'
 
 const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
   height: 10,
@@ -52,151 +45,83 @@ const TrackCanvasWrapper = ctyled.div.styles({
 })
 
 interface WaveformProps {
-  track: Types.TrackState,
+  track: Types.TrackState
   trackId: string
+}
+
+export interface ViewContext {
+  scale: number
+  start: number
+  center: number
+  impulses: Float32Array
+}
+
+export interface DrawViewContext extends ViewContext {
+  clickX: number
+  width: number
+  height: number
+}
+
+export interface BoundViewContext extends ViewContext {
+  bounds: number[]
 }
 
 const getMappedState = (state: Types.AppState) => ({ length: state.mix.length })
 
-function snapSampleToImpulses(raw: number, scale: number, impulses: Float32Array) {
-  const impulseIndex = Math.floor(raw / BIN_SIZE),
-    range = 5,
-    sampleRange = scale * 20
-
-  for (let i = 0; i < range; i = -1 * (i + (i > 0 ? 0 : -1))) {
-    const impulse = impulses[impulseIndex + i],
-      impulseTime = (impulseIndex + i) * BIN_SIZE
-    if (impulse) {
-      if (Math.abs(impulseTime - raw) < sampleRange) raw = impulseTime
-      break
-    }
-  }
-  return raw
-}
-
-function inferTimeBase(playback: Types.PlaybackState, impulses: Float32Array): number[] {
-  const len = impulses.length * BIN_SIZE
-  const bounds = []
-  for (
-    let sample = playback.start;
-    sample < len;
-    sample = snapSampleToImpulses(sample + playback.length, 400, impulses)
-  ) {
-    bounds.push(sample)
-  }
-  for (
-    let sample = snapSampleToImpulses(playback.start - playback.length, 400, impulses);
-    sample > 0;
-    sample = snapSampleToImpulses(sample - playback.length, 400, impulses)
-  ) {
-    bounds.unshift(sample)
-  }
-  return bounds
-}
-
 export default function Track({ track, trackId }: WaveformProps) {
-  const container = useRef(null),
-    canvasRef = useRef(null),
-    [scale, setScale] = useState(200),
-    [start, setStart] = useState(0),
-    [width, setWidth] = useState(0),
-    [height, setHeight] = useState(0),
-    [center, setCenter] = useState(0),
-    handleWheel = useRef(null),
-    ctxt = useRef(null),
-    dispatch = useDispatch(),
-    { length } = useMappedState(getMappedState),
-    ctyledContext = useContext(CtyledContext),
+  //refs
+  const container = useRef(null)
+
+  // state
+  const [center, setCenter] = useState(0),
     [movingBoundIndex, setMovingBoundIndex] = useState(-1),
     [clickX, setClickX] = useState(null)
 
+  //redux/context
+  const dispatch = useDispatch(),
+    { length } = useMappedState(getMappedState)
+
+  // computed data
+  const buffer = useMemo(() => track.buffer.getChannelData(1), [track.buffer]),
+    impulses = useMemo(() => getImpulses(buffer), [buffer])
+
+  const { left, top, width, height } = getContainerPosition(container)
+
   /* ZOOM/PANNING CONTROL */
+  const { scale, start } = useZoom(container, center)
 
-  useEffect(() => {
-    handleWheel.current = e => {
-      const { deltaX, deltaY, ctrlKey } = e
-      if (ctrlKey) {
-        const scaleMultiplier = scale / 100,
-          nextScale = Math.max(scale + deltaY * scaleMultiplier, 2),
-          dx = (nextScale - scale) * center
-        setStart(start - dx)
-        setScale(nextScale)
-      } else {
-        setStart(start + deltaX * scale)
-      }
-    }
-  }, [scale, start])
-
-  useEffect(() => {
-    container.current.addEventListener(
-      'wheel',
-      e => {
-        e.preventDefault()
-        handleWheel.current && handleWheel.current(e)
-      },
-      { passive: false } //so we can prevent default
-    )
-    setWidth(container.current.offsetWidth)
-    setHeight(container.current.offsetHeight)
-    setCenter(container.current.offsetWidth / 2)
-  }, [container.current])
+  const view: ViewContext = {
+      scale,
+      start,
+      center,
+      impulses,
+    },
+    drawView: DrawViewContext = {
+      ...view,
+      clickX,
+      width,
+      height,
+    },
+    boundView: BoundViewContext = {
+      ...view,
+      bounds: track.bounds,
+    },
+    boundViewValues = _.values(boundView)
 
   /* WAVEFORM DRAWING ON CANVAS */
-  const buffer = useMemo(() => track.buffer.getChannelData(1), [track.buffer]),
-    impulses = useMemo(() => getImpulses(buffer), [buffer]),
-    minMaxes = useMemo(() => getMinMaxes(buffer), [buffer]),
-    effectivePos = track.playback.on ? track.position : 0
+  const { canvasRef } = useWaveformCanvas(drawView, track, buffer)
 
-  useEffect(() => {
-    ctxt.current = canvasRef.current.getContext('2d')
-    ctxt.current.scale(2, 2)
-    ctxt.current.imageSmoothingEnabled = false
-  }, [])
-
-  useEffect(() => {
-    if (!width) return
-    const pwidth = width * 2,
-      pheight = height * 2,
-      ctx = ctxt.current,
-      drawContext = {
-        pwidth,
-        pheight,
-        scale,
-        start,
-        ctx,
-        color: ctyledContext.theme.color,
-      }
-
-    ctx.clearRect(0, 0, pwidth, pheight)
-
-    drawWaveform(drawContext, minMaxes)
-    if (track.editing) drawImpulses(drawContext, impulses)
-    drawPlayback(drawContext, track)
-    drawBounds(drawContext, track.bounds, track.editing)
-    drawSelection(drawContext, clickX, center)
-    drawNextPlayback(drawContext, track.nextPlayback)
-  }, [
-    buffer,
-    scale,
-    start,
-    width,
-    height,
-    track.playback,
-    effectivePos,
-    track.bounds,
-    track.editing,
-    track.selected,
-    clickX && center,
+  const getRelativePos = useCallback(e => ({ x: e.clientX - left, y: e.clientY - top }), [
+    left,
+    top,
   ])
 
   /* playback/selection */
   const handleMouseDown = useCallback(
       e => {
-        const x = e.clientX - container.current.offsetLeft,
-          y = e.clientY - container.current.getBoundingClientRect().y
-
+        const { x, y } = getRelativePos(e)
         if (y < 20 && track.selected) {
-          const bound = getBoundIndex(x)
+          const bound = getBoundIndex(x, boundView)
           if (bound !== -1) {
             setMovingBoundIndex(bound)
             dispatch(
@@ -205,16 +130,16 @@ export default function Track({ track, trackId }: WaveformProps) {
           }
         }
 
-        setClickX(x)
+        if (!track.editing || track.selected) setClickX(x)
       },
-      [track.bounds, scale, start, track.selected]
+      [track.editing, track.selected, ...boundViewValues]
     ),
     handleMouseMove = useCallback(
       e => {
-        const x = e.clientX - container.current.offsetLeft
+        const { x } = getRelativePos(e)
         setCenter(x)
         if (movingBoundIndex !== -1) {
-          const sample = getTimeFromPosition(x, true),
+          const sample = getTimeFromPosition(x, true, view),
             newBounds = [...track.bounds]
           newBounds[movingBoundIndex] = sample
           dispatch(
@@ -251,71 +176,73 @@ export default function Track({ track, trackId }: WaveformProps) {
           }
         }
       },
-      [movingBoundIndex, track.bounds, track]
+      [movingBoundIndex, ...boundViewValues, track]
     ),
     handleMouseUp = useCallback(
       e => {
-        const x = e.clientX - container.current.offsetLeft,
-          y = e.clientY - container.current.getBoundingClientRect().y,
+        const { x, y } = getRelativePos(e),
           dx = x - clickX
 
         if (track.editing) {
-          if (track.selected) {
-            //if we are selected and in edit mode
-            if (movingBoundIndex !== -1) {
-              //we were dragging a bound
-              setMovingBoundIndex(-1)
-            } else if (y < 20) {
-              const next = getNextBoundIndex(x)
-              if (next !== -1) {
-                const endBound = track.bounds[next],
-                  startBound = track.bounds[next - 1],
-                  newLen = endBound - startBound
-                dispatch(
-                  Actions.updateTrackPlayback({
-                    id: trackId,
-                    playback: {
-                      start: startBound,
-                      length: newLen,
-                      alpha: newLen ? newLen / length : null,
-                      aperiodic: true,
-                    },
-                  })
-                )
-              }
+          //EDITING
+          if (!track.selected) return //if we are selected and in edit mode
+          if (movingBoundIndex !== -1) {
+            //we were dragging a bound
+            setMovingBoundIndex(-1)
+          } else if (y < 20) {
+            const next = getNextBoundIndex(x, boundView)
+            if (next !== -1) {
+              const endBound = track.bounds[next],
+                startBound = track.bounds[next - 1],
+                newLen = endBound - startBound
+              dispatch(
+                Actions.updateTrackPlayback({
+                  id: trackId,
+                  playback: {
+                    start: startBound,
+                    length: newLen,
+                    alpha: newLen ? newLen / length : null,
+                    aperiodic: true,
+                  },
+                  nextPlayback: [],
+                })
+              )
+            }
+          } else {
+            //set playback
+            if (dx < 3) {
+              //click to play
+              const pos = getTimeFromPosition(x, true, view)
+              dispatch(
+                Actions.updateTrackPlayback({
+                  id: trackId,
+                  playback: { start: pos, length: 0, alpha: null, aperiodic: true },
+                  nextPlayback: [],
+                })
+              )
             } else {
-              //set playback
-              if (dx < 3) {
-                //click to play
-                const pos = getTimeFromPosition(x, true)
-                dispatch(
-                  Actions.updateTrackPlayback({
-                    id: trackId,
-                    playback: { start: pos, length: 0, alpha: null, aperiodic: true },
-                  })
-                )
-              } else {
-                //dragged selection
-                const start = getTimeFromPosition(clickX, true),
-                  end = getTimeFromPosition(x, true),
-                  len = end - start
-                dispatch(
-                  Actions.updateTrackPlayback({
-                    id: trackId,
-                    playback: {
-                      start,
-                      length: len,
-                      alpha: len / length,
-                      aperiodic: true,
-                    },
-                  })
-                )
-              }
+              //dragged selection
+              const start = getTimeFromPosition(clickX, true, view),
+                end = getTimeFromPosition(x, true, view),
+                len = Math.abs(end - start)
+              dispatch(
+                Actions.updateTrackPlayback({
+                  id: trackId,
+                  playback: {
+                    start: Math.min(start, end),
+                    length: len,
+                    alpha: len / length,
+                    aperiodic: true,
+                  },
+                  nextPlayback: [],
+                })
+              )
             }
           }
         } else {
-          const next = getNextBoundIndex(x),
-            start = (clickX && getNextBoundIndex(clickX)) || next
+          //SYNCED PLAYBACK
+          const next = getNextBoundIndex(x, boundView),
+            start = (clickX && getNextBoundIndex(clickX, boundView)) || next
           if (next !== -1) {
             let playBacks = []
             for (let bi = start; bi <= next; bi++) {
@@ -344,145 +271,113 @@ export default function Track({ track, trackId }: WaveformProps) {
         }
         setClickX(null)
       },
-      [clickX, track.bounds, container.current, track.selected, track.editing]
-    ),
-    getTimeFromPosition = useCallback(
-      (x: number, snap: boolean) => {
-        let raw = x * 2 * scale + start
-        return snap ? snapSampleToImpulses(raw, scale, impulses) : raw
-      },
-      [width, height, track.playback, impulses, start, scale]
-    ),
-    getBoundIndex = useCallback(
-      x => {
-        const sample = getTimeFromPosition(x, false)
-        return _.findIndex(track.bounds, b => {
-          return Math.abs(b - sample) < 7 * scale
-        })
-      },
-      [track.bounds, scale, start]
-    ),
-    getNextBoundIndex = useCallback(
-      x => {
-        const sample = getTimeFromPosition(x, false)
-        return _.findIndex(track.bounds, b => {
-          return b >= sample
-        })
-      },
-      [track.bounds, scale, start]
+      [clickX, ...boundViewValues, track.selected, track.editing]
     )
 
   return (
-      <TrackContainer
-        selected={track.selected}
-        onClick={() => dispatch(Actions.selectTrackExclusive(trackId))}
+    <TrackContainer
+      selected={track.selected}
+      onClick={() => dispatch(Actions.selectTrackExclusive(trackId))}
+    >
+      <TrackControls>
+        <span>
+          {track.name}: {Math.floor(scale)}spx
+        </span>
+        <button
+          onClick={() =>
+            dispatch(
+              Actions.editTrack({
+                id: trackId,
+                edit: !track.editing,
+              })
+            )
+          }
+          children={track.editing ? 'done' : 'edit'}
+        />
+        <button onClick={() => dispatch(Actions.rmTrack(trackId))} children="x" />
+        {!track.editing && (
+          <>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.02"
+              value={track.playback.vol}
+              onChange={e => {
+                dispatch(
+                  Actions.updateTrackPlayback({
+                    id: trackId,
+                    playback: { vol: parseFloat(e.target.value) },
+                  })
+                )
+              }}
+            />
+          </>
+        )}
+        {track.editing && (
+          <>
+            <button
+              onClick={() =>
+                dispatch(
+                  Actions.setTrackBounds({
+                    id: trackId,
+                    bounds: inferTimeBase(track.playback, impulses),
+                  })
+                )
+              }
+              children="< infer >"
+            />
+            <button
+              onClick={() => {
+                const endPoint = track.playback.start + track.playback.length,
+                  inferredBounds = inferTimeBase(track.playback, impulses).filter(
+                    bound => bound <= endPoint
+                  ),
+                  existingBounds = track.bounds.filter(bound => bound > endPoint)
+
+                dispatch(
+                  Actions.setTrackBounds({
+                    id: trackId,
+                    bounds: _.sortBy([...inferredBounds, ...existingBounds]),
+                  })
+                )
+              }}
+              children=" < infer"
+            />
+            <button
+              onClick={() => {
+                const startPoint = track.playback.start,
+                  inferredBounds = inferTimeBase(track.playback, impulses).filter(
+                    bound => bound >= startPoint
+                  ),
+                  existingBounds = track.bounds.filter(bound => bound < startPoint)
+
+                dispatch(
+                  Actions.setTrackBounds({
+                    id: trackId,
+                    bounds: _.sortBy([...inferredBounds, ...existingBounds]),
+                  })
+                )
+              }}
+              children="infer > "
+            />
+          </>
+        )}
+      </TrackControls>
+      <TrackCanvasWrapper
+        inRef={container}
+        onMouseMove={handleMouseMove}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
       >
-        <TrackControls>
-          <span>
-            {track.name}: {Math.floor(scale)}spx
-          </span>
-          <button
-            onClick={() =>
-              dispatch(
-                Actions.editTrack({
-                  id: trackId,
-                  edit: !track.editing,
-                })
-              )
-            }
-            children={track.editing ? 'done' : 'edit'}
-          />
-          <button
-            onClick={() =>
-              dispatch(
-                Actions.rmTrack(trackId)
-              )
-            }
-            children="x"
-          />
-          {!track.editing && (
-            <>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.02"
-                value={track.playback.vol}
-                onChange={e => {
-                  dispatch(
-                    Actions.updateTrackPlayback({
-                      id: trackId,
-                      playback: { vol: parseFloat(e.target.value) },
-                    })
-                  )
-                }}
-              />
-            </>
-          )}
-          {track.editing && (
-            <>
-              <button
-                onClick={() =>
-                  dispatch(
-                    Actions.setTrackBounds({
-                      id: trackId,
-                      bounds: inferTimeBase(track.playback, impulses),
-                    })
-                  )
-                }
-                children="< infer >"
-              />
-              <button
-                onClick={() => {
-                  const endPoint = track.playback.start + track.playback.length,
-                    inferredBounds = inferTimeBase(track.playback, impulses).filter(
-                      bound => bound <= endPoint
-                    ),
-                    existingBounds = track.bounds.filter(bound => bound > endPoint)
-
-                  dispatch(
-                    Actions.setTrackBounds({
-                      id: trackId,
-                      bounds: _.sortBy([...inferredBounds, ...existingBounds]),
-                    })
-                  )
-                }}
-                children=" < infer"
-              />
-              <button
-                onClick={() => {
-                  const startPoint = track.playback.start,
-                    inferredBounds = inferTimeBase(track.playback, impulses).filter(
-                      bound => bound >= startPoint
-                    ),
-                    existingBounds = track.bounds.filter(bound => bound < startPoint)
-
-                  dispatch(
-                    Actions.setTrackBounds({
-                      id: trackId,
-                      bounds: _.sortBy([...inferredBounds, ...existingBounds]),
-                    })
-                  )
-                }}
-                children="infer > "
-              />
-            </>
-          )}
-        </TrackControls>
-        <TrackCanvasWrapper
-          inRef={container}
-          onMouseMove={handleMouseMove}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-        >
-          <TrackCanvas
-            selected={track.selected}
-            inRef={canvasRef}
-            width={width * 2}
-            height={height * 2}
-            style={{ width: '100%', height: '100%' }}
-          />
-        </TrackCanvasWrapper>
-      </TrackContainer>
+        <TrackCanvas
+          selected={track.selected}
+          inRef={canvasRef}
+          width={width * 2}
+          height={height * 2}
+          style={{ width: '100%', height: '100%' }}
+        />
+      </TrackCanvasWrapper>
+    </TrackContainer>
   )
 }

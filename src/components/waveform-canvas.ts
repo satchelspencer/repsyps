@@ -1,6 +1,63 @@
+import { useEffect, useMemo, useContext, useRef } from 'react'
+import { CtyledContext, Color } from 'ctyled'
+import * as _ from 'lodash'
+
 import * as Types from '../redux/types'
 import { BIN_SIZE } from '../dsp/impulse-detect'
-import { Color } from 'ctyled'
+import getMinMaxes from '../dsp/min-maxes'
+import { DrawViewContext } from './waveform'
+
+export default function useWaveformCanvas(
+  view: DrawViewContext,
+  track: Types.TrackState,
+  buffer: Float32Array
+) {
+  const canvasRef = useRef(null),
+    ctxt = useRef(null),
+    ctyledContext = useContext(CtyledContext),
+    minMaxes = useMemo(() => getMinMaxes(buffer), [buffer]),
+    effectivePos = track.playback.on ? track.position : 0,
+    { scale, start, impulses, width, height, clickX, center } = view
+
+  useEffect(() => {
+    ctxt.current = canvasRef.current.getContext('2d')
+    ctxt.current.scale(2, 2)
+    ctxt.current.imageSmoothingEnabled = false
+  }, [])
+
+  useEffect(() => {
+    if (!width) return
+    const pwidth = width * 2,
+      pheight = height * 2,
+      ctx = ctxt.current,
+      drawContext = {
+        pwidth,
+        pheight,
+        scale,
+        start,
+        ctx,
+        color: ctyledContext.theme.color,
+      }
+
+    ctx.clearRect(0, 0, pwidth, pheight)
+
+    drawWaveform(drawContext, minMaxes)
+    if (track.editing) drawImpulses(drawContext, impulses)
+    drawPlayback(drawContext, track)
+    drawBounds(drawContext, track.bounds, track.editing)
+    drawSelection(drawContext, clickX, center)
+    drawNextPlayback(drawContext, track.nextPlayback)
+  }, [
+    buffer,
+    track.playback,
+    effectivePos,
+    track.bounds,
+    track.editing,
+    track.selected,
+    ..._.values(view),
+  ])
+  return { canvasRef }
+}
 
 export interface DrawingContext {
   pwidth: number
