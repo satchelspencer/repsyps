@@ -1,8 +1,8 @@
-//import pvPlayer, { PvPlayerApi } from './pv-player'
-import * as Types from '../redux/types'
-import * as Actions from '../redux/actions'
 import { Store } from 'redux'
 import * as _ from 'lodash'
+
+import * as Types from '../redux/types'
+import * as Actions from '../redux/actions'
 import pvWorkletUrl from './pv-mixer.worklet'
 
 export default async function init(store: Store<Types.AppState>) {
@@ -62,10 +62,14 @@ export default async function init(store: Store<Types.AppState>) {
       })
 
       removed.forEach(id => {
-        console.log('remove', id)
+        node.port.postMessage({
+          type: 'remove',
+          id,
+        })
       })
 
       Object.keys(lastTracks).forEach(id => {
+        if (!tracks[id]) return
         const oldTrackPlayback = lastTracks[id],
           newTrack = tracks[id]
         if (oldTrackPlayback.playback !== newTrack.playback)

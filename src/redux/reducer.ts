@@ -81,7 +81,7 @@ export default combineReducers({
           },
         }
     }),
-    handle(Actions.rmTrack, (tracks, { payload }) => _.omit(tracks, payload.id)),
+    handle(Actions.rmTrack, (tracks, { payload: id }) => _.omit(tracks, id)),
     handle(Actions.updateTrackDisplay, (tracks, { payload }) => {
       return {
         ...tracks,
@@ -90,6 +90,18 @@ export default combineReducers({
           display: {
             ...tracks[payload.id].display,
             ...payload.display,
+          },
+        },
+      }
+    }),
+    handle(Actions.toggleTrack, (tracks, { payload: id }) => {
+      return {
+        ...tracks,
+        [id]: {
+          ...tracks[id],
+          playback: {
+            ...tracks[id].playback,
+            on: !tracks[id].playback.on,
           },
         },
       }

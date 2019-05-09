@@ -6,12 +6,11 @@ import React, {
   useState,
   useCallback,
 } from 'react'
-import { HotKeys } from 'react-hotkeys'
 import ctyled, { CtyledContext } from 'ctyled'
 import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 
-import getImpulses, { binSize } from '../dsp/impulse-detect'
+import getImpulses, { BIN_SIZE } from '../dsp/impulse-detect'
 import getMinMaxes from '../dsp/min-maxes'
 import {
   drawWaveform,
@@ -53,19 +52,20 @@ const TrackCanvasWrapper = ctyled.div.styles({
 })
 
 interface WaveformProps {
-  track: Types.TrackState
+  track: Types.TrackState,
+  trackId: string
 }
 
 const getMappedState = (state: Types.AppState) => ({ length: state.mix.length })
 
 function snapSampleToImpulses(raw: number, scale: number, impulses: Float32Array) {
-  const impulseIndex = Math.floor(raw / binSize),
+  const impulseIndex = Math.floor(raw / BIN_SIZE),
     range = 5,
     sampleRange = scale * 20
 
   for (let i = 0; i < range; i = -1 * (i + (i > 0 ? 0 : -1))) {
     const impulse = impulses[impulseIndex + i],
-      impulseTime = (impulseIndex + i) * binSize
+      impulseTime = (impulseIndex + i) * BIN_SIZE
     if (impulse) {
       if (Math.abs(impulseTime - raw) < sampleRange) raw = impulseTime
       break
@@ -75,7 +75,7 @@ function snapSampleToImpulses(raw: number, scale: number, impulses: Float32Array
 }
 
 function inferTimeBase(playback: Types.PlaybackState, impulses: Float32Array): number[] {
-  const len = impulses.length * binSize
+  const len = impulses.length * BIN_SIZE
   const bounds = []
   for (
     let sample = playback.start;
@@ -94,7 +94,7 @@ function inferTimeBase(playback: Types.PlaybackState, impulses: Float32Array): n
   return bounds
 }
 
-export default function Track({ track }: WaveformProps) {
+export default function Track({ track, trackId }: WaveformProps) {
   const container = useRef(null),
     canvasRef = useRef(null),
     [scale, setScale] = useState(200),
@@ -200,7 +200,7 @@ export default function Track({ track }: WaveformProps) {
           if (bound !== -1) {
             setMovingBoundIndex(bound)
             dispatch(
-              Actions.updateTrackPlayback({ id: track.name, playback: { on: false } })
+              Actions.updateTrackPlayback({ id: trackId, playback: { on: false } })
             )
           }
         }
@@ -219,7 +219,7 @@ export default function Track({ track }: WaveformProps) {
           newBounds[movingBoundIndex] = sample
           dispatch(
             Actions.setTrackBounds({
-              id: track.name,
+              id: trackId,
               bounds: newBounds,
             })
           )
@@ -230,7 +230,7 @@ export default function Track({ track }: WaveformProps) {
             const newLen = track.playback.length && nextBound - sample
             dispatch(
               Actions.updateTrackPlayback({
-                id: track.name,
+                id: trackId,
                 playback: {
                   start: sample,
                   length: newLen,
@@ -244,7 +244,7 @@ export default function Track({ track }: WaveformProps) {
             const newLen = sample - track.playback.start
             dispatch(
               Actions.updateTrackPlayback({
-                id: track.name,
+                id: trackId,
                 playback: { length: newLen, alpha: newLen / length },
               })
             )
@@ -273,7 +273,7 @@ export default function Track({ track }: WaveformProps) {
                   newLen = endBound - startBound
                 dispatch(
                   Actions.updateTrackPlayback({
-                    id: track.name,
+                    id: trackId,
                     playback: {
                       start: startBound,
                       length: newLen,
@@ -290,7 +290,7 @@ export default function Track({ track }: WaveformProps) {
                 const pos = getTimeFromPosition(x, true)
                 dispatch(
                   Actions.updateTrackPlayback({
-                    id: track.name,
+                    id: trackId,
                     playback: { start: pos, length: 0, alpha: null, aperiodic: true },
                   })
                 )
@@ -301,7 +301,7 @@ export default function Track({ track }: WaveformProps) {
                   len = end - start
                 dispatch(
                   Actions.updateTrackPlayback({
-                    id: track.name,
+                    id: trackId,
                     playback: {
                       start,
                       length: len,
@@ -335,7 +335,7 @@ export default function Track({ track }: WaveformProps) {
 
             dispatch(
               Actions.updateTrackPlayback({
-                id: track.name,
+                id: trackId,
                 playback: first,
                 nextPlayback: playBacks,
               })
@@ -370,32 +370,12 @@ export default function Track({ track }: WaveformProps) {
         })
       },
       [track.bounds, scale, start]
-    ),
-    handlers = useMemo(
-      () => ({
-        playPause: () => {
-          dispatch(
-            Actions.updateTrackPlayback({
-              id: track.name,
-              playback: { on: !track.playback.on },
-            })
-          )
-        },
-      }),
-      [track]
     )
 
   return (
-    <HotKeys
-      keyMap={{
-        playPause: 'space',
-      }}
-      handlers={handlers}
-      style={{ outline: 'none' }}
-    >
       <TrackContainer
         selected={track.selected}
-        onClick={() => dispatch(Actions.selectTrackExclusive(track.name))}
+        onClick={() => dispatch(Actions.selectTrackExclusive(trackId))}
       >
         <TrackControls>
           <span>
@@ -405,12 +385,20 @@ export default function Track({ track }: WaveformProps) {
             onClick={() =>
               dispatch(
                 Actions.editTrack({
-                  id: track.name,
+                  id: trackId,
                   edit: !track.editing,
                 })
               )
             }
             children={track.editing ? 'done' : 'edit'}
+          />
+          <button
+            onClick={() =>
+              dispatch(
+                Actions.rmTrack(trackId)
+              )
+            }
+            children="x"
           />
           {!track.editing && (
             <>
@@ -423,7 +411,7 @@ export default function Track({ track }: WaveformProps) {
                 onChange={e => {
                   dispatch(
                     Actions.updateTrackPlayback({
-                      id: track.name,
+                      id: trackId,
                       playback: { vol: parseFloat(e.target.value) },
                     })
                   )
@@ -437,7 +425,7 @@ export default function Track({ track }: WaveformProps) {
                 onClick={() =>
                   dispatch(
                     Actions.setTrackBounds({
-                      id: track.name,
+                      id: trackId,
                       bounds: inferTimeBase(track.playback, impulses),
                     })
                   )
@@ -454,7 +442,7 @@ export default function Track({ track }: WaveformProps) {
 
                   dispatch(
                     Actions.setTrackBounds({
-                      id: track.name,
+                      id: trackId,
                       bounds: _.sortBy([...inferredBounds, ...existingBounds]),
                     })
                   )
@@ -471,7 +459,7 @@ export default function Track({ track }: WaveformProps) {
 
                   dispatch(
                     Actions.setTrackBounds({
-                      id: track.name,
+                      id: trackId,
                       bounds: _.sortBy([...inferredBounds, ...existingBounds]),
                     })
                   )
@@ -496,6 +484,5 @@ export default function Track({ track }: WaveformProps) {
           />
         </TrackCanvasWrapper>
       </TrackContainer>
-    </HotKeys>
   )
 }

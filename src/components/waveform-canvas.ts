@@ -1,5 +1,5 @@
 import * as Types from '../redux/types'
-import { binSize } from '../dsp/impulse-detect'
+import { BIN_SIZE } from '../dsp/impulse-detect'
 import { Color } from 'ctyled'
 
 export interface DrawingContext {
@@ -45,9 +45,9 @@ export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
   const r = 128 + Math.max((1 - scale / 512) * 128, 0)
   ctx.strokeStyle = `rgba(${r},${255 - r},${255 - r},1)`
 
-  for (let i = Math.floor(start / binSize); i < Math.floor(end / binSize); i++) {
+  for (let i = Math.floor(start / BIN_SIZE); i < Math.floor(end / BIN_SIZE); i++) {
     const value = impulses[i],
-      x = (i * binSize - start) / scale
+      x = (i * BIN_SIZE - start) / scale
     if (value) {
       ctx.beginPath()
       ctx.lineTo(x, pheight * (0.5 - value / 2))
@@ -148,7 +148,7 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
           spacing
         )
       } else {
-        ctx.lineWidth = 1
+        ctx.lineWidth = 2
         ctx.fillStyle = 'rgba(255,255,255,0.2)'
         ctx.strokeStyle = 'rgba(0,0,0,0.5)'
         roundedRect(
@@ -181,7 +181,7 @@ export function drawNextPlayback(
   const { pheight, scale, start, ctx } = context
   nextPlayback.forEach(playback => {
     if (playback.length) {
-      ctx.fillStyle = 'rgba(0,0,0,0.1)'
+      ctx.fillStyle = 'rgba(255,0,0,0.1)'
 
       let sx = (playback.start - start) / scale,
         sw = playback.length / scale

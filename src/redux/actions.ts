@@ -12,7 +12,7 @@ export const addTrack = createAction<{
   name: string
 }>('ADD_TRACK')
 
-export const rmTrack = createAction<{ id: string }>('REMOVE_TRACK')
+export const rmTrack = createAction<string>('REMOVE_TRACK')
 
 export const updateTrackDisplay = createAction<{
   id: string
@@ -24,6 +24,8 @@ export const updateTrackPlayback = createAction<{
   playback: Partial<Types.PlaybackState>
   nextPlayback?: Partial<Types.PlaybackState>[]
 }>('UPDATE_TRACK_PLAYBACK')
+
+export const toggleTrack = createAction<string>('TOGGLE_TRACK_PLAYBACK')
 
 export const applyNextPlayback = createAction<{
   id: string
