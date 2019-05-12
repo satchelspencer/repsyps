@@ -74,7 +74,6 @@ export function drawWaveform(
 ) {
   const { pwidth, pheight, scale, start, ctx } = context,
     halfHeight = pheight / 2
-
   ctx.lineWidth = 1
   ctx.strokeStyle = context.color.fg
   ctx.beginPath()
@@ -117,7 +116,7 @@ export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
 export function drawPlayback(context: DrawingContext, track: Types.TrackState) {
   const { pheight, scale, start, ctx } = context
   if (track.playback.length) {
-    ctx.fillStyle = track.playback.on ? 'rgba(255,0,0,0.2)' : 'rgba(0,0,0,0.2)'
+    ctx.fillStyle = track.playback.on ? 'rgba(255,0,0,0.2)' : context.color.fg + '33'
 
     let sx = (track.playback.start - start) / scale,
       sw = track.playback.length / scale
@@ -126,19 +125,19 @@ export function drawPlayback(context: DrawingContext, track: Types.TrackState) {
   }
   if (true || track.playback.on) {
     let px = (track.playback.start + track.position - start) / scale
-    ctx.fillStyle = 'rgba(0,0,0,0.2)'
+    ctx.fillStyle = context.color.fg + '33'
     ctx.fillRect(px - 10, 0, 20, pheight)
 
     const startX = (track.playback.start - start) / scale
     ctx.lineWidth = 5
-    ctx.strokeStyle = track.selected ? 'rgba(255,0,0,0.5)' : 'rgba(0,0,0,0.5)'
+    ctx.strokeStyle = track.selected ? 'rgba(255,0,0,0.5)' : context.color.fg + '99'
     ctx.beginPath()
     ctx.lineTo(startX, 0)
     ctx.lineTo(startX, pheight)
     ctx.stroke()
 
     ctx.lineWidth = 3
-    ctx.strokeStyle = track.selected ? 'rgb(255,0,0)' : 'black'
+    ctx.strokeStyle = track.selected ? 'rgb(255,0,0)' : context.color.fg
     ctx.beginPath()
     ctx.lineTo(px, 0)
     ctx.lineTo(px, pheight)
@@ -168,7 +167,7 @@ function roundedRect(
 }
 
 export function drawBounds(context: DrawingContext, bounds: number[], editing: boolean) {
-  const { pheight, scale, start, ctx } = context
+  const { pheight, scale, start, ctx, color } = context
 
   const fheight = pheight / 10,
     spacing = fheight / 4
@@ -182,7 +181,7 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
     // drag handle
     if (editing) {
       ctx.lineWidth = 3
-      ctx.strokeStyle = 'black'
+      ctx.strokeStyle = context.color.fg
       ctx.beginPath()
       ctx.lineTo(px, 0)
       ctx.lineTo(px, fheight)
@@ -194,8 +193,8 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
         width = nx - px
       if (editing) {
         ctx.lineWidth = 1
-        ctx.fillStyle = 'rgba(255,255,255,0.9)'
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+        ctx.fillStyle = context.color.fg + 'dd'
+        ctx.strokeStyle = context.color.bg + '99'
         roundedRect(
           ctx,
           px + spacing,
@@ -205,9 +204,9 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
           spacing
         )
       } else {
-        ctx.lineWidth = 2
-        ctx.fillStyle = 'rgba(255,255,255,0.2)'
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+        ctx.lineWidth = 3
+        ctx.fillStyle = context.color.bg + '1f'
+        ctx.strokeStyle = context.color.fg + '99'
         roundedRect(
           ctx,
           px,
@@ -226,7 +225,7 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
 export function drawSelection(context: DrawingContext, clickX: number, center: number) {
   const { pheight, ctx } = context
   if (clickX) {
-    ctx.fillStyle = 'rgba(0,0,0,0.1)'
+    ctx.fillStyle = context.color.fg + '22'
     ctx.fillRect(clickX * 2, 0, (center - clickX) * 2, pheight)
   }
 }

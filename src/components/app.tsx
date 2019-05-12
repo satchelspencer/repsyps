@@ -10,6 +10,8 @@ import * as Types from '../redux/types'
 import * as Actions from '../redux/actions'
 import FracIn from './frac-indicator'
 
+import Icon from './icon'
+
 const Wrapper = ctyled.div.styles({
   color: c =>
     c

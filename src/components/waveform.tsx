@@ -28,7 +28,8 @@ const TrackCanvas = ctyled.canvas.attrs({ selected: false }).styles({}).extend`
   width:100%;
   height:100%;
   transition:0.3s all;
-  ${(_, { selected }) => selected && `box-shadow:0 0 5px rgba(0,0,0,0.2) inset;`}
+  ${({ color }, { selected }) =>
+    selected && `box-shadow:0 0 5px ${color.fg + '33'} inset;`}
 `
 
 const TrackControls = ctyled.div.styles({

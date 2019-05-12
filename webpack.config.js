@@ -34,7 +34,24 @@ module.exports = {
       },
       {
         test: /\.worklet\.js$/,
-        use: ['worklet-loader', 'babel-loader' ],
+        use: ['worklet-loader', 'babel-loader'],
+      },
+      {
+        test: /\.svg$/,
+        use: [
+          'babel-loader',
+          {
+            loader: 'react-svg-loader',
+            options: {
+              svgo: {
+                plugins: [{ removeViewBox: false }],
+              },
+              options: {
+                jsx: true,
+              },
+            },
+          },
+        ],
       },
     ],
   },
