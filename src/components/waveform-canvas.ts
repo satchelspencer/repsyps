@@ -169,7 +169,7 @@ function roundedRect(
 export function drawBounds(context: DrawingContext, bounds: number[], editing: boolean) {
   const { pheight, scale, start, ctx, color } = context
 
-  const fheight = pheight / 10,
+  const fheight = pheight / 20,
     spacing = fheight / 4
   // ctx.fillStyle = 'rgba(0,0,0,0.6 )'
   // ctx.fillRect(0,0, pwidth, fheight)
@@ -210,9 +210,9 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
         roundedRect(
           ctx,
           px,
-          fheight / 4,
+          fheight / 2,
           width,
-          pheight - fheight / 2,
+          pheight - fheight,
           Math.min(spacing * 2, width / 2)
         )
       }

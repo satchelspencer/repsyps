@@ -7,15 +7,9 @@ export interface PlaybackState {
   aperiodic?: boolean
 }
 
-export interface DisplayState {
-  scale: number //samples per pixel
-  start: number //sample #
-}
-
 export interface TrackState {
   name: string
   buffer: AudioBuffer
-  display: DisplayState
   playback: PlaybackState,
   nextPlayback: Partial<PlaybackState>[],
   position: number,

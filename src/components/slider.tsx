@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react'
 import ResizeObserver from 'resize-observer-polyfill'
+import * as _ from 'lodash'
 
 import ctyled from 'ctyled'
 
@@ -7,7 +8,7 @@ const SliderWrapper = ctyled.div.attrs<{ column?: boolean }>({ column: false }).
   align: 'center',
   column: (_, { column }) => column,
   height: (_, { column }) => (column ? '100%' : 1.5),
-  width: (_, { column }) => (column ? 1.5 : '100%')
+  width: (_, { column }) => (column ? 1.5 : '100%'),
 })
 
 const SliderGuide = ctyled.div.attrs<{ column?: boolean }>({ column: false }).styles({
@@ -26,8 +27,8 @@ const Handle = ctyled.div.attrs<{ column?: boolean }>({ column: false }).styles(
   rounded: true,
   border: true,
   flex: 1,
-  height: (_, { column }) => (column ? 0.7 : 1.5),
-  width: (_, { column }) => (column ? 1.5 : 0.7),
+  height: (_, { column }) => (column ? 0.85 : 1.5),
+  width: (_, { column }) => (column ? 1.5 : 0.85),
 }).extend`
   position:absolute;
   cursor:;
@@ -42,7 +43,9 @@ interface SliderProps {
 function Slider(props: SliderProps) {
   const wrapper = useRef(null),
     handle = useRef(null),
-    [size, setSize] = useState(0)
+    [size, setSize] = useState(0),
+    [dragOffset, setDragOffset] = useState(null),
+    throttledOnChange = useCallback(_.throttle(props.onChange, 100), [props.onChange])
 
   useEffect(() => {
     const ro = new ResizeObserver(entries => {
@@ -70,21 +73,30 @@ function Slider(props: SliderProps) {
       window.addEventListener('mouseup', handleMouseUp)
     }, callbackDeps),
     handleMouseUp = useCallback(() => {
+      setDragOffset(null)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }, callbackDeps),
     handleMouseMove = useCallback(e => {
-      const offset = e[props.column ? 'clientY' : 'clientX'] - docOffset - handleOffset
-      props.onChange(offset / range)
+      const offset =
+          (props.column
+            ? docOffset + size - e[props.column ? 'clientY' : 'clientX']
+            : e[props.column ? 'clientY' : 'clientX'] - docOffset) - handleOffset,
+        value = Math.max(Math.min(offset / range, 1), 0)
+      throttledOnChange(value)
+      setDragOffset(value)
     }, callbackDeps)
 
   const handleStyle = useMemo(() => {
-    return { [props.column ? 'top' : 'left']: range * props.value }
-  }, [props.column, range, props.value])
+    return {
+      [props.column ? 'bottom' : 'left']:
+        range * (dragOffset !== null ? dragOffset : props.value),
+    }
+  }, [props.column, range, props.value, dragOffset])
 
   return (
     <SliderWrapper column={props.column} onMouseUp={handleMouseUp} inRef={wrapper}>
-      <SliderGuide column={props.column} />
+      <SliderGuide column={props.column} onClick={handleMouseMove} />
       <Handle
         column={props.column}
         onMouseDown={handleMouseDown}

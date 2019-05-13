@@ -52,7 +52,7 @@ class PvProcessor extends AudioWorkletProcessor {
     }
   }
 
-  remove({id}){
+  remove({ id }) {
     delete this.tracks[id]
   }
 
@@ -116,7 +116,7 @@ class PvProcessor extends AudioWorkletProcessor {
       outputR = outputs[0][1],
       outputLen = outputL.length
 
-    //if(!this.on) return
+    if (!this.on) return true
 
     /* get the output for each track */
     Object.keys(this.tracks).forEach((trackId, t) => {

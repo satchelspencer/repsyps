@@ -14,11 +14,6 @@ export const addTrack = createAction<{
 
 export const rmTrack = createAction<string>('REMOVE_TRACK')
 
-export const updateTrackDisplay = createAction<{
-  id: string
-  display: Partial<Types.DisplayState>
-}>('UPDATE_TRACK_DISPLAY')
-
 export const updateTrackPlayback = createAction<{
   id: string
   playback: Partial<Types.PlaybackState>

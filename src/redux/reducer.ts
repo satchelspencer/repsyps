@@ -64,10 +64,6 @@ export default combineReducers({
           [payload.id]: {
             name: payload.name,
             buffer: payload.buffer,
-            display: {
-              scale: 100,
-              start: 0,
-            },
             playback: {
               on: false,
               start: 0,
@@ -82,18 +78,6 @@ export default combineReducers({
         }
     }),
     handle(Actions.rmTrack, (tracks, { payload: id }) => _.omit(tracks, id)),
-    handle(Actions.updateTrackDisplay, (tracks, { payload }) => {
-      return {
-        ...tracks,
-        [payload.id]: {
-          ...tracks[payload.id],
-          display: {
-            ...tracks[payload.id].display,
-            ...payload.display,
-          },
-        },
-      }
-    }),
     handle(Actions.toggleTrack, (tracks, { payload: id }) => {
       return {
         ...tracks,

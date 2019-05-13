@@ -17,20 +17,43 @@ import {
 import useZoom from './waveform-zoom'
 import Button from './button'
 import Slider from './slider'
+import Icon from './icon'
+
+const CornerWrapper = ctyled.div.styles({
+  padd: true,
+  size: s => s * 1.3,
+}).extend`
+  top:0;
+  right:0;
+  position:absolute;
+`
 
 const CButton = Button.styles({
   color: c => c.nudge(-0.1),
   alignSelf: 'flex-start',
 })
 
+const TrackName = ctyled.div.styles({
+  bg: true,
+  color: c => c.nudge(0.2),
+  padd: 0.5,
+}).extendSheet`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display:block;
+`
+
 const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
-  height: 10,
+  height: 13,
   flex: 'none',
   lined: true,
-  color: (c, { selected }) => (selected ? c.nudge(0.1) : c),
+  color: (c, { selected }) => (selected ? c.nudge(0.1) : c.nudge(0.05)),
 })
 
-const TrackCanvas = ctyled.canvas.attrs({ selected: false }).styles({}).extend`
+const TrackCanvas = ctyled.canvas
+  .attrs({ selected: false })
+  .styles({ color: (c, { selected }) => (selected ? c.nudge(0.1) : c) }).extend`
   position:absolute;
   width:100%;
   height:100%;
@@ -40,17 +63,29 @@ const TrackCanvas = ctyled.canvas.attrs({ selected: false }).styles({}).extend`
 `
 
 const TrackControls = ctyled.div.styles({
-  width: 10,
+  width: 15,
   bg: true,
+  lined: true,
+})
+
+const VolumeWrapper = ctyled.div.styles({
+  bg: true,
+  padd: 0.5,
+  color: c => c.nudge(-0.05),
 })
 
 const TrackControlsInner = ctyled.div.styles({
   column: true,
-  gutter: 1,
   flex: 1,
-}).extend`
-  overflow:hidden;
-`
+  lined: 1,
+}).extend`overflow:hidden;`
+
+const TrackControlsBody = ctyled.div.styles({
+  column: true,
+  gutter: 1,
+  padd: 1,
+  bg: true,
+})
 
 const TrackCanvasWrapper = ctyled.div.styles({
   flex: 1,
@@ -360,20 +395,21 @@ export default memo(function({ trackId }: WaveformProps) {
     <TrackContainer selected={track.selected} onClick={handleClick}>
       <TrackControls>
         <TrackControlsInner>
-          <span>
-            {track.name}: {Math.floor(scale)}spx
-          </span>
-          <CButton onClick={toggleEdit} children={track.editing ? 'done' : 'edit'} />
-          <CButton onClick={rmTrack} children="x" />
-          {track.editing && (
-            <>
-              <CButton onClick={inferLR} children="< infer >" />
-              <CButton onClick={inferLeft} children=" < infer" />
-              <CButton onClick={inferRight} children="infer > " />
-            </>
-          )}
+          <TrackName>{track.name}</TrackName>
+          <TrackControlsBody>
+            <CButton onClick={toggleEdit} children={track.editing ? 'done' : 'edit'} />
+            {track.editing && (
+              <>
+                <CButton onClick={inferLR} children="< infer >" />
+                <CButton onClick={inferLeft} children=" < infer" />
+                <CButton onClick={inferRight} children="infer > " />
+              </>
+            )}
+          </TrackControlsBody>
         </TrackControlsInner>
-        <Slider value={track.playback.vol} column onChange={volumeChange} />
+        <VolumeWrapper>
+          <Slider value={track.playback.vol} column onChange={volumeChange} />
+        </VolumeWrapper>
       </TrackControls>
       <TrackCanvasWrapper
         inRef={container}
@@ -387,6 +423,9 @@ export default memo(function({ trackId }: WaveformProps) {
           width={width * 2}
           height={height * 2}
         />
+        <CornerWrapper>
+          <Icon onClick={rmTrack} asButton name="close-thin" />
+        </CornerWrapper>
       </TrackCanvasWrapper>
     </TrackContainer>
   )
