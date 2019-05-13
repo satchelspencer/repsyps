@@ -8,9 +8,8 @@ import * as _ from 'lodash'
 import Waveform from './waveform'
 import * as Types from '../redux/types'
 import * as Actions from '../redux/actions'
-import FracIn from './frac-indicator'
 
-import Icon from './icon'
+import Head from './head'
 
 const Wrapper = ctyled.div.styles({
   color: c =>
@@ -21,8 +20,8 @@ const Wrapper = ctyled.div.styles({
   size: 12,
   column: true,
   bg: true,
-  lined: true,
   endLine: true,
+  lined: true,
 }).extend`
     width:100%;
     height:100%;
@@ -33,10 +32,13 @@ const Wrapper = ctyled.div.styles({
 
 export default function() {
   const getMappedState = useCallback(
-      (state: Types.AppState) => ({ tracks: state.tracks, length: state.mix.length }),
+      (state: Types.AppState) => ({
+        trackIds: Object.keys(state.tracks),
+        selected: Object.keys(state.tracks).filter(tid => state.tracks[tid].selected)[0],
+      }),
       []
     ),
-    { tracks, length } = useMappedState(getMappedState),
+    { trackIds, selected } = useMappedState(getMappedState),
     dispatch = useDispatch(),
     keyMap = useMemo(
       () => ({
@@ -48,35 +50,16 @@ export default function() {
     handlers = useMemo(
       () => ({
         playPause: () => dispatch(Actions.togglePlayback({})),
-        playPauseTrack: () => {
-          const selected = _.find(_.keys(tracks), tid => tracks[tid].selected)
-          dispatch(Actions.toggleTrack(selected))
-        },
+        playPauseTrack: () => dispatch(Actions.toggleTrack(selected)),
       }),
-      [tracks]
+      [trackIds]
     )
-
   return (
     <HotKeys keyMap={keyMap} handlers={handlers}>
       <Wrapper>
-        <input
-          type="range"
-          min="0"
-          max="5"
-          step="0.02"
-          value={length / 44100}
-          onChange={e => {
-            dispatch(
-              Actions.updateMixState({
-                length: parseFloat(e.target.value) * 44100,
-              })
-            )
-          }}
-        />
-        {/* <FracIn/> */}
-        {Object.keys(tracks).map(trackId => {
-          const track = tracks[trackId]
-          return <Waveform key={trackId} track={track} trackId={trackId} />
+        <Head />
+        {trackIds.map(trackId => {
+          return <Waveform key={trackId} trackId={trackId} />
         })}
       </Wrapper>
     </HotKeys>

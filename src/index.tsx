@@ -4,6 +4,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { StoreContext } from 'redux-react-hook'
 import * as _ from 'lodash'
+import { ThemeProvider } from 'ctyled'
 
 import App from './components/app'
 import store from './redux/store'
@@ -47,10 +48,13 @@ async function init() {
       on: true,
     })
   )
+  const theme = {}
 
   ReactDOM.render(
     <StoreContext.Provider value={store}>
-      <App />
+      <ThemeProvider theme={theme}>
+        <App />
+      </ThemeProvider>
     </StoreContext.Provider>,
     document.getElementById('root')
   )

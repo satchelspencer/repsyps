@@ -36,7 +36,7 @@ export default function useWaveformCanvas(
         scale,
         start,
         ctx,
-        color: ctyledContext.theme.color,
+        color: ctyledContext.theme.color//{fg: 'black', bg: 'white'},
       }
 
     ctx.clearRect(0, 0, pwidth, pheight)

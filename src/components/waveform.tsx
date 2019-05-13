@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useState, useCallback } from 'react'
+import React, { memo, useRef, useMemo, useState, useCallback } from 'react'
 import ctyled from 'ctyled'
 import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
@@ -15,6 +15,13 @@ import {
   getContainerPosition,
 } from './waveform-utils'
 import useZoom from './waveform-zoom'
+import Button from './button'
+import Slider from './slider'
+
+const CButton = Button.styles({
+  color: c => c.nudge(-0.1),
+  alignSelf: 'flex-start',
+})
 
 const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
   height: 10,
@@ -34,10 +41,16 @@ const TrackCanvas = ctyled.canvas.attrs({ selected: false }).styles({}).extend`
 
 const TrackControls = ctyled.div.styles({
   width: 10,
-  column: true,
-  gutter: 1,
   bg: true,
 })
+
+const TrackControlsInner = ctyled.div.styles({
+  column: true,
+  gutter: 1,
+  flex: 1,
+}).extend`
+  overflow:hidden;
+`
 
 const TrackCanvasWrapper = ctyled.div.styles({
   flex: 1,
@@ -46,7 +59,6 @@ const TrackCanvasWrapper = ctyled.div.styles({
 })
 
 interface WaveformProps {
-  track: Types.TrackState
   trackId: string
 }
 
@@ -67,9 +79,7 @@ export interface BoundViewContext extends ViewContext {
   bounds: number[]
 }
 
-const getMappedState = (state: Types.AppState) => ({ length: state.mix.length })
-
-export default function Track({ track, trackId }: WaveformProps) {
+export default memo(function({ trackId }: WaveformProps) {
   //refs
   const container = useRef(null)
 
@@ -79,8 +89,15 @@ export default function Track({ track, trackId }: WaveformProps) {
     [clickX, setClickX] = useState(null)
 
   //redux/context
-  const dispatch = useDispatch(),
-    { length } = useMappedState(getMappedState)
+  const getMappedState = useCallback(
+      (state: Types.AppState) => ({
+        length: state.mix.length,
+        track: state.tracks[trackId],
+      }),
+      [trackId]
+    ),
+    dispatch = useDispatch(),
+    { length, track } = useMappedState(getMappedState)
 
   // computed data
   const buffer = useMemo(() => track.buffer.getChannelData(1), [track.buffer]),
@@ -273,97 +290,90 @@ export default function Track({ track, trackId }: WaveformProps) {
         setClickX(null)
       },
       [clickX, ...boundViewValues, track.selected, track.editing]
-    )
+    ),
+    handleClick = useCallback(() => dispatch(Actions.selectTrackExclusive(trackId)), [
+      trackId,
+    ]),
+    toggleEdit = useCallback(
+      () =>
+        dispatch(
+          Actions.editTrack({
+            id: trackId,
+            edit: !track.editing,
+          })
+        ),
+      [trackId, track.editing]
+    ),
+    rmTrack = useCallback(() => dispatch(Actions.rmTrack(trackId)), [trackId]),
+    volumeChange = useCallback(
+      value => {
+        dispatch(
+          Actions.updateTrackPlayback({
+            id: trackId,
+            playback: { vol: value },
+          })
+        )
+      },
+      [trackId]
+    ),
+    inferLR = useCallback(
+      e => {
+        dispatch(
+          Actions.setTrackBounds({
+            id: trackId,
+            bounds: inferTimeBase(track.playback, impulses),
+          })
+        )
+      },
+      [track.playback, impulses]
+    ),
+    inferLeft = useCallback(() => {
+      const endPoint = track.playback.start + track.playback.length,
+        inferredBounds = inferTimeBase(track.playback, impulses).filter(
+          bound => bound <= endPoint
+        ),
+        existingBounds = track.bounds.filter(bound => bound > endPoint)
+
+      dispatch(
+        Actions.setTrackBounds({
+          id: trackId,
+          bounds: _.sortBy([...inferredBounds, ...existingBounds]),
+        })
+      )
+    }, [track.playback, track.bounds, impulses]),
+    inferRight = useCallback(() => {
+      const startPoint = track.playback.start,
+        inferredBounds = inferTimeBase(track.playback, impulses).filter(
+          bound => bound >= startPoint
+        ),
+        existingBounds = track.bounds.filter(bound => bound < startPoint)
+
+      dispatch(
+        Actions.setTrackBounds({
+          id: trackId,
+          bounds: _.sortBy([...inferredBounds, ...existingBounds]),
+        })
+      )
+    }, [track.playback, track.bounds, impulses])
 
   return (
-    <TrackContainer
-      selected={track.selected}
-      onClick={() => dispatch(Actions.selectTrackExclusive(trackId))}
-    >
+    <TrackContainer selected={track.selected} onClick={handleClick}>
       <TrackControls>
-        <span>
-          {track.name}: {Math.floor(scale)}spx
-        </span>
-        <button
-          onClick={() =>
-            dispatch(
-              Actions.editTrack({
-                id: trackId,
-                edit: !track.editing,
-              })
-            )
-          }
-          children={track.editing ? 'done' : 'edit'}
-        />
-        <button onClick={() => dispatch(Actions.rmTrack(trackId))} children="x" />
-        {!track.editing && (
-          <>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.02"
-              value={track.playback.vol}
-              onChange={e => {
-                dispatch(
-                  Actions.updateTrackPlayback({
-                    id: trackId,
-                    playback: { vol: parseFloat(e.target.value) },
-                  })
-                )
-              }}
-            />
-          </>
-        )}
-        {track.editing && (
-          <>
-            <button
-              onClick={() =>
-                dispatch(
-                  Actions.setTrackBounds({
-                    id: trackId,
-                    bounds: inferTimeBase(track.playback, impulses),
-                  })
-                )
-              }
-              children="< infer >"
-            />
-            <button
-              onClick={() => {
-                const endPoint = track.playback.start + track.playback.length,
-                  inferredBounds = inferTimeBase(track.playback, impulses).filter(
-                    bound => bound <= endPoint
-                  ),
-                  existingBounds = track.bounds.filter(bound => bound > endPoint)
-
-                dispatch(
-                  Actions.setTrackBounds({
-                    id: trackId,
-                    bounds: _.sortBy([...inferredBounds, ...existingBounds]),
-                  })
-                )
-              }}
-              children=" < infer"
-            />
-            <button
-              onClick={() => {
-                const startPoint = track.playback.start,
-                  inferredBounds = inferTimeBase(track.playback, impulses).filter(
-                    bound => bound >= startPoint
-                  ),
-                  existingBounds = track.bounds.filter(bound => bound < startPoint)
-
-                dispatch(
-                  Actions.setTrackBounds({
-                    id: trackId,
-                    bounds: _.sortBy([...inferredBounds, ...existingBounds]),
-                  })
-                )
-              }}
-              children="infer > "
-            />
-          </>
-        )}
+        <TrackControlsInner>
+          <span>
+            {track.name}: {Math.floor(scale)}spx
+          </span>
+          <CButton onClick={toggleEdit} children={track.editing ? 'done' : 'edit'} />
+          <CButton onClick={rmTrack} children="x" />
+          {track.editing && (
+            <>
+              <CButton onClick={inferLR} children="< infer >" />
+              <CButton onClick={inferLeft} children=" < infer" />
+              <CButton onClick={inferRight} children="infer > " />
+            </>
+          )}
+        </TrackControlsInner>
+        <Slider value={track.playback.vol} column onChange={volumeChange} />
       </TrackControls>
       <TrackCanvasWrapper
         inRef={container}
@@ -376,9 +386,8 @@ export default function Track({ track, trackId }: WaveformProps) {
           inRef={canvasRef}
           width={width * 2}
           height={height * 2}
-          style={{ width: '100%', height: '100%' }}
         />
       </TrackCanvasWrapper>
     </TrackContainer>
   )
-}
+})

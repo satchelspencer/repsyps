@@ -31,7 +31,7 @@ export default async function init(store: Store<Types.AppState>) {
     }
     node.connect(context.destination)
 
-    store.subscribe(() => {
+    store.subscribe(_.throttle(() => {
       const mixState = store.getState().mix
       if (!_.isEqual(mixState, lastMixState)) {
         const diff = {}
@@ -94,6 +94,6 @@ export default async function init(store: Store<Types.AppState>) {
       })
 
       lastTracks = tracks
-    })
+    }, 50))
   })
 }

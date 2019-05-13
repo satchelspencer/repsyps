@@ -116,6 +116,8 @@ class PvProcessor extends AudioWorkletProcessor {
       outputR = outputs[0][1],
       outputLen = outputL.length
 
+    //if(!this.on) return
+
     /* get the output for each track */
     Object.keys(this.tracks).forEach((trackId, t) => {
       const track = this.tracks[trackId]
