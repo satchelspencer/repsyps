@@ -36,7 +36,7 @@ export default function useWaveformCanvas(
         scale,
         start,
         ctx,
-        color: ctyledContext.theme.color//{fg: 'black', bg: 'white'},
+        color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
       }
 
     ctx.clearRect(0, 0, pwidth, pheight)
@@ -167,55 +167,49 @@ function roundedRect(
 }
 
 export function drawBounds(context: DrawingContext, bounds: number[], editing: boolean) {
-  const { pheight, scale, start, ctx, color } = context
-
-  const fheight = pheight / 20,
-    spacing = fheight / 4
-  // ctx.fillStyle = 'rgba(0,0,0,0.6 )'
-  // ctx.fillRect(0,0, pwidth, fheight)
+  const { pheight, scale, start, ctx, color } = context,
+    fheight = pheight / 10,
+    spacing = fheight / 4,
+    center = pheight / 2,
+    highContrast = color.contrast(0.5)
 
   bounds.forEach((sample, i) => {
-    const next = bounds[i + 1]
-    const px = (sample - start) / scale
+    const next = bounds[i + 1],
+      px = (sample - start) / scale
+
+    // bar line
+    ctx.lineWidth = 3
+    ctx.strokeStyle = highContrast.fg
+    ctx.beginPath()
+    ctx.lineTo(px, 0)
+    ctx.lineTo(px, pheight)
+    ctx.stroke()
 
     // drag handle
     if (editing) {
-      ctx.lineWidth = 3
-      ctx.strokeStyle = context.color.fg
+      ctx.strokeStyle = context.color.bg
       ctx.beginPath()
-      ctx.lineTo(px, 0)
-      ctx.lineTo(px, fheight)
+      ctx.lineTo(px, center - fheight)
+      ctx.lineTo(px, center + fheight)
       ctx.stroke()
     }
 
     if (next) {
       const nx = (next - start) / scale,
         width = nx - px
-      if (editing) {
-        ctx.lineWidth = 1
-        ctx.fillStyle = context.color.fg + 'dd'
-        ctx.strokeStyle = context.color.bg + '99'
-        roundedRect(
-          ctx,
-          px + spacing,
-          fheight / 4,
-          width - 2 * spacing,
-          fheight * 0.5,
-          spacing
-        )
-      } else {
-        ctx.lineWidth = 3
-        ctx.fillStyle = context.color.bg + '1f'
-        ctx.strokeStyle = context.color.fg + '99'
-        roundedRect(
-          ctx,
-          px,
-          fheight / 2,
-          width,
-          pheight - fheight,
-          Math.min(spacing * 2, width / 2)
-        )
-      }
+
+      ctx.lineWidth = 1
+      ctx.fillStyle = context.color.bg + 'cc'
+      ctx.strokeStyle = context.color.fg + '99'
+      roundedRect(
+        ctx,
+        px + spacing,
+        center - fheight * 0.25,
+        width - 2 * spacing,
+        fheight * 0.5,
+        spacing
+      )
+
       ctx.fill()
       ctx.stroke()
     }

@@ -10,11 +10,11 @@ import App from './components/app'
 import store from './redux/store'
 import * as Actions from './redux/actions'
 
-// function getAudioFromURL(url, context) {
-//   return fetch(url)
-//     .then(res => res.arrayBuffer())
-//     .then(buff => context.decodeAudioData(buff))
-// }
+function getAudioFromURL(url, context) {
+  return fetch(url)
+    .then(res => res.arrayBuffer())
+    .then(buff => context.decodeAudioData(buff))
+}
 
 async function init() {
   const context = new AudioContext()
@@ -48,6 +48,15 @@ async function init() {
       on: true,
     })
   )
+
+  store.dispatch(
+    Actions.addTrack({
+      id: '1',
+      name: 'after.mp3',
+      buffer: await getAudioFromURL(require('file-loader!../assets/after.mp3'), context),
+    })
+  )
+
   const theme = {}
 
   ReactDOM.render(

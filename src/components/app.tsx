@@ -14,9 +14,9 @@ import Head from './head'
 const Wrapper = ctyled.div.styles({
   color: c =>
     c
-      .as(palette.gray)
+      .as(palette.primary_blue)
       .absLum(0.9)
-      .contrast(0.15),
+      .contrast(0.15).invert(),
   size: 12,
   column: true,
   bg: true,
