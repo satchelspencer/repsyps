@@ -382,40 +382,6 @@ export default memo(function({ trackId }: WaveformProps) {
         })
       )
     }, [track.playback, track.bounds, impulses]),
-    setPlaybackFromCursor = useCallback(
-      x => {
-        const dx = Math.abs(x - clickX)
-        if (dx < 3) {
-          //click to play
-          const pos = getTimeFromPosition(x, true, view)
-          dispatch(
-            Actions.updateTrackPlayback({
-              id: trackId,
-              playback: { start: pos, length: 0, alpha: null, aperiodic: true },
-              nextPlayback: [],
-            })
-          )
-        } else {
-          //dragged selection
-          const start = getTimeFromPosition(clickX, true, view),
-            end = getTimeFromPosition(x, true, view),
-            len = Math.abs(end - start)
-          dispatch(
-            Actions.updateTrackPlayback({
-              id: trackId,
-              playback: {
-                start: Math.min(start, end),
-                length: len,
-                alpha: len / length,
-                aperiodic: true,
-              },
-              nextPlayback: [],
-            })
-          )
-        }
-      },
-      [clickX, ...boundViewValues]
-    ),
     setTrackAlpha = useCallback(alpha => {
       return useCallback(() => {
         dispatch(Actions.setTrackAlpha({ id: trackId, alpha }))
