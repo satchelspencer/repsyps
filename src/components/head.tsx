@@ -8,6 +8,7 @@ import * as Actions from '../redux/actions'
 
 import Slider from './slider'
 import Icon from './icon'
+import Frac from './frac-indicator'
 
 const Head = ctyled.div.styles({
   padd: 0.5,
@@ -21,6 +22,10 @@ const Head = ctyled.div.styles({
 const SliderWrapper = ctyled.div.styles({ flex: 1 })
 
 const TimingWrapper = ctyled.div
+
+const FracWrapper = ctyled.div.styles({
+  width: 5,
+})
 
 export default memo(function() {
   const getMappedState = useCallback((state: Types.AppState) => state.mix, []),
@@ -47,6 +52,9 @@ export default memo(function() {
         <Slider value={mix.length / 44100 / 5} onChange={handleChange} />
       </SliderWrapper>
       <TimingWrapper>{_.round(60 / (mix.length / 44100), 0) + '/m'}</TimingWrapper>
+      <FracWrapper>
+        <Frac />
+      </FracWrapper>
     </Head>
   )
 })

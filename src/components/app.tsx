@@ -78,9 +78,9 @@ export default function() {
       <Wrapper>
         <Head />
         <Tracks>
-          {trackIds.map(trackId => {
-            return <Waveform key={trackId} trackId={trackId} />
-          })}
+          {trackIds.map(trackId => (
+            <Waveform key={trackId} trackId={trackId} />
+          ))}
         </Tracks>
       </Wrapper>
     </HotKeys>

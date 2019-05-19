@@ -70,3 +70,7 @@ export function getContainerPosition(container) {
     height = container.current ? container.current.offsetHeight : 0
   return { left, top, width, height }
 }
+
+export function getRelativePos(e, left: number, top: number) {
+  return { x: e.clientX - left, y: e.clientY - top }
+}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useDispatch } from 'redux-react-hook'
 import _ from 'lodash'
 
@@ -15,52 +15,51 @@ export interface ClickPos {
 /* click and or drag to select playback region */
 export function useSelectPlayback(trackId: string) {
   const dispatch = useDispatch()
-  return useMemo(
-    () => ({
-      mouseUp(
-        ctxt: ClickEventContext,
-        pos: ClickPos,
-        boundView: BoundViewContext,
-        length: number
-      ) {
-        const { clickX, editing, selected, height } = ctxt,
-          { x, y } = pos,
-          next = getNextBoundIndex(x, boundView)
+  return useCallback(
+    (
+      ctxt: ClickEventContext,
+      pos: ClickPos,
+      boundView: BoundViewContext,
+      length: number
+    ) => {
+      const { clickX, editing, height } = ctxt,
+        { x, y } = pos,
+        next = getNextBoundIndex(x, boundView)
 
-        if (Math.abs(y - height / 2) > 10 && (editing || next === -1)) {
-          const dx = Math.abs(x - clickX)
-          if (dx < 3) {
-            //click to play
-            const pos = getTimeFromPosition(x, true, boundView)
-            dispatch(
-              Actions.updateTrackPlayback({
-                id: trackId,
-                playback: { start: pos, length: 0, alpha: null, aperiodic: true },
-                nextPlayback: [],
-              })
-            )
-          } else {
-            //dragged selection
-            const start = getTimeFromPosition(clickX, true, boundView),
-              end = getTimeFromPosition(x, true, boundView),
-              len = Math.abs(end - start)
+      /* selection only counts if it is not on a bar */
+      if (editing && (next === -1 || Math.abs(y - height / 2) > 10)) {
+        const dx = Math.abs(x - clickX),
+          xPos = getTimeFromPosition(x, true, boundView)
 
-            dispatch(
-              Actions.updateTrackPlayback({
-                id: trackId,
-                playback: {
-                  start: Math.min(start, end),
-                  length: len,
-                  alpha: len / length,
-                  aperiodic: true,
-                },
-                nextPlayback: [],
-              })
-            )
-          }
+        if (dx < 3) {
+          //click to play
+          dispatch(
+            Actions.updateTrackPlayback({
+              id: trackId,
+              playback: { start: xPos, length: 0, alpha: null, aperiodic: true },
+              nextPlayback: [],
+            })
+          )
+        } else {
+          //dragged selection
+          const start = getTimeFromPosition(clickX, true, boundView),
+            len = Math.abs(xPos - start)
+
+          dispatch(
+            Actions.updateTrackPlayback({
+              id: trackId,
+              playback: {
+                start: Math.min(start, xPos),
+                length: len,
+                alpha: len / length,
+                aperiodic: true,
+              },
+              nextPlayback: [],
+            })
+          )
         }
-      },
-    }),
+      }
+    },
     []
   )
 }
@@ -69,64 +68,62 @@ export function useSelectPlayback(trackId: string) {
 export function useMeasurePlayback(trackId: string) {
   const dispatch = useDispatch()
 
-  return useMemo(
-    () => ({
-      mouseUp(
-        ctxt: ClickEventContext,
-        pos: ClickPos,
-        boundView: BoundViewContext,
-        alpha: number,
-        length: number
-      ) {
-        const { clickX, editing, selected, height } = ctxt,
-          { x, y } = pos,
-          next = getNextBoundIndex(x, boundView),
-          start = (clickX && getNextBoundIndex(clickX, boundView)) || next,
-          dx = Math.abs(x - clickX)
+  return useCallback(
+    (
+      ctxt: ClickEventContext,
+      pos: ClickPos,
+      boundView: BoundViewContext,
+      alpha: number,
+      length: number
+    ) => {
+      const { clickX, editing, height } = ctxt,
+        { x, y } = pos,
+        next = getNextBoundIndex(x, boundView),
+        start = (clickX && getNextBoundIndex(clickX, boundView)) || next,
+        dx = Math.abs(x - clickX)
 
-        if (next !== -1 && !editing) {
-          let playBacks = []
-          for (let bi = start; bi <= next; bi++) {
-            const endBound = boundView.bounds[bi],
-              startBound = boundView.bounds[bi - 1],
-              newLen = endBound - startBound
-            playBacks.push({
+      if (next !== -1 && !editing) {
+        let playBacks = []
+        for (let bi = start; bi <= next; bi++) {
+          const endBound = boundView.bounds[bi],
+            startBound = boundView.bounds[bi - 1],
+            newLen = endBound - startBound
+          playBacks.push({
+            start: startBound,
+            length: newLen,
+            alpha: alpha || 1,
+            aperiodic: false,
+          })
+        }
+        // cycle first to end of queue
+        const first = playBacks.shift()
+        playBacks.push(first)
+
+        dispatch(
+          Actions.updateTrackPlayback({
+            id: trackId,
+            playback: first,
+            nextPlayback: playBacks,
+          })
+        )
+      } else if (editing && dx < 3 && Math.abs(y - height / 2) < 10 && next !== -1) {
+        const endBound = boundView.bounds[next],
+          startBound = boundView.bounds[next - 1],
+          newLen = endBound - startBound
+        dispatch(
+          Actions.updateTrackPlayback({
+            id: trackId,
+            playback: {
               start: startBound,
               length: newLen,
-              alpha: alpha || 1,
-              aperiodic: false,
-            })
-          }
-          // cycle first to end of queue
-          const first = playBacks.shift()
-          playBacks.push(first)
-
-          dispatch(
-            Actions.updateTrackPlayback({
-              id: trackId,
-              playback: first,
-              nextPlayback: playBacks,
-            })
-          )
-        } else if (editing && dx < 3 && Math.abs(y - height / 2) < 10 && next !== -1) {
-          const endBound = boundView.bounds[next],
-            startBound = boundView.bounds[next - 1],
-            newLen = endBound - startBound
-          dispatch(
-            Actions.updateTrackPlayback({
-              id: trackId,
-              playback: {
-                start: startBound,
-                length: newLen,
-                alpha: newLen ? newLen / length : null,
-                aperiodic: true,
-              },
-              nextPlayback: [],
-            })
-          )
-        }
-      },
-    }),
+              alpha: newLen ? newLen / length : null,
+              aperiodic: true,
+            },
+            nextPlayback: [],
+          })
+        )
+      }
+    },
     []
   )
 }
