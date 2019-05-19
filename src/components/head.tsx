@@ -7,16 +7,24 @@ import * as Types from '../redux/types'
 import * as Actions from '../redux/actions'
 
 import Slider from './slider'
+import Icon from './icon'
 
 const Head = ctyled.div.styles({
   padd: 0.5,
   bg: true,
   justify: 'stretch',
+  color: c => c.nudge(0.1),
+  align: 'center',
+  gutter: 1,
 })
 
+const SliderWrapper = ctyled.div.styles({ flex: 1 })
+
+const TimingWrapper = ctyled.div
+
 export default memo(function() {
-  const getMappedState = useCallback((state: Types.AppState) => state.mix.length, []),
-    length = useMappedState(getMappedState),
+  const getMappedState = useCallback((state: Types.AppState) => state.mix, []),
+    mix = useMappedState(getMappedState),
     dispatch = useDispatch(),
     handleChange = useCallback(val => {
       dispatch(
@@ -24,11 +32,21 @@ export default memo(function() {
           length: val * 5 * 44100,
         })
       )
-    }, [])
+    }, []),
+    handlePlayPause = useCallback(() => dispatch(Actions.togglePlayback({})), [])
 
   return (
     <Head>
-      <Slider value={length / 44100 / 5} onChange={handleChange} />
+      <Icon
+        asButton
+        name={mix.on ? 'pause' : 'play'}
+        onClick={handlePlayPause}
+        styles={{ size: s => s * 2 }}
+      />
+      <SliderWrapper>
+        <Slider value={mix.length / 44100 / 5} onChange={handleChange} />
+      </SliderWrapper>
+      <TimingWrapper>{_.round(60 / (mix.length / 44100), 0) + '/m'}</TimingWrapper>
     </Head>
   )
 })

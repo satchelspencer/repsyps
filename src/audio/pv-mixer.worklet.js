@@ -82,7 +82,8 @@ class PvProcessor extends AudioWorkletProcessor {
       const hasTimeChange =
         playback.start !== track.playback.start ||
         playback.length !== track.playback.length ||
-        playback.alpha !== track.playback.alpha
+        playback.alpha !== track.playback.alpha ||
+        playback.on !== track.playback.on
 
       track.playback = { ...track.playback, ...playback }
       if (hasTimeChange) {

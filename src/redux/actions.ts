@@ -41,6 +41,8 @@ export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
 
 export const editTrack = createAction<{ id: string; edit: boolean }>('SET_TRACK_EDIT')
 
+export const setTrackAlpha = createAction<{ id: string; alpha: number }>('SET_TRACK_ALPHA')
+
 export const updateMixState = createAction<Partial<Types.MixState>>('MIX_STATE_UPDATE')
 
 export const togglePlayback = createAction('TOGGLE_PLAYBACK')

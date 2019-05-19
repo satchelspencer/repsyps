@@ -14,16 +14,25 @@ import {
   getTimeFromPosition,
   getContainerPosition,
 } from './waveform-utils'
+
 import useZoom from './waveform-zoom'
+
+import {
+  useDraggableBounds,
+  useMeasurePlayback,
+  useSelectPlayback,
+} from './waveform-mouse'
+
 import Button from './button'
 import Slider from './slider'
 import Icon from './icon'
 
 const CornerWrapper = ctyled.div.styles({
-  padd: true,
-  size: s => s * 1.3,
+  padd: 2,
+  gutter: 1,
+  align: 'center',
 }).extend`
-  bottom:0;
+  top:0;
   right:0;
   position:absolute;
 `
@@ -36,16 +45,13 @@ const TrackName = ctyled.div.styles({
   flex: 1,
   padd: 0.7,
   color: c => c.invert(),
-  rounded: 2
+  rounded: 2,
 }).extendSheet`
-  position:absolute;
-  top:${({size}) => size}px;
-  right:${({size}) => size}px;
   background:${({ color }) => color.bg + '99'};
 `
 
 const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
-  height: 11,
+  height: 13,
   flex: 'none',
   color: (c, { selected }) => (selected ? c.nudge(0.1) : c.nudge(0.05)),
 })
@@ -207,13 +213,20 @@ export interface BoundViewContext extends ViewContext {
   bounds: number[]
 }
 
+export interface ClickEventContext {
+  clickX: number
+  editing: boolean
+  selected: boolean
+  height: number
+  width: number
+}
+
 export default memo(function({ trackId }: WaveformProps) {
   //refs
   const container = useRef(null)
 
   // state
   const [center, setCenter] = useState(0),
-    [movingBoundIndex, setMovingBoundIndex] = useState(-1),
     [clickX, setClickX] = useState(null)
 
   //redux/context
@@ -262,130 +275,48 @@ export default memo(function({ trackId }: WaveformProps) {
     top,
   ])
 
+  const clickCtxt: ClickEventContext = {
+      clickX,
+      editing: track.editing,
+      selected: track.selected,
+      height,
+      width,
+    },
+    clickCtxtValues = _.values(clickCtxt)
+
+  const select = useSelectPlayback(trackId),
+    measure = useMeasurePlayback(trackId),
+    dbounds = useDraggableBounds(trackId)
+
   /* playback/selection */
   const handleMouseDown = useCallback(
       e => {
-        const { x, y } = getRelativePos(e)
-        if (Math.abs(y - height / 2) < 10 && track.editing) {
-          const bound = getBoundIndex(x, boundView)
-          if (bound !== -1) {
-            setMovingBoundIndex(bound)
-            dispatch(
-              Actions.updateTrackPlayback({ id: trackId, playback: { on: false } })
-            )
-          }
-        }
+        const pos = getRelativePos(e)
+        dbounds.mouseDown(clickCtxt, pos, boundView)
 
-        if (!track.editing || track.selected) setClickX(x)
+        setClickX(pos.x)
       },
-      [track.editing, track.selected, ...boundViewValues]
+      [...clickCtxtValues, ...boundViewValues]
     ),
     handleMouseMove = useCallback(
       e => {
-        const { x } = getRelativePos(e)
-        setCenter(x)
-        if (movingBoundIndex !== -1) {
-          const sample = getTimeFromPosition(x, true, view),
-            newBounds = [...track.bounds]
-          newBounds[movingBoundIndex] = sample
-          dispatch(
-            Actions.setTrackBounds({
-              id: trackId,
-              bounds: newBounds,
-            })
-          )
-          const oldPos = track.bounds[movingBoundIndex],
-            nextBound = track.bounds[movingBoundIndex + 1]
-
-          if (track.playback.start === oldPos) {
-            const newLen = track.playback.length && nextBound - sample
-            dispatch(
-              Actions.updateTrackPlayback({
-                id: trackId,
-                playback: {
-                  start: sample,
-                  length: newLen,
-                  alpha: newLen ? newLen / length : null,
-                },
-              })
-            )
-          }
-
-          if (track.playback.length === oldPos - track.playback.start) {
-            const newLen = sample - track.playback.start
-            dispatch(
-              Actions.updateTrackPlayback({
-                id: trackId,
-                playback: { length: newLen, alpha: newLen / length },
-              })
-            )
-          }
-        }
+        const pos = getRelativePos(e)
+        setCenter(pos.x)
+        dbounds.mouseMove(clickCtxt, pos, boundView, length, track.playback)
       },
-      [movingBoundIndex, ...boundViewValues, track]
+      [...clickCtxtValues, ...boundViewValues, length, track.playback]
     ),
     handleMouseUp = useCallback(
       e => {
-        const { x, y } = getRelativePos(e),
-          dx = x - clickX
+        const pos = getRelativePos(e)
 
-        if (track.editing) {
-          //EDITING
-          if (!track.selected) return //if we are selected and in edit mode
-          const next = getNextBoundIndex(x, boundView)
-          if (movingBoundIndex !== -1) {
-            //we were dragging a bound
-            setMovingBoundIndex(-1)
-          } else if (dx < 3 && Math.abs(y - height / 2) < 10 && next !== -1) {
-            const endBound = track.bounds[next],
-              startBound = track.bounds[next - 1],
-              newLen = endBound - startBound
-            dispatch(
-              Actions.updateTrackPlayback({
-                id: trackId,
-                playback: {
-                  start: startBound,
-                  length: newLen,
-                  alpha: newLen ? newLen / length : null,
-                  aperiodic: true,
-                },
-                nextPlayback: [],
-              })
-            )
-          } else setPlaybackFromCursor(x)
-        } else {
-          //SYNCED PLAYBACK
-          const next = getNextBoundIndex(x, boundView),
-            start = (clickX && getNextBoundIndex(clickX, boundView)) || next
-          if (next !== -1) {
-            let playBacks = []
-            for (let bi = start; bi <= next; bi++) {
-              const endBound = track.bounds[bi],
-                startBound = track.bounds[bi - 1],
-                newLen = endBound - startBound
-              playBacks.push({
-                start: startBound,
-                length: newLen,
-                alpha: 1,
-                aperiodic: false,
-              })
-            }
-            // cycle first to end of queue
-            const first = playBacks.shift()
-            playBacks.push(first)
+        select.mouseUp(clickCtxt, pos, boundView, length)
+        measure.mouseUp(clickCtxt, pos, boundView, track.alpha, length)
+        dbounds.mouseUp(clickCtxt, pos, boundView)
 
-            dispatch(
-              Actions.updateTrackPlayback({
-                id: trackId,
-                playback: first,
-                nextPlayback: playBacks,
-              })
-            )
-          } else setPlaybackFromCursor(x)
-        }
         setClickX(null)
       },
-      [clickX, ...boundViewValues, track.selected, track.editing]
+      [...clickCtxtValues, ...boundViewValues, track.alpha, length]
     ),
     handleClick = useCallback(() => dispatch(Actions.selectTrackExclusive(trackId)), [
       trackId,
@@ -412,18 +343,17 @@ export default memo(function({ trackId }: WaveformProps) {
       },
       [trackId]
     ),
-    inferLR = useCallback(
-      e => {
-        dispatch(
-          Actions.setTrackBounds({
-            id: trackId,
-            bounds: inferTimeBase(track.playback, impulses),
-          })
-        )
-      },
-      [track.playback, impulses]
-    ),
+    inferLR = useCallback(() => {
+      if (!track.playback.length) return
+      dispatch(
+        Actions.setTrackBounds({
+          id: trackId,
+          bounds: inferTimeBase(track.playback, impulses),
+        })
+      )
+    }, [track.playback, impulses]),
     inferLeft = useCallback(() => {
+      if (!track.playback.length) return
       const endPoint = track.playback.start + track.playback.length,
         inferredBounds = inferTimeBase(track.playback, impulses).filter(
           bound => bound <= endPoint
@@ -438,6 +368,7 @@ export default memo(function({ trackId }: WaveformProps) {
       )
     }, [track.playback, track.bounds, impulses]),
     inferRight = useCallback(() => {
+      if (!track.playback.length) return
       const startPoint = track.playback.start,
         inferredBounds = inferTimeBase(track.playback, impulses).filter(
           bound => bound >= startPoint
@@ -453,7 +384,7 @@ export default memo(function({ trackId }: WaveformProps) {
     }, [track.playback, track.bounds, impulses]),
     setPlaybackFromCursor = useCallback(
       x => {
-        const dx = x - clickX
+        const dx = Math.abs(x - clickX)
         if (dx < 3) {
           //click to play
           const pos = getTimeFromPosition(x, true, view)
@@ -487,9 +418,10 @@ export default memo(function({ trackId }: WaveformProps) {
     ),
     setTrackAlpha = useCallback(alpha => {
       return useCallback(() => {
-        dispatch(Actions.updateTrackPlayback({ id: trackId, playback: { alpha } }))
+        dispatch(Actions.setTrackAlpha({ id: trackId, alpha }))
       }, [])
-    }, [])
+    }, []),
+    handlePlayPause = useCallback(() => dispatch(Actions.toggleTrack(trackId)), [trackId])
 
   const avgBar = useMemo(() => {
       let sum = 0
@@ -523,27 +455,35 @@ export default memo(function({ trackId }: WaveformProps) {
             open={track.editing}
             onClick={toggleEdit}
             icon="timer"
-            text={barLen ? _.round(barLen / 44100, 2) + 's' : '??'}
+            text={barLen ? _.round(60 / (barLen / 44100), 0) + '/m' : '??'}
           >
             <CButton onClick={inferLR} children="&lsaquo; &rsaquo;" />
             <CButton onClick={inferLeft} children="&lsaquo;" />
             <CButton onClick={inferRight} children="&rsaquo;" />
-            <CButton onClick={toggleEdit} children="save" />
+            <CButton onClick={toggleEdit} children="done" />
           </TrackMenuItem>
+          <TrackMenuItem
+            icon={track.playback.on ? 'pause' : 'play'}
+            iconSize={1.6}
+            text=""
+            onClick={handlePlayPause}
+          />
           <TrackMenuItem
             icon="tape"
             text={
               playBackBar
-                ? Math.floor(_.round(playBackBar / length, 2) * 100) + '%'
+                ? Math.floor(
+                    _.round(playBackBar / length / (track.playback.alpha || 1), 2) * 100
+                  ) + '%'
                 : '100%'
             }
           />
-          <DropdownMenuItem icon="meter" text={_.round(track.playback.alpha || 1, 2)}>
-            <CButton children="1/4" onClick={setTrackAlpha(0.25)} />
-            <CButton children="1/2" onClick={setTrackAlpha(0.5)} />
+          <DropdownMenuItem icon="meter" text={_.round(1 / track.alpha || 1, 2)}>
+            <CButton children="1/4" onClick={setTrackAlpha(4)} />
+            <CButton children="1/2" onClick={setTrackAlpha(2)} />
             <CButton children="1" onClick={setTrackAlpha(1)} />
-            <CButton children="2" onClick={setTrackAlpha(2)} />
-            <CButton children="4" onClick={setTrackAlpha(4)} />
+            <CButton children="2" onClick={setTrackAlpha(1 / 2)} />
+            <CButton children="4" onClick={setTrackAlpha(1 / 4)} />
           </DropdownMenuItem>
         </TrackMenu>
       </TrackControls>
@@ -559,9 +499,17 @@ export default memo(function({ trackId }: WaveformProps) {
           width={width * 2}
           height={height * 2}
         />
-        <TrackName>{track.name}</TrackName>
+
         <CornerWrapper>
-          <Icon onClick={rmTrack} asButton name="close-thin" />
+          <TrackName>
+            {track.name}&nbsp;
+            <Icon
+              asButton
+              onClick={rmTrack}
+              styles={{ size: s => s * 1.1, color: c => c.contrast(0.3) }}
+              name="close-thin"
+            />
+          </TrackName>
         </CornerWrapper>
       </TrackCanvasWrapper>
     </TrackContainer>

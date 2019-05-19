@@ -14,9 +14,9 @@ import Head from './head'
 const Wrapper = ctyled.div.styles({
   color: c =>
     c
-      .as(palette.primary_blue)
+      .as(palette.gray)
       .absLum(0.9)
-      .contrast(0.15).invert(),
+      .contrast(0.15),
   size: 12,
   column: true,
   bg: true,
@@ -29,6 +29,13 @@ const Wrapper = ctyled.div.styles({
     left:0;
     position:absolute;
   `
+
+const Tracks = ctyled.div.styles({
+  column: true,
+  lined: true,
+  flex: 1,
+  scroll: true,
+})
 
 export default function() {
   const getMappedState = useCallback(
@@ -44,6 +51,8 @@ export default function() {
       () => ({
         playPause: 'shift+space',
         playPauseTrack: 'space',
+        nextTrack: 'down',
+        prevTrack: 'up',
       }),
       []
     ),
@@ -51,16 +60,28 @@ export default function() {
       () => ({
         playPause: () => dispatch(Actions.togglePlayback({})),
         playPauseTrack: () => dispatch(Actions.toggleTrack(selected)),
+        nextTrack: () => {
+          const next =
+            trackIds[(trackIds.indexOf(selected) + trackIds.length + 1) % trackIds.length]
+          dispatch(Actions.selectTrackExclusive(next))
+        },
+        prevTrack: () => {
+          const prev =
+            trackIds[(trackIds.indexOf(selected) + trackIds.length - 1) % trackIds.length]
+          dispatch(Actions.selectTrackExclusive(prev))
+        },
       }),
-      [trackIds]
+      [trackIds, selected]
     )
   return (
     <HotKeys keyMap={keyMap} handlers={handlers}>
       <Wrapper>
         <Head />
-        {trackIds.map(trackId => {
-          return <Waveform key={trackId} trackId={trackId} />
-        })}
+        <Tracks>
+          {trackIds.map(trackId => {
+            return <Waveform key={trackId} trackId={trackId} />
+          })}
+        </Tracks>
       </Wrapper>
     </HotKeys>
   )

@@ -15,7 +15,8 @@ export interface TrackState {
   position: number,
   bounds: number[],
   selected: boolean,
-  editing: boolean
+  editing: boolean,
+  alpha?: number
 }
 
 export interface MixState{

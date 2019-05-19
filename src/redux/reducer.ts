@@ -78,6 +78,29 @@ export default combineReducers({
         }
     }),
     handle(Actions.rmTrack, (tracks, { payload: id }) => _.omit(tracks, id)),
+    handle(Actions.setTrackAlpha, (tracks, { payload }) => {
+      const applyAlphaToPlayback = (playback, alpha) => {
+        if (playback.aperiodic) return playback
+        else
+          return {
+            ...playback,
+            alpha,
+          }
+      }
+      return {
+        ...tracks,
+        [payload.id]: {
+          ...tracks[payload.id],
+          playback: applyAlphaToPlayback(tracks[payload.id].playback, payload.alpha),
+          nextPlayback:
+            tracks[payload.id].nextPlayback &&
+            tracks[payload.id].nextPlayback.map(p =>
+              applyAlphaToPlayback(p, payload.alpha)
+            ),
+          alpha: payload.alpha,
+        },
+      }
+    }),
     handle(Actions.toggleTrack, (tracks, { payload: id }) => {
       return {
         ...tracks,
@@ -86,7 +109,7 @@ export default combineReducers({
           playback: {
             ...tracks[id].playback,
             on: !tracks[id].playback.on,
-          },
+          }
         },
       }
     }),
