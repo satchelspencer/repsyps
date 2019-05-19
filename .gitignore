@@ -1,3 +1,5 @@
 node_modules
 dist
 assets
+.DS_Store
+**/.DS_Store
