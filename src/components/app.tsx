@@ -5,7 +5,7 @@ import { HotKeys } from 'react-hotkeys'
 import { palette } from '../styles/theme'
 import * as _ from 'lodash'
 
-import Waveform from './waveform'
+import Track from './track/track'
 import * as Types from '../redux/types'
 import * as Actions from '../redux/actions'
 
@@ -15,12 +15,11 @@ const Wrapper = ctyled.div.styles({
   color: c =>
     c
       .as(palette.gray)
-      .absLum(0.9)
+      .absLum(0.7)
       .contrast(0.15),
   size: 12,
   column: true,
   bg: true,
-  endLine: true,
   lined: true,
 }).extend`
     width:100%;
@@ -33,6 +32,7 @@ const Wrapper = ctyled.div.styles({
 const Tracks = ctyled.div.styles({
   column: true,
   lined: true,
+  endLine: true,
   flex: 1,
   scroll: true,
 })
@@ -79,7 +79,7 @@ export default function() {
         <Head />
         <Tracks>
           {trackIds.map(trackId => (
-            <Waveform key={trackId} trackId={trackId} />
+            <Track key={trackId} trackId={trackId} />
           ))}
         </Tracks>
       </Wrapper>

@@ -8,7 +8,7 @@ import * as Actions from '../redux/actions'
 
 import Slider from './slider'
 import Icon from './icon'
-import Frac from './frac-indicator'
+import Frac from './frac'
 
 const Head = ctyled.div.styles({
   padd: 0.5,

@@ -2,10 +2,10 @@ import { useMemo, useState, useCallback } from 'react'
 import { useDispatch } from 'redux-react-hook'
 import _ from 'lodash'
 
-import * as Actions from '../redux/actions'
-import { getBoundIndex, getNextBoundIndex, getTimeFromPosition } from './waveform-utils'
+import * as Actions from '../../redux/actions'
+import { getBoundIndex, getNextBoundIndex, getTimeFromPosition } from './utils'
 
-import { ClickEventContext, BoundViewContext } from './waveform'
+import { ClickEventContext, BoundViewContext } from './track'
 
 export interface ClickPos {
   x: number

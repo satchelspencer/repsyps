@@ -2,10 +2,10 @@ import { useEffect, useMemo, useContext, useRef } from 'react'
 import { CtyledContext, Color } from 'ctyled'
 import * as _ from 'lodash'
 
-import * as Types from '../redux/types'
-import { BIN_SIZE } from '../dsp/impulse-detect'
-import getMinMaxes from '../dsp/min-maxes'
-import { DrawViewContext } from './waveform'
+import * as Types from '../../redux/types'
+import { BIN_SIZE } from '../../dsp/impulse-detect'
+import getMinMaxes from '../../dsp/min-maxes'
+import { DrawViewContext } from './track'
 
 export default function useWaveformCanvas(
   view: DrawViewContext,
@@ -196,7 +196,8 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
 
     if (next) {
       const nx = (next - start) / scale,
-        width = nx - px
+        width = nx - px - 2 * spacing,
+        height = Math.min(fheight * 0.5, width)
 
       ctx.lineWidth = 1
       ctx.fillStyle = context.color.bg + 'cc'
@@ -204,10 +205,10 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
       roundedRect(
         ctx,
         px + spacing,
-        center - fheight * 0.25,
-        width - 2 * spacing,
-        fheight * 0.5,
-        spacing
+        center - height * 0.5,
+        width,
+        height,
+        Math.min(spacing, width)
       )
 
       ctx.fill()

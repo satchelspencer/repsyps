@@ -3,13 +3,13 @@ import ctyled, { active } from 'ctyled'
 import _ from 'lodash'
 import { useDispatch } from 'redux-react-hook'
 
-import * as Actions from '../redux/actions'
-import * as Types from '../redux/types'
-import { inferTimeBase } from './waveform-utils'
+import * as Actions from '../../redux/actions'
+import * as Types from '../../redux/types'
+import { inferTimeBase } from './utils'
 
-import Button from './button'
-import Slider from './slider'
-import Icon from './icon'
+import Button from '../button'
+import Slider from '../slider'
+import Icon from '../icon'
 
 const CButton = Button.styles({})
 

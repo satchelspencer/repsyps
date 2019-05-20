@@ -1,26 +1,46 @@
 import React, { memo, useRef, useMemo, useState, useCallback } from 'react'
-import ctyled, { active } from 'ctyled'
+import ctyled from 'ctyled'
 import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 
-import getImpulses from '../dsp/impulse-detect'
-import useWaveformCanvas from './waveform-canvas'
-import * as Types from '../redux/types'
-import * as Actions from '../redux/actions'
-import { getContainerPosition, getRelativePos } from './waveform-utils'
+import getImpulses from '../../dsp/impulse-detect'
+import * as Types from '../../redux/types'
+import * as Actions from '../../redux/actions'
+import Icon from '../icon'
 
-import useZoom from './waveform-zoom'
-
+import { getContainerPosition, getRelativePos } from './utils'
+import useZoom from './zoom'
+import useWaveformCanvas from './canvas'
 import {
   useDraggableBounds,
   useMeasurePlayback,
   useSelectPlayback,
-} from './waveform-mouse'
+} from './mouse'
+import WaveformControls from './controls'
 
-import WaveformControls from './waveform-controls'
+const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
+  height: 13,
+  flex: 'none',
+  color: (c, { selected }) => (selected ? c.nudge(0.1) : c.nudge(0.05)),
+})
 
-import Button from './button'
-import Icon from './icon'
+const TrackCanvasWrapper = ctyled.div.styles({
+  flex: 1,
+  bg: true,
+  color: c => c.contrast(0.1).nudge(0.1),
+})
+
+const TrackCanvas = ctyled.canvas
+  .attrs({ selected: false })
+  .styles({ color: (c, { selected }) => (selected ? c.nudge(0.1) : c) }).extend`
+  position:absolute;
+  width:100%;
+  height:100%;
+  transition:0.3s all;
+  ${({ color }, { selected }) =>
+    selected && `box-shadow:0 0 5px ${color.fg + '33'} inset;`}
+`
+
 
 const CornerWrapper = ctyled.div.styles({
   padd: 2,
@@ -42,29 +62,6 @@ const TrackName = ctyled.div.styles({
 }).extendSheet`
   background:${({ color }) => color.bg + '99'};
 `
-
-const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
-  height: 13,
-  flex: 'none',
-  color: (c, { selected }) => (selected ? c.nudge(0.1) : c.nudge(0.05)),
-})
-
-const TrackCanvas = ctyled.canvas
-  .attrs({ selected: false })
-  .styles({ color: (c, { selected }) => (selected ? c.nudge(0.1) : c) }).extend`
-  position:absolute;
-  width:100%;
-  height:100%;
-  transition:0.3s all;
-  ${({ color }, { selected }) =>
-    selected && `box-shadow:0 0 5px ${color.fg + '33'} inset;`}
-`
-
-const TrackCanvasWrapper = ctyled.div.styles({
-  flex: 1,
-  bg: true,
-  color: c => c.contrast(0.1).nudge(0.1),
-})
 
 interface WaveformProps {
   trackId: string
@@ -123,6 +120,7 @@ export default memo(function({ trackId }: WaveformProps) {
   /* ZOOM/PANNING CONTROL */
   const { scale, start } = useZoom(container, center)
 
+  /* drawing contexts */
   const view: ViewContext = {
       scale,
       start,
@@ -141,9 +139,7 @@ export default memo(function({ trackId }: WaveformProps) {
     },
     boundViewValues = _.values(boundView)
 
-  /* WAVEFORM DRAWING ON CANVAS */
-  const { canvasRef } = useWaveformCanvas(drawView, track, buffer)
-
+  /* click event contexts */
   const clickCtxt: ClickEventContext = {
       clickX,
       editing: track.editing,
@@ -153,11 +149,15 @@ export default memo(function({ trackId }: WaveformProps) {
     },
     clickCtxtValues = _.values(clickCtxt)
 
+  /* WAVEFORM DRAWING ON CANVAS */
+  const { canvasRef } = useWaveformCanvas(drawView, track, buffer)
+
+  /* mouse behavior handlers */
   const selectMouseUp = useSelectPlayback(trackId),
     measureMouseUp = useMeasurePlayback(trackId),
     dboundsHandlers = useDraggableBounds(trackId)
 
-  /* playback/selection */
+  /* mouseEvent handlers */
   const handleMouseDown = useCallback(
       e => {
         const pos = getRelativePos(e, left, top)
@@ -189,6 +189,12 @@ export default memo(function({ trackId }: WaveformProps) {
     ]),
     rmTrack = useCallback(() => dispatch(Actions.rmTrack(trackId)), [trackId])
 
+  /* styles */
+  const delIconSty = useMemo(
+    () => ({ size: s => s * 1.1, color: c => c.contrast(0.3) }),
+    []
+  )
+
   return (
     <TrackContainer selected={track.selected} onClick={handleClick}>
       <WaveformControls
@@ -213,12 +219,7 @@ export default memo(function({ trackId }: WaveformProps) {
         <CornerWrapper>
           <TrackName>
             {track.name}&nbsp;
-            <Icon
-              asButton
-              onClick={rmTrack}
-              styles={{ size: s => s * 1.1, color: c => c.contrast(0.3) }}
-              name="close-thin"
-            />
+            <Icon asButton onClick={rmTrack} styles={delIconSty} name="close-thin" />
           </TrackName>
         </CornerWrapper>
       </TrackCanvasWrapper>

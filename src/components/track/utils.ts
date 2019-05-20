@@ -1,8 +1,8 @@
 import _ from 'lodash'
 
-import { BIN_SIZE } from '../dsp/impulse-detect'
-import * as Types from '../redux/types'
-import { BoundViewContext, ViewContext } from './waveform'
+import { BIN_SIZE } from '../../dsp/impulse-detect'
+import * as Types from '../../redux/types'
+import { BoundViewContext, ViewContext } from './track'
 
 export function getBoundIndex(x: number, view: BoundViewContext) {
   const sample = getTimeFromPosition(x, false, view)
