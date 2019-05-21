@@ -17,6 +17,7 @@ const Head = ctyled.div.styles({
   color: c => c.nudge(0.1),
   align: 'center',
   gutter: 1,
+  size: s => s * 1.1,
 })
 
 const SliderWrapper = ctyled.div.styles({ flex: 1 })

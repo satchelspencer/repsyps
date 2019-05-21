@@ -6,10 +6,12 @@ import { palette } from '../styles/theme'
 import * as Types from '../redux/types'
 
 const Wrapper = ctyled.div.styles({
-  height: 0.4,
+  height: 0.5,
   alignSelf: 'stretch',
+  border: true,
   flex: 1,
   bg: true,
+  rounded: 2,
   color: c => c.nudge(0.2)
 }).extend`
   overflow:hidden;

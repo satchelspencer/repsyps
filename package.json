@@ -9,7 +9,7 @@
     "@types/redux": "^3.6.0",
     "babel-loader": "^8.0.5",
     "babel-polyfill": "^6.26.0",
-    "ctyled": "^0.0.9",
+    "ctyled": "^0.0.11",
     "deox": "^1.4.0",
     "dsp.js": "^1.0.1",
     "file-loader": "^3.0.1",

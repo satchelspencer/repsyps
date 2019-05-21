@@ -4,7 +4,6 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { StoreContext } from 'redux-react-hook'
 import * as _ from 'lodash'
-import { ThemeProvider } from 'ctyled'
 
 import App from './components/app'
 import store from './redux/store'
@@ -49,21 +48,19 @@ async function init() {
     })
   )
 
-  store.dispatch(
-    Actions.addTrack({
-      id: '1',
-      name: 'after.mp3',
-      buffer: await getAudioFromURL(require('file-loader!../assets/after.mp3'), context),
-    })
-  )
+  // store.dispatch(
+  //   Actions.addTrack({
+  //     id: '1',
+  //     name: 'after.mp3',
+  //     buffer: await getAudioFromURL(require('file-loader!../assets/after.mp3'), context),
+  //   })
+  // )
 
   const theme = {}
 
   ReactDOM.render(
     <StoreContext.Provider value={store}>
-      <ThemeProvider theme={theme}>
         <App />
-      </ThemeProvider>
     </StoreContext.Provider>,
     document.getElementById('root')
   )

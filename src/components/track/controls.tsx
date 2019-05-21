@@ -17,18 +17,18 @@ const TrackControls = ctyled.div.styles({
   bg: true,
   lined: true,
   endLine: true,
-  size: s => s * 0.9,
+  size: s => s * 0.9
 })
 
 const VolumeWrapper = ctyled.div.styles({
   bg: true,
   padd: 0.5,
-  color: c => c.nudge(-0.05),
+  color: c => c.nudge(-0.1),
 })
 
 const TrackMenu = ctyled.div.styles({
   bg: true,
-  color: c => c.nudge(-0.05),
+  color: c => c.nudge(-0.15),
   column: true,
   justify: 'space-around',
   padd: 0.7,
@@ -44,11 +44,11 @@ const TrackMenuItemWrapper = ctyled.div
     bg: true,
     rounded: 2,
     flatRight: (c, { open }) => open,
-    color: (c, { open }) => (open ? c.nudge(0.2) : c),
+    color: (c, { open }) => (open ? c.nudge(-0.05) : c),
     border: 1,
     justify: 'center',
   }).extend`
-  border-color:${({ borderColor }, { open }) => (open ? borderColor.fg : 'transparent')};
+  border-color:${({ borderColor }, { open }) => (open ? borderColor.bq : 'transparent')};
 `
 
 const TrackMenuItemText = ctyled.div.styles({

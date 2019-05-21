@@ -9,6 +9,7 @@ const SliderWrapper = ctyled.div.attrs<{ column?: boolean }>({ column: false }).
   column: (_, { column }) => column,
   height: (_, { column }) => (column ? '100%' : 1.5),
   width: (_, { column }) => (column ? 1.5 : '100%'),
+  //color: c => c.contrast(-0.15),
 })
 
 const SliderGuide = ctyled.div.attrs<{ column?: boolean }>({ column: false }).styles({
@@ -22,7 +23,6 @@ const SliderGuide = ctyled.div.attrs<{ column?: boolean }>({ column: false }).st
 })
 
 const Handle = ctyled.div.attrs<{ column?: boolean }>({ column: false }).styles({
-  color: c => c.contrast(-0.25),
   bg: true,
   rounded: true,
   border: true,
@@ -32,10 +32,11 @@ const Handle = ctyled.div.attrs<{ column?: boolean }>({ column: false }).styles(
 }).extend`
   position:absolute;
   cursor:;
-`
+  `
 
 interface SliderProps {
   column?: boolean
+  throttle?: number
   value: number
   onChange: (value: number) => any
 }
@@ -45,7 +46,9 @@ function Slider(props: SliderProps) {
     handle = useRef(null),
     [size, setSize] = useState(0),
     [dragOffset, setDragOffset] = useState(null),
-    throttledOnChange = useCallback(_.throttle(props.onChange, 100), [props.onChange])
+    throttledOnChange = useCallback(_.throttle(props.onChange, props.throttle || 100), [
+      props.onChange,
+    ])
 
   useEffect(() => {
     const ro = new ResizeObserver(entries => {

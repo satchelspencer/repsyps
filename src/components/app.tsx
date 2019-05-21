@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import ctyled from 'ctyled'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import { HotKeys } from 'react-hotkeys'
@@ -11,16 +11,16 @@ import * as Actions from '../redux/actions'
 
 import Head from './head'
 
-const Wrapper = ctyled.div.styles({
-  color: c =>
+const Wrapper = ctyled.div.attrs({ lum: 0, contrast: 0 }).styles({
+  color: (c, { lum, contrast }) =>
     c
       .as(palette.gray)
       .absLum(0.7)
-      .contrast(0.15),
+      .contrast(0),
   size: 12,
   column: true,
   bg: true,
-  lined: true,
+  lined: true
 }).extend`
     width:100%;
     height:100%;
@@ -36,6 +36,12 @@ const Tracks = ctyled.div.styles({
   flex: 1,
   scroll: true,
 })
+
+import Slider from './slider'
+
+const Heh = ctyled.div.styles({ padd: 1, gutter: 1 })
+
+const SliderWrapper = ctyled.div.styles({ flex: 1 })
 
 export default function() {
   const getMappedState = useCallback(
@@ -73,9 +79,21 @@ export default function() {
       }),
       [trackIds, selected]
     )
+
+  const [lum, setLum] = useState(0.85),
+    [contrast, setContrast] = useState(0.5)
+
   return (
     <HotKeys keyMap={keyMap} handlers={handlers}>
-      <Wrapper>
+      <Wrapper lum={lum} contrast={contrast}>
+        {/* <Heh>
+          <SliderWrapper>
+            <Slider throttle={500} value={lum} onChange={setLum} />
+          </SliderWrapper>
+          <SliderWrapper>
+            <Slider value={contrast} onChange={setContrast} />
+          </SliderWrapper>
+        </Heh> */}
         <Head />
         <Tracks>
           {trackIds.map(trackId => (

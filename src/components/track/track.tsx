@@ -27,7 +27,7 @@ const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
 const TrackCanvasWrapper = ctyled.div.styles({
   flex: 1,
   bg: true,
-  color: c => c.contrast(0.1).nudge(0.1),
+  color: c => c.contrast(0.3),
 })
 
 const TrackCanvas = ctyled.canvas
@@ -38,7 +38,7 @@ const TrackCanvas = ctyled.canvas
   height:100%;
   transition:0.3s all;
   ${({ color }, { selected }) =>
-    selected && `box-shadow:0 0 5px ${color.fg + '33'} inset;`}
+    selected && `box-shadow:0 0 10px ${color.fg + '33'} inset;`}
 `
 
 
