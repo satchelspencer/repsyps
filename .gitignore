@@ -1,5 +1,8 @@
-node_modules
-dist
-assets
 .DS_Store
-**/.DS_Store
+dist/
+node_modules/
+.idea/
+cred/
+yarn-error.log
+lib/
+build/

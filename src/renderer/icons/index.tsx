@@ -1,8 +1,8 @@
 import React, { memo, HTMLAttributes } from 'react'
 import _ from 'lodash'
-
 import { active } from 'ctyled'
-import icons from '../icons'
+
+import icons from './modules.js'
 
 interface IconProps {
   name: string
