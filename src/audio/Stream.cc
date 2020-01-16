@@ -44,21 +44,32 @@ static int paCallbackMethod(
       trackPhase = state->playback->time*track->alpha;
       trackPhase -= floor(trackPhase);
 
-
       trackSource = state->sources[track->sourceId];
       channelCount = trackSource->channels.size();
       chunkCount = track->chunks.size()/2;
+
+      if(chunkCount == 0 || !track->playing) continue;
       
       for( i=0; i<framesPerBuffer; i++ ){
-        if(track->chunkIndex == -1 && trackPhase >= 0) track->chunkIndex = 0; //on first
+        if(track->chunkIndex == -1 && trackPhase >= 0){
+          track->chunkIndex = 0;
+          track->sample = track->chunks[track->chunkIndex*2];
+        } //on first
         if(track->chunkIndex == -1) break; //before we should be playing
 
-        sample = track->chunks[track->chunkIndex*2] + ( track->chunks[(track->chunkIndex*2)+1] * trackPhase );
-
-        /* check if we looped around */
-        if( sample < track->sample) {
-          track->chunkIndex = (track->chunkIndex + 1) % chunkCount; //increment the chunk
-          sample = track->chunks[track->chunkIndex*2] + ( track->chunks[(track->chunkIndex*2)+1] * trackPhase );
+        if(track->aperiodic){
+          sample = track->sample + track->alpha;
+          if(sample > track->chunks[track->chunkIndex*2]+track->chunks[track->chunkIndex*2+1]){
+            track->chunkIndex = (track->chunkIndex + 1) % chunkCount;
+            sample = track->chunks[track->chunkIndex*2];
+          }
+        }else{
+          sample = track->chunks[track->chunkIndex*2] + ( track->chunks[track->chunkIndex*2+1] * trackPhase );
+          /* check if we looped around */
+          if( sample < track->sample) {
+            track->chunkIndex = (track->chunkIndex + 1) % chunkCount; //increment the chunk
+            sample = track->chunks[track->chunkIndex*2] + ( track->chunks[track->chunkIndex*2+1] * trackPhase );
+          }
         }
 
         track->sample = sample;
@@ -200,6 +211,9 @@ void setTrack(const Napi::CallbackInfo &info){
     newTrack->volume = 1.;
     newTrack->chunkIndex = -1;
     newTrack->alpha = 1.;
+    newTrack->playing = false;
+    newTrack->aperiodic = false;
+    newTrack->sample = 0;
     state.tracks[trackId] = newTrack;
   }
 
@@ -223,6 +237,10 @@ void setTrack(const Napi::CallbackInfo &info){
       }
     }else if(propNameStr == "alpha"){
       state.tracks[trackId]->alpha = value.As<Napi::Number>().FloatValue();
+    }else if(propNameStr == "playing"){
+      state.tracks[trackId]->playing = value.As<Napi::Boolean>().Value();
+    }else if(propNameStr == "aperiodic"){
+      state.tracks[trackId]->aperiodic = value.As<Napi::Boolean>().Value();
     }
   }
 }

@@ -18,8 +18,10 @@ typedef struct{
   float volume;
   std::vector<int> chunks;
   int chunkIndex;
-  int sample;
+  double sample;
   float alpha;
+  bool playing;
+  bool aperiodic;
 }
 track;
 
