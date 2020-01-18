@@ -6,6 +6,8 @@ function createAction<Payload>(name) {
   return createActionCreator(name, res => (payload: Payload) => res(payload))
 }
 
+export const updateTime = createAction<Types.TimingState>('UPDATE_TIMES')
+
 export const addSource = createAction<{
   sourceId: string
   channels: Types.Channels
@@ -25,3 +27,9 @@ export const setSourceBounds = createAction<{
 }>('SET_SOURCE_BOUNDS')
 
 export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAYBACK')
+
+export const selectSourceExclusive = createAction<string>('SELECT_SOURCE_EX')
+
+export const toggleSource = createAction<string>('TOGGLE_SOURCE_PLAYBACK')
+
+export const editSource = createAction<{ sourceId: string; edit: boolean }>('SET_SOURCE_EDIT')

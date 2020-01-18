@@ -53,20 +53,21 @@ static int paCallbackMethod(
       for( i=0; i<framesPerBuffer; i++ ){
         if(track->chunkIndex == -1 && trackPhase >= 0){
           track->chunkIndex = 0;
-          track->sample = track->chunks[track->chunkIndex*2];
+          track->sample = track->chunks[track->chunkIndex*2]; //reset the sample to the start
         } //on first
         if(track->chunkIndex == -1) break; //before we should be playing
 
         if(track->aperiodic){
           sample = track->sample + track->alpha;
-          if(sample > track->chunks[track->chunkIndex*2]+track->chunks[track->chunkIndex*2+1]){
-            track->chunkIndex = (track->chunkIndex + 1) % chunkCount;
-            sample = track->chunks[track->chunkIndex*2];
-          }
+          if(track->chunks[track->chunkIndex*2+1] > 0){ //chunk has end
+            if(sample > track->chunks[track->chunkIndex*2]+track->chunks[track->chunkIndex*2+1]){
+              track->chunkIndex = (track->chunkIndex + 1) % chunkCount;
+              sample = track->chunks[track->chunkIndex*2];
+            }
+          }else if(sample >= trackSource->length) sample = 0; //chunk has no end, wrap on playback
         }else{
           sample = track->chunks[track->chunkIndex*2] + ( track->chunks[track->chunkIndex*2+1] * trackPhase );
-          /* check if we looped around */
-          if( sample < track->sample) {
+          if( sample < track->sample) {  /* check if we looped around */
             track->chunkIndex = (track->chunkIndex + 1) % chunkCount; //increment the chunk
             sample = track->chunks[track->chunkIndex*2] + ( track->chunks[track->chunkIndex*2+1] * trackPhase );
           }
@@ -257,6 +258,16 @@ Napi::Value removeTrack(const Napi::CallbackInfo &info){
   return Napi::Boolean::New(env, false);
 }
 
+Napi::Value getTiming(const Napi::CallbackInfo &info){
+  Napi::Env env = info.Env();
+  Napi::Object timings = Napi::Object::New(env);
+   timings.Set("playback", state.playback->time);
+  for(auto trackPair: state.tracks){
+    timings.Set(trackPair.first, trackPair.second->sample);
+  }
+  return timings;
+}
+
 Napi::Value getDebug(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
   return Napi::Number::New(env, state.playback->out);
@@ -272,6 +283,6 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("removeSource", Napi::Function::New(env, removeSource));
   exports.Set("setTrack", Napi::Function::New(env, setTrack));
   exports.Set("removeTrack", Napi::Function::New(env, removeTrack));
-
+  exports.Set("getTiming", Napi::Function::New(env, getTiming));
   exports.Set("getDebug", Napi::Function::New(env, getDebug));
 }

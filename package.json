@@ -1,5 +1,5 @@
 {
-  "name": "rpsyps",
+  "name": "repsys",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,7 @@
     "dist:dir": "yarn dist --dir -c.compression=store -c.mac.identity=null"
   },
   "build": {
-    "appId": "rpsyps",
+    "appId": "repsys",
     "asar": false,
     "files": [
       "!src/*",
@@ -25,9 +25,10 @@
   },
   "gypfile": true,
   "electronWebpack": {
-    "title": "TTRL",
+    "title": "repsys",
     "whiteListedModules": [
-      "ctyled"
+      "ctyled",
+      "redux-react-hook"
     ],
     "renderer": {
       "webpackConfig": "conf/webpack.renderer.additions.js"
@@ -41,8 +42,9 @@
     "@types/lodash": "^4.14.137",
     "@types/svgo": "^1.2.0",
     "bindings": "^1.5.0",
-    "ctyled": "^0.0.15",
+    "ctyled": "^0.0.19",
     "deox": "^3.2.1",
+    "dsp.js": "^1.0.1",
     "electron-context-menu": "^0.14.0",
     "electron-devtools-installer": "^2.2.4",
     "express": "^4.17.1",
@@ -50,13 +52,14 @@
     "lodash": "^4.17.15",
     "node-addon-api": "^2.0.0",
     "node-gyp": "^6.1.0",
-    "node-wav": "^0.0.2",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-hotkeys": "^2.0.0",
     "react-svg-loader": "^3.0.3",
     "redux": "^4.0.5",
     "redux-devtools-extension": "^2.13.8",
     "redux-react-hook": "^4.0.1",
+    "resize-observer-polyfill": "^1.5.1",
     "socket.io": "^2.2.0",
     "source-map-support": "^0.5.12",
     "svgo": "^1.2.2"

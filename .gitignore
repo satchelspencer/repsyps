@@ -6,3 +6,4 @@ cred/
 yarn-error.log
 lib/
 build/
+.vscode/

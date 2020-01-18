@@ -49,8 +49,7 @@ void addSource(const Napi::CallbackInfo &info);
 Napi::Value removeSource(const Napi::CallbackInfo &info);
 void setTrack(const Napi::CallbackInfo &info);
 Napi::Value removeTrack(const Napi::CallbackInfo &info);
-
-
+Napi::Value getTiming(const Napi::CallbackInfo &info);
 Napi::Value getDebug(const Napi::CallbackInfo &info);
 
 void InitAudio(Napi::Env env, Napi::Object exports);
