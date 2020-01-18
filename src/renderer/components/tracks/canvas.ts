@@ -17,7 +17,7 @@ export default function useWaveformCanvas(
     ctyledContext = useContext(CtyledContext),
     minMaxes = useMemo(() => getMinMaxes(buffer), [buffer]),
     effectivePos = source.playback.playing ? 0 /* position */ : 0,
-    { scale, start, impulses, width, height, clickX, center, time } = view
+    { scale, start, impulses, width, height, clickX, center } = view
 
   useEffect(() => {
     ctxt.current = canvasRef.current.getContext('2d')
@@ -36,13 +36,14 @@ export default function useWaveformCanvas(
         scale,
         start,
         ctx,
-        time,
+        sample: source.playback.sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
       }
 
     ctx.clearRect(0, 0, pwidth, pheight)
 
     drawWaveform(drawContext, minMaxes)
+    drawImpulses(drawContext, impulses)
     drawPlayback(drawContext, source)
   }, [
     buffer,
@@ -63,7 +64,7 @@ export interface DrawingContext {
   start: number
   ctx: CanvasRenderingContext2D
   color: Color
-  time: number
+  sample: number
 }
 
 export function drawWaveform(
@@ -91,11 +92,32 @@ export function drawWaveform(
   ctx.stroke()
 }
 
+export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
+  const { pwidth, pheight, scale, start, ctx } = context,
+    end = scale * pwidth + start
+
+  ctx.lineWidth = 3
+  const r = 128 + Math.max((1 - scale / 512) * 128, 0)
+  ctx.strokeStyle = `rgba(${r},${255 - r},${255 - r},1)`
+
+  for (let i = Math.floor(start / BIN_SIZE); i < Math.floor(end / BIN_SIZE); i++) {
+    const value = impulses[i],
+      x = (i * BIN_SIZE - start) / scale
+
+    if (value) {
+      ctx.beginPath()
+      ctx.lineTo(x, pheight * (0.5 - value / 2))
+      ctx.lineTo(x, pheight * (0.5 + value / 2))
+      ctx.stroke()
+    }
+  }
+}
+
 export function drawPlayback(context: DrawingContext, source: Types.Source) {
-  const { pheight, scale, start, ctx, time } = context
+  const { pheight, scale, start, ctx, sample } = context
 
   if (true || source.playback.playing) {
-    let px = (time - start) / scale
+    let px = (sample - start) / scale
     ctx.fillStyle = context.color.fg + '33'
     ctx.fillRect(px - 10, 0, 20, pheight)
 
@@ -103,8 +125,9 @@ export function drawPlayback(context: DrawingContext, source: Types.Source) {
       const cstart = source.playback.chunks[i],
         clength = source.playback.chunks[i + 1],
         startX = (cstart - start) / scale,
-        endX = (cstart + clength - start) / scale
-
+        endX = (cstart + clength - start) / scale,
+        isCurrent = source.playback.chunkIndex === i/2
+      
       if (!clength) {
         ctx.lineWidth = 5
         ctx.strokeStyle = source.selected ? 'rgba(255,0,0,0.5)' : context.color.fg + '99'
@@ -114,7 +137,22 @@ export function drawPlayback(context: DrawingContext, source: Types.Source) {
         ctx.stroke()
       } else {
         ctx.fillStyle = 'rgba(255,0,0,0.1)'
-        ctx.fillRect(startX, 0, endX-startX, pheight)
+        ctx.fillRect(startX, 0, endX - startX, pheight)
+
+        if (isCurrent) {
+          ctx.lineWidth = 3
+          ctx.strokeStyle = source.selected
+            ? 'rgba(255,0,0,0.5)'
+            : context.color.fg + '99'
+          ctx.beginPath()
+          ctx.lineTo(startX, 0)
+          ctx.lineTo(startX, pheight)
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.lineTo(endX, 0)
+          ctx.lineTo(endX, pheight)
+          ctx.stroke()
+        }
       }
     }
 

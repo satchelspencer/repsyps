@@ -72,7 +72,6 @@ export interface DrawViewContext extends ViewContext {
   clickX: number
   width: number
   height: number
-  time: number
 }
 
 export interface BoundViewContext extends ViewContext {
@@ -93,12 +92,11 @@ export default memo(function({ sourceId }: SourceProps) {
       (state: Types.State) => ({
         period: state.playback.period,
         source: state.sources[sourceId],
-        time: state.times[sourceId],
       }),
       [sourceId]
     ),
     dispatch = useDispatch(),
-    { period, source, time } = useMappedState(getMappedState)
+    { period, source } = useMappedState(getMappedState)
 
   /* computed data */
   const buffer = useMemo(() => source.channels.getChannelData(1), [source.channels]),
@@ -127,7 +125,6 @@ export default memo(function({ sourceId }: SourceProps) {
       clickX,
       width,
       height,
-      time,
     },
     boundView: BoundViewContext = {
       ...view,

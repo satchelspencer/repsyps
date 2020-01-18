@@ -10,33 +10,30 @@ typedef struct{
   bool playing;
   int period;
   double out;
-} 
-playback;
+} playback;
 
 typedef struct{
   std::string sourceId;
   float volume;
   std::vector<int> chunks;
-  int chunkIndex;
-  double sample;
   float alpha;
   bool playing;
   bool aperiodic;
-}
-track;
+  int chunkIndex;
+  double sample;
+} track;
+
 
 typedef struct{
   std::vector<float*>  channels;
   int length;
-}
-source;
+} source;
 
 typedef struct{
   playback *playback;
   std::unordered_map<std::string, track*> tracks;
   std::unordered_map<std::string, source*> sources;
-} 
-streamState;
+} streamState;
 
 static streamState state;
 static PaStream * gstream;

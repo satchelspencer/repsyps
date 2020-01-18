@@ -263,7 +263,10 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
   Napi::Object timings = Napi::Object::New(env);
    timings.Set("playback", state.playback->time);
   for(auto trackPair: state.tracks){
-    timings.Set(trackPair.first, trackPair.second->sample);
+    Napi::Object trackState = Napi::Object::New(env);
+    trackState.Set("sample", trackPair.second->sample);
+    trackState.Set("chunkIndex", trackPair.second->chunkIndex);
+    timings.Set(trackPair.first, trackState);
   }
   return timings;
 }

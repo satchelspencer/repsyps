@@ -16,17 +16,14 @@ const defaultPlayback: Types.Playback = {
   defaultTrack: Types.Track = {
     volume: 1,
     chunks: [0, 0],
-    chunkIndex: -1,
     alpha: 1.2,
     playing: false,
     aperiodic: true,
-  },
-  defaultTimes: Types.TimingState = {}
+    chunkIndex: -1,
+    sample: 0,
+  }
 
 export default combineReducers({
-  times: createReducer(defaultTimes, handle => [
-    handle(Actions.updateTime, (times, { payload }) => payload),
-  ]),
   playback: createReducer(defaultPlayback, handle => [
     handle(Actions.updatePlayback, (playback, { payload }) => {
       return {
@@ -103,28 +100,30 @@ export default combineReducers({
         },
       }
     }),
-    // handle(Actions.updateTime, (sources, { payload }) => {
-    //   return _.mapValues(sources, (source, sourceId) => {
-    //     const sourceTime = payload[sourceId]
-    //     let chunkIndex = -1
-    //     for (let i = 0; i < source.playback.chunks.length; i += 2) {
-    //       const start = source.playback.chunks[i],
-    //         length = source.playback.chunks[i + 1]
-    //       if (!length || (sourceTime > start && sourceTime < start + length)) {
-    //         chunkIndex = i / 2
-    //         break
-    //       }
-    //     }
-    //     if (source.playback.playing && chunkIndex !== source.playback.chunkIndex)
-    //       return {
-    //         ...source,
-    //         playback: {
-    //           ...source.playback,
-    //           chunkIndex,
-    //         },
-    //       }
-    //     else return source
-    //   })
-    // }),
+    handle(Actions.updateTime, (sources, { payload }) => {
+      return _.mapValues(sources, (source, sourceId) => {
+        const isPlaying = source.playback.playing,
+          trackTiming = payload[sourceId]
+
+        let needsUpdate = false
+        if (isPlaying) {
+          for (let prop in trackTiming) {
+            if (trackTiming[prop] !== source.playback[prop]) {
+              needsUpdate = true
+              break
+            }
+          }
+        }
+        return needsUpdate
+          ? {
+              ...source,
+              playback: {
+                ...source.playback,
+                ...trackTiming,
+              },
+            }
+          : source
+      })
+    }),
   ]),
 })

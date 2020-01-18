@@ -1,18 +1,18 @@
 {
-  "name": "repsys",
+  "name": "repsyps",
   "version": "0.0.0",
   "private": true,
   "scripts": {
     "start": "electron-webpack dev",
-    "build": "electron-webpack",
-    "build-native": "node-gyp configure build --libsdir=$HOME",
+    "build": "node-gyp configure build --libsdir=$HOME",
+    "clean": "node-gyp clean",
     "install": "node-gyp rebuild --libsdir=$HOME",
-    "clean-native": "node-gyp clean",
-    "dist": "yarn build && electron-builder",
+    "build-electron": "electron-webpack",
+    "dist": "yarn build-electron && electron-builder",
     "dist:dir": "yarn dist --dir -c.compression=store -c.mac.identity=null"
   },
   "build": {
-    "appId": "repsys",
+    "appId": "repsyps",
     "asar": false,
     "files": [
       "!src/*",
@@ -25,7 +25,7 @@
   },
   "gypfile": true,
   "electronWebpack": {
-    "title": "repsys",
+    "title": "repsyps",
     "whiteListedModules": [
       "ctyled",
       "redux-react-hook"
@@ -68,6 +68,7 @@
     "@babel/preset-react": "^7.0.0",
     "@types/react": "^16.8.23",
     "@types/react-dom": "^16.8.4",
+    "devtron": "^1.4.0",
     "electron": "5.0.4",
     "electron-builder": "^20.44.4",
     "electron-webpack": "^2.7.1",

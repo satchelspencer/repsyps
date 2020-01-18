@@ -48,7 +48,7 @@ export function useSelectPlayback(sourceId: string) {
                 chunks: [Math.min(start, xPos), len],
                 alpha: 1,
                 aperiodic: true,
-                chunkIndex: -1,
+                chunkIndex: -1
               },
             })
           )

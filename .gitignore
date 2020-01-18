@@ -4,6 +4,5 @@ node_modules/
 .idea/
 cred/
 yarn-error.log
-lib/
 build/
 .vscode/
