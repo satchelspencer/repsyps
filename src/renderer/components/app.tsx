@@ -34,18 +34,24 @@ const Sources = ctyled.div.styles({
   endLine: true,
   flex: 1,
   scroll: true,
+  borderColor: c => c.contrast(-0.3)
 })
 
 export default function App() {
   const getMappedState = useCallback((state: Types.State) => {
-    return {
-      selected: Object.keys(state.sources).filter(tid => state.sources[tid].selected)[0],
-      sources: state.sources,
-      playing: state.playback.playing,
-    }
-  }, [])
-  const { selected, playing, sources } = useMappedState(getMappedState),
-    dispatch = useDispatch()
+      return {
+        selected: Object.keys(state.sources).filter(
+          tid => state.sources[tid].selected
+        )[0],
+        sources: state.sources,
+        playing: state.playback.playing,
+      }
+    }, []),
+    { selected, playing, sources } = useMappedState(getMappedState),
+    dispatch = useDispatch(),
+    sourceIds = Object.keys(sources),
+    sourcelen = sourceIds.length
+
   return (
     <Wrapper
       tabIndex={0}
@@ -67,10 +73,22 @@ export default function App() {
               playing: !playing,
             })
           )
+        if (e.key === 'ArrowUp')
+          dispatch(
+            Actions.selectSourceExclusive(
+              sourceIds[(sourceIds.indexOf(selected) + sourcelen - 1) % sourcelen]
+            )
+          )
+        if (e.key === 'ArrowDown')
+          dispatch(
+            Actions.selectSourceExclusive(
+              sourceIds[(sourceIds.indexOf(selected) + sourcelen + 1) % sourcelen]
+            )
+          )
       }}
     >
       <Sources>
-        {Object.keys(sources).map(sourceId => (
+        {sourceIds.map(sourceId => (
           <Source key={sourceId} sourceId={sourceId} />
         ))}
       </Sources>

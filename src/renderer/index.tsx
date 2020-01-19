@@ -20,7 +20,7 @@ window.ondrop = e => {
     reader = new FileReader()
   reader.onload = async (e: any) => {
     const audioBuff = await context.decodeAudioData(e.target.result),
-      id = _.snakeCase(file.name) + new Date().getTime()
+      id = _.snakeCase(file.name.substr(0, 15)) + new Date().getTime()
     store.dispatch(
       Actions.addSource({
         sourceId: id,

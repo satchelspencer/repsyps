@@ -8,8 +8,8 @@ export default function useZoom(container: React.MutableRefObject<any>, center: 
 
   useEffect(() => {
     handleWheel.current = e => {
-      const { deltaX, deltaY, ctrlKey } = e
-      if (ctrlKey) {
+      const { deltaX, deltaY, ctrlKey, metaKey } = e
+      if (ctrlKey || metaKey) {
         const scaleMultiplier = scale / 100,
           nextScale = Math.max(scale + deltaY * scaleMultiplier, 2),
           dx = (nextScale - scale) * center

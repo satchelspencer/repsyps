@@ -126,8 +126,8 @@ export function drawPlayback(context: DrawingContext, source: Types.Source) {
         clength = source.playback.chunks[i + 1],
         startX = (cstart - start) / scale,
         endX = (cstart + clength - start) / scale,
-        isCurrent = source.playback.chunkIndex === i/2
-      
+        isCurrent = source.playback.chunkIndex === i / 2
+
       if (!clength) {
         ctx.lineWidth = 5
         ctx.strokeStyle = source.selected ? 'rgba(255,0,0,0.5)' : context.color.fg + '99'
@@ -139,20 +139,16 @@ export function drawPlayback(context: DrawingContext, source: Types.Source) {
         ctx.fillStyle = 'rgba(255,0,0,0.1)'
         ctx.fillRect(startX, 0, endX - startX, pheight)
 
-        if (isCurrent) {
-          ctx.lineWidth = 3
-          ctx.strokeStyle = source.selected
-            ? 'rgba(255,0,0,0.5)'
-            : context.color.fg + '99'
-          ctx.beginPath()
-          ctx.lineTo(startX, 0)
-          ctx.lineTo(startX, pheight)
-          ctx.stroke()
-          ctx.beginPath()
-          ctx.lineTo(endX, 0)
-          ctx.lineTo(endX, pheight)
-          ctx.stroke()
-        }
+        ctx.lineWidth = 3
+        ctx.strokeStyle = source.selected ? 'rgba(255,0,0,0.5)' : context.color.fg + '99'
+        ctx.beginPath()
+        ctx.lineTo(startX, 0)
+        ctx.lineTo(startX, pheight)
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.lineTo(endX, 0)
+        ctx.lineTo(endX, pheight)
+        ctx.stroke()
       }
     }
 

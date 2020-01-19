@@ -5,15 +5,17 @@ export interface Playback {
   period: number
 }
 
-export interface TrackTiming{
+export interface TrackTiming {
   chunkIndex: number
   sample: number
 }
 
-export interface Track extends TrackTiming{
+export type Chunks = number[] //[start0,end0,start1,end1]
+
+export interface Track extends TrackTiming {
   sourceId?: string
   volume: number
-  chunks: number[] //[start0,end0,start1,end1]
+  chunks: Chunks
   alpha: number
   playing: boolean
   aperiodic: boolean
@@ -35,7 +37,7 @@ export interface Sources {
   [sourceId: string]: Source
 }
 
-export interface TimingState{
+export interface TimingState {
   [trackId: string]: TrackTiming
 }
 

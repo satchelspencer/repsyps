@@ -14,10 +14,11 @@ import useWaveformCanvas from './canvas'
 import { useSelectPlayback } from './mouse'
 
 const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
-  height: 10,
   flex: 'none',
   color: (c, { selected }) => (selected ? c.nudge(0.1) : c.nudge(0.05)),
-})
+}).extendSheet`
+  height:${({ size }) => Math.ceil(size * 10) + 1}px;
+`
 
 const TrackCanvasWrapper = ctyled.div.styles({
   flex: 1,
@@ -31,9 +32,11 @@ const TrackCanvas = ctyled.canvas
   position:absolute;
   width:100%;
   height:100%;
-  transition:0.3s all;
+  transition:0.15s all;
   ${({ color }, { selected }) =>
-    selected && `box-shadow:0 0 10px ${color.fg + '33'} inset;`}
+    selected &&
+    `box-shadow:#ff000073 0px 0px 0px 3px inset;
+    `}
 `
 
 const CornerWrapper = ctyled.div.styles({
@@ -72,10 +75,6 @@ export interface DrawViewContext extends ViewContext {
   clickX: number
   width: number
   height: number
-}
-
-export interface BoundViewContext extends ViewContext {
-  bounds: number[]
 }
 
 export interface ClickEventContext {
@@ -120,17 +119,13 @@ export default memo(function({ sourceId }: SourceProps) {
       center,
       impulses,
     },
+    viewValues = _.values(view),
     drawView: DrawViewContext = {
       ...view,
       clickX,
       width,
       height,
-    },
-    boundView: BoundViewContext = {
-      ...view,
-      bounds: source.bounds,
-    },
-    boundViewValues = _.values(boundView)
+    }
 
   /* click event contexts */
   const clickCtxt: ClickEventContext = {
@@ -146,37 +141,36 @@ export default memo(function({ sourceId }: SourceProps) {
   const { canvasRef } = useWaveformCanvas(drawView, source, buffer)
 
   /* mouse event handlers */
-  const selectMouseUp = useSelectPlayback(sourceId)
+  const selectPlaybackHandlers = useSelectPlayback(sourceId)
 
   const handleMouseDown = useCallback(
       e => {
         const pos = getRelativePos(e, left, top)
-        //dboundsHandlers.mouseDown(clickCtxt, pos, boundView)
+        selectPlaybackHandlers.mouseDown(clickCtxt, view, pos, source.playback.chunks)
         setClickX(pos.x)
       },
-      [...clickCtxtValues, ...boundViewValues]
+      [...clickCtxtValues, ...viewValues, source.playback.chunks]
     ),
     handleMouseMove = useCallback(
       e => {
         const pos = getRelativePos(e, left, top)
-        //dboundsHandlers.mouseMove(clickCtxt, pos, boundView, period, track.playback)
+        selectPlaybackHandlers.mouseMove(clickCtxt, pos, view, source.playback.chunks)
+        //resizeChunkHandlers.mouseMove(clickCtxt, pos)
         setCenter(pos.x)
       },
-      [...clickCtxtValues, ...boundViewValues, period, source.playback]
+      [...clickCtxtValues, ...viewValues]
     ),
     handleMouseUp = useCallback(
       e => {
         const pos = getRelativePos(e, left, top)
-        selectMouseUp(clickCtxt, pos, boundView, period)
-        // measureMouseUp(clickCtxt, pos, boundView, track.alpha, period)
-        // dboundsHandlers.mouseUp(clickCtxt, pos, boundView)
+        selectPlaybackHandlers.mouseUp(clickCtxt, pos, view)
         setClickX(null)
       },
-      [...clickCtxtValues, ...boundViewValues, source.playback.alpha, period]
+      [...clickCtxtValues, ...viewValues]
     ),
     handleClick = useCallback(
       () => !source.selected && dispatch(Actions.selectSourceExclusive(sourceId)),
-      [sourceId]
+      [sourceId] 
     ),
     rmTrack = useCallback(() => dispatch(Actions.rmSource(sourceId)), [sourceId])
 
