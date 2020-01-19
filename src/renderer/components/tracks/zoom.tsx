@@ -3,12 +3,13 @@ import _ from 'lodash'
 
 export default function useZoom(container: React.MutableRefObject<any>, center: number) {
   const [scale, setScale] = useState(200),
-    [start, setStart] = useState(1),
+    [start, setStart] = useState(-200 * 24 * 2),
     handleWheel = useRef(null)
 
   useEffect(() => {
     handleWheel.current = e => {
       const { deltaX, deltaY, ctrlKey, metaKey } = e
+      if (ctrlKey || metaKey || deltaX) e.preventDefault()
       if (ctrlKey || metaKey) {
         const scaleMultiplier = scale / 100,
           nextScale = Math.max(scale + deltaY * scaleMultiplier, 2),
@@ -25,7 +26,6 @@ export default function useZoom(container: React.MutableRefObject<any>, center: 
     container.current.addEventListener(
       'wheel',
       e => {
-        e.preventDefault()
         handleWheel.current && handleWheel.current(e)
       },
       { passive: false } //so we can prevent default

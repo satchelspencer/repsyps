@@ -16,7 +16,7 @@ const defaultPlayback: Types.Playback = {
   defaultTrack: Types.Track = {
     volume: 1,
     chunks: [0, 0],
-    alpha: 1.2,
+    alpha: 1,
     playing: false,
     aperiodic: true,
     chunkIndex: -1,
@@ -29,6 +29,12 @@ export default combineReducers({
       return {
         ...playback,
         ...payload,
+      }
+    }),
+    handle(Actions.updateTime, (playback, { payload }) => {
+      return {
+        ...playback,
+        time: (payload as any).playback,
       }
     }),
   ]),

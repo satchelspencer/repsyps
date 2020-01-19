@@ -15,28 +15,22 @@ import { useSelectPlayback } from './mouse'
 
 const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
   flex: 'none',
-  color: (c, { selected }) => (selected ? c.nudge(0.1) : c.nudge(0.05)),
+  color: (c, { selected }) => (selected ? c.contrast(0.3) : c),
 }).extendSheet`
-  height:${({ size }) => Math.ceil(size * 10) + 1}px;
+  height:${({ size }) => Math.ceil(size * 8) + 4}px;
 `
 
 const TrackCanvasWrapper = ctyled.div.styles({
   flex: 1,
   bg: true,
-  color: c => c.contrast(0.3),
+  color: c => c.contrast(-0.1),
 })
 
-const TrackCanvas = ctyled.canvas
-  .attrs({ selected: false })
-  .styles({ color: (c, { selected }) => (selected ? c.nudge(0.1) : c) }).extend`
+const TrackCanvas = ctyled.canvas.attrs({ selected: false }).extend`
   position:absolute;
   width:100%;
   height:100%;
   transition:0.15s all;
-  ${({ color }, { selected }) =>
-    selected &&
-    `box-shadow:#ff000073 0px 0px 0px 3px inset;
-    `}
 `
 
 const CornerWrapper = ctyled.div.styles({
@@ -58,6 +52,22 @@ const TrackName = ctyled.div.styles({
   rounded: 2,
 }).extendSheet`
   background:${({ color }) => color.bg + '99'};
+`
+
+const TrackArrow = ctyled.div.styles({
+  width: 1.5,
+  height: 1.5,
+}).extendSheet`
+  position:absolute;
+  top:50%;
+  left:0%; 
+  background:rgb(237, 235, 235);
+  border: 1px solid #c1bfbf;
+  margin-top:-${({ size }) => Math.round(size * 0.75)}px;
+  margin-left:-${({ size }) => Math.round(size * 0.75) + 1}px;
+  transform-origin:50% 50%;
+  transform:rotate(45deg);
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
 `
 
 export interface SourceProps {
@@ -170,7 +180,7 @@ export default memo(function({ sourceId }: SourceProps) {
     ),
     handleClick = useCallback(
       () => !source.selected && dispatch(Actions.selectSourceExclusive(sourceId)),
-      [sourceId] 
+      [sourceId]
     ),
     rmTrack = useCallback(() => dispatch(Actions.rmSource(sourceId)), [sourceId])
 
@@ -201,6 +211,7 @@ export default memo(function({ sourceId }: SourceProps) {
           </TrackName>
         </CornerWrapper>
       </TrackCanvasWrapper>
+      {source.selected && <TrackArrow />}
     </TrackContainer>
   )
 })

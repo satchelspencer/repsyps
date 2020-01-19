@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
-import { HotKeys } from 'react-hotkeys'
 import { palette } from './theme'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
@@ -9,24 +8,35 @@ import * as Types from 'lib/types'
 import * as Actions from 'src/renderer/redux/actions'
 
 import Source from './tracks/source'
+import Sidebar from './sidebar'
+import Header from './header'
 
 const Wrapper = ctyled.div.styles({
   color: c =>
     c
       .as(palette.gray)
-      .absLum(0.7)
+      .absLum(0.8)
       .contrast(0.2),
   size: 12,
-  column: true,
   bg: true,
   lined: true,
+  align: 'stretch',
+  column: true,
 }).extend`
     width:100%;
     height:100%;
     top:0;
     left:0;
     position:absolute;
+    overflow:hidden;
   `
+
+const Body = ctyled.div.styles({
+  flex: 1,
+  lined: true,
+}).extend`
+  margin-top:1px;
+`
 
 const Sources = ctyled.div.styles({
   column: true,
@@ -34,8 +44,11 @@ const Sources = ctyled.div.styles({
   endLine: true,
   flex: 1,
   scroll: true,
-  borderColor: c => c.contrast(-0.3)
-})
+  color: c => c.nudge(0.025),
+  bg: true,
+}).extend`
+  overflow:visible;
+`
 
 export default function App() {
   const getMappedState = useCallback((state: Types.State) => {
@@ -56,6 +69,7 @@ export default function App() {
     <Wrapper
       tabIndex={0}
       onKeyDown={e => {
+        if (e.key === ' ') e.preventDefault()
         if (e.key === ' ' && !e.shiftKey)
           selected &&
             dispatch(
@@ -87,11 +101,15 @@ export default function App() {
           )
       }}
     >
-      <Sources>
-        {sourceIds.map(sourceId => (
-          <Source key={sourceId} sourceId={sourceId} />
-        ))}
-      </Sources>
+      <Header />
+      <Body>
+        <Sidebar />
+        <Sources>
+          {sourceIds.map(sourceId => (
+            <Source key={sourceId} sourceId={sourceId} />
+          ))}
+        </Sources>
+      </Body>
     </Wrapper>
   )
 }

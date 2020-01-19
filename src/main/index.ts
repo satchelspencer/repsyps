@@ -15,9 +15,9 @@ dialog.showErrorBox = (title, content) => console.log('err', title, content)
 
 function createMainWindow() {
   const window = new BrowserWindow({
-      width: 900,
-      height: 600,
-
+      width: 1050,
+      height: 700,
+      titleBarStyle: 'hiddenInset',
       webPreferences: { nodeIntegration: true },
     }),
     windowUrl = isDevelopment

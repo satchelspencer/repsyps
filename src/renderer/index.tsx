@@ -28,6 +28,7 @@ window.ondrop = e => {
         channels: audioBuff,
       })
     )
+    store.dispatch(Actions.selectSourceExclusive(id))
   }
   reader.readAsArrayBuffer(file)
 }

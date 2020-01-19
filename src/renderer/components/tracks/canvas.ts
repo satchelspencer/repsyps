@@ -74,7 +74,7 @@ export function drawWaveform(
   const { pwidth, pheight, scale, start, ctx } = context,
     halfHeight = pheight / 2
   ctx.lineWidth = 1
-  ctx.strokeStyle = context.color.fg
+  ctx.strokeStyle = context.color.contrast(-0.1).fg
   ctx.beginPath()
   const minMaxIndex = Math.floor(Math.log2(scale)) - 1,
     minMaxSize = Math.pow(2, minMaxIndex + 1),
@@ -98,7 +98,7 @@ export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
 
   ctx.lineWidth = 3
   const r = 128 + Math.max((1 - scale / 512) * 128, 0)
-  ctx.strokeStyle = `rgba(${r},${255 - r},${255 - r},1)`
+  ctx.strokeStyle = `rgba(${r},${r},${r},1)`
 
   for (let i = Math.floor(start / BIN_SIZE); i < Math.floor(end / BIN_SIZE); i++) {
     const value = impulses[i],
@@ -130,7 +130,7 @@ export function drawPlayback(context: DrawingContext, source: Types.Source) {
 
       if (!clength) {
         ctx.lineWidth = 5
-        ctx.strokeStyle = source.selected ? 'rgba(255,0,0,0.5)' : context.color.fg + '99'
+        ctx.strokeStyle = 'rgba(255,0,0,0.5)'
         ctx.beginPath()
         ctx.lineTo(startX, 0)
         ctx.lineTo(startX, pheight)
@@ -140,7 +140,7 @@ export function drawPlayback(context: DrawingContext, source: Types.Source) {
         ctx.fillRect(startX, 0, endX - startX, pheight)
 
         ctx.lineWidth = 3
-        ctx.strokeStyle = source.selected ? 'rgba(255,0,0,0.5)' : context.color.fg + '99'
+        ctx.strokeStyle = 'rgba(255,0,0,0.5)'
         ctx.beginPath()
         ctx.lineTo(startX, 0)
         ctx.lineTo(startX, pheight)
@@ -153,7 +153,7 @@ export function drawPlayback(context: DrawingContext, source: Types.Source) {
     }
 
     ctx.lineWidth = 3
-    ctx.strokeStyle = source.selected ? 'rgb(255,0,0)' : context.color.fg
+    ctx.strokeStyle = 'rgb(255,0,0)'
     ctx.beginPath()
     ctx.lineTo(px, 0)
     ctx.lineTo(px, pheight)
