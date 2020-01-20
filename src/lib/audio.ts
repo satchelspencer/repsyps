@@ -25,3 +25,5 @@ export default eval('require')(
 ) as AudioAPI
 
 export const RATE = 44100
+
+export const EPSILON = RATE

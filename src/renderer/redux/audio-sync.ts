@@ -8,6 +8,8 @@ import diff from 'lib/diff'
 import reducer from 'renderer/redux/reducer'
 import isEqual from 'lib/is-equal'
 
+export const UPDATE_PERIOD = 50
+
 export default function syncAudio(store: Store<Types.State>) {
   let lastState: Types.State = null
 
@@ -69,7 +71,7 @@ export default function syncAudio(store: Store<Types.State>) {
       lastState = reducer(lastState, action)
       store.dispatch(action)
     }
-  }, 50)
+  }, UPDATE_PERIOD)
 
   audio.start()
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { ViewContext } from './source'
 import { BIN_SIZE } from 'renderer/dsp/impulse-detect'
+import * as Types from 'lib/types'
 
 export function getContainerPosition(container) {
   const [pos, setPos] = useState({
@@ -46,4 +47,26 @@ export function snapSampleToImpulses(raw: number, scale: number, impulses: Float
     }
   }
   return raw
+}
+
+export function inferTimeBase(playback: Types.Track, impulses: Float32Array): number[] {
+  const len = impulses.length * BIN_SIZE,
+    bounds = [],
+    cstart = playback.chunks[0],
+    clength = playback.chunks[1]
+  for (
+    let sample = cstart;
+    sample < len;
+    sample = snapSampleToImpulses(sample + clength, 400, impulses)
+  ) {
+    bounds.push(sample)
+  }
+  for (
+    let sample = snapSampleToImpulses(cstart - clength, 400, impulses);
+    sample > 0;
+    sample = snapSampleToImpulses(sample - clength, 400, impulses)
+  ) {
+    bounds.unshift(sample)
+  }
+  return bounds
 }

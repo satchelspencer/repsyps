@@ -8,8 +8,8 @@ import * as Types from 'lib/types'
 import * as Actions from 'src/renderer/redux/actions'
 
 import Source from './tracks/source'
-import Sidebar from './sidebar'
-import Header from './header'
+import Sidebar from './sidebar/sidebar'
+import Header from './header/header'
 
 const Wrapper = ctyled.div.styles({
   color: c =>

@@ -30,7 +30,7 @@ const SliderGuide = ctyled.div
   })
 
 const HANDLE_MINOR = 0.5,
-  HANDLE_MAJOR = 1.5
+  HANDLE_MAJOR = 1.3
 
 const Handle = ctyled.div
   .attrs<{ column?: boolean }>({ column: false })
@@ -46,10 +46,23 @@ const Handle = ctyled.div
   position:absolute;
   `
 
+const Marker = ctyled.div
+  .attrs<{ column?: boolean }>({ column: false })
+  .styles({
+    bg: true,
+    flex: 1,
+    color: c => c.invert().contrast(-0.3),
+    height: (_, { column }) => (column ? '1px' : HANDLE_MAJOR * 1.4),
+    width: (_, { column }) => (column ? HANDLE_MAJOR * 1.4 : '1px'),
+  }).extend`
+position:absolute;
+`
+
 interface SliderProps {
   column?: boolean
   throttle?: number
   value: number
+  markers?: number[]
   onChange: (value: number) => any
 }
 
@@ -97,18 +110,23 @@ function Slider(props: SliderProps) {
     handleMouseMove = useCallback(e => {
       e.preventDefault()
       const offset =
-          (props.column
-            ? docOffset + size - e[props.column ? 'clientY' : 'clientX']
-            : e[props.column ? 'clientY' : 'clientX'] - docOffset) - handleOffset,
-        value = Math.max(Math.min(offset / range, 1), 0)
+        (props.column
+          ? docOffset + size - e[props.column ? 'clientY' : 'clientX']
+          : e[props.column ? 'clientY' : 'clientX'] - docOffset) - handleOffset
+      let value = Math.max(Math.min(offset / range, 1), 0)
+      if (props.markers)
+        props.markers.forEach(marker => {
+          if (Math.abs(marker - value) < 0.02) value = marker
+        })
       throttledOnChange(value)
       setDragOffset(value)
     }, callbackDeps)
 
   const handleStyle = useMemo(() => {
     return {
-      [props.column ? 'bottom' : 'left']:
-        range * (dragOffset !== null ? dragOffset : props.value),
+      [props.column ? 'bottom' : 'left']: Math.floor(
+        range * (dragOffset !== null ? dragOffset : props.value)
+      ),
     }
   }, [props.column, range, props.value, dragOffset])
 
@@ -120,6 +138,18 @@ function Slider(props: SliderProps) {
       inRef={wrapper}
     >
       <SliderGuide column={props.column} onClick={handleMouseMove} />
+      {props.markers &&
+        props.markers.map((marker, i) => {
+          return (
+            <Marker
+              key={i}
+              column={props.column}
+              style={{
+                [props.column ? 'bottom' : 'left']: marker * size - HANDLE_MINOR * 6,
+              }}
+            />
+          )
+        })}
       <Handle
         onMouseDown={handleMouseDown}
         column={props.column}
