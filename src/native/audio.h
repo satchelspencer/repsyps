@@ -1,5 +1,10 @@
 #include <napi.h>
+#include <math.h>
+#include <kfr/base.hpp>
+#include <kfr/dsp.hpp>
+#include <kfr/io.hpp>
 #include "portaudio.h"
+
 #include "state.h"
 
 Napi::Value init(const Napi::CallbackInfo &info);

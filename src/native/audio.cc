@@ -1,11 +1,4 @@
 #include "audio.h"
-#include <math.h>
-#include <kfr/base.hpp>
-#include <kfr/dsp.hpp>
-#include <kfr/io.hpp>
-
-#include <map>
-#include <list>
 
 static int paCallbackMethod(
   const void *inputBuffer, 

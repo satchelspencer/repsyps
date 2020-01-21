@@ -17,7 +17,7 @@ export default function syncAudio(store: Store<Types.State>) {
 
   const handleUpdate = () => {
     const currentState = store.getState()
-    if (!lastState || currentState.playback !== lastState.playback) {
+    if (!lastState || !isEqual(currentState.playback, lastState.playback)) {
       // const change = diff(!lastState ? {} : lastState.playback, currentState.playback)
       // console.log('update playback', change)
       audio.updatePlayback(currentState.playback)

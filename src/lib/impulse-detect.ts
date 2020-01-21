@@ -8,7 +8,6 @@ const cache: { [trackId: string]: Float32Array } = {}
 /* find the beats in an audio buffer */
 export default function(buffer: Float32Array, trackId?: string) {
   if (trackId && cache[trackId]) return cache[trackId]
-  console.log('miss')
 
   const fft = new FFT(BIN_SIZE, 44100),
     binCount = Math.floor(buffer.length / BIN_SIZE),

@@ -16,6 +16,7 @@ import {
   useResizeBounds,
   useResizePlayback,
   useSelectBound,
+  usePlaybackBound,
 } from './mouse'
 
 const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
@@ -163,7 +164,8 @@ export default memo(function({ sourceId }: SourceProps) {
   const selectPlaybackHandlers = useSelectPlayback(sourceId),
     resizePlaybackHandlers = useResizePlayback(sourceId),
     boundHandlers = useResizeBounds(sourceId),
-    selectBoundHandlers = useSelectBound(sourceId)
+    selectBoundHandlers = useSelectBound(sourceId),
+    playbackBoundHandlers = usePlaybackBound(sourceId)
 
   const handleMouseDown = useCallback(
       e => {
@@ -186,6 +188,9 @@ export default memo(function({ sourceId }: SourceProps) {
     handleMouseUp = useCallback(
       e => {
         const pos = getRelativePos(e, left, top)
+
+        playbackBoundHandlers.mouseUp(clickCtxt, pos, view, source.bounds)
+
         const didSelectBound = selectBoundHandlers.mouseUp(
             clickCtxt,
             pos,

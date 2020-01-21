@@ -228,3 +228,46 @@ export function useSelectBound(sourceId: string) {
     [sourceId]
   )
 }
+
+export function usePlaybackBound(sourceId: string) {
+  const dispatch = useDispatch()
+
+  return useMemo(
+    () => ({
+      mouseUp(
+        ctxt: ClickEventContext,
+        pos: ClickPos,
+        view: ViewContext,
+        bounds: number[]
+      ) {
+        if (ctxt.editing) return false
+        const startBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
+          endBoundIndex = getNextBoundIndex(pos.x, view, bounds)
+
+        if (startBoundIndex && endBoundIndex) {
+          const chunkCount = Math.abs(endBoundIndex - startBoundIndex) + 1,
+            initIndex = Math.min(startBoundIndex, endBoundIndex),
+            chunks = _.flatten(
+              _.range(chunkCount).map(ci => {
+                const start = bounds[initIndex + ci - 1],
+                  end = bounds[initIndex + ci]
+                return [start, end - start]
+              })
+            )
+          dispatch(
+            Actions.setSourcePlayback({
+              sourceId,
+              playback: {
+                chunks,
+                alpha: 1,
+                aperiodic: false,
+                chunkIndex: -1,
+              },
+            })
+          )
+        }
+      },
+    }),
+    [sourceId]
+  )
+}
