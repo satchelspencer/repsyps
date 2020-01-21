@@ -5,13 +5,18 @@ import _ from 'lodash'
 
 import * as Types from 'lib/types'
 import Icon from 'render/components/icon'
-import { getContainerPosition, getRelativePos } from './utils'
+import { getContainerPosition, getRelativePos, capture } from './utils'
 import * as Actions from 'render/redux/actions'
 import getImpulses from 'lib/impulse-detect'
 
 import useZoom from './zoom'
 import useWaveformCanvas from './canvas'
-import { useSelectPlayback } from './mouse'
+import {
+  useSelectPlayback,
+  useResizeBounds,
+  useResizePlayback,
+  useSelectBound,
+} from './mouse'
 
 const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
   flex: 'none',
@@ -87,6 +92,10 @@ export interface DrawViewContext extends ViewContext {
   height: number
 }
 
+export interface BoundViewContext extends ViewContext {
+  bounds: number[]
+}
+
 export interface ClickEventContext {
   clickX: number
   editing: boolean
@@ -109,7 +118,7 @@ export default memo(function({ sourceId }: SourceProps) {
 
   /* computed data */
   const buffer = useMemo(() => source.channels.getChannelData(1), [source.channels]),
-    impulses = useMemo(() => getImpulses(buffer), [buffer])
+    impulses = useMemo(() => getImpulses(buffer, sourceId), [buffer, sourceId])
 
   /* react state */
   const [center, setCenter] = useState(0),
@@ -151,21 +160,25 @@ export default memo(function({ sourceId }: SourceProps) {
   const { canvasRef } = useWaveformCanvas(drawView, source, buffer)
 
   /* mouse event handlers */
-  const selectPlaybackHandlers = useSelectPlayback(sourceId)
+  const selectPlaybackHandlers = useSelectPlayback(sourceId),
+    resizePlaybackHandlers = useResizePlayback(sourceId),
+    boundHandlers = useResizeBounds(sourceId),
+    selectBoundHandlers = useSelectBound(sourceId)
 
   const handleMouseDown = useCallback(
       e => {
         const pos = getRelativePos(e, left, top)
-        selectPlaybackHandlers.mouseDown(clickCtxt, view, pos, source.playback.chunks)
+        resizePlaybackHandlers.mouseDown(clickCtxt, view, pos, source.playback.chunks)
+        boundHandlers.mouseDown(clickCtxt, view, pos, source.bounds)
         setClickX(pos.x)
       },
-      [...clickCtxtValues, ...viewValues, source.playback.chunks]
+      [...clickCtxtValues, ...viewValues, source.playback.chunks, source.bounds]
     ),
     handleMouseMove = useCallback(
       e => {
         const pos = getRelativePos(e, left, top)
-        selectPlaybackHandlers.mouseMove(clickCtxt, pos, view, source.playback.chunks)
-        //resizeChunkHandlers.mouseMove(clickCtxt, pos)
+        boundHandlers.mouseMove(clickCtxt, view, pos, source.bounds)
+        resizePlaybackHandlers.mouseMove(clickCtxt, pos, view, source.playback.chunks)
         setCenter(pos.x)
       },
       [...clickCtxtValues, ...viewValues]
@@ -173,10 +186,27 @@ export default memo(function({ sourceId }: SourceProps) {
     handleMouseUp = useCallback(
       e => {
         const pos = getRelativePos(e, left, top)
-        selectPlaybackHandlers.mouseUp(clickCtxt, pos, view)
+        const didSelectBound = selectBoundHandlers.mouseUp(
+            clickCtxt,
+            pos,
+            view,
+            source.bounds
+          ),
+          didResizeBound = boundHandlers.mouseUp(clickCtxt, pos, view),
+          didResizePlayback = resizePlaybackHandlers.mouseUp(clickCtxt, pos, view)
+
+        if (!didSelectBound && !didResizeBound && !didResizePlayback)
+          selectPlaybackHandlers.mouseUp(clickCtxt, pos, view)
         setClickX(null)
       },
-      [...clickCtxtValues, ...viewValues]
+      [...clickCtxtValues, ...viewValues, source.bounds]
+    ),
+    handleDoubleClick = useCallback(
+      e => {
+        const pos = getRelativePos(e, left, top)
+        selectBoundHandlers.doubleClick(clickCtxt, pos, view, source.bounds)
+      },
+      [...clickCtxtValues, ...viewValues, source.bounds]
     ),
     handleClick = useCallback(
       () => !source.selected && dispatch(Actions.selectSourceExclusive(sourceId)),
@@ -197,6 +227,7 @@ export default memo(function({ sourceId }: SourceProps) {
         onMouseMove={handleMouseMove}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
+        onDoubleClick={handleDoubleClick}
       >
         <TrackCanvas
           selected={source.selected}

@@ -3,7 +3,7 @@ import { useDispatch } from 'redux-react-hook'
 import _ from 'lodash'
 
 import * as Actions from 'render/redux/actions'
-import { getTimeFromPosition } from './utils'
+import { getTimeFromPosition, getBoundIndex, getNextBoundIndex } from './utils'
 import * as Types from 'lib/types'
 
 import { ClickEventContext, ViewContext } from './source'
@@ -13,8 +13,49 @@ export interface ClickPos {
   y: number
 }
 
-/* click and or drag to select playback region */
-export function useSelectPlayback(sourceId: string) {
+export function useResizeBounds(sourceId: string) {
+  const dispatch = useDispatch(),
+    [boundIndex, setBoundIndex] = useState(-1)
+
+  return useMemo(
+    () => ({
+      mouseDown(
+        ctxt: ClickEventContext,
+        view: ViewContext,
+        pos: ClickPos,
+        bounds: number[]
+      ) {
+        if (!ctxt.editing) return false
+        const closeBoundIndex = getBoundIndex(pos.x, view, bounds)
+        setBoundIndex(closeBoundIndex)
+        return closeBoundIndex !== -1 //capture if boundindex
+      },
+      mouseMove(
+        ctxt: ClickEventContext,
+        view: ViewContext,
+        pos: ClickPos,
+        bounds: number[]
+      ) {
+        if (!ctxt.editing) return false
+        if (boundIndex !== -1) {
+          const sample = getTimeFromPosition(pos.x, true, view),
+            newBounds = [...bounds]
+          newBounds[boundIndex] = sample
+          dispatch(Actions.setSourceBounds({ sourceId, bounds: newBounds }))
+        }
+        return boundIndex !== -1
+      },
+      mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
+        if (!ctxt.editing) return false
+        if (boundIndex !== -1) setBoundIndex(-1)
+        return boundIndex !== -1
+      },
+    }),
+    [sourceId, boundIndex]
+  )
+}
+
+export function useResizePlayback(sourceId: string) {
   const dispatch = useDispatch(),
     [chunkIndex, setChunkIndex] = useState(-1)
 
@@ -26,12 +67,14 @@ export function useSelectPlayback(sourceId: string) {
         pos: ClickPos,
         chunks: Types.Chunks
       ) {
+        if (!ctxt.editing) return false
         const sample = getTimeFromPosition(pos.x, false, view),
           nearChunkIndex = _.findIndex(chunks, (chunk, i) => {
             const csample = i % 2 === 0 ? chunk : chunk + chunks[i - 1]
             return Math.abs(csample - sample) < 7 * view.scale
           })
         setChunkIndex(nearChunkIndex)
+        return nearChunkIndex !== -1
       },
       mouseMove(
         ctxt: ClickEventContext,
@@ -39,6 +82,7 @@ export function useSelectPlayback(sourceId: string) {
         view: ViewContext,
         chunks: Types.Chunks
       ) {
+        if (!ctxt.editing) return false
         if (chunkIndex !== -1) {
           const sample = getTimeFromPosition(pos.x, true, view),
             newChunks = [...chunks],
@@ -66,49 +110,121 @@ export function useSelectPlayback(sourceId: string) {
             })
           )
         }
+        return chunkIndex !== -1
       },
       mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
-        const { clickX, editing } = ctxt,
-          { x, y } = pos
-
-        if (chunkIndex !== -1) {
-          setChunkIndex(-1)
-        } else if (editing) {
-          const dx = Math.abs(x - clickX),
-            xPos = getTimeFromPosition(x, true, view)
-          if (dx < 3) {
-            //click to play
-            dispatch(
-              Actions.setSourcePlayback({
-                sourceId,
-                playback: {
-                  chunks: [xPos, 0],
-                  alpha: 1,
-                  aperiodic: true,
-                  chunkIndex: -1,
-                },
-              })
-            )
-          } else {
-            //dragged selection
-            const start = getTimeFromPosition(clickX, true, view),
-              len = Math.abs(xPos - start)
-
-            dispatch(
-              Actions.setSourcePlayback({
-                sourceId,
-                playback: {
-                  chunks: [Math.min(start, xPos), len],
-                  alpha: 1,
-                  aperiodic: true,
-                  chunkIndex: -1,
-                },
-              })
-            )
-          }
-        }
+        if (!ctxt.editing) return false
+        if (chunkIndex !== -1) setChunkIndex(-1)
+        return chunkIndex !== -1
       },
     }),
     [sourceId, chunkIndex]
+  )
+}
+
+/* click and or drag to select playback region */
+export function useSelectPlayback(sourceId: string) {
+  const dispatch = useDispatch()
+
+  return useMemo(
+    () => ({
+      mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
+        if (!ctxt.editing) return false
+        const dx = Math.abs(pos.x - ctxt.clickX),
+          xPos = getTimeFromPosition(pos.x, true, view)
+        if (dx < 3) {
+          //click to play
+          dispatch(
+            Actions.setSourcePlayback({
+              sourceId,
+              playback: {
+                chunks: [xPos, 0],
+                alpha: 1,
+                aperiodic: true,
+                chunkIndex: -1,
+              },
+            })
+          )
+        } else {
+          //dragged selection
+          const start = getTimeFromPosition(ctxt.clickX, true, view),
+            len = Math.abs(xPos - start)
+
+          dispatch(
+            Actions.setSourcePlayback({
+              sourceId,
+              playback: {
+                chunks: [Math.min(start, xPos), len],
+                alpha: 1,
+                aperiodic: true,
+                chunkIndex: -1,
+              },
+            })
+          )
+        }
+        return true
+      },
+    }),
+    [sourceId]
+  )
+}
+
+export function useSelectBound(sourceId: string) {
+  const dispatch = useDispatch()
+
+  return useMemo(
+    () => ({
+      mouseUp(
+        ctxt: ClickEventContext,
+        pos: ClickPos,
+        view: ViewContext,
+        bounds: number[]
+      ) {
+        if (!ctxt.editing) return false
+        const closeBoundIndex = getBoundIndex(pos.x, view, bounds)
+        if (Math.abs(ctxt.clickX - pos.x) < 3 && closeBoundIndex !== -1) {
+          dispatch(
+            Actions.setSourcePlayback({
+              sourceId,
+              playback: {
+                chunks: [bounds[closeBoundIndex], 0],
+                alpha: 1,
+                aperiodic: true,
+                chunkIndex: -1,
+              },
+            })
+          )
+          return true
+        } else return false
+      },
+      doubleClick(
+        ctxt: ClickEventContext,
+        pos: ClickPos,
+        view: ViewContext,
+        bounds: number[]
+      ) {
+        if (!ctxt.editing) return false
+        const nextBoundIndex = getNextBoundIndex(pos.x, view, bounds),
+          prevBoundIndex = nextBoundIndex - 1,
+          start = bounds[prevBoundIndex],
+          next = bounds[nextBoundIndex]
+
+        if (prevBoundIndex >= 0) {
+          dispatch(
+            Actions.setSourcePlayback({
+              sourceId,
+              playback: {
+                chunks: [start, next - start],
+                alpha: 1,
+                aperiodic: true,
+                chunkIndex: -1,
+              },
+            })
+          )
+          return true
+        } else return false
+      },
+    }),
+    [sourceId]
   )
 }

@@ -25,9 +25,10 @@ export default function BoundsControl(props: BoundsControlProps) {
     ),
     { source } = useMappedState(getMappedState),
     dispatch = useDispatch(),
-    impulses = useMemo(() => getImpulses(source.channels.getChannelData(1)), [
-      source.channels,
-    ]),
+    impulses = useMemo(
+      () => getImpulses(source.channels.getChannelData(1), props.sourceId),
+      [source.channels, props.sourceId]
+    ),
     hasTimeBase = !!source.bounds.length,
     cstart = source.playback.chunks[0],
     clength = source.playback.chunks[1],
@@ -90,7 +91,7 @@ export default function BoundsControl(props: BoundsControlProps) {
           <Icon name="timer" styles={{ size: s => s * 1.2 }} />
           <span>Time Divisions:</span>
           <SidebarValue warn={!hasTimeBase} styles={{ size: s => s * 0.8 }}>
-            {hasTimeBase ? _.round(60 / (avgBar / RATE), 0)+'/m' : '??'}
+            {hasTimeBase ? _.round(60 / (avgBar / RATE), 0) + '/m' : '??'}
           </SidebarValue>
         </HeaderContent>
       }

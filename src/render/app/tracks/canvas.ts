@@ -45,6 +45,7 @@ export default function useWaveformCanvas(
     drawWaveform(drawContext, minMaxes)
     drawImpulses(drawContext, impulses)
     drawPlayback(drawContext, source)
+    drawBounds(drawContext, source.bounds, source.editing)
   }, [
     buffer,
     source.playback,
@@ -159,4 +160,33 @@ export function drawPlayback(context: DrawingContext, source: Types.Source) {
     ctx.lineTo(px, pheight)
     ctx.stroke()
   }
+}
+
+export function drawBounds(context: DrawingContext, bounds: number[], editing: boolean) {
+  const { pheight, scale, start, ctx, color } = context,
+    fheight = pheight / 10,
+    spacing = fheight / 4,
+    center = pheight / 2,
+    highContrast = color.contrast(0.3)
+
+  bounds.forEach((sample, i) => {
+    const next = bounds[i + 1],
+      px = (sample - start) / scale
+
+    ctx.lineWidth = 7
+    ctx.strokeStyle = highContrast.bg
+    ctx.beginPath()
+    ctx.lineTo(px, 0)
+    ctx.lineTo(px, pheight)
+    ctx.stroke()
+    // bar line
+    ctx.lineWidth = 3
+    ctx.strokeStyle = highContrast.fg
+    if(editing) ctx.setLineDash([10, 10])
+    ctx.beginPath()
+    ctx.lineTo(px, 0)
+    ctx.lineTo(px, pheight)
+    ctx.stroke()
+    ctx.setLineDash([])
+  })
 }
