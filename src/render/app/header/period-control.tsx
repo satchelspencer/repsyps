@@ -4,11 +4,11 @@ import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
 import * as Types from 'lib/types'
-import * as Actions from 'src/renderer/redux/actions'
-import Slider from '../slider'
-import Icon from 'renderer/icons'
+import * as Actions from 'render/redux/actions'
+import Slider from 'render/components/slider'
+import Icon from 'render/components/icon'
 import { RATE, EPSILON } from 'lib/audio'
-import { Value, SliderWrapper } from '../misc'
+import { Value, SliderWrapper } from 'render/components/misc'
 import PhaseDisplay from './phase-display'
 
 const PeriodWrapper = ctyled.div.styles({

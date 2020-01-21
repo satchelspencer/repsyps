@@ -1,4 +1,4 @@
-#include "Stream.h"
+#include "audio.h"
 #include <math.h>
 #include <kfr/base.hpp>
 #include <kfr/dsp.hpp>
@@ -15,86 +15,87 @@ static int paCallbackMethod(
   PaStreamCallbackFlags statusFlags,
   void *userData
 ){
-    streamState *state = (streamState*)userData;
-    float *out = (float*)outputBuffer;
-    unsigned long i;
+  streamState *state = (streamState*)userData;
+  float *out = (float*)outputBuffer;
+  unsigned long i;
 
-    double trackPhase;
-    double phaseStep = 1/(double)state->playback->period;
+  double trackPhase;
+  double phaseStep = 1/(double)state->playback->period;
+  
+  for( i=0; i<framesPerBuffer*2; i++ ) *out++ = 0;
+
+  if(!state->playback->playing) return paContinue;
+
+  int sampleIndex;
+  double sample;
+  double sampleFrac;
+  float s;
+  float sn;
+  source* trackSource;
+  track* track;
+  int channelCount;
+  int channelIndex;
+  int chunkCount;
+  
+  for(auto trackPair: state->tracks){
+    track = trackPair.second;
+    out = (float*)outputBuffer;
+
+    trackPhase = state->playback->time*track->alpha;
+    trackPhase -= floor(trackPhase);
+
+    trackSource = state->sources[track->sourceId];
+    channelCount = trackSource->channels.size();
+    chunkCount = track->chunks.size()/2;
+
+    if(chunkCount == 0 || !track->playing) continue;
     
-    for( i=0; i<framesPerBuffer*2; i++ ) *out++ = 0;
+    for( i=0; i<framesPerBuffer; i++ ){
+      if(track->chunkIndex == -1 && trackPhase >= 0){
+        track->chunkIndex = 0;
+        track->sample = track->chunks[track->chunkIndex*2]; //reset the sample to the start
+      } //on first
+      if(track->chunkIndex == -1) break; //before we should be playing
 
-    if(!state->playback->playing) return paContinue;
-
-    int sampleIndex;
-    double sample;
-    double sampleFrac;
-    float s;
-    float sn;
-    source* trackSource;
-    track* track;
-    int channelCount;
-    int channelIndex;
-    int chunkCount;
-    
-    for(auto trackPair: state->tracks){
-      track = trackPair.second;
-      out = (float*)outputBuffer;
-
-      trackPhase = state->playback->time*track->alpha;
-      trackPhase -= floor(trackPhase);
-
-      trackSource = state->sources[track->sourceId];
-      channelCount = trackSource->channels.size();
-      chunkCount = track->chunks.size()/2;
-
-      if(chunkCount == 0 || !track->playing) continue;
-      
-      for( i=0; i<framesPerBuffer; i++ ){
-        if(track->chunkIndex == -1 && trackPhase >= 0){
-          track->chunkIndex = 0;
-          track->sample = track->chunks[track->chunkIndex*2]; //reset the sample to the start
-        } //on first
-        if(track->chunkIndex == -1) break; //before we should be playing
-
-        if(track->aperiodic){
-          sample = track->sample + track->alpha;
-          if(track->chunks[track->chunkIndex*2+1] > 0){ //chunk has end
-            if(sample > track->chunks[track->chunkIndex*2]+track->chunks[track->chunkIndex*2+1]){
-              track->chunkIndex = (track->chunkIndex + 1) % chunkCount;
-              sample = track->chunks[track->chunkIndex*2];
-            }
-          }else if(sample >= trackSource->length) sample = 0; //chunk has no end, wrap on playback
-        }else{
-          sample = track->chunks[track->chunkIndex*2] + ( track->chunks[track->chunkIndex*2+1] * trackPhase );
-          if( sample < track->sample) {  /* check if we looped around */
-            track->chunkIndex = (track->chunkIndex + 1) % chunkCount; //increment the chunk
-            sample = track->chunks[track->chunkIndex*2] + ( track->chunks[track->chunkIndex*2+1] * trackPhase );
+      if(track->aperiodic){
+        sample = track->sample + track->alpha;
+        if(track->chunks[track->chunkIndex*2+1] > 0){ //chunk has end
+          if(sample > track->chunks[track->chunkIndex*2]+track->chunks[track->chunkIndex*2+1]){
+            track->chunkIndex = (track->chunkIndex + 1) % chunkCount;
+            sample = track->chunks[track->chunkIndex*2];
           }
+        }else if(sample >= trackSource->length) sample = 0; //chunk has no end, wrap on playback
+      }else{
+        sample = track->chunks[track->chunkIndex*2] + ( track->chunks[track->chunkIndex*2+1] * trackPhase );
+        if( sample < track->sample) {  /* check if we looped around */
+          track->chunkIndex = (track->chunkIndex + 1) % chunkCount; //increment the chunk
+          sample = track->chunks[track->chunkIndex*2] + ( track->chunks[track->chunkIndex*2+1] * trackPhase );
         }
-
-        track->sample = sample;
-        sampleFrac = sample-floor(sample);
-        sampleIndex = sample;
-
-        state->playback->out = sample;
-
-        for(channelIndex=0;channelIndex<channelCount;channelIndex++){
-          s = trackSource->channels[channelIndex][sampleIndex];
-          sn = trackSource->channels[channelIndex][sampleIndex+1];
-          s += (sn-s)*sampleFrac;
-          
-          s *= state->playback->volume;
-          s *= track->volume;
-          *out++ += s;
-        }       
-        trackPhase += phaseStep*track->alpha;
       }
-    }
 
-    state->playback->time += (double)framesPerBuffer/state->playback->period;
-    return paContinue;
+      track->sample = sample;
+      sampleFrac = sample-floor(sample);
+      sampleIndex = sample;
+
+      state->playback->out = sample;
+
+      for(channelIndex=0;channelIndex<channelCount;channelIndex++){
+        s = trackSource->channels[channelIndex][sampleIndex];
+        sn = trackSource->channels[channelIndex][sampleIndex+1];
+        s += (sn-s)*sampleFrac;
+        
+        s *= state->playback->volume;
+        s *= track->volume;
+        *out++ += s;
+      }       
+      trackPhase += phaseStep*track->alpha;
+    }
+  }
+
+  state->playback->time += (double)framesPerBuffer/state->playback->period;
+  return paContinue;
 }
+
 
 Napi::Value init(const Napi::CallbackInfo &info){
   playback * newPlayback = new playback{};

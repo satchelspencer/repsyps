@@ -3,8 +3,8 @@ import { CtyledContext, Color } from 'ctyled'
 import * as _ from 'lodash'
 
 import * as Types from 'lib/types'
-import { BIN_SIZE } from '../../dsp/impulse-detect'
-import getMinMaxes from '../../dsp/min-maxes'
+import { BIN_SIZE } from 'lib/impulse-detect'
+import getMinMaxes from 'lib/min-maxes'
 import { DrawViewContext } from './source'
 
 export default function useWaveformCanvas(

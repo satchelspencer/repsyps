@@ -31,6 +31,7 @@
       "redux-react-hook"
     ],
     "renderer": {
+      "sourceDirectory": "src/render",
       "webpackConfig": "conf/webpack.renderer.additions.js"
     },
     "main": {

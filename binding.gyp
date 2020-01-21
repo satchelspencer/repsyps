@@ -6,11 +6,11 @@
       "cflags_cc!": [ "-fno-rtti"],
       "ldflags" : ["-Wl,-rpath,../lib"],
       "sources": [
-        "src/audio/addon.cc",
-        "src/audio/Stream.cc"
+        "src/native/addon.cc",
+        "src/native/audio.cc"
       ],
       "include_dirs": [
-        "src/audio",
+        "src/native",
         "<@(libsdir)/portaudio/include",
         "<@(libsdir)/kfr/include",
         "<!@(node -p \"require('node-addon-api').include\")"

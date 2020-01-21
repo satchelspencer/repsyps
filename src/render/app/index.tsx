@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
-import { palette } from './theme'
+import { palette } from 'render/components/theme'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
 import * as Types from 'lib/types'
-import * as Actions from 'src/renderer/redux/actions'
+import * as Actions from 'render/redux/actions'
 
 import Source from './tracks/source'
 import Sidebar from './sidebar/sidebar'

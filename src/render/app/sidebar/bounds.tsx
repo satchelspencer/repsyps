@@ -4,12 +4,12 @@ import * as _ from 'lodash'
 import ctyled, { inline } from 'ctyled'
 
 import * as Types from 'lib/types'
-import getImpulses from 'renderer/dsp/impulse-detect'
-import * as Actions from 'renderer/redux/actions'
-import Icon from 'renderer/icons'
+import getImpulses from 'lib/impulse-detect'
+import * as Actions from 'render/redux/actions'
+import Icon from 'render/components/icon'
 import SidebarItem from './item'
-import { WideButton, SidebarValue, HeaderContent } from './misc'
-import { inferTimeBase } from 'renderer/components/tracks/utils'
+import { WideButton, SidebarValue, HeaderContent } from 'render/components/misc'
+import inferTimeBase from 'lib/infer-timebase'
 import { RATE } from 'lib/audio'
 
 export interface BoundsControlProps {

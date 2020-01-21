@@ -5,7 +5,7 @@ import * as Types from 'lib/types'
 import audio, { RATE } from 'lib/audio'
 import { updateTime } from './actions'
 import diff from 'lib/diff'
-import reducer from 'renderer/redux/reducer'
+import reducer from 'render/redux/reducer'
 import isEqual from 'lib/is-equal'
 
 export const UPDATE_PERIOD = 50

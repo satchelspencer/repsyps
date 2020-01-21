@@ -2,7 +2,7 @@ import { useCallback, useState, useMemo } from 'react'
 import { useDispatch } from 'redux-react-hook'
 import _ from 'lodash'
 
-import * as Actions from 'renderer/redux/actions'
+import * as Actions from 'render/redux/actions'
 import { getTimeFromPosition } from './utils'
 import * as Types from 'lib/types'
 

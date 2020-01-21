@@ -4,10 +4,10 @@ import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
 import * as Types from 'lib/types'
-import * as Actions from 'src/renderer/redux/actions'
-import Icon from 'renderer/icons'
-import Volume from '../volume'
-import { Value } from '../misc'
+import * as Actions from 'render/redux/actions'
+import Icon from 'render/components/icon'
+import Volume from 'render/components/volume'
+import { Value } from 'render/components/misc'
 import PeriodControl from './period-control'
 
 const HeaderWrapper = ctyled.div.styles({

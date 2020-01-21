@@ -2,7 +2,7 @@ import React from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import Icon from 'renderer/icons'
+import Icon from 'render/components/icon'
 
 const SourceItem = ctyled.div.styles({
   gutter: 1,

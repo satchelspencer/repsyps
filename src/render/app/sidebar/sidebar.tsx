@@ -4,7 +4,7 @@ import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
 import * as Types from 'lib/types'
-import Volume from '../volume'
+import Volume from 'render/components/volume'
 import SidebarItem from './item'
 import Title from './title'
 import BoundsControl from './bounds'

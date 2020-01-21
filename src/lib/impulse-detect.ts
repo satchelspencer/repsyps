@@ -1,5 +1,3 @@
-//import { FFT } from './dsp'
-
 import { FFT } from 'dsp.js'
 
 const BIN_SIZE = 256, //size of each frame to measure

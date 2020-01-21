@@ -1,5 +1,5 @@
 #include <napi.h>
-#include "Stream.h"
+#include "audio.h"
 
 Napi::Object InitAll(Napi::Env env, Napi::Object exports) {
   InitAudio(env, exports);

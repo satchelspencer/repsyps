@@ -7,7 +7,7 @@ import { StoreContext } from 'redux-react-hook'
 
 import store from './redux/store'
 import * as Actions from './redux/actions'
-import App from './components/app'
+import App from './app'
 
 const context = new AudioContext()
 

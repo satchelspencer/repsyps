@@ -4,10 +4,10 @@ import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 
 import * as Types from 'lib/types'
-import Icon from 'renderer/icons'
+import Icon from 'render/components/icon'
 import { getContainerPosition, getRelativePos } from './utils'
-import * as Actions from 'renderer/redux/actions'
-import getImpulses from 'renderer/dsp/impulse-detect'
+import * as Actions from 'render/redux/actions'
+import getImpulses from 'lib/impulse-detect'
 
 import useZoom from './zoom'
 import useWaveformCanvas from './canvas'

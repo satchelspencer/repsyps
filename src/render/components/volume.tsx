@@ -3,7 +3,7 @@ import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
 import Slider from './slider'
-import Icon from 'renderer/icons'
+import Icon from 'render/components/icon'
 import { SliderWrapper } from './misc'
 
 const VolumeWrapper = ctyled.div.styles({
