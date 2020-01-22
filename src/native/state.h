@@ -3,6 +3,9 @@
 #include <unordered_map> 
 #include <vector>
 
+#ifndef STATE_HEADER_H
+#define STATE_HEADER_H
+
 typedef struct{
   float volume;
   double time;
@@ -44,5 +47,4 @@ typedef struct{
   std::unordered_map<std::string, source*> sources;
 } streamState;
 
-static streamState state;
-static PaStream * gstream;
+#endif

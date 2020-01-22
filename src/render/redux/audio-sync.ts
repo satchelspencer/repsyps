@@ -18,9 +18,9 @@ export default function syncAudio(store: Store<Types.State>) {
   const handleUpdate = () => {
     const currentState = store.getState()
     if (!lastState || !isEqual(currentState.playback, lastState.playback)) {
-      // const change = diff(!lastState ? {} : lastState.playback, currentState.playback)
-      // console.log('update playback', change)
-      audio.updatePlayback(currentState.playback)
+      const change = diff(!lastState ? {} : lastState.playback, currentState.playback)
+      //console.log('update playback', change)
+      audio.updatePlayback(change)
     }
 
     _.keys(currentState.sources).forEach(sourceId => {
@@ -42,10 +42,10 @@ export default function syncAudio(store: Store<Types.State>) {
       }
 
       if (sourcePlaybackHasChanged) {
-        // const lastSource = lastState && lastState.sources[sourceId],
-        //   change = diff(!lastSource ? {} : lastSource.playback, source.playback)
-        // console.log('source change', change)
-        audio.setTrack(sourceId, { sourceId, ..._.omit(source.playback, 'sample') })
+        const lastSource = lastState && lastState.sources[sourceId],
+          change = diff(!lastSource ? {} : lastSource.playback, source.playback)
+        //console.log('source change', change)
+        audio.setTrack(sourceId, { sourceId, ..._.omit(change, 'sample') })
       }
     })
 

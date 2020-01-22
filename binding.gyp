@@ -7,7 +7,8 @@
       "ldflags" : ["-Wl,-rpath,../lib"],
       "sources": [
         "src/native/addon.cc",
-        "src/native/audio.cc"
+        "src/native/audio.cc",
+        "src/native/callback.cc"
       ],
       "include_dirs": [
         "src/native",

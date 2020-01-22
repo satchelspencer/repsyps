@@ -17,7 +17,7 @@ export default function useWaveformCanvas(
     ctyledContext = useContext(CtyledContext),
     minMaxes = useMemo(() => getMinMaxes(buffer), [buffer]),
     effectivePos = source.playback.playing ? 0 /* position */ : 0,
-    { scale, start, impulses, width, height, clickX, center } = view
+    { scale, start, impulses, width, height, clickX, center, mouseDown } = view
 
   useEffect(() => {
     ctxt.current = canvasRef.current.getContext('2d')
@@ -36,6 +36,9 @@ export default function useWaveformCanvas(
         scale,
         start,
         ctx,
+        clickX: clickX * 2,
+        center: center * 2,
+        mouseDown,
         sample: source.playback.sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
       }
@@ -46,6 +49,7 @@ export default function useWaveformCanvas(
     drawImpulses(drawContext, impulses)
     drawPlayback(drawContext, source)
     drawBounds(drawContext, source.bounds, source.editing)
+    drawDrag(drawContext)
   }, [
     buffer,
     source.playback,
@@ -55,6 +59,7 @@ export default function useWaveformCanvas(
     source.selected,
     ..._.values(view),
   ])
+
   return { canvasRef }
 }
 
@@ -66,6 +71,17 @@ export interface DrawingContext {
   ctx: CanvasRenderingContext2D
   color: Color
   sample: number
+  clickX: number
+  center: number
+  mouseDown: boolean
+}
+
+export function drawDrag(context: DrawingContext) {
+  const { ctx, mouseDown, clickX, center, pheight } = context
+  if (mouseDown) {
+    ctx.fillStyle = 'rgba(255,0,0,0.1)'
+    ctx.fillRect(clickX, 0, center - clickX, pheight)
+  }
 }
 
 export function drawWaveform(
@@ -182,7 +198,7 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
     // bar line
     ctx.lineWidth = 3
     ctx.strokeStyle = highContrast.fg
-    if(editing) ctx.setLineDash([10, 10])
+    if (editing) ctx.setLineDash([10, 10])
     ctx.beginPath()
     ctx.lineTo(px, 0)
     ctx.lineTo(px, pheight)

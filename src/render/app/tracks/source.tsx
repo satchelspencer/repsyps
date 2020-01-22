@@ -85,6 +85,7 @@ export interface ViewContext {
   start: number
   center: number
   impulses: Float32Array
+  mouseDown: boolean
 }
 
 export interface DrawViewContext extends ViewContext {
@@ -123,7 +124,8 @@ export default memo(function({ sourceId }: SourceProps) {
 
   /* react state */
   const [center, setCenter] = useState(0),
-    [clickX, setClickX] = useState(null)
+    [clickX, setClickX] = useState(null),
+    [mouseDown, setMouseDown] = useState(false)
 
   const container = useRef(null)
 
@@ -138,6 +140,7 @@ export default memo(function({ sourceId }: SourceProps) {
       start,
       center,
       impulses,
+      mouseDown
     },
     viewValues = _.values(view),
     drawView: DrawViewContext = {
@@ -173,6 +176,7 @@ export default memo(function({ sourceId }: SourceProps) {
         resizePlaybackHandlers.mouseDown(clickCtxt, view, pos, source.playback.chunks)
         boundHandlers.mouseDown(clickCtxt, view, pos, source.bounds)
         setClickX(pos.x)
+        setMouseDown(true)
       },
       [...clickCtxtValues, ...viewValues, source.playback.chunks, source.bounds]
     ),
@@ -203,6 +207,7 @@ export default memo(function({ sourceId }: SourceProps) {
         if (!didSelectBound && !didResizeBound && !didResizePlayback)
           selectPlaybackHandlers.mouseUp(clickCtxt, pos, view)
         setClickX(null)
+        setMouseDown(false)
       },
       [...clickCtxtValues, ...viewValues, source.bounds]
     ),

@@ -59,7 +59,7 @@ export const Controls = memo(() => {
         styles={{ size: s => s * 2 }}
         asButton
         name="prev"
-        onClick={() => dispatch(Actions.updatePlayback({ time: time + 1 }))}
+        onClick={() => dispatch(Actions.updatePlayback({ time: time - 1 }))}
       />
       <Icon
         styles={{ size: s => s * 2 }}

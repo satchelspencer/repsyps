@@ -26,19 +26,21 @@ const PeriodControl = memo(() => {
       }
     }, []),
     { period, time } = useMappedState(getMappedState),
-    dispatch = useDispatch()
-
+    dispatch = useDispatch(),
+    handleChange = useCallback(
+      v =>
+        dispatch(
+          Actions.updatePlayback({ period: Math.pow(1 - v, 2) * 9 * RATE + EPSILON })
+        ),
+      []
+    )
   return (
     <PeriodWrapper>
       <Icon styles={{ size: s => s * 1.5 }} name="timer" />
       <SliderWrapper>
         <Slider
-          value={1 - Math.pow((period - EPSILON) / 9 / RATE, 1/2)}
-          onChange={v =>
-            dispatch(
-              Actions.updatePlayback({ period: Math.pow(1 - v, 2) * 9 * RATE + EPSILON })
-            )
-          }
+          value={1 - Math.sqrt((Math.floor(period) - EPSILON) / 9 / RATE)}
+          onChange={handleChange}
         />
       </SliderWrapper>
       <Value>{_.round(60 / (period / RATE), 0) + '/m'}</Value>

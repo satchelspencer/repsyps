@@ -8,6 +8,7 @@ import Volume from 'render/components/volume'
 import SidebarItem from './item'
 import Title from './title'
 import BoundsControl from './bounds'
+import * as Actions from 'render/redux/actions'
 
 const SidebarWrapper = ctyled.div.styles({
   column: true,
@@ -43,7 +44,18 @@ export default function Sidebar() {
         <SourceDetailsWrapper>
           <Title name={source.name} icon="wave" />
           <BoundsControl sourceId={sourceId} />
-          <SidebarItem title={<Volume volume={0.5} onChange={() => {}} />} />
+          <SidebarItem
+            title={
+              <Volume
+                volume={source.playback.volume}
+                onChange={v =>
+                  dispatch(
+                    Actions.setSourcePlayback({ sourceId, playback: { volume: v } })
+                  )
+                }
+              />
+            }
+          />
         </SourceDetailsWrapper>
       )}
     </SidebarWrapper>
