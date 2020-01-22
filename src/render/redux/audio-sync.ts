@@ -45,7 +45,7 @@ export default function syncAudio(store: Store<Types.State>) {
         // const lastSource = lastState && lastState.sources[sourceId],
         //   change = diff(!lastSource ? {} : lastSource.playback, source.playback)
         // console.log('source change', change)
-        audio.setTrack(sourceId, { sourceId, ...source.playback })
+        audio.setTrack(sourceId, { sourceId, ..._.omit(source.playback, 'sample') })
       }
     })
 
@@ -66,7 +66,7 @@ export default function syncAudio(store: Store<Types.State>) {
     if (lastState && lastState.playback.playing) {
       const currentTiming = audio.getTiming(),
         action = updateTime(currentTiming)
-
+      //console.log(audio.getDebug())
       /* override last state so this change won't be sent back to where it came from */
       lastState = reducer(lastState, action)
       store.dispatch(action)

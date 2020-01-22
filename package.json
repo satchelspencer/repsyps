@@ -5,6 +5,7 @@
   "scripts": {
     "start": "electron-webpack dev",
     "build": "node-gyp configure build --libsdir=$HOME",
+    "test-native": "node src/native/test.js",
     "clean": "node-gyp clean",
     "install": "node-gyp rebuild --libsdir=$HOME",
     "build-electron": "electron-webpack",
@@ -73,6 +74,7 @@
     "electron-builder": "^20.44.4",
     "electron-webpack": "^2.7.1",
     "electron-webpack-ts": "^3.2.0",
+    "node-wav": "^0.0.2",
     "typescript": "^3.5.2",
     "webpack": "~4.35.0"
   }

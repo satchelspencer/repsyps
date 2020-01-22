@@ -33,10 +33,10 @@ const PeriodControl = memo(() => {
       <Icon styles={{ size: s => s * 1.5 }} name="timer" />
       <SliderWrapper>
         <Slider
-          value={1 - Math.pow((period - EPSILON) / 30 / RATE, 1 / 5)}
+          value={1 - Math.pow((period - EPSILON) / 9 / RATE, 1/2)}
           onChange={v =>
             dispatch(
-              Actions.updatePlayback({ period: Math.pow(1 - v, 5) * 30 * RATE + EPSILON })
+              Actions.updatePlayback({ period: Math.pow(1 - v, 2) * 9 * RATE + EPSILON })
             )
           }
         />

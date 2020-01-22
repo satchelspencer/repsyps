@@ -29,6 +29,16 @@ typedef struct{
 } source;
 
 typedef struct{
+  std::vector<float*>  channels;
+  int size;
+  int head;
+  int tail;
+} ringbuffer;
+
+typedef struct{
+  ringbuffer *buffer;
+  float *window;
+  unsigned int windowSize;
   playback *playback;
   std::unordered_map<std::string, track*> tracks;
   std::unordered_map<std::string, source*> sources;
