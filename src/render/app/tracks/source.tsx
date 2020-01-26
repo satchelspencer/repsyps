@@ -8,6 +8,7 @@ import Icon from 'render/components/icon'
 import { getContainerPosition, getRelativePos, capture } from './utils'
 import * as Actions from 'render/redux/actions'
 import getImpulses from 'lib/impulse-detect'
+import { useSelectable } from 'render/components/selection'
 
 import useZoom from './zoom'
 import useWaveformCanvas from './canvas'
@@ -140,7 +141,7 @@ export default memo(function({ sourceId }: SourceProps) {
       start,
       center,
       impulses,
-      mouseDown
+      mouseDown,
     },
     viewValues = _.values(view),
     drawView: DrawViewContext = {
@@ -218,10 +219,11 @@ export default memo(function({ sourceId }: SourceProps) {
       },
       [...clickCtxtValues, ...viewValues, source.bounds]
     ),
-    handleClick = useCallback(
-      () => !source.selected && dispatch(Actions.selectSourceExclusive(sourceId)),
-      [sourceId]
-    ),
+    { isSelecting, onSelect } = useSelectable(),
+    handleClick = useCallback(() => {
+      if (isSelecting) onSelect(sourceId)
+      else !source.selected && dispatch(Actions.selectSourceExclusive(sourceId))
+    }, [sourceId, isSelecting, onSelect]),
     rmTrack = useCallback(() => dispatch(Actions.rmSource(sourceId)), [sourceId])
 
   /* styles */
@@ -238,6 +240,9 @@ export default memo(function({ sourceId }: SourceProps) {
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onDoubleClick={handleDoubleClick}
+        style={{
+          pointerEvents: isSelecting ? 'none' : 'all',
+        }}
       >
         <TrackCanvas
           selected={source.selected}

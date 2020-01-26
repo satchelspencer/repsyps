@@ -131,5 +131,19 @@ export default combineReducers({
           : source
       })
     }),
+    handle(Actions.copySourceBounds, (sources, { payload }) => {
+      const from = sources[payload.src],
+        to = sources[payload.dest]
+
+      if (from && to)
+        return {
+          ...sources,
+          [payload.dest]: {
+            ...to,
+            bounds: [...from.bounds],
+          },
+        }
+      else return sources
+    }),
   ]),
 })

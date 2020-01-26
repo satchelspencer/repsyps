@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react'
+import React from 'react'
 import ReactDOM from 'react-dom'
-import { ipcRenderer } from 'electron'
 import _ from 'lodash'
-import pathUtils from 'path'
 import { StoreContext } from 'redux-react-hook'
 
 import store from './redux/store'
 import * as Actions from './redux/actions'
+import { SelectionContextProvider } from './components/selection'
+
 import App from './app'
 
 const context = new AudioContext()
@@ -35,7 +35,9 @@ window.ondrop = e => {
 
 ReactDOM.render(
   <StoreContext.Provider value={store}>
-    <App />
+    <SelectionContextProvider>
+      <App />
+    </SelectionContextProvider>
   </StoreContext.Provider>,
   document.getElementById('app')
 )

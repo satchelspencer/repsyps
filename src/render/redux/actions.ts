@@ -1,6 +1,7 @@
 import { createActionCreator } from 'deox'
 
 import * as Types from 'lib/types'
+import { create } from 'redux-react-hook'
 
 function createAction<Payload>(name) {
   return createActionCreator(name, res => (payload: Payload) => res(payload))
@@ -25,6 +26,11 @@ export const setSourceBounds = createAction<{
   sourceId: string
   bounds: number[]
 }>('SET_SOURCE_BOUNDS')
+
+export const copySourceBounds = createAction<{
+  src: string,
+  dest: string
+}>('COPY_SOURCE_BOUNDS')
 
 export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAYBACK')
 

@@ -266,6 +266,7 @@ export function usePlaybackBound(sourceId: string) {
             })
           )
         }
+        return true
       },
     }),
     [sourceId]

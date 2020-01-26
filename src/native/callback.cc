@@ -92,7 +92,7 @@ int paCallbackMethod(
           }
         }
 
-        tempTrackSample = samplePosition;
+        tempTrackSample = samplePosition; //casting back to int
         samplePositionFrac = samplePosition-floor(samplePosition);
         sampledFrameIndex = samplePosition;
 

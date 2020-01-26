@@ -11,6 +11,7 @@ import SidebarItem from './item'
 import { WideButton, SidebarValue, HeaderContent } from 'render/components/misc'
 import inferTimeBase from 'lib/infer-timebase'
 import { RATE } from 'lib/audio'
+import { useSelection } from 'render/components/selection'
 
 export interface BoundsControlProps {
   sourceId: string
@@ -25,6 +26,7 @@ export default function BoundsControl(props: BoundsControlProps) {
     ),
     { source } = useMappedState(getMappedState),
     dispatch = useDispatch(),
+    { isSelecting, getSelection } = useSelection(),
     impulses = useMemo(
       () => getImpulses(source.channels.getChannelData(1), props.sourceId),
       [source.channels, props.sourceId]
@@ -78,7 +80,19 @@ export default function BoundsControl(props: BoundsControlProps) {
         if (next) sum += next - bound
       })
       return sum / (source.bounds.length - 1)
-    }, [source.bounds])
+    }, [source.bounds]),
+    handleSelect = useCallback(async () => {
+      if (!isSelecting) {
+        console.log()
+        const id = await getSelection()
+        dispatch(
+          Actions.copySourceBounds({
+            src: id,
+            dest: props.sourceId,
+          })
+        )
+      }
+    }, [isSelecting, getSelection, props.sourceId])
 
   return (
     <SidebarItem
@@ -121,6 +135,10 @@ export default function BoundsControl(props: BoundsControlProps) {
       <WideButton onClick={inferRight}>
         <span>infer selection right</span>
         <Icon name="cheveron-right" />
+      </WideButton>
+      <WideButton onClick={handleSelect}>
+        <Icon name="eyedropper" />
+        <span>{isSelecting ? 'select a track...' : 'select from track'}</span>
       </WideButton>
     </SidebarItem>
   )
