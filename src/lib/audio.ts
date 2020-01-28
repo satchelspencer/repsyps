@@ -3,7 +3,7 @@ import path from 'path'
 import * as Types from 'lib/types'
 
 interface AudioAPI {
-  init(): void
+  init(root: string): void
   start(): void
   stop(): void
   updatePlayback(playback: Partial<Types.Playback>): void

@@ -1,5 +1,6 @@
 import { Store } from 'redux'
 import _ from 'lodash'
+import { remote } from 'electron'
 
 import * as Types from 'lib/types'
 import audio, { RATE } from 'lib/audio'
@@ -8,12 +9,14 @@ import diff from 'lib/diff'
 import reducer from 'render/redux/reducer'
 import isEqual from 'lib/is-equal'
 
-export const UPDATE_PERIOD = 50
+export const UPDATE_PERIOD = 50,
+  isDev = process.env.NODE_ENV === 'development'
 
 export default function syncAudio(store: Store<Types.State>) {
   let lastState: Types.State = null
 
-  audio.init()
+  const appPath = isDev ? './' : remote.app.getAppPath() + '/'
+  audio.init(appPath)
 
   const handleUpdate = () => {
     const currentState = store.getState()

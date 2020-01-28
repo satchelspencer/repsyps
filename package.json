@@ -18,7 +18,8 @@
     "files": [
       "!src/*",
       "!docs/*",
-      "build/*/*"
+      "build/*/*",
+      "lib/**/*"
     ],
     "directories": {
       "buildResources": "conf/build"

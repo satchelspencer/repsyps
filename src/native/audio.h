@@ -7,6 +7,7 @@
 
 #include "state.h"
 #include "callback.h"
+#include "separate.h"
 
 Napi::Value init(const Napi::CallbackInfo &info);
 Napi::Value start(const Napi::CallbackInfo &info);

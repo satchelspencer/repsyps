@@ -1,9 +1,12 @@
-#include "audio.h"
+#include "audio.h" 
 
 static streamState state;
 static PaStream * gstream;
 
 Napi::Value init(const Napi::CallbackInfo &info){
+  std::string rootPath = info[0].As<Napi::String>().Utf8Value();
+  init_separator(rootPath);
+
   playback * newPlayback = new playback{};
   newPlayback->time = 0.;
   newPlayback->playing = false;
@@ -108,6 +111,8 @@ void addSource(const Napi::CallbackInfo &info){
     newSource->length = len;
     newSource->channels.push_back(arrn);
   }
+
+  //separate(newSource->channels, newSource->length);
   state.sources[sourceId] = newSource;
 }
 
