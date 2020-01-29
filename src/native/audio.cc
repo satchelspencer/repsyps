@@ -102,7 +102,7 @@ void addSource(const Napi::CallbackInfo &info){
     float* arr = reinterpret_cast<float*>(buff.ArrayBuffer().Data());
     int len = buff.ByteLength() / sizeof(float);
     float* arrn = new float[len];
-    for(int j = 0;j<len;j++) arrn[j] = arr[j];
+    std::memcpy(arrn, arr, buff.ByteLength());
 
     // kfr::univector<float, 0> vect = kfr::make_univector(arrn, len);
     // kfr::biquad_params<float> bq[]    = { kfr::biquad_lowpass(0.02, 0.1) };

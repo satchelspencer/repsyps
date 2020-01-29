@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
-import ctyled, { inline } from 'ctyled'
+import ctyled, { inline, active } from 'ctyled'
 
 import * as Types from 'lib/types'
 import getImpulses from 'lib/impulse-detect'
@@ -16,6 +16,17 @@ import { useSelection } from 'render/components/selection'
 export interface BoundsControlProps {
   sourceId: string
 }
+
+const EditLink = ctyled.div
+  .class(inline)
+  .class(active)
+  .styles({
+    hover: true,
+    padd: 1,
+    bg: false
+  }).extend`
+  text-decoration:underline;
+`
 
 export default function BoundsControl(props: BoundsControlProps) {
   const getMappedState = useCallback(
@@ -107,6 +118,7 @@ export default function BoundsControl(props: BoundsControlProps) {
           <SidebarValue warn={!hasTimeBase} styles={{ size: s => s * 0.8 }}>
             {hasTimeBase ? _.round(60 / (avgBar / RATE), 0) + '/m' : '??'}
           </SidebarValue>
+          <EditLink>{source.editing ? 'done' : 'edit'}</EditLink>
         </HeaderContent>
       }
     >

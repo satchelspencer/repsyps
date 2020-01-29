@@ -18,6 +18,7 @@ int paCallbackMethod(
 
   source* trackSource;
   track* track;
+  int trackLength;
   int channelCount;
   int channelIndex;
   int chunkCount;
@@ -59,6 +60,7 @@ int paCallbackMethod(
       trackPhase -= floor(trackPhase); 
 
       trackSource = state->sources[track->sourceId];
+      trackLength = trackSource->length;
       channelCount = trackSource->channels.size();
       chunkCount = track->chunks.size()/2;
 
@@ -83,7 +85,7 @@ int paCallbackMethod(
               tempTrackChunkIndex = (tempTrackChunkIndex + 1) % chunkCount;
               samplePosition = track->chunks[tempTrackChunkIndex*2];
             }
-          }else if(samplePosition >= trackSource->length) samplePosition = 0; //chunk has no end, wrap on playback
+          }
         }else{
           samplePosition = track->chunks[tempTrackChunkIndex*2] + ( track->chunks[tempTrackChunkIndex*2+1] * trackPhase );
           if( samplePosition < tempTrackSample) {  /* check if we looped around */
@@ -105,13 +107,15 @@ int paCallbackMethod(
 
         /* add the sample to the buffer */
         for(channelIndex=0;channelIndex<channelCount;channelIndex++){
-          sampleValue = trackSource->channels[channelIndex][sampledFrameIndex];
-          sampleValueNext = trackSource->channels[channelIndex][sampledFrameIndex+1];
-          sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
-          
-          sampleValue *= state->playback->volume;
-          sampleValue *= track->volume;
-          sampleValue *= state->window[frameIndex]; //multiply by the window
+          sampleValue = 0;
+          if(sampledFrameIndex >= 0 && sampledFrameIndex < trackLength-1){
+            sampleValue = trackSource->channels[channelIndex][sampledFrameIndex];
+            sampleValueNext = trackSource->channels[channelIndex][sampledFrameIndex+1];
+            sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
+            sampleValue *= state->playback->volume;
+            sampleValue *= track->volume;
+            sampleValue *= state->window[frameIndex]; //multiply by the window
+          }
           state->buffer->channels[channelIndex][bufferHead] += sampleValue;
         }       
         bufferHead = (bufferHead+1)%state->buffer->size;

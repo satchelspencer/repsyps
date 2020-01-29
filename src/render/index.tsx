@@ -19,8 +19,10 @@ window.ondrop = e => {
   const file = e.dataTransfer.files[0],
     reader = new FileReader()
   reader.onload = async (e: any) => {
+    console.log('read')
     const audioBuff = await context.decodeAudioData(e.target.result),
       id = _.snakeCase(file.name.substr(0, 15)) + new Date().getTime()
+    console.log('done')
     store.dispatch(
       Actions.addSource({
         sourceId: id,
@@ -31,6 +33,7 @@ window.ondrop = e => {
     store.dispatch(Actions.selectSourceExclusive(id))
   }
   reader.readAsArrayBuffer(file)
+  console.log('reading...')
 }
 
 ReactDOM.render(

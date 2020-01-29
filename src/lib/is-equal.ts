@@ -6,7 +6,9 @@ var hasProp = Object.prototype.hasOwnProperty
 export default function isEqual(a, b) {
   if (a === b) return true
 
-  if (a && b && typeof a == 'object' && typeof b == 'object') {
+  if (a instanceof AudioBuffer || b instanceof AudioBuffer) return false
+
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
     var arrA = isArray(a),
       arrB = isArray(b),
       i,

@@ -29,6 +29,7 @@ const SubItem = ctyled.div.styles({
 interface SidebarItemProps {
   title: any
   children?: any
+  caret?: boolean
   open?: boolean
   onSetOpen?: (open: boolean) => any
 }
@@ -38,7 +39,7 @@ export default function SidebarItem(props: SidebarItemProps) {
     <SourceItem style={{ cursor: 'pointer' }}>
       <Horizontal onClick={() => props.onSetOpen && props.onSetOpen(!props.open)}>
         {props.title}
-        {props.children && (
+        {props.children && props.caret &&  (
           <Icon
             name={props.open ? 'caret-down' : 'caret-right'}
             styles={{ size: s => s * 1.8 }}
