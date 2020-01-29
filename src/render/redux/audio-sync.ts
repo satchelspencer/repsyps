@@ -7,6 +7,7 @@ import audio, { RATE } from 'lib/audio'
 import { updateTime } from './actions'
 import diff from 'lib/diff'
 import reducer from 'render/redux/reducer'
+import {getBuffer} from 'render/redux/buffers'
 import isEqual from 'lib/is-equal'
 
 export const UPDATE_PERIOD = 50,
@@ -38,10 +39,7 @@ export default function syncAudio(store: Store<Types.State>) {
 
       if (sourceIsNew) {
         console.log('new source', sourceId)
-        audio.addSource(sourceId, [
-          source.channels.getChannelData(0),
-          source.channels.getChannelData(1),
-        ])
+        audio.addSource(sourceId, getBuffer(sourceId))
       }
 
       if (sourcePlaybackHasChanged) {

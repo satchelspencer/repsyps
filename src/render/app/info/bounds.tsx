@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, {memo, useCallback, useMemo } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 import ctyled, { inline, active } from 'ctyled'
@@ -12,6 +12,7 @@ import { WideButton, SidebarValue, HeaderContent } from 'render/components/misc'
 import inferTimeBase from 'lib/infer-timebase'
 import { RATE } from 'lib/audio'
 import { useSelection } from 'render/components/selection'
+import {getBuffer} from 'render/redux/buffers'
 
 export interface BoundsControlProps {
   sourceId: string
@@ -28,39 +29,45 @@ const EditLink = ctyled.div
   text-decoration:underline;
 `
 
-export default function BoundsControl(props: BoundsControlProps) {
+const  BoundsControl = memo((props: BoundsControlProps) => {
   const getMappedState = useCallback(
-      (state: Types.State) => ({
-        source: props.sourceId && state.sources[props.sourceId],
-      }),
+      (state: Types.State) => {
+        const source = props.sourceId && state.sources[props.sourceId]
+        return {
+          chunks: source && source.playback.chunks,
+          bounds: source && source.bounds,
+          editing: source && source.editing,
+        }
+      },
       [props.sourceId]
     ),
-    { source } = useMappedState(getMappedState),
+    { chunks, bounds, editing } = useMappedState(getMappedState),
+    channels = getBuffer(props.sourceId),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection(),
     impulses = useMemo(
-      () => getImpulses(source.channels.getChannelData(1), props.sourceId),
-      [source.channels, props.sourceId]
+      () => getImpulses(channels[0], props.sourceId),
+      [channels, props.sourceId]
     ),
-    hasTimeBase = !!source.bounds.length,
-    cstart = source.playback.chunks[0],
-    clength = source.playback.chunks[1],
+    hasTimeBase = !!bounds.length,
+    cstart = chunks[0],
+    clength = chunks[1],
     inferLR = useCallback(() => {
       if (!clength) return
       dispatch(
         Actions.setSourceBounds({
           sourceId: props.sourceId,
-          bounds: inferTimeBase(source.playback, impulses),
+          bounds: inferTimeBase(chunks, impulses),
         })
       )
-    }, [source.playback, impulses]),
+    }, [chunks, impulses]),
     inferLeft = useCallback(() => {
       if (!clength) return
       const endPoint = cstart + clength,
-        inferredBounds = inferTimeBase(source.playback, impulses).filter(
+        inferredBounds = inferTimeBase(chunks, impulses).filter(
           bound => bound <= endPoint
         ),
-        existingBounds = source.bounds.filter(bound => bound > endPoint)
+        existingBounds = bounds.filter(bound => bound > endPoint)
 
       dispatch(
         Actions.setSourceBounds({
@@ -68,14 +75,14 @@ export default function BoundsControl(props: BoundsControlProps) {
           bounds: _.sortBy([...inferredBounds, ...existingBounds]),
         })
       )
-    }, [source.playback, source.bounds, impulses]),
+    }, [chunks, bounds, impulses]),
     inferRight = useCallback(() => {
       if (!clength) return
       const startPoint = cstart,
-        inferredBounds = inferTimeBase(source.playback, impulses).filter(
+        inferredBounds = inferTimeBase(chunks, impulses).filter(
           bound => bound >= startPoint
         ),
-        existingBounds = source.bounds.filter(bound => bound < startPoint)
+        existingBounds = bounds.filter(bound => bound < startPoint)
 
       dispatch(
         Actions.setSourceBounds({
@@ -83,15 +90,15 @@ export default function BoundsControl(props: BoundsControlProps) {
           bounds: _.sortBy([...inferredBounds, ...existingBounds]),
         })
       )
-    }, [source.playback, source.bounds, impulses]),
+    }, [chunks, bounds, impulses]),
     avgBar = useMemo(() => {
       let sum = 0
-      source.bounds.forEach((bound, i) => {
-        const next = source.bounds[i + 1]
+      bounds.forEach((bound, i) => {
+        const next = bounds[i + 1]
         if (next) sum += next - bound
       })
-      return sum / (source.bounds.length - 1)
-    }, [source.bounds]),
+      return sum / (bounds.length - 1)
+    }, [bounds]),
     handleSelect = useCallback(async () => {
       if (!isSelecting) {
         console.log()
@@ -107,7 +114,7 @@ export default function BoundsControl(props: BoundsControlProps) {
 
   return (
     <SidebarItem
-      open={source.editing}
+      open={editing}
       onSetOpen={open =>
         dispatch(Actions.editSource({ sourceId: props.sourceId, edit: open }))
       }
@@ -118,7 +125,7 @@ export default function BoundsControl(props: BoundsControlProps) {
           <SidebarValue warn={!hasTimeBase} styles={{ size: s => s * 0.8 }}>
             {hasTimeBase ? _.round(60 / (avgBar / RATE), 0) + '/m' : '??'}
           </SidebarValue>
-          <EditLink>{source.editing ? 'done' : 'edit'}</EditLink>
+          <EditLink>{editing ? 'done' : 'edit'}</EditLink>
         </HeaderContent>
       }
     >
@@ -154,4 +161,6 @@ export default function BoundsControl(props: BoundsControlProps) {
       </WideButton>
     </SidebarItem>
   )
-}
+})
+
+export default BoundsControl

@@ -5,11 +5,12 @@ import * as _ from 'lodash'
 import * as Actions from './actions'
 import * as Types from 'lib/types'
 import { RATE } from 'lib/audio'
+import {createBuffer, delBuffer} from './buffers'
 
 const defaultPlayback: Types.Playback = {
     volume: 0.666,
     playing: true,
-    period: 5.33 * RATE,
+    period: 2.7 * RATE,
     time: 0,
   },
   defaultSources: Types.Sources = {},
@@ -70,11 +71,11 @@ export default combineReducers({
   ]),
   sources: createReducer(defaultSources, handle => [
     handle(Actions.addSource, (sources, { payload }) => {
+      createBuffer(payload.sourceId, payload.channels)
       return {
         ...sources,
         [payload.sourceId]: {
           name: payload.name,
-          channels: payload.channels,
           playback: defaultTrack,
           bounds: [],
           selected: false,
@@ -83,6 +84,7 @@ export default combineReducers({
       }
     }),
     handle(Actions.rmSource, (sources, { payload }) => {
+      delBuffer(payload)
       return _.omit(sources, payload)
     }),
     handle(Actions.setSourcePlayback, (sources, { payload }) => {

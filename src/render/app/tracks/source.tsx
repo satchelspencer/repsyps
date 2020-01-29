@@ -9,6 +9,7 @@ import { getContainerPosition, getRelativePos, capture } from './utils'
 import * as Actions from 'render/redux/actions'
 import getImpulses from 'lib/impulse-detect'
 import { useSelectable } from 'render/components/selection'
+import {getBuffer} from 'render/redux/buffers'
 
 import useZoom from './zoom'
 import useWaveformCanvas from './canvas'
@@ -120,7 +121,7 @@ export default memo(function({ sourceId }: SourceProps) {
     { period, source } = useMappedState(getMappedState)
 
   /* computed data */
-  const buffer = useMemo(() => source.channels.getChannelData(1), [source.channels]),
+  const buffer = useMemo(() => getBuffer(sourceId)[1], [sourceId]),
     impulses = useMemo(() => getImpulses(buffer, sourceId), [buffer, sourceId])
 
   /* react state */

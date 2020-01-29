@@ -5,13 +5,13 @@ import * as Types from 'lib/types'
 const SNAP_SCALE = 400
 
 export default function inferTimeBase(
-  playback: Types.Track,
+  chunks: Types.Chunks,
   impulses: Float32Array
 ): number[] {
   const len = impulses.length * BIN_SIZE,
     bounds = [],
-    cstart = playback.chunks[0],
-    clength = playback.chunks[1]
+    cstart = chunks[0],
+    clength = chunks[1]
   for (
     let sample = cstart;
     sample < len;

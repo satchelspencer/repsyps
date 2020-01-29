@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import { palette } from 'render/components/theme'
 import * as _ from 'lodash'
@@ -8,7 +8,7 @@ import * as Types from 'lib/types'
 import * as Actions from 'render/redux/actions'
 
 import Source from './tracks/source'
-import Sidebar from './sidebar/sidebar'
+import Sidebar from './info/sidebar'
 import Header from './header/header'
 
 const Wrapper = ctyled.div.styles({

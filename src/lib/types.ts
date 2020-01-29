@@ -29,7 +29,6 @@ export type NativeChannels = Float32Array[] //array of arrays... 1 per channel
 export type Channels = AudioBuffer
 
 export interface Source {
-  channels: Channels
   name: string
   playback: Track
   bounds: number[]
