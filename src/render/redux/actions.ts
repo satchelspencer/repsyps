@@ -28,7 +28,7 @@ export const setSourceBounds = createAction<{
 }>('SET_SOURCE_BOUNDS')
 
 export const copySourceBounds = createAction<{
-  src: string,
+  src: string
   dest: string
 }>('COPY_SOURCE_BOUNDS')
 
@@ -38,4 +38,23 @@ export const selectSourceExclusive = createAction<string>('SELECT_SOURCE_EX')
 
 export const toggleSource = createAction<string>('TOGGLE_SOURCE_PLAYBACK')
 
-export const editSource = createAction<{ sourceId: string; edit: boolean }>('SET_SOURCE_EDIT')
+export const editSource = createAction<{ sourceId: string; edit: boolean }>(
+  'SET_SOURCE_EDIT'
+)
+
+export const addValueControl = createAction<{
+  controlId: string
+  control: Types.ValueControl
+}>('ADD_VALUE_CONTROL')
+
+export const setControlMidiId = createAction<{
+  controlId: string
+  midiId: number
+}>('SET_CONTROL_MIDI')
+
+export const deleteControl = createAction<string>('DELETE_CONTROL')
+
+export const addCueControl = createAction<{
+  controlId: string
+  control: Types.CueControl
+}>('ADD_CUE_CONTROL')

@@ -12,7 +12,7 @@ const SourceItem = ctyled.div.styles({
 const Horizontal = ctyled.div.styles({
   align: 'center',
   //justify: 'space-between',
-  gutter: 0.5,
+  gutter: 1,
 })
 
 const SubItem = ctyled.div.styles({

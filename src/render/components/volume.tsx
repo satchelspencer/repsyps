@@ -17,17 +17,7 @@ export interface VolumeProps {
   onChange: (volume: number) => any
 }
 
-const CENTER = 2 / 3,
-  map = (value: number) => {
-    let res = value
-    if (value > 1) res = Math.pow(res, 1 / 4)
-    return res * CENTER
-  },
-  invMap = (value: number) => {
-    let res = value / CENTER
-    if (res > 1) res = Math.pow(res, 4)
-    return res
-  }
+const CENTER = 2 / 3
 
 export default function Volume(props: VolumeProps) {
   const [muted, setMuted] = useState(false),
@@ -52,10 +42,10 @@ export default function Volume(props: VolumeProps) {
       />
       <SliderWrapper style={{ opacity: muted ? 0.5 : 1 }}>
         <Slider
-          value={map(muted ? lastVolume : props.volume)}
+          value={muted ? lastVolume : props.volume}
           onChange={v => {
             setMuted(false)
-            props.onChange(invMap(v))
+            props.onChange(v)
           }}
           markers={[CENTER]}
         />

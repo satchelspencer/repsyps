@@ -7,23 +7,53 @@ import * as Types from 'lib/types'
 import { RATE } from 'lib/audio'
 
 const defaultPlayback: Types.Playback = {
-    volume: 1,
+    volume: 0.666,
     playing: true,
     period: 5.33 * RATE,
     time: 0,
   },
   defaultSources: Types.Sources = {},
   defaultTrack: Types.Track = {
-    volume: 1,
+    volume: 0.666,
     chunks: [0, 0],
     alpha: 1,
     playing: false,
     aperiodic: true,
     chunkIndex: -1,
     sample: 0,
-  }
+  },
+  defaultControls: Types.Controls = {}
 
 export default combineReducers({
+  controls: createReducer(defaultControls, handle => [
+    handle(Actions.addValueControl, (controls, { payload }) => {
+      return {
+        ...controls,
+        [payload.controlId]: payload.control,
+      }
+    }),
+    handle(Actions.deleteControl, (controls, { payload }) => {
+      return _.omit(controls, payload)
+    }),
+    handle(Actions.setControlMidiId, (controls, { payload }) => {
+      return _.mapValues(controls, (control, controlId) => {
+        if (controlId === payload.controlId)
+          return {
+            ...control,
+            midiId: payload.midiId,
+          }
+        else if (control.midiId === payload.midiId)
+          return {
+            ...control,
+            midiId: null,
+          }
+        else return control
+      })
+    }),
+    handle(Actions.rmSource, (controls, { payload }) => {
+      return _.pickBy(controls, control => control.sourceId !== payload)
+    }),
+  ]),
   playback: createReducer(defaultPlayback, handle => [
     handle(Actions.updatePlayback, (playback, { payload }) => {
       return {

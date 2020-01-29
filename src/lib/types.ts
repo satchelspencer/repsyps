@@ -10,6 +10,10 @@ export interface TrackTiming {
   sample: number
 }
 
+export interface TimingState {
+  [trackId: string]: TrackTiming
+}
+
 export type Chunks = number[] //[start0,end0,start1,end1]
 
 export interface Track extends TrackTiming {
@@ -37,11 +41,27 @@ export interface Sources {
   [sourceId: string]: Source
 }
 
-export interface TimingState {
-  [trackId: string]: TrackTiming
+export interface SourceControl {
+  sourceId: string
+  midiId?: number
+}
+
+export interface CueControl extends SourceControl {
+  chunks: Chunks
+}
+
+export type ValueProp = 'volume'
+
+export interface ValueControl extends SourceControl {
+  prop: ValueProp
+}
+
+export interface Controls {
+  [controlId: string]: CueControl | ValueControl
 }
 
 export interface State {
   playback: Playback
   sources: Sources
+  controls: Controls
 }

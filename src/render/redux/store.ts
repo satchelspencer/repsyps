@@ -4,6 +4,7 @@ import { devToolsEnhancer } from 'redux-devtools-extension'
 import reducer from './reducer'
 import * as Actions from './actions'
 import syncAudio from './audio-sync'
+import syncMidi from './midi-sync'
 
 const store = createStore(
   reducer,
@@ -15,5 +16,6 @@ const store = createStore(
 )
 
 syncAudio(store)
+syncMidi(store)
 
 export default store
