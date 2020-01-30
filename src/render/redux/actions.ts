@@ -11,8 +11,9 @@ export const updateTime = createAction<Types.TimingState>('UPDATE_TIMES')
 
 export const addSource = createAction<{
   sourceId: string
-  channels: Types.NativeChannels
+  channels: Types.Channels
   name: string
+  bounds?: Types.Bounds
 }>('ADD_SOURCE')
 
 export const rmSource = createAction<string>('REMOVE_SOURCE')

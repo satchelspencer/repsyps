@@ -77,7 +77,7 @@ export default combineReducers({
         [payload.sourceId]: {
           name: payload.name,
           playback: defaultTrack,
-          bounds: [],
+          bounds: payload.bounds||[],
           selected: false,
           editing: true,
         },

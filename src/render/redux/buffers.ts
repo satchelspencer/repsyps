@@ -1,8 +1,8 @@
 import * as Types from 'lib/types'
 
-const buffers: { [sourceId: string]: Types.NativeChannels } = {}
+const buffers: { [sourceId: string]: Types.Channels } = {}
 
-export function createBuffer(sourceId: string, channels: Types.NativeChannels) {
+export function createBuffer(sourceId: string, channels: Types.Channels) {
   buffers[sourceId] = channels
 }
 

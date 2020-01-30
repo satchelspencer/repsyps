@@ -25,13 +25,14 @@ export interface Track extends TrackTiming {
   aperiodic: boolean
 }
 
-export type NativeChannels = Float32Array[] //array of arrays... 1 per channel
-export type Channels = AudioBuffer
+export type Channels = Float32Array[] //array of arrays... 1 per channel
+
+export type Bounds = number[]
 
 export interface Source {
   name: string
   playback: Track
-  bounds: number[]
+  bounds: Bounds
   selected: boolean
   editing: boolean
 }

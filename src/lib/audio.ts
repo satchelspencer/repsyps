@@ -7,11 +7,12 @@ interface AudioAPI {
   start(): void
   stop(): void
   updatePlayback(playback: Partial<Types.Playback>): void
-  addSource(sourceId: string, source: Types.NativeChannels): void
+  addSource(sourceId: string, source: Types.Channels): void
   removeSource(sourceId: string): boolean
   setTrack(trackId: string, track: Partial<Types.Track>)
   removeTrack(trackId: string)
   getTiming(): Types.TimingState
+  separateSource(source: Types.Channels): Types.Channels
   getDebug():any
 }
 

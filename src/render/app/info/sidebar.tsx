@@ -8,6 +8,7 @@ import * as Types from 'lib/types'
 import Title from './title'
 import BoundsControl from './bounds'
 import SourceVolume from './source-volume'
+import Separate from './separate'
 
 const SidebarWrapper = ctyled.div.styles({
   column: true,
@@ -44,8 +45,9 @@ const Sidebar = () => {
         {sourceExists && (
           <SourceDetailsWrapper>
             <Title name={name} icon="wave" />
-            <BoundsControl sourceId={sourceId} />
             <SourceVolume sourceId={sourceId} />
+            <BoundsControl sourceId={sourceId} />
+            <Separate sourceId={sourceId} />
           </SourceDetailsWrapper>
         )}
       </SidebarWrapper>

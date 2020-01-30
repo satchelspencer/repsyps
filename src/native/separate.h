@@ -3,4 +3,4 @@
 #include <tensorflow/c/c_api.h>       
 
 void init_separator(std::string rootPath);
-void separate(std::vector<float*>  channels, int length);
+void separate(std::vector<float*>  channels, std::vector<float*>  outchannels, int length);

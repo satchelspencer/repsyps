@@ -205,11 +205,39 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
   return timings;
 }
 
+Napi::Value separateSource(const Napi::CallbackInfo &info){
+  Napi::Env env = info.Env();
+  Napi::Array inpchannels = info[0].As<Napi::Array>();
+  int len;
+  std::vector<float*> channels;
+
+  Napi::Array outArray = Napi::Array::New(env);
+  std::vector<float*> outChannels;
+  int sepCount = 2;
+
+  for(uint32_t i=0;i<inpchannels.Length();i++){
+    Napi::TypedArray buff = inpchannels.Get(i).As<Napi::TypedArray>();
+    float* arr = reinterpret_cast<float*>(buff.ArrayBuffer().Data());
+    len = buff.ByteLength() / sizeof(float);
+    
+    channels.push_back(arr);
+
+    for(int j=0;j<sepCount;j++){
+      Napi::TypedArrayOf<float> oarr = Napi::TypedArrayOf<float>::New(env, len);
+      outChannels.push_back(reinterpret_cast<float*>(oarr.ArrayBuffer().Data()));
+      outArray.Set(i*2+j, oarr);
+    }
+  }
+
+  separate(channels, outChannels, len);
+
+  return outArray;
+}
+
 Napi::Value getDebug(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
   return Napi::Number::New(env, state.playback->out);
 }
-
 
 void InitAudio(Napi::Env env, Napi::Object exports){  
   exports.Set("init", Napi::Function::New(env, init));
@@ -221,5 +249,6 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("setTrack", Napi::Function::New(env, setTrack));
   exports.Set("removeTrack", Napi::Function::New(env, removeTrack));
   exports.Set("getTiming", Napi::Function::New(env, getTiming));
+  exports.Set("separateSource", Napi::Function::New(env, separateSource));
   exports.Set("getDebug", Napi::Function::New(env, getDebug));
 }

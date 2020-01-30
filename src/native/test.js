@@ -1,23 +1,21 @@
 const path = require('path')
 const fs = require('fs')
 const wav = require('node-wav')
+const _ = require('lodash')
 const audio = require(path.resolve(__dirname, '../../build/Release/audio.node'))
 
 const RATE = 44100
 
 audio.init('./')
 
-const src = '/Users/satchel/dev/fuckabouts/spleeter/bench.wav'//'/Users/satchel/Desktop/10. The Mask.wav'
+const src = './lib/test/bench.wav'
 
-const A = wav.decode(fs.readFileSync(src))
+const A = wav.decode(fs.readFileSync(src)).channelData
 
-
-// console.log(audio.tfTest(A.channelData))
-// setInterval(() => {})
+const [vocal, instru] = _.chunk(audio.separateSource(A), 2)
 
 
-
-audio.addSource('mysource', A.channelData)
+audio.addSource('mysource', vocal)
 audio.setTrack('mytrack', {
   sourceId: 'mysource',
   chunks: [0, 5.41 * RATE],//[34.13 * RATE, 5.41 * RATE, 23.27 * RATE, 5.41 * RATE],
