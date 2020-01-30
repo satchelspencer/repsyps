@@ -21,7 +21,7 @@ const CENTER = 2 / 3
 
 export default function Volume(props: VolumeProps) {
   const [muted, setMuted] = useState(false),
-    [lastVolume, setLastVolume] = useState(1)
+    [lastVolume, setLastVolume] = useState(0.666)
 
   return (
     <VolumeWrapper>
@@ -40,7 +40,7 @@ export default function Volume(props: VolumeProps) {
           }
         }}
       />
-      <SliderWrapper style={{ opacity: muted ? 0.5 : 1 }}>
+      <SliderWrapper style={{ opacity: muted || !props.volume ? 0.5 : 1 }}>
         <Slider
           value={muted ? lastVolume : props.volume}
           onChange={v => {

@@ -7,7 +7,7 @@ import audio, { RATE } from 'lib/audio'
 import { updateTime } from './actions'
 import diff from 'lib/diff'
 import reducer from 'render/redux/reducer'
-import {getBuffer} from 'render/redux/buffers'
+import { getBuffer } from 'render/redux/buffers'
 import isEqual from 'lib/is-equal'
 
 export const UPDATE_PERIOD = 50,
@@ -30,6 +30,7 @@ export default function syncAudio(store: Store<Types.State>) {
     _.keys(currentState.sources).forEach(sourceId => {
       const source = currentState.sources[sourceId],
         sourceIsNew = !lastState || !lastState.sources[sourceId],
+        lastSource = lastState && lastState.sources[sourceId],
         sourcePlaybackHasChanged =
           sourceIsNew ||
           !isEqual(
@@ -43,18 +44,56 @@ export default function syncAudio(store: Store<Types.State>) {
       }
 
       if (sourcePlaybackHasChanged) {
-        const lastSource = lastState && lastState.sources[sourceId],
-          change = diff(!lastSource ? {} : lastSource.playback, source.playback)
+        const change = diff(!lastSource ? {} : lastSource.playback, source.playback)
         //console.log('source change', change)
-        audio.setTrack(sourceId, { sourceId, ..._.omit(change, 'sample') })
+        /* update all the trackSources to have the same playback state */
+        _.keys(source.trackSources).forEach(trackSourceId => {
+          //console.log('pbchange', trackSourceId, change)
+          if (lastSource && lastSource.trackSources[trackSourceId]) {
+            audio.setTrack(trackSourceId, {
+              sourceId: trackSourceId,
+              ..._.omit(change, 'sample'),
+            })
+          }
+        })
       }
+
+      /* create and remove native tracks for each trackSource */
+      const sourceTrackIds = _.keys(source.trackSources),
+        lastSourceTrackIds = sourceIsNew ? [] : _.keys(lastSource.trackSources)
+
+      sourceTrackIds.forEach(sourceTrackId => {
+        const trackIsNew = !lastSourceTrackIds.includes(sourceTrackId),
+          trackHasChange =
+            trackIsNew ||
+            !isEqual(
+              lastSource.trackSources[sourceTrackId],
+              source.trackSources[sourceTrackId]
+            )
+        if (trackIsNew) {
+          audio.addSource(sourceTrackId, getBuffer(sourceTrackId))
+          audio.setTrack(sourceTrackId, {
+            ...source.playback,
+            ...source.trackSources[sourceTrackId],
+          })
+        } else if (trackHasChange)
+          audio.setTrack(sourceTrackId, {
+            ...source.trackSources[sourceTrackId],
+          })
+      })
+
+      lastSourceTrackIds.forEach(sourceTrackId => {
+        if (!sourceTrackIds.includes(sourceTrackId)) audio.removeTrack(sourceTrackId)
+      })
     })
 
     if (lastState)
       _.keys(lastState.sources).forEach(sourceId => {
         if (!currentState.sources[sourceId]) {
           audio.removeTrack(sourceId)
-          audio.removeSource(sourceId)
+          _.keys(lastState.sources[sourceId].trackSources).forEach(trackSourceId => {
+            audio.removeSource(trackSourceId)
+          })
         }
       })
 

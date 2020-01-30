@@ -18,7 +18,7 @@ int paCallbackMethod(
 
   source* trackSource;
   track* track;
-  int trackLength;
+  unsigned int trackLength;
   int channelCount;
   int channelIndex;
   int chunkCount;

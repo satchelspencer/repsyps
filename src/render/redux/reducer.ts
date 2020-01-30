@@ -5,7 +5,7 @@ import * as _ from 'lodash'
 import * as Actions from './actions'
 import * as Types from 'lib/types'
 import { RATE } from 'lib/audio'
-import {createBuffer, delBuffer} from './buffers'
+import { delBuffer } from './buffers'
 
 const defaultPlayback: Types.Playback = {
     volume: 0.666,
@@ -14,14 +14,17 @@ const defaultPlayback: Types.Playback = {
     time: 0,
   },
   defaultSources: Types.Sources = {},
-  defaultTrack: Types.Track = {
-    volume: 0.666,
+  defaultTrackPlayback: Types.TrackPlayback = {
     chunks: [0, 0],
     alpha: 1,
     playing: false,
     aperiodic: true,
     chunkIndex: -1,
     sample: 0,
+  },
+  defaultTrackSource: Types.TrackSource = {
+    name: '',
+    volume: 0.666,
   },
   defaultControls: Types.Controls = {}
 
@@ -71,15 +74,30 @@ export default combineReducers({
   ]),
   sources: createReducer(defaultSources, handle => [
     handle(Actions.addSource, (sources, { payload }) => {
-      createBuffer(payload.sourceId, payload.channels)
       return {
         ...sources,
         [payload.sourceId]: {
           name: payload.name,
-          playback: defaultTrack,
-          bounds: payload.bounds||[],
+          playback: defaultTrackPlayback,
+          trackSources: payload.trackSources,
+          bounds: payload.bounds || [],
           selected: false,
           editing: true,
+        },
+      }
+    }),
+    handle(Actions.setSourceTrack, (sources, { payload }) => {
+      return {
+        ...sources,
+        [payload.sourceId]: {
+          ...sources[payload.sourceId],
+          trackSources: {
+            ...sources[payload.sourceId].trackSources,
+            [payload.trackSourceId]: {
+              ...sources[payload.sourceId].trackSources[payload.trackSourceId],
+              ...payload.trackSource,
+            },
+          },
         },
       }
     }),

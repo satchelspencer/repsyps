@@ -34,12 +34,13 @@ const ControlWrapper = ctyled.div.attrs({ enabled: false, waiting: false }).styl
 export interface ControlProps {
   sourceId: string
   prop: Types.ValueProp
+  trackSourceId: string
 }
 
 export default function Control(props: ControlProps) {
   const getMappedState = useCallback(
       (state: Types.State) => {
-        const controlId = getValueControlId(state, props.sourceId, props.prop)
+        const controlId = getValueControlId(state, props.sourceId, props.trackSourceId, props.prop)
         return {
           controlId,
           control: state.controls[controlId] as Types.ValueControl,
@@ -62,6 +63,7 @@ export default function Control(props: ControlProps) {
               control: {
                 sourceId: props.sourceId,
                 prop: props.prop,
+                trackSourceId: props.trackSourceId
               },
             })
           )

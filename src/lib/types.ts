@@ -16,13 +16,24 @@ export interface TimingState {
 
 export type Chunks = number[] //[start0,end0,start1,end1]
 
-export interface Track extends TrackTiming {
-  sourceId?: string
-  volume: number
+export interface TrackPlayback extends TrackTiming {
   chunks: Chunks
   alpha: number
   playing: boolean
   aperiodic: boolean
+}
+
+export interface TrackSource {
+  name: string
+  volume: number
+}
+
+export interface TrackSources {
+  [trackSourceId: string]: TrackSource
+}
+
+export interface NativeTrack extends TrackPlayback, TrackSource {
+  sourceId?: string
 }
 
 export type Channels = Float32Array[] //array of arrays... 1 per channel
@@ -31,7 +42,8 @@ export type Bounds = number[]
 
 export interface Source {
   name: string
-  playback: Track
+  playback: TrackPlayback
+  trackSources: TrackSources
   bounds: Bounds
   selected: boolean
   editing: boolean
@@ -54,6 +66,7 @@ export type ValueProp = 'volume'
 
 export interface ValueControl extends SourceControl {
   prop: ValueProp
+  trackSourceId?: string
 }
 
 export interface Controls {

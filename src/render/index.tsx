@@ -6,6 +6,7 @@ import { StoreContext } from 'redux-react-hook'
 import store from './redux/store'
 import * as Actions from './redux/actions'
 import { SelectionContextProvider } from './components/selection'
+import { createBuffer } from 'render/redux/buffers'
 
 import App from './app'
 
@@ -21,11 +22,13 @@ window.ondrop = e => {
   reader.onload = async (e: any) => {
     const audioBuff = await context.decodeAudioData(e.target.result),
       id = _.snakeCase(file.name.substr(0, 15)) + new Date().getTime()
+
+    createBuffer(id, [audioBuff.getChannelData(0), audioBuff.getChannelData(1)])
     store.dispatch(
       Actions.addSource({
         sourceId: id,
         name: file.name,
-        channels: [audioBuff.getChannelData(0), audioBuff.getChannelData(1)],
+        trackSources: { [id]: { name: 'Main', volume: 0.666 } },
       })
     )
     store.dispatch(Actions.selectSourceExclusive(id))

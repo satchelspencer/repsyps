@@ -16,32 +16,43 @@ export interface SourceVolumeProps {
 const SourceVolume = (props: SourceVolumeProps) => {
   const getMappedState = useCallback(
       (state: Types.State) => {
-        return state.sources[props.sourceId].playback.volume
+        return state.sources[props.sourceId] && state.sources[props.sourceId].trackSources
       },
       [props.sourceId]
     ),
-    volume = useMappedState(getMappedState),
+    sources = useMappedState(getMappedState),
     dispatch = useDispatch()
 
   return (
-    <SidebarItem
-      title={
-        <>
-          <Volume
-            volume={volume}
-            onChange={v =>
-              dispatch(
-                Actions.setSourcePlayback({
-                  sourceId: props.sourceId,
-                  playback: { volume: v },
-                })
-              )
-            }
-          />
-          <Control sourceId={props.sourceId} prop="volume" />
-        </>
-      }
-    />
+    <>
+      {!!sources &&
+        _.keys(sources).map(trackSourceId => {
+          const trackSource = sources[trackSourceId]
+          return (
+            <SidebarItem
+              key={trackSourceId}
+              title={
+                <>
+                  <span>{trackSource.name}</span>
+                  <Volume
+                    volume={trackSource.volume}
+                    onChange={v =>
+                      dispatch(
+                        Actions.setSourceTrack({
+                          sourceId: props.sourceId,
+                          trackSourceId,
+                          trackSource: { volume: v },
+                        })
+                      )
+                    }
+                  />
+                  <Control sourceId={props.sourceId} trackSourceId={trackSourceId} prop="volume" />
+                </>
+              }
+            />
+          )
+        })}
+    </>
   )
 }
 

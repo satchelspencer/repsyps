@@ -11,16 +11,22 @@ export const updateTime = createAction<Types.TimingState>('UPDATE_TIMES')
 
 export const addSource = createAction<{
   sourceId: string
-  channels: Types.Channels
+  trackSources: Types.TrackSources
   name: string
   bounds?: Types.Bounds
 }>('ADD_SOURCE')
 
 export const rmSource = createAction<string>('REMOVE_SOURCE')
 
+export const setSourceTrack = createAction<{
+  sourceId: string
+  trackSourceId: string
+  trackSource: Partial<Types.TrackSource>
+}>('SET_SOURCE_TRACK')
+
 export const setSourcePlayback = createAction<{
   sourceId: string
-  playback: Partial<Types.Track>
+  playback: Partial<Types.TrackPlayback>
 }>('SET_SOURCE_PLAYBACK')
 
 export const setSourceBounds = createAction<{
