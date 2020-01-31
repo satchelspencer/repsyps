@@ -27,8 +27,12 @@ const ControlWrapper = ctyled.div.attrs({ enabled: false, waiting: false }).styl
   color: c => c.nudge(0.1),
 }).extendSheet`
     border-radius:50%;
-    ${(_, { enabled, waiting }) => enabled && !waiting && `background:rgba(255,0,0,0.65);`}
-    ${(_, {  waiting }) => waiting && `animation: ${blink} 2s linear infinite;`}
+    ${({ color }, { enabled, waiting }) =>
+      enabled && !waiting
+        ? `background:rgba(255,0,0,0.65) !important;`
+        : waiting
+        ? `animation: ${blink} 2s linear infinite;`
+        : `background:${color.bg};`}
   `
 
 export interface ControlProps {
@@ -40,7 +44,12 @@ export interface ControlProps {
 export default function Control(props: ControlProps) {
   const getMappedState = useCallback(
       (state: Types.State) => {
-        const controlId = getValueControlId(state, props.sourceId, props.trackSourceId, props.prop)
+        const controlId = getValueControlId(
+          state,
+          props.sourceId,
+          props.trackSourceId,
+          props.prop
+        )
         return {
           controlId,
           control: state.controls[controlId] as Types.ValueControl,
@@ -59,11 +68,11 @@ export default function Control(props: ControlProps) {
         if (!control)
           dispatch(
             Actions.addValueControl({
-              controlId: uid(), 
+              controlId: uid(),
               control: {
                 sourceId: props.sourceId,
                 prop: props.prop,
-                trackSourceId: props.trackSourceId
+                trackSourceId: props.trackSourceId,
               },
             })
           )

@@ -102,7 +102,8 @@ export default function syncAudio(store: Store<Types.State>) {
   store.subscribe(handleUpdate)
   handleUpdate()
 
-  setInterval(() => {
+  function update() {
+    let start = new Date().getTime()
     if (lastState && lastState.playback.playing) {
       const currentTiming = audio.getTiming(),
         action = updateTime(currentTiming)
@@ -111,7 +112,19 @@ export default function syncAudio(store: Store<Types.State>) {
       lastState = reducer(lastState, action)
       store.dispatch(action)
     }
-  }, UPDATE_PERIOD)
+    setTimeout(update, Math.max(UPDATE_PERIOD-(new Date().getTime()-start), 0))
+  }
+  update()
+  // setInterval(() => {
+  //   if (lastState && lastState.playback.playing) {
+  //     const currentTiming = audio.getTiming(),
+  //       action = updateTime(currentTiming)
+  //     //console.log(audio.getDebug())
+  //     /* override last state so this change won't be sent back to where it came from */
+  //     lastState = reducer(lastState, action)
+  //     store.dispatch(action)
+  //   }
+  // }, UPDATE_PERIOD)
 
   audio.start()
 }

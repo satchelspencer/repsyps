@@ -1,9 +1,12 @@
 /* returns the min and max for various size bins of the audio
   used for visualizing the waveform */
 
-export default function getMinMaxes(
-  buffer: Float32Array
-): [Float32Array, Float32Array, number][] {
+export type MinMaxes = [Float32Array, Float32Array, number][]
+
+const cache: { [key: string]: MinMaxes } = {}
+
+export default function getMinMaxes(buffer: Float32Array, key?: string): MinMaxes {
+  if (key && cache[key]) return cache[key]
   let minMaxes = []
   for (let frameSize = 2; frameSize < Math.floor(buffer.length / 2); frameSize *= 2) {
     const frameCount = Math.ceil(buffer.length / frameSize),
@@ -28,5 +31,6 @@ export default function getMinMaxes(
     }
     minMaxes.push([mins, maxes, frameSize])
   }
+  if (key) cache[key] = minMaxes
   return minMaxes
 }

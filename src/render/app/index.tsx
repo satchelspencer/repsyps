@@ -7,7 +7,7 @@ import ctyled from 'ctyled'
 import * as Types from 'lib/types'
 import * as Actions from 'render/redux/actions'
 
-import Source from './tracks/source'
+import Tracks from './tracks/tracks'
 import Sidebar from './info/sidebar'
 import Header from './header/header'
 
@@ -36,18 +36,6 @@ const Body = ctyled.div.styles({
   lined: true,
 }).extend`
   margin-top:1px;
-`
-
-const Sources = ctyled.div.styles({
-  column: true,
-  lined: true,
-  endLine: true,
-  flex: 1,
-  scroll: true,
-  color: c => c.nudge(0.025),
-  bg: true,
-}).extend`
-  overflow:visible;
 `
 
 export default function App() {
@@ -104,11 +92,7 @@ export default function App() {
       <Header />
       <Body>
         <Sidebar />
-        <Sources>
-          {sourceIds.map(sourceId => (
-            <Source key={sourceId} sourceId={sourceId} />
-          ))}
-        </Sources>
+        <Tracks />
       </Body>
     </Wrapper>
   )

@@ -26,7 +26,7 @@ export default function Volume(props: VolumeProps) {
   return (
     <VolumeWrapper>
       <Icon
-        styles={{ size: s => s * 1.6 }}
+        styles={{ size: s => s * 1.3 }}
         asButton
         name={props.volume ? 'volume' : 'volume_mute'}
         onClick={() => {

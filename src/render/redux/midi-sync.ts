@@ -38,14 +38,10 @@ export default async function init(store: Store<Types.State>) {
         }
       }
     },
-    throttledHandle = _.throttle(handleMessage, 100),
-    rawHandle = res => {
-      if (res.data[2] === 0 || res.data[2] === 128) handleMessage(res)
-      else throttledHandle(res)
-    }
+    throttledHandle = _.throttle(handleMessage, 100, { leading: false })
   ;(navigator as any).requestMIDIAccess().then(midiAccess => {
     for (var input of midiAccess.inputs.values()) {
-      input.onmidimessage = rawHandle
+      input.onmidimessage = throttledHandle
     }
   })
 }

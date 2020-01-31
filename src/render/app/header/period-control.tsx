@@ -36,7 +36,7 @@ const PeriodControl = memo(() => {
     )
   return (
     <PeriodWrapper>
-      <Icon styles={{ size: s => s * 1.5 }} name="timer" />
+      <Icon styles={{ size: s => s * 1.2 }} name="timer" />
       <SliderWrapper>
         <Slider
           value={1 - Math.sqrt((Math.floor(period) - EPSILON) / 9 / RATE)}

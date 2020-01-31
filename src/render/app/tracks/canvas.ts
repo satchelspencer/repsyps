@@ -10,12 +10,13 @@ import { DrawViewContext } from './source'
 export default function useWaveformCanvas(
   view: DrawViewContext,
   source: Types.Source,
-  buffer: Float32Array
+  buffer: Float32Array,
+  sourceId: string
 ) {
   const canvasRef = useRef(null),
     ctxt = useRef(null),
     ctyledContext = useContext(CtyledContext),
-    minMaxes = useMemo(() => getMinMaxes(buffer), [buffer]),
+    minMaxes = useMemo(() => getMinMaxes(buffer, sourceId), [buffer]),
     effectivePos = source.playback.playing ? 0 /* position */ : 0,
     { scale, start, impulses, width, height, clickX, center, mouseDown } = view
 

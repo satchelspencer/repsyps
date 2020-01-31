@@ -9,14 +9,14 @@ export default function useZoom(container: React.MutableRefObject<any>, center: 
   useEffect(() => {
     handleWheel.current = e => {
       const { deltaX, deltaY, ctrlKey, metaKey } = e
-      if (ctrlKey || metaKey || deltaX) e.preventDefault()
+      if (ctrlKey || metaKey || (deltaX && !deltaY)) e.preventDefault()
       if (ctrlKey || metaKey) {
         const scaleMultiplier = scale / 100,
           nextScale = Math.max(scale + deltaY * scaleMultiplier, 2),
           dx = (nextScale - scale) * center
         setStart(start - dx)
         setScale(nextScale)
-      } else {
+      } else if (deltaY < 2) {
         setStart(start + deltaX * scale)
       }
     }

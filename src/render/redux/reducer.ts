@@ -5,7 +5,6 @@ import * as _ from 'lodash'
 import * as Actions from './actions'
 import * as Types from 'lib/types'
 import { RATE } from 'lib/audio'
-import { delBuffer } from './buffers'
 
 const defaultPlayback: Types.Playback = {
     volume: 0.666,
@@ -21,10 +20,6 @@ const defaultPlayback: Types.Playback = {
     aperiodic: true,
     chunkIndex: -1,
     sample: 0,
-  },
-  defaultTrackSource: Types.TrackSource = {
-    name: '',
-    volume: 0.666,
   },
   defaultControls: Types.Controls = {}
 
@@ -102,7 +97,6 @@ export default combineReducers({
       }
     }),
     handle(Actions.rmSource, (sources, { payload }) => {
-      delBuffer(payload)
       return _.omit(sources, payload)
     }),
     handle(Actions.setSourcePlayback, (sources, { payload }) => {

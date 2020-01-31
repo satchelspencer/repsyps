@@ -108,7 +108,7 @@ int paCallbackMethod(
         /* add the sample to the buffer */
         for(channelIndex=0;channelIndex<channelCount;channelIndex++){
           sampleValue = 0;
-          if(sampledFrameIndex >= 0 && sampledFrameIndex < trackLength-1){
+          if(sampledFrameIndex >= 0 && sampledFrameIndex < trackLength-1 && track->volume > 0){
             sampleValue = trackSource->channels[channelIndex][sampledFrameIndex];
             sampleValueNext = trackSource->channels[channelIndex][sampledFrameIndex+1];
             sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
