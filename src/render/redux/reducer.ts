@@ -21,36 +21,74 @@ const defaultPlayback: Types.Playback = {
     chunkIndex: -1,
     sample: 0,
   },
-  defaultControls: Types.Controls = {}
+  defaultControls: Types.Controls = {
+    values: [],
+    cues: [],
+  },
+  defaultBindings: Types.Bindings = {
+    values: [],
+    cues: [],
+  }
 
 export default combineReducers({
-  controls: createReducer(defaultControls, handle => [
-    handle(Actions.addValueControl, (controls, { payload }) => {
+  bindings: createReducer(defaultBindings, handle => [
+    handle(Actions.setValueBinding, (bindings, { payload }) => {
+      const newBindings = [...bindings.values].map(v => (v === -1 ? null : v))
+      newBindings[payload.index] = payload.binding
       return {
-        ...controls,
-        [payload.controlId]: payload.control,
+        ...bindings,
+        values: newBindings,
       }
     }),
-    handle(Actions.deleteControl, (controls, { payload }) => {
-      return _.omit(controls, payload)
+    handle(Actions.setCueBinding, (bindings, { payload }) => {
+      const newBindings = [...bindings.cues].map(v => (v === -1 ? null : v))
+      newBindings[payload.index] = payload.binding
+      return {
+        ...bindings,
+        cues: newBindings,
+      }
     }),
-    handle(Actions.setControlMidiId, (controls, { payload }) => {
-      return _.mapValues(controls, (control, controlId) => {
-        if (controlId === payload.controlId)
-          return {
-            ...control,
-            midiId: payload.midiId,
-          }
-        else if (control.midiId === payload.midiId)
-          return {
-            ...control,
-            midiId: null,
-          }
-        else return control
-      })
+  ]),
+  controls: createReducer(defaultControls, handle => [
+    handle(Actions.addValueControl, (controls, { payload }) => {
+      const newValues = [...controls.values]
+      newValues[payload.index === undefined ? newValues.length : payload.index] =
+        payload.control
+      return {
+        ...controls,
+        values: newValues,
+      }
+    }),
+    handle(Actions.deleteValueControl, (controls, { payload }) => {
+      const newValues = [...controls.values]
+      newValues.splice(payload, 1)
+      return {
+        ...controls,
+        values: newValues,
+      }
+    }),
+    handle(Actions.addCueControl, (controls, { payload }) => {
+      const newCues = [...controls.cues]
+      newCues[payload.index === undefined ? newCues.length : payload.index] =
+        payload.control
+      return {
+        ...controls,
+        cues: newCues,
+      }
+    }),
+    handle(Actions.deleteCueControl, (controls, { payload }) => {
+      const newCues = [...controls.cues]
+      newCues.splice(payload, 1)
+      return {
+        ...controls,
+        cues: newCues,
+      }
     }),
     handle(Actions.rmSource, (controls, { payload }) => {
-      return _.pickBy(controls, control => control.sourceId !== payload)
+      return {
+        cues: controls.cues.filter(control => !(control.sourceId === payload)),
+        values: controls.values.filter(control => !(control.sourceId === payload)),
+      }
     }),
   ]),
   playback: createReducer(defaultPlayback, handle => [

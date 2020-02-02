@@ -145,7 +145,7 @@ function Slider(props: SliderProps) {
               key={i}
               column={props.column}
               style={{
-                [props.column ? 'bottom' : 'left']: marker * size - HANDLE_MINOR * 6,
+                [props.column ? 'bottom' : 'left']: marker * size - handleOffset,
               }}
             />
           )

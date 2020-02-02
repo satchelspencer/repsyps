@@ -55,7 +55,7 @@ export interface Sources {
 
 export interface SourceControl {
   sourceId: string
-  midiId?: number
+  name: string
 }
 
 export interface CueControl extends SourceControl {
@@ -70,11 +70,20 @@ export interface ValueControl extends SourceControl {
 }
 
 export interface Controls {
-  [controlId: string]: CueControl | ValueControl
+  values: ValueControl[]
+  cues: CueControl[]
+}
+
+export type Binding = number
+
+export interface Bindings{
+  values: Binding[]
+  cues: Binding[] //midi note ids
 }
 
 export interface State {
   playback: Playback
   sources: Sources
   controls: Controls
+  bindings: Bindings
 }

@@ -17,9 +17,9 @@ const HeaderWrapper = ctyled.div.styles({
   align: 'center',
   gutter: 1,
 }).extendSheet`
-  height:40px;
+  height:${72/window.devicePixelRatio}px;
   -webkit-app-region: drag;
-  padding-left:72px;
+  padding-left:${144/window.devicePixelRatio}px;
 `
 
 const ControlsWrapper = ctyled.div.styles({

@@ -3,20 +3,20 @@ import { keyframes } from 'react-emotion'
 import ctyled, { inline, active } from 'ctyled'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 
-import { getValueControlId } from 'render/redux/selectors'
+import { getValueControlIndex } from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 import * as Types from 'lib/types'
 import uid from 'lib/uid'
 
 const blink = keyframes`
   0% {
-    background:rgba(255,0,0,0.65);
+    opacity:1;
   }
   50% {
-    background:rgba(255,0,0,0);
+    opacity:0.3;
   }
   100% {
-    background:rgba(255,0,0,0.65);
+    opacity:1;
   }
 `
 
@@ -39,44 +39,45 @@ export interface ControlProps {
   sourceId: string
   prop: Types.ValueProp
   trackSourceId: string
+  name: string
 }
 
 export default function Control(props: ControlProps) {
   const getMappedState = useCallback(
       (state: Types.State) => {
-        const controlId = getValueControlId(
+        const controlIndex = getValueControlIndex(
           state,
           props.sourceId,
           props.trackSourceId,
           props.prop
         )
         return {
-          controlId,
-          control: state.controls[controlId] as Types.ValueControl,
+          controlIndex,
+          control: state.controls.values[controlIndex] as Types.ValueControl,
         }
       },
       [props.sourceId, props.prop]
     ),
-    { control, controlId } = useMappedState(getMappedState),
+    { control, controlIndex } = useMappedState(getMappedState),
     dispatch = useDispatch()
 
   return (
     <ControlWrapper
-      waiting={control && !control.midiId}
+      waiting={false}
       enabled={!!control}
       onClick={() => {
         if (!control)
           dispatch(
             Actions.addValueControl({
-              controlId: uid(),
               control: {
                 sourceId: props.sourceId,
                 prop: props.prop,
                 trackSourceId: props.trackSourceId,
+                name: props.name
               },
             })
           )
-        else dispatch(Actions.deleteControl(controlId))
+        else dispatch(Actions.deleteValueControl(controlIndex))
       }}
     />
   )

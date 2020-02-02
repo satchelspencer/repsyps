@@ -10,6 +10,7 @@ import * as Actions from 'render/redux/actions'
 import Tracks from './tracks/tracks'
 import Sidebar from './info/sidebar'
 import Header from './header/header'
+import Controls from './controls/controls'
 
 const Wrapper = ctyled.div.styles({
   color: c =>
@@ -17,7 +18,7 @@ const Wrapper = ctyled.div.styles({
       .as(palette.gray)
       .absLum(0.8)
       .contrast(0.2),
-  size: 12,
+  size: 11,
   bg: true,
   lined: true,
   align: 'stretch',
@@ -37,6 +38,13 @@ const Body = ctyled.div.styles({
 }).extend`
   margin-top:1px;
 `
+
+const BodyInner = ctyled.div.styles({
+  flex: 1,
+  column: true,
+  lined: true,
+  height:'100%'
+})
 
 export default function App() {
   const getMappedState = useCallback((state: Types.State) => {
@@ -92,7 +100,10 @@ export default function App() {
       <Header />
       <Body>
         <Sidebar />
-        <Tracks />
+        <BodyInner>
+          <Tracks />
+          <Controls />
+        </BodyInner>
       </Body>
     </Wrapper>
   )

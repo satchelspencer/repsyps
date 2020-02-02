@@ -50,18 +50,46 @@ export const editSource = createAction<{ sourceId: string; edit: boolean }>(
 )
 
 export const addValueControl = createAction<{
-  controlId: string
   control: Types.ValueControl
+  index?: number
 }>('ADD_VALUE_CONTROL')
 
-export const setControlMidiId = createAction<{
-  controlId: string
-  midiId: number
-}>('SET_CONTROL_MIDI')
-
-export const deleteControl = createAction<string>('DELETE_CONTROL')
+export const deleteValueControl = createAction<number>('DELETE_VALUE_CONTROL') //by index
 
 export const addCueControl = createAction<{
-  controlId: string
   control: Types.CueControl
+  index?: number
 }>('ADD_CUE_CONTROL')
+
+export const deleteCueControl = createAction<number>('DELETE_CUE_CONTROL') //by index
+
+export const setValueBinding = createAction<{ index: number; binding: Types.Binding }>(
+  'SET_VALUE_BINDING'
+)
+
+export const setCueBinding = createAction<{ index: number; binding: Types.Binding }>(
+  'SET_CUE_BINDING'
+)
+
+export function updateValueControlValue(control: Types.ValueControl, value: number) {
+  if (control.prop === 'volume' && control.trackSourceId)
+    return setSourceTrack({
+      sourceId: control.sourceId,
+      trackSourceId: control.trackSourceId,
+      trackSource: {
+        volume: value,
+      },
+    })
+  else return { type: 'NOOP' }
+}
+
+export function playbackCueControl(control: Types.CueControl) {
+  return setSourcePlayback({
+    sourceId: control.sourceId,
+    playback: {
+      chunks: control.chunks,
+      chunkIndex: -1,
+      playing: true
+    },
+  })
+}

@@ -16,11 +16,15 @@ export interface SourceVolumeProps {
 const SourceVolume = (props: SourceVolumeProps) => {
   const getMappedState = useCallback(
       (state: Types.State) => {
-        return state.sources[props.sourceId] && state.sources[props.sourceId].trackSources
+        const source = state.sources[props.sourceId]
+        return {
+          sources: source && source.trackSources,
+          name: source.name,
+        }
       },
       [props.sourceId]
     ),
-    sources = useMappedState(getMappedState),
+    { sources, name } = useMappedState(getMappedState),
     dispatch = useDispatch()
 
   return (
@@ -46,7 +50,12 @@ const SourceVolume = (props: SourceVolumeProps) => {
                       )
                     }
                   />
-                  <Control sourceId={props.sourceId} trackSourceId={trackSourceId} prop="volume" />
+                  <Control
+                    name={trackSource.name + ' - ' + name}
+                    sourceId={props.sourceId}
+                    trackSourceId={trackSourceId}
+                    prop="volume"
+                  />
                 </>
               }
             />

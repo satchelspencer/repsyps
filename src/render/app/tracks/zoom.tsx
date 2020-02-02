@@ -16,7 +16,7 @@ export default function useZoom(container: React.MutableRefObject<any>, center: 
           dx = (nextScale - scale) * center
         setStart(start - dx)
         setScale(nextScale)
-      } else if (deltaY < 2) {
+      } else {
         setStart(start + deltaX * scale)
       }
     }
