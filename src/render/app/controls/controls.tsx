@@ -124,7 +124,7 @@ const CueBindings = ctyled.div.styles({
 }).extendSheet`min-height: max-content;`
 
 const CueControl = ctyled.div.styles({
-  height: 3.5,
+  height: 2.5,
   color: c => c.contrast(0.1),
 })
 
@@ -139,14 +139,26 @@ const CueControlInner = ctyled.div.class(active).styles({
 
 const CueControlName = ctyled.div.styles({
   flex: 1,
+  height: 1.4,
 })
+
+const NameInner = ctyled.div.styles({
+  flex: 'none',
+}).extendSheet`
+position:absolute;
+width:100%;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+    display: block;
+`
 
 const CueControlPad = ctyled.div.styles({
   bg: true,
   rounded: 2,
   color: c => c.nudge(0.15),
-  width: 1.75,
-  height: 1.75,
+  width: 1.5,
+  height: 1.5,
   border: true,
   borderColor: c => c.contrast(-0.2),
 })
@@ -155,7 +167,7 @@ const CueBinding = ctyled.div.attrs({ enabled: false, waiting: false }).styles({
   align: 'center',
   justify: 'center',
   bg: true,
-  height: 3.5,
+  height: 2.5,
   color: c => c.nudge(-0.07),
 }).extendSheet`
 cursor:pointer;
@@ -181,11 +193,11 @@ export default function Controls() {
     { controls, bindings, values } = useMappedState(getMappedState),
     maxValueCount = Math.max(
       controls.values.length,
-      _.findLastIndex(bindings.values, a => !!a) + 1
+      _.findLastIndex(bindings.values, a => !!(a.note || a.waiting)) + 1
     ),
     maxCueCount = Math.max(
       controls.cues.length,
-      _.findLastIndex(bindings.cues, a => !!a) + 1
+      _.findLastIndex(bindings.cues, a => !!(a.note || a.waiting)) + 1
     )
 
   return (
@@ -193,17 +205,19 @@ export default function Controls() {
       <ValuesWrapper>
         <ValueBindings>
           {_.range(maxValueCount).map(index => {
-            const binding = bindings.values[index]
+            const binding = bindings.values[index],
+              enabled = !!(binding && binding.note)
+
             return (
               <ValueControlBinding
-                enabled={!!binding}
-                waiting={binding === -1}
+                enabled={enabled}
+                waiting={binding && binding.waiting}
                 key={index}
                 onClick={() =>
                   dispatch(
                     Actions.setValueBinding({
                       index,
-                      binding: binding ? null : -1,
+                      binding: { note: null, channel: null, waiting: !enabled },
                     })
                   )
                 }
@@ -220,7 +234,11 @@ export default function Controls() {
               dispatch(
                 Actions.setValueBinding({
                   index: maxValueCount,
-                  binding: -1,
+                  binding: {
+                    note: null,
+                    channel: null,
+                    waiting: true,
+                  },
                 })
               )
             }
@@ -261,7 +279,9 @@ export default function Controls() {
                     onClick={() => dispatch(Actions.playbackCueControl(control))}
                   >
                     <CueControlPad />
-                    <CueControlName>{control.name}</CueControlName>
+                    <CueControlName>
+                      <NameInner>{control.name}</NameInner>
+                    </CueControlName>
                   </CueControlInner>
                 )}
               </CueControl>
@@ -270,17 +290,18 @@ export default function Controls() {
         </CueControls>
         <CueBindings>
           {_.range(maxCueCount).map(index => {
-            const binding = bindings.cues[index]
+            const binding = bindings.cues[index],
+              enabled = !!(binding && binding.note)
             return (
               <CueBinding
-                enabled={!!binding}
-                waiting={binding === -1}
+                enabled={enabled}
+                waiting={binding && binding.waiting}
                 key={index}
                 onClick={() =>
                   dispatch(
                     Actions.setCueBinding({
                       index,
-                      binding: binding ? null : -1,
+                      binding: { note: null, channel: null, waiting: !enabled },
                     })
                   )
                 }
@@ -297,7 +318,11 @@ export default function Controls() {
               dispatch(
                 Actions.setCueBinding({
                   index: maxCueCount,
-                  binding: -1,
+                  binding: {
+                    note: null,
+                    channel: null,
+                    waiting: true,
+                  },
                 })
               )
             }

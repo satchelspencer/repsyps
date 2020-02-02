@@ -74,7 +74,11 @@ export interface Controls {
   cues: CueControl[]
 }
 
-export type Binding = number
+export type Binding = {
+  channel: number,
+  note: number,
+  waiting?: boolean
+}
 
 export interface Bindings{
   values: Binding[]

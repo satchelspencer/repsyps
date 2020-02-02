@@ -33,7 +33,9 @@ const defaultPlayback: Types.Playback = {
 export default combineReducers({
   bindings: createReducer(defaultBindings, handle => [
     handle(Actions.setValueBinding, (bindings, { payload }) => {
-      const newBindings = [...bindings.values].map(v => (v === -1 ? null : v))
+      const newBindings = [...bindings.values].map(v =>
+        v.waiting ? _.omit(v, 'waiting') : v
+      )
       newBindings[payload.index] = payload.binding
       return {
         ...bindings,
@@ -41,7 +43,9 @@ export default combineReducers({
       }
     }),
     handle(Actions.setCueBinding, (bindings, { payload }) => {
-      const newBindings = [...bindings.cues].map(v => (v === -1 ? null : v))
+      const newBindings = [...bindings.cues].map(v =>
+        v.waiting ? _.omit(v, 'waiting') : v
+      )
       newBindings[payload.index] = payload.binding
       return {
         ...bindings,
