@@ -2,9 +2,6 @@
   "targets": [
     {
       "target_name": "audio",
-      "cflags!": [ "-std=c++17" ],
-      "cflags_cc!": [ "-fno-rtti"],
-      "ldflags" : [""],
       "sources": [
         "src/native/addon.cc",
         "src/native/audio.cc",
@@ -18,20 +15,32 @@
         "<@(libsdir)/libtensorflow/include",
         "<!@(node -p \"require('node-addon-api').include\")"
       ],
-      "libraries": [
-        "<@(libsdir)/portaudio/lib/.libs/libportaudio.a",
-        "<@(libsdir)/kfr/build/lib/libkfr_capi_avx_pic.a",
-        "-L../lib -ltensorflow -Wl,-rpath,@loader_path/../../lib",
-      ],
       'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ],
-      "xcode_settings": {
-        "OTHER_CFLAGS": [
-          "-std=c++17",
-          "-stdlib=libc++"
-        ],
-        "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
-        "MACOSX_DEPLOYMENT_TARGET": "10.12"
-      },
+      "conditions": [
+      	[ "OS==\"linux\"", {
+          "cflags_cc": [ "-fno-rtti", "-std=c++1z", "-fpermissive"],
+          "libraries": [
+		        "-lportaudio",
+		        "<@(libsdir)/kfr/build/lib/libkfr_capi_avx_pic.a",
+		        "-L../lib/libtensorflow/lib -ltensorflow -Wl,-rpath,@loader_path/../../lib/libtensorflow/lib",
+		      ],
+        }],
+        [ "OS==\"mac\"", {
+          "xcode_settings": {
+		        "OTHER_CFLAGS": [
+		          "-std=c++17",
+		          "-stdlib=libc++"
+		        ],
+		        "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
+		        "MACOSX_DEPLOYMENT_TARGET": "10.12"
+		      },
+		      "libraries": [
+		        "<@(libsdir)/portaudio/lib/.libs/libportaudio.a",
+		        "<@(libsdir)/kfr/build/lib/libkfr_capi_avx_pic.a",
+		        "-L../lib/libtensorflow/lib -ltensorflow -Wl,-rpath,@loader_path/../../lib/libtensorflow/lib",
+		      ],
+        }]
+      ]
     }
   ]
 }

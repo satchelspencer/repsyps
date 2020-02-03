@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "start": "electron-webpack dev",
-    "build": "node-gyp configure build --libsdir=$HOME",
+    "build": "node-gyp configure build --libsdir=$(pwd)/lib",
+    "install": "node-gyp configure rebuild --libsdir=$(pwd)/lib",
     "test-native": "node src/native/test.js",
     "clean": "node-gyp clean",
-    "install": "node-gyp rebuild --libsdir=$HOME",
     "build-electron": "electron-webpack",
     "dist": "yarn build-electron && electron-builder",
     "dist:dir": "yarn dist --dir -c.compression=store -c.mac.identity=null"
