@@ -22,7 +22,7 @@
           "libraries": [
 		        "-lportaudio",
 		        "<@(libsdir)/kfr/build/lib/libkfr_capi_avx_pic.a",
-		        "-L../lib/libtensorflow/lib -ltensorflow -Wl,-rpath,@loader_path/../../lib/libtensorflow/lib",
+		        "-L../lib/libtensorflow/lib -ltensorflow -Wl,-rpath,./lib/libtensorflow/lib",
 		      ],
         }],
         [ "OS==\"mac\"", {
