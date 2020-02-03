@@ -23,7 +23,7 @@ import {
 
 const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
   flex: 'none',
-  color: (c, { selected }) => (selected ? c.contrast(0.3) : c),
+  color: (c, { selected }) => (selected ? c.contrast(0.3) : c.contrast(-0.1)),
 }).extendSheet`
   height:${({ size }) => Math.ceil(size * 8) + 4}px;
 `
@@ -51,7 +51,7 @@ const CornerWrapper = ctyled.div.styles({
   position:absolute;
 `
 
-const TrackName = ctyled.div.styles({
+const TrackName = ctyled.div.attrs({ selected: false }).styles({
   align: 'center',
   gutter: 1,
   flex: 1,
@@ -59,7 +59,7 @@ const TrackName = ctyled.div.styles({
   color: c => c.invert(),
   rounded: 2,
 }).extendSheet`
-  background:${({ color }) => color.bg + '99'};
+  background:${({ color }, { selected }) => (selected ? '#ca5d5d99' : color.bg + '99')};
 `
 
 const TrackArrow = ctyled.div.styles({
@@ -127,6 +127,7 @@ const Source = memo(
     /* react state */
     const [center, setCenter] = useState(0),
       [clickX, setClickX] = useState(null),
+      [shiftKey, setShiftKey] = useState(false),
       [mouseDown, setMouseDown] = useState(false)
 
     const container = useRef(null)
@@ -179,6 +180,7 @@ const Source = memo(
           boundHandlers.mouseDown(clickCtxt, view, pos, source.bounds)
           setClickX(pos.x)
           setMouseDown(true)
+          setShiftKey(e.shiftKey)
         },
         [...clickCtxtValues, ...viewValues, source.playback.chunks, source.bounds]
       ),
@@ -195,7 +197,13 @@ const Source = memo(
         e => {
           const pos = getRelativePos(e, left, top)
 
-          playbackBoundHandlers.mouseUp(clickCtxt, pos, view, source.bounds)
+          playbackBoundHandlers.mouseUp(
+            clickCtxt,
+            pos,
+            view,
+            source.bounds,
+            source.selected
+          )
 
           const didSelectBound = selectBoundHandlers.mouseUp(
               clickCtxt,
@@ -210,8 +218,9 @@ const Source = memo(
             selectPlaybackHandlers.mouseUp(clickCtxt, pos, view)
           setClickX(null)
           setMouseDown(false)
+          setShiftKey(false)
         },
-        [...clickCtxtValues, ...viewValues, source.bounds]
+        [...clickCtxtValues, ...viewValues, source.bounds, source.selected]
       ),
       handleDoubleClick = useCallback(
         e => {
@@ -247,13 +256,12 @@ const Source = memo(
             height={height * 2}
           />
           <CornerWrapper>
-            <TrackName>
+            <TrackName selected={source.selected}>
               {source.name}&nbsp;
               <Icon asButton onClick={rmTrack} styles={delIconSty} name="close-thin" />
             </TrackName>
           </CornerWrapper>
         </TrackCanvasWrapper>
-        {source.selected && <TrackArrow />}
       </>
     )
   },
@@ -288,13 +296,14 @@ export default function SourceContainer(props: SourceContainerProps) {
     }, [props.sourceId, isSelecting, onSelect])
 
   return (
-    <TrackContainer
-      inRef={wrapperRef}
-      onClick={handleClick}
-      selected={source.selected}
-    >
+    <TrackContainer inRef={wrapperRef} onClick={handleClick} selected={source.selected}>
       {!wayOffScreen && (
-        <Source noClick={isSelecting} visible={visible} sourceId={props.sourceId} source={source} />
+        <Source
+          noClick={isSelecting}
+          visible={visible}
+          sourceId={props.sourceId}
+          source={source}
+        />
       )}
     </TrackContainer>
   )

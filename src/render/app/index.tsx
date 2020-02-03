@@ -42,7 +42,6 @@ const Body = ctyled.div.styles({
 const BodyInner = ctyled.div.styles({
   flex: 1,
   column: true,
-  lined: true,
   height:'100%'
 })
 

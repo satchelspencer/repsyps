@@ -18,6 +18,7 @@ const ControlsWrapper = ctyled.div.styles({
   bg: true,
 }).extendSheet`
   height:100%;
+  border-top:2px solid ${({ color }) => color.bq} !important;
 `
 
 const ValueControl = ctyled.div.styles({
@@ -34,13 +35,22 @@ const ValueControl = ctyled.div.styles({
 `
 
 const ValueControlTitle = ctyled.div.styles({
-  width: 1,
+  width: 1.3,
 }).extendSheet`
   writing-mode: vertical-rl;
   text-orientation: mixed;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+`
+
+const TitleInner = ctyled.div.styles({ flex: 'none' }).extendSheet`
+position:absolute;
+height:100%;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+    display: block;
 `
 
 const blink = keyframes`
@@ -101,7 +111,7 @@ const CuesWrapper = ctyled.div.styles({
   flex: '0.75 0 0',
   lined: true,
 }).extendSheet`
-  border-left:4px solid ${({ color }) => color.bq} !important;
+  border-left:2px solid ${({ color }) => color.bq} !important;
   overflow-y:scroll;
   height: 100%;
 `
@@ -260,7 +270,9 @@ export default function Controls() {
                         dispatch(Actions.updateValueControlValue(control, value))
                       }
                     />
-                    <ValueControlTitle>{control.name}</ValueControlTitle>
+                    <ValueControlTitle>
+                      <TitleInner>{control.name}</TitleInner>
+                    </ValueControlTitle>
                   </>
                 )}
               </ValueControl>

@@ -238,9 +238,10 @@ export function usePlaybackBound(sourceId: string) {
         ctxt: ClickEventContext,
         pos: ClickPos,
         view: ViewContext,
-        bounds: number[]
+        bounds: number[],
+        selected: boolean
       ) {
-        if (ctxt.editing) return false
+        if (ctxt.editing || (!selected && ctxt.clickX === pos.x)) return false
         const startBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
           endBoundIndex = getNextBoundIndex(pos.x, view, bounds)
 
