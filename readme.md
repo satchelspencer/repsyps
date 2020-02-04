@@ -94,9 +94,9 @@ repsyps depends on native libraries that must be installed manually for developm
  
     ~~~
     mkdir libtensorflow && cd libtensorflow && \
-    wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-1.15.0.tar.gz \
-    && tar xvzf libtensorflow-cpu-linux-x86_64-1.15.0.tar.gz \
-    && rm libtensorflow-cpu-linux-x86_64-1.15.0.tar.gz
+    wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-1.15.0.tar.gz \
+    && tar xvzf libtensorflow-gpu-linux-x86_64-1.15.0.tar.gz \
+    && rm libtensorflow-gpu-linux-x86_64-1.15.0.tar.gz
     ~~~
  - `cd ../../` back to repsyps root folder
  - `yarn` install node dependencies and build native modules

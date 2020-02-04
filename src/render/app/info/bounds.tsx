@@ -1,4 +1,4 @@
-import React, {memo, useCallback, useMemo } from 'react'
+import React, { memo, useCallback, useMemo } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 import ctyled, { inline, active } from 'ctyled'
@@ -12,7 +12,7 @@ import { WideButton, SidebarValue, HeaderContent } from 'render/components/misc'
 import inferTimeBase from 'lib/infer-timebase'
 import { RATE } from 'lib/audio'
 import { useSelection } from 'render/components/selection'
-import {getBuffer} from 'render/redux/buffers'
+import { getBuffer } from 'render/redux/buffers'
 
 export interface BoundsControlProps {
   sourceId: string
@@ -24,12 +24,12 @@ const EditLink = ctyled.div
   .styles({
     hover: true,
     padd: 1,
-    bg: false
+    bg: false,
   }).extend`
   text-decoration:underline;
 `
 
-const  BoundsControl = memo((props: BoundsControlProps) => {
+const BoundsControl = memo((props: BoundsControlProps) => {
   const getMappedState = useCallback(
       (state: Types.State) => {
         const source = props.sourceId && state.sources[props.sourceId]
@@ -45,10 +45,10 @@ const  BoundsControl = memo((props: BoundsControlProps) => {
     channels = getBuffer(props.sourceId),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection(),
-    impulses = useMemo(
-      () => getImpulses(channels[0], props.sourceId),
-      [channels, props.sourceId]
-    ),
+    impulses = useMemo(() => getImpulses(channels[0], props.sourceId), [
+      channels,
+      props.sourceId,
+    ]),
     hasTimeBase = !!bounds.length,
     cstart = chunks[0],
     clength = chunks[1],
@@ -119,14 +119,16 @@ const  BoundsControl = memo((props: BoundsControlProps) => {
         dispatch(Actions.editSource({ sourceId: props.sourceId, edit: open }))
       }
       title={
-        <HeaderContent>
-          <Icon name="timer" styles={{ size: s => s * 1.2 }} />
-          <span>Time Divisions:</span>
-          <SidebarValue warn={!hasTimeBase} styles={{ size: s => s * 0.8 }}>
-            {hasTimeBase ? _.round(60 / (avgBar / RATE), 0) + '/m' : '??'}
-          </SidebarValue>
-          <EditLink>{editing ? 'done' : 'edit'}</EditLink>
-        </HeaderContent>
+        <>
+          <HeaderContent>
+            <Icon name="timer" styles={{ size: s => s * 1.2 }} />
+            <span>Time Divisions:</span>
+            <SidebarValue warn={!hasTimeBase} styles={{ size: s => s * 1 }}>
+              {hasTimeBase ? _.round(60 / (avgBar / RATE), 0) + '/m' : '??'}
+            </SidebarValue>
+          </HeaderContent>
+          <WideButton styles={{ flex: 1 }}>{editing ? 'Done' : 'Edit'}</WideButton>
+        </>
       }
     >
       <WideButton

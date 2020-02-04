@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef, useEffect } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import { palette } from 'render/components/theme'
 import * as _ from 'lodash'
@@ -6,6 +6,7 @@ import ctyled from 'ctyled'
 
 import * as Types from 'lib/types'
 import * as Actions from 'render/redux/actions'
+import addTrack from 'render/redux/add-track'
 
 import Tracks from './tracks/tracks'
 import Sidebar from './info/sidebar'
@@ -42,7 +43,7 @@ const Body = ctyled.div.styles({
 const BodyInner = ctyled.div.styles({
   flex: 1,
   column: true,
-  height:'100%'
+  height: '100%',
 })
 
 export default function App() {
@@ -58,12 +59,24 @@ export default function App() {
     { selected, playing, sources } = useMappedState(getMappedState),
     dispatch = useDispatch(),
     sourceIds = Object.keys(sources),
-    sourcelen = sourceIds.length
+    sourcelen = sourceIds.length,
+    input = useRef(null)
+
+  useEffect(() => {
+    input.current = document.createElement('input')
+    input.current.type = 'file'
+    input.current.onchange = e => {
+      const { files } = input.current
+      addTrack(files[0], dispatch)
+      input.current.value = ''
+    }
+  }, [])
 
   return (
     <Wrapper
       tabIndex={0}
       onKeyDown={e => {
+        if (e.key === 'o' && e.metaKey) input.current.click()
         if (e.key === ' ') e.preventDefault()
         if (e.key === ' ' && !e.shiftKey)
           selected &&
