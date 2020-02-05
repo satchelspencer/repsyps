@@ -16,7 +16,7 @@ export default function(file: any, dispatch: any) {
       Actions.addSource({
         sourceId: id,
         name: file.name,
-        trackSources: { [id]: { name: 'Main', volume: 0.666 } },
+        trackSources: { [id]: { name: 'Main', volume: 1 } },
       })
     )
     dispatch(Actions.selectSourceExclusive(id))

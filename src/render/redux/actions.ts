@@ -49,47 +49,33 @@ export const editSource = createAction<{ sourceId: string; edit: boolean }>(
   'SET_SOURCE_EDIT'
 )
 
-export const addValueControl = createAction<{
-  control: Types.ValueControl
+export const addCue = createAction<{
+  sourceId: string
+  cue: Types.Cue
   index?: number
-}>('ADD_VALUE_CONTROL')
+}>('ADD_CUE')
 
-export const deleteValueControl = createAction<number>('DELETE_VALUE_CONTROL') //by index
+export const deleteCue = createAction<{
+  sourceId: string
+  index: number
+}>('DELETE_CUE')
 
-export const addCueControl = createAction<{
-  control: Types.CueControl
-  index?: number
-}>('ADD_CUE_CONTROL')
+export const addControl = createAction<{
+  controlId: string
+  control: Types.Control
+}>('ADD_CONTROL')
 
-export const deleteCueControl = createAction<number>('DELETE_CUE_CONTROL') //by index
+export const removeControl = createAction<string>('REMOVE_CONTROL')
 
-export const setValueBinding = createAction<{ index: number; binding: Types.Binding }>(
-  'SET_VALUE_BINDING'
-)
+export const addBinding = createAction<{
+  bindingId: string
+  binding: Types.Binding
+}>('ADD_BINDING')
 
-export const setCueBinding = createAction<{ index: number; binding: Types.Binding }>(
-  'SET_CUE_BINDING'
-)
+export const removeBinding = createAction<string>('REMOVE_BINDING')
 
-export function updateValueControlValue(control: Types.ValueControl, value: number) {
-  if (control.prop === 'volume' && control.trackSourceId)
-    return setSourceTrack({
-      sourceId: control.sourceId,
-      trackSourceId: control.trackSourceId,
-      trackSource: {
-        volume: value,
-      },
-    })
-  else return { type: 'NOOP' }
-}
-
-export function playbackCueControl(control: Types.CueControl) {
-  return setSourcePlayback({
-    sourceId: control.sourceId,
-    playback: {
-      chunks: control.chunks,
-      chunkIndex: -1,
-      playing: true
-    },
-  })
-}
+export const applyControl = createAction<{
+  control: Types.Control
+  value: number
+  function: Types.MidiFunctionName
+}>('APPLY_CONTROL')

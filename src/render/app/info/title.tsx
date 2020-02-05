@@ -33,7 +33,7 @@ export interface TrackTitleProps {
 
 export default function TrackTitle(props: TrackTitleProps) {
   return (
-    <SourceItem>
+    <SourceItem styles={{ height: 1.3 }}>
       <HeaderContent>
         <Icon name={props.icon} styles={{ size: s => s * 1.5 }} />
         <SourceTitle styles={{ size: s => s * 1.1 }}>{props.name}</SourceTitle>

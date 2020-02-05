@@ -7,7 +7,7 @@ import * as Types from 'lib/types'
 import { RATE } from 'lib/audio'
 
 const defaultPlayback: Types.Playback = {
-    volume: 0.666,
+    volume: 1,
     playing: true,
     period: 2.7 * RATE,
     time: 0,
@@ -21,81 +21,47 @@ const defaultPlayback: Types.Playback = {
     chunkIndex: -1,
     sample: 0,
   },
-  defaultControls: Types.Controls = {
-    values: [],
-    cues: [],
-  },
-  defaultBindings: Types.Bindings = {
-    values: [],
-    cues: [],
-  }
+  defaultControls: Types.Controls = {},
+  defaultBindings: Types.Bindings = {}
 
 export default combineReducers({
   bindings: createReducer(defaultBindings, handle => [
-    handle(Actions.setValueBinding, (bindings, { payload }) => {
-      const newBindings = [...bindings.values].map(v =>
-        v.waiting ? _.omit(v, 'waiting') : v
-      )
-      newBindings[payload.index] = payload.binding
+    handle(Actions.addBinding, (bindings, { payload }) => {
       return {
         ...bindings,
-        values: newBindings,
+        [payload.bindingId]: payload.binding,
       }
     }),
-    handle(Actions.setCueBinding, (bindings, { payload }) => {
-      const newBindings = [...bindings.cues].map(v =>
-        v.waiting ? _.omit(v, 'waiting') : v
-      )
-      newBindings[payload.index] = payload.binding
-      return {
-        ...bindings,
-        cues: newBindings,
-      }
+    handle(Actions.removeBinding, (bindings, { payload }) => {
+      return _.omit(bindings, payload)
     }),
   ]),
   controls: createReducer(defaultControls, handle => [
-    handle(Actions.addValueControl, (controls, { payload }) => {
-      const newValues = [...controls.values]
-      newValues[payload.index === undefined ? newValues.length : payload.index] =
-        payload.control
+    handle(Actions.addControl, (controls, { payload }) => {
       return {
         ...controls,
-        values: newValues,
+        [payload.controlId]: payload.control,
       }
     }),
-    handle(Actions.deleteValueControl, (controls, { payload }) => {
-      const newValues = [...controls.values]
-      newValues.splice(payload, 1)
-      return {
-        ...controls,
-        values: newValues,
-      }
-    }),
-    handle(Actions.addCueControl, (controls, { payload }) => {
-      const newCues = [...controls.cues]
-      newCues[payload.index === undefined ? newCues.length : payload.index] =
-        payload.control
-      return {
-        ...controls,
-        cues: newCues,
-      }
-    }),
-    handle(Actions.deleteCueControl, (controls, { payload }) => {
-      const newCues = [...controls.cues]
-      newCues.splice(payload, 1)
-      return {
-        ...controls,
-        cues: newCues,
-      }
+    handle(Actions.removeControl, (controls, { payload }) => {
+      return _.omit(controls, payload)
     }),
     handle(Actions.rmSource, (controls, { payload }) => {
-      return {
-        cues: controls.cues.filter(control => !(control.sourceId === payload)),
-        values: controls.values.filter(control => !(control.sourceId === payload)),
-      }
+      return _.pickBy(
+        controls,
+        control => !('sourceId' in control && control.sourceId === payload) //keep only controls that arent tied to a sourec
+      )
     }),
   ]),
   playback: createReducer(defaultPlayback, handle => [
+    handle(Actions.applyControl, (playback, { payload }) => {
+      if (!('global' in payload.control)) return playback
+      else
+        return {
+          ...playback,
+          [payload.control.prop]: payload.value,
+        }
+    }),
     handle(Actions.updatePlayback, (playback, { payload }) => {
       return {
         ...playback,
@@ -110,6 +76,60 @@ export default combineReducers({
     }),
   ]),
   sources: createReducer(defaultSources, handle => [
+    handle(Actions.addCue, (sources, { payload }) => {
+      const source = sources[payload.sourceId],
+        newCues = [...source.cues]
+      newCues[payload.index === undefined ? newCues.length : payload.index] = payload.cue
+      return {
+        ...sources,
+        [payload.sourceId]: {
+          ...source,
+          cues: newCues,
+        },
+      }
+    }),
+    handle(Actions.deleteCue, (sources, { payload }) => {
+      const source = sources[payload.sourceId],
+        newCues = [...source.cues]
+      newCues.splice(payload.index, 1)
+      return {
+        ...sources,
+        [payload.sourceId]: {
+          ...source,
+          cues: newCues,
+        },
+      }
+    }),
+    handle(Actions.applyControl, (sources, { payload }) => {
+      const control = payload.control
+      if (!('sourceId' in control)) return sources
+      else if ('trackSourceId' in control) {
+        return {
+          ...sources,
+          [control.sourceId]: {
+            ...sources[control.sourceId],
+            trackSources: {
+              ...sources[control.sourceId].trackSources,
+              [control.trackSourceId]: {
+                ...sources[control.sourceId].trackSources[control.trackSourceId],
+                [control.prop]: payload.value,
+              },
+            },
+          },
+        }
+      } else if ('cueIndex' in control && payload.function === 'note-on') {
+        return {
+          ...sources,
+          [control.sourceId]: {
+            ...sources[control.sourceId],
+            playback: {
+              ...sources[control.sourceId].playback,
+              ...sources[control.sourceId].cues[control.cueIndex],
+            },
+          },
+        }
+      } else return sources
+    }),
     handle(Actions.addSource, (sources, { payload }) => {
       return {
         ...sources,
@@ -120,6 +140,7 @@ export default combineReducers({
           bounds: payload.bounds || [],
           selected: false,
           editing: true,
+          cues: [],
         },
       }
     }),

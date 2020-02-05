@@ -9,7 +9,7 @@ import Title from './title'
 import BoundsControl from './bounds'
 import SourceVolume from './source-volume'
 import Separate from './separate'
-import AddCue from './addcue'
+import Cues from './cues'
 
 const SidebarWrapper = ctyled.div.styles({
   column: true,
@@ -49,7 +49,7 @@ const Sidebar = () => {
             <SourceVolume sourceId={sourceId} />
             <BoundsControl sourceId={sourceId} />
             <Separate sourceId={sourceId} />
-            <AddCue sourceId={sourceId} />
+            <Cues sourceId={sourceId} />
           </SourceDetailsWrapper>
         )}
       </SidebarWrapper>

@@ -5,6 +5,7 @@ import ctyled from 'ctyled'
 import Slider from './slider'
 import Icon from 'render/components/icon'
 import { SliderWrapper } from './misc'
+import mappings from 'render/redux/mappings'
 
 const VolumeWrapper = ctyled.div.styles({
   align: 'center',
@@ -21,7 +22,7 @@ const CENTER = 2 / 3
 
 export default function Volume(props: VolumeProps) {
   const [muted, setMuted] = useState(false),
-    [lastVolume, setLastVolume] = useState(0.666)
+    [lastVolume, setLastVolume] = useState(1)
 
   return (
     <VolumeWrapper>
@@ -42,10 +43,10 @@ export default function Volume(props: VolumeProps) {
       />
       <SliderWrapper style={{ opacity: muted || !props.volume ? 0.5 : 1 }}>
         <Slider
-          value={muted ? lastVolume : props.volume}
+          value={mappings.volume.toStandard(muted ? lastVolume : props.volume)}
           onChange={v => {
             setMuted(false)
-            props.onChange(v)
+            props.onChange(mappings.volume.fromStandard(v))
           }}
           markers={[CENTER]}
         />

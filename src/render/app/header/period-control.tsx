@@ -9,7 +9,9 @@ import Slider from 'render/components/slider'
 import Icon from 'render/components/icon'
 import { RATE, EPSILON } from 'lib/audio'
 import { Value, SliderWrapper } from 'render/components/misc'
+import ControlAdder from 'render/components/control-adder'
 import PhaseDisplay from './phase-display'
+import mappings from 'render/redux/mappings'
 
 const PeriodWrapper = ctyled.div.styles({
   align: 'center',
@@ -28,21 +30,20 @@ const PeriodControl = memo(() => {
     { period, time } = useMappedState(getMappedState),
     dispatch = useDispatch(),
     handleChange = useCallback(
-      v =>
-        dispatch(
-          Actions.updatePlayback({ period: Math.pow(1 - v, 2) * 9 * RATE + EPSILON })
-        ),
+      v => dispatch(Actions.updatePlayback({ period: mappings.period.fromStandard(v) })),
       []
     )
   return (
     <PeriodWrapper>
       <Icon styles={{ size: s => s * 1.2 }} name="timer" />
       <SliderWrapper>
-        <Slider
-          value={1 - Math.sqrt((Math.floor(period) - EPSILON) / 9 / RATE)}
-          onChange={handleChange}
-        />
+        <Slider value={mappings.period.toStandard(period)} onChange={handleChange} />
       </SliderWrapper>
+      <ControlAdder
+        name="Playback Rate"
+        params={{ prop: 'period', global: true }}
+        type="value"
+      />
       <Value>{_.round(60 / (period / RATE), 0) + '/m'}</Value>
       <PhaseDisplay time={time} />
     </PeriodWrapper>

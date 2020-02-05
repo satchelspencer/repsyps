@@ -22,7 +22,7 @@ const SubItem = ctyled.div.styles({
 }).extend`
   margin-top:0px !important;
   margin-left:${({ size }) => size * 0.7}px;
-  padding-left:${({ size }) => size}px;
+  padding-left:${({ size }) => size/2}px;
   border-left:1px solid ${({ color }) => color.bq};
 `
 

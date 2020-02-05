@@ -40,6 +40,8 @@ export type Channels = Float32Array[] //array of arrays... 1 per channel
 
 export type Bounds = number[]
 
+export type Cue = Partial<TrackPlayback>
+
 export interface Source {
   name: string
   playback: TrackPlayback
@@ -47,42 +49,76 @@ export interface Source {
   bounds: Bounds
   selected: boolean
   editing: boolean
+  cues: Cue[]
 }
 
 export interface Sources {
   [sourceId: string]: Source
 }
 
-export interface SourceControl {
-  sourceId: string
+export interface ControlPosition {
+  x: number
+  y: number
+}
+
+export interface BaseControl {
+  type: BindingType
   name: string
+  position: ControlPosition
 }
 
-export interface CueControl extends SourceControl {
-  chunks: Chunks
+export interface CueControl extends BaseControl {
+  type: 'note'
+  sourceId: string
+  cueIndex: number
 }
 
-export type ValueProp = 'volume'
+export type TrackValueProp = 'volume' | string //only vol for now
 
-export interface ValueControl extends SourceControl {
-  prop: ValueProp
+export interface TrackValueControl extends BaseControl {
+  type: 'value'
+  sourceId: string
   trackSourceId?: string
+  prop: TrackValueProp
 }
+
+export type GlobalValueProp = 'rate' | 'volume' | string
+
+export interface GlobalValueControl extends BaseControl {
+  type: 'value'
+  global: true
+  prop: GlobalValueProp
+}
+
+export type ValueControl = TrackValueControl | GlobalValueControl
+
+export type Control = CueControl | TrackValueControl | GlobalValueControl
 
 export interface Controls {
-  values: ValueControl[]
-  cues: CueControl[]
+  [controlId: string]: Control
 }
+
+export type MidiFunctionName =
+  | 'note-off'
+  | 'note-on'
+  | 'poly-aftertouch'
+  | 'control'
+  | 'program'
+  | 'channel-aftertouch'
+  | 'pitch-bend'
+
+export type BindingType = 'note' | 'value'
 
 export type Binding = {
-  channel: number,
-  note: number,
+  type: BindingType
+  channel: number
+  note: number
   waiting?: boolean
+  position: ControlPosition
 }
 
-export interface Bindings{
-  values: Binding[]
-  cues: Binding[] //midi note ids
+export interface Bindings {
+  [bindingId: string]: Binding
 }
 
 export interface State {

@@ -5,7 +5,7 @@ import * as _ from 'lodash'
 import * as Types from 'lib/types'
 import * as Actions from 'render/redux/actions'
 
-import Control from 'render/components/control'
+import ControlAdder from 'render/components/control-adder'
 import Volume from 'render/components/volume'
 import SidebarItem from './item'
 
@@ -50,11 +50,14 @@ const SourceVolume = (props: SourceVolumeProps) => {
                       )
                     }
                   />
-                  <Control
+                  <ControlAdder
                     name={trackSource.name + ' - ' + name}
-                    sourceId={props.sourceId}
-                    trackSourceId={trackSourceId}
-                    prop="volume"
+                    params={{
+                      sourceId: props.sourceId,
+                      trackSourceId,
+                      prop: 'volume',
+                    }}
+                    type="value"
                   />
                 </>
               }

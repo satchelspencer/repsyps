@@ -1,12 +1,14 @@
-import React, { useCallback, useRef, useMemo, useState, useEffect } from 'react'
+import React, { memo, useCallback } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 import { keyframes } from 'react-emotion'
 import ctyled, { active } from 'ctyled'
 
 import * as Types from 'lib/types'
+import uid from 'lib/uid'
 import * as Actions from 'render/redux/actions'
-import { getValueControlValue } from 'render/redux/selectors'
+import * as Selectors from 'render/redux/selectors'
+import mappings from 'render/redux/mappings'
 
 import Slider from 'render/components/slider'
 import Icon from 'render/components/icon'
@@ -107,7 +109,7 @@ const ValueBindings = ctyled.div.styles({
   height: 2.5,
 }).extendSheet`min-width: max-content;`
 
-const CuesWrapper = ctyled.div.styles({
+const NotesWrapper = ctyled.div.styles({
   flex: '0.75 0 0',
   lined: true,
 }).extendSheet`
@@ -116,7 +118,7 @@ const CuesWrapper = ctyled.div.styles({
   height: 100%;
 `
 
-const CueControls = ctyled.div.styles({
+const NoteControls = ctyled.div.styles({
   column: true,
   lined: true,
   endLine: true,
@@ -124,7 +126,7 @@ const CueControls = ctyled.div.styles({
   flex: 1,
 }).extendSheet`min-height: max-content;`
 
-const CueBindings = ctyled.div.styles({
+const NoteBindings = ctyled.div.styles({
   lined: true,
   endLine: true,
   bg: true,
@@ -133,12 +135,12 @@ const CueBindings = ctyled.div.styles({
   width: 5,
 }).extendSheet`min-height: max-content;`
 
-const CueControl = ctyled.div.styles({
+const NoteControl = ctyled.div.styles({
   height: 2.5,
   color: c => c.contrast(0.1),
 })
 
-const CueControlInner = ctyled.div.class(active).styles({
+const NoteControlInner = ctyled.div.class(active).styles({
   bg: true,
   align: 'center',
   padd: 1.5,
@@ -147,7 +149,7 @@ const CueControlInner = ctyled.div.class(active).styles({
   flex: 1,
 })
 
-const CueControlName = ctyled.div.styles({
+const NoteControlName = ctyled.div.styles({
   flex: 1,
   height: 1.4,
 })
@@ -163,7 +165,7 @@ text-overflow: ellipsis;
     display: block;
 `
 
-const CueControlPad = ctyled.div.styles({
+const NoteControlPad = ctyled.div.styles({
   bg: true,
   rounded: 2,
   color: c => c.nudge(0.15),
@@ -173,7 +175,7 @@ const CueControlPad = ctyled.div.styles({
   borderColor: c => c.contrast(-0.2),
 })
 
-const CueBinding = ctyled.div.attrs({ enabled: false, waiting: false }).styles({
+const NoteBinding = ctyled.div.attrs({ enabled: false, waiting: false }).styles({
   align: 'center',
   justify: 'center',
   bg: true,
@@ -189,85 +191,148 @@ ${({ color }, { enabled, waiting }) =>
     : `opacity:0.5;`}
 `
 
-export default function Controls() {
+interface BindingControllerProps {
+  x: number
+  type: Types.BindingType
+  bindings: Types.Bindings
+}
+
+function BindingController(props: BindingControllerProps) {
+  const dispatch = useDispatch(),
+    bindingId = _.find(
+      _.keys(props.bindings),
+      bindingId =>
+        props.bindings[bindingId].position.x === props.x &&
+        props.bindings[bindingId].type === props.type
+    ),
+    binding = props.bindings[bindingId],
+    enabled = !!(binding && binding.note),
+    Container = props.type === 'value' ? ValueControlBinding : NoteBinding
+
+  return (
+    <Container
+      enabled={enabled}
+      waiting={binding && binding.waiting}
+      onClick={() => {
+        if (bindingId) dispatch(Actions.removeBinding(bindingId))
+        else
+          dispatch(
+            Actions.addBinding({
+              bindingId: uid(),
+              binding: {
+                type: props.type,
+                note: null,
+                channel: null,
+                waiting: !enabled,
+                position: { x: props.x, y: props.type === 'value' ? 0 : 1 }, //for now
+              },
+            })
+          )
+      }}
+    >
+      {props.x + 1}
+    </Container>
+  )
+}
+
+interface BindingAdderProps {
+  x: number
+  type: Types.BindingType
+}
+
+function BindingAdder(props: BindingAdderProps) {
+  const dispatch = useDispatch(),
+    Container = props.type === 'value' ? ValueControlBinding : NoteBinding
+
+  return (
+    <Container
+      enabled
+      waiting={false}
+      styles={{ bgColor: c => c.contrast(0.1) }}
+      onClick={() =>
+        dispatch(
+          Actions.addBinding({
+            bindingId: uid(),
+            binding: {
+              type: props.type,
+              note: null,
+              channel: null,
+              waiting: true,
+              position: { x: props.x, y: 0 },
+            },
+          })
+        )
+      }
+    >
+      <Icon name="add" styles={{ size: s => s * 1.3 }} />
+    </Container>
+  )
+}
+
+export default function ControlsContainer() {
   const getMappedState = useCallback((state: Types.State) => {
       return {
         controls: state.controls,
         bindings: state.bindings,
-        values: state.controls.values.map(control =>
-          getValueControlValue(state, control)
-        ),
+        values: _.mapValues(state.controls, control => {
+          if (control.type === 'value')
+            return Selectors.getValueControlValue(state, control)
+          else return 0
+        }),
       }
     }, []),
-    dispatch = useDispatch(),
-    { controls, bindings, values } = useMappedState(getMappedState),
-    maxValueCount = Math.max(
-      controls.values.length,
-      _.findLastIndex(bindings.values, a => !!(a.note || a.waiting)) + 1
-    ),
-    maxCueCount = Math.max(
-      controls.cues.length,
-      _.findLastIndex(bindings.cues, a => !!(a.note || a.waiting)) + 1
-    )
+    { controls, bindings, values } = useMappedState(getMappedState)
+  return <Controls {...{ controls, bindings, values }} />
+}
+
+export interface ControlsProps {
+  controls: Types.Controls
+  bindings: Types.Bindings
+  values: any
+}
+
+const Controls = memo((props: ControlsProps) => {
+  const dispatch = useDispatch(),
+    { controls, bindings, values } = props,
+    corbs = _.values({ ...controls, ...bindings }),
+    maxValueX =
+      _.max(corbs.filter(corb => corb.type === 'value').map(c => c.position.x + 1)) || 0,
+    maxNoteX =
+      _.max(corbs.filter(corb => corb.type === 'note').map(c => c.position.x + 1)) || 0
 
   return (
     <ControlsWrapper>
       <ValuesWrapper>
         <ValueBindings>
-          {_.range(maxValueCount).map(index => {
-            const binding = bindings.values[index],
-              enabled = !!(binding && binding.note)
-
-            return (
-              <ValueControlBinding
-                enabled={enabled}
-                waiting={binding && binding.waiting}
-                key={index}
-                onClick={() =>
-                  dispatch(
-                    Actions.setValueBinding({
-                      index,
-                      binding: { note: null, channel: null, waiting: !enabled },
-                    })
-                  )
-                }
-              >
-                {index + 1}
-              </ValueControlBinding>
-            )
-          })}
-          <ValueControlBinding
-            enabled
-            waiting={false}
-            styles={{ bgColor: c => c.contrast(0.1) }}
-            onClick={() =>
-              dispatch(
-                Actions.setValueBinding({
-                  index: maxValueCount,
-                  binding: {
-                    note: null,
-                    channel: null,
-                    waiting: true,
-                  },
-                })
-              )
-            }
-          >
-            <Icon name="add" styles={{ size: s => s * 1.3 }} />
-          </ValueControlBinding>
+          {_.range(maxValueX).map(x => (
+            <BindingController key={x} x={x} bindings={bindings} type="value" />
+          ))}
+          <BindingAdder x={maxValueX} type="value" />
         </ValueBindings>
         <ValueControls>
-          {_.range(maxValueCount).map(index => {
-            const control = controls.values[index]
+          {_.range(maxValueX).map(x => {
+            const controlId = _.find(
+                _.keys(controls),
+                controlId =>
+                  controls[controlId].position.x === x &&
+                  controls[controlId].type === 'value'
+              ),
+              control = controls[controlId] as Types.ValueControl
             return (
-              <ValueControl key={index}>
-                {control && (
+              <ValueControl key={x}>
+                {!!control && (
                   <>
                     <Slider
                       column
-                      value={values[index]}
+                      value={values[controlId]}
                       onChange={value =>
-                        dispatch(Actions.updateValueControlValue(control, value))
+                        dispatch(
+                          Actions.applyControl({
+                            control,
+                            value: mappings[control.prop].fromStandard(value),
+                            function: 'control',
+                          })
+                        )
                       }
                     />
                     <ValueControlTitle>
@@ -280,69 +345,47 @@ export default function Controls() {
           })}
         </ValueControls>
       </ValuesWrapper>
-      <CuesWrapper>
-        <CueControls>
-          {_.range(maxCueCount).map(index => {
-            const control = controls.cues[index]
+      <NotesWrapper>
+        <NoteControls>
+          {_.range(maxNoteX).map(x => {
+            const controlId = _.find(
+                _.keys(controls),
+                controlId =>
+                  controls[controlId].position.x === x &&
+                  controls[controlId].type === 'note'
+              ),
+              control = controls[controlId]
             return (
-              <CueControl key={index}>
+              <NoteControl key={x}>
                 {control && (
-                  <CueControlInner
-                    onClick={() => dispatch(Actions.playbackCueControl(control))}
+                  <NoteControlInner
+                    onClick={() =>
+                      dispatch(
+                        Actions.applyControl({
+                          control,
+                          value: 127,
+                          function: 'note-on',
+                        })
+                      )
+                    }
                   >
-                    <CueControlPad />
-                    <CueControlName>
+                    <NoteControlPad />
+                    <NoteControlName>
                       <NameInner>{control.name}</NameInner>
-                    </CueControlName>
-                  </CueControlInner>
+                    </NoteControlName>
+                  </NoteControlInner>
                 )}
-              </CueControl>
+              </NoteControl>
             )
           })}
-        </CueControls>
-        <CueBindings>
-          {_.range(maxCueCount).map(index => {
-            const binding = bindings.cues[index],
-              enabled = !!(binding && binding.note)
-            return (
-              <CueBinding
-                enabled={enabled}
-                waiting={binding && binding.waiting}
-                key={index}
-                onClick={() =>
-                  dispatch(
-                    Actions.setCueBinding({
-                      index,
-                      binding: { note: null, channel: null, waiting: !enabled },
-                    })
-                  )
-                }
-              >
-                {index + 1}
-              </CueBinding>
-            )
-          })}
-          <CueBinding
-            enabled
-            waiting={false}
-            styles={{ bgColor: c => c.contrast(0.1) }}
-            onClick={() =>
-              dispatch(
-                Actions.setCueBinding({
-                  index: maxCueCount,
-                  binding: {
-                    note: null,
-                    channel: null,
-                    waiting: true,
-                  },
-                })
-              )
-            }
-          >
-            <Icon name="add" styles={{ size: s => s * 1.3 }} />
-          </CueBinding>
-        </CueBindings>
-      </CuesWrapper>
+        </NoteControls>
+        <NoteBindings>
+          {_.range(maxNoteX).map(x => (
+            <BindingController key={x} x={x} bindings={bindings} type="note" />
+          ))}
+          <BindingAdder x={maxNoteX} type="note" />
+        </NoteBindings>
+      </NotesWrapper>
     </ControlsWrapper>
   )
-}
+})

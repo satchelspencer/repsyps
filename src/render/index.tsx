@@ -44,7 +44,7 @@ ReactDOM.render(
 //     Actions.addSource({
 //       sourceId: id,
 //       name: id,
-//       trackSources: { [id]: { name: 'Main', volume: 0.666 } },
+//       trackSources: { [id]: { name: 'Main', volume: 1 } },
 //     })
 //   )
 //   store.dispatch(

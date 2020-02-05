@@ -158,8 +158,8 @@ void setTrack(const Napi::CallbackInfo &info){
       state.tracks[trackId]->sourceId = value.As<Napi::String>().Utf8Value();
     }else if(propNameStr == "volume"){
       float volume = value.As<Napi::Number>().FloatValue();
-      volume /= 0.666;
-      if(volume > 1) volume = pow(volume, 4);
+      // volume /= 0.666;
+      // if(volume > 1) volume = pow(volume, 4);
       state.tracks[trackId]->volume = volume;
     }else if(propNameStr == "chunkIndex"){
       state.tracks[trackId]->chunkIndex = value.As<Napi::Number>().Int32Value();
