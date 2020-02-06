@@ -7,7 +7,7 @@ import * as Types from 'render/util/types'
 
 import Title from './title'
 import BoundsControl from './bounds'
-import SourceVolume from './source-volume'
+import TrackVolume from './track-volume'
 import Separate from './separate'
 import Cues from './cues'
 
@@ -20,7 +20,7 @@ const SidebarWrapper = ctyled.div.styles({
   width:${({ size }) => size * 25}px;
 `
 
-const SourceDetailsWrapper = ctyled.div.styles({
+const TrackDetailsWrapper = ctyled.div.styles({
   column: true,
   padd: true,
   gutter: 2,
@@ -28,33 +28,33 @@ const SourceDetailsWrapper = ctyled.div.styles({
 
 const Sidebar = () => {
   const getMappedState = useCallback((state: Types.State) => {
-      const selectedId = Object.keys(state.sources).filter(
-          tid => state.sources[tid].selected
+      const selectedId = Object.keys(state.tracks).filter(
+          tid => state.tracks[tid].selected
         )[0],
-        source = selectedId && state.sources[selectedId]
+        track = selectedId && state.tracks[selectedId]
       return {
-        sourceId: selectedId,
-        sourceExists: !!source,
-        name: source && source.name,
+        trackId: selectedId,
+        trackExists: !!track,
+        name: track && track.name,
       }
     }, []),
-    { sourceId, sourceExists, name } = useMappedState(getMappedState)
+    { trackId, trackExists, name } = useMappedState(getMappedState)
 
   return useMemo(
     () => (
       <SidebarWrapper>
-        {sourceExists && (
-          <SourceDetailsWrapper>
+        {trackExists && (
+          <TrackDetailsWrapper>
             <Title name={name} icon="wave" />
-            <SourceVolume sourceId={sourceId} />
-            <BoundsControl sourceId={sourceId} />
-            <Separate sourceId={sourceId} />
-            <Cues sourceId={sourceId} />
-          </SourceDetailsWrapper>
+            <TrackVolume trackId={trackId} />
+            <BoundsControl trackId={trackId} />
+            <Separate trackId={trackId} />
+            <Cues trackId={trackId} />
+          </TrackDetailsWrapper>
         )}
       </SidebarWrapper>
     ),
-    [sourceId, sourceExists, name]
+    [trackId, trackExists, name]
   )
 }
 

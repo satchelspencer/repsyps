@@ -23,16 +23,16 @@ export interface TrackPlayback extends TrackTiming {
   aperiodic: boolean
 }
 
-export interface TrackSource {
+export interface TrackChannel {
   name: string
   volume: number
 }
 
-export interface TrackSources {
-  [trackSourceId: string]: TrackSource
+export interface TrackChannels {
+  [trackChannelId: string]: TrackChannel
 }
 
-export interface MixTrack extends TrackPlayback, TrackSource {
+export interface MixTrack extends TrackPlayback, TrackChannel {
   sourceId?: string
 }
 
@@ -42,18 +42,18 @@ export type Bounds = number[]
 
 export type Cue = Partial<TrackPlayback>
 
-export interface Source {
+export interface Track {
   name: string
   playback: TrackPlayback
-  trackSources: TrackSources
+  trackChannels: TrackChannels
   bounds: Bounds
   selected: boolean
   editing: boolean
   cues: Cue[]
 }
 
-export interface Sources {
-  [sourceId: string]: Source
+export interface Tracks {
+  [trackId: string]: Track
 }
 
 export interface ControlPosition {
@@ -69,7 +69,7 @@ export interface BaseControl {
 
 export interface CueControl extends BaseControl {
   type: 'note'
-  sourceId: string
+  trackId: string
   cueIndex: number
 }
 
@@ -77,8 +77,8 @@ export type TrackValueProp = 'volume' | string //only vol for now
 
 export interface TrackValueControl extends BaseControl {
   type: 'value'
-  sourceId: string
-  trackSourceId?: string
+  trackId: string
+  trackChannelId?: string
   prop: TrackValueProp
 }
 
@@ -124,7 +124,7 @@ export interface Bindings {
 
 export interface State {
   playback: Playback
-  sources: Sources
+  tracks: Tracks
   controls: Controls
   bindings: Bindings
 }

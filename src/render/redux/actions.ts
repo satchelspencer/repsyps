@@ -8,54 +8,54 @@ function createAction<Payload>(name) {
 
 export const updateTime = createAction<Types.TimingState>('UPDATE_TIMES')
 
-export const addSource = createAction<{
-  sourceId: string
-  trackSources: Types.TrackSources
+export const addTrack = createAction<{
+  trackId: string
+  trackChannels: Types.TrackChannels
   name: string
   bounds?: Types.Bounds
-}>('ADD_SOURCE')
+}>('ADD_TRACK')
 
-export const rmSource = createAction<string>('REMOVE_SOURCE')
+export const rmTrack = createAction<string>('REMOVE_TRACK')
 
-export const setSourceTrack = createAction<{
-  sourceId: string
-  trackSourceId: string
-  trackSource: Partial<Types.TrackSource>
-}>('SET_SOURCE_TRACK')
+export const setTrackChannels = createAction<{
+  trackId: string
+  trackChannelId: string
+  trackChannel: Partial<Types.TrackChannel>
+}>('SET_TRACK_CHANNEL')
 
-export const setSourcePlayback = createAction<{
-  sourceId: string
+export const setTrackPlayback = createAction<{
+  trackId: string
   playback: Partial<Types.TrackPlayback>
-}>('SET_SOURCE_PLAYBACK')
+}>('SET_TRACK_PLAYBACK')
 
-export const setSourceBounds = createAction<{
-  sourceId: string
+export const setTrackBounds = createAction<{
+  trackId: string
   bounds: number[]
-}>('SET_SOURCE_BOUNDS')
+}>('SET_TRACK_BOUNDS')
 
-export const copySourceBounds = createAction<{
+export const copyTrackBounds = createAction<{
   src: string
   dest: string
-}>('COPY_SOURCE_BOUNDS')
+}>('COPY_TRACK_BOUNDS')
 
 export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAYBACK')
 
-export const selectSourceExclusive = createAction<string>('SELECT_SOURCE_EX')
+export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
 
-export const toggleSource = createAction<string>('TOGGLE_SOURCE_PLAYBACK')
+export const toggleTrack = createAction<string>('TOGGLE_TRACK_PLAYBACK')
 
-export const editSource = createAction<{ sourceId: string; edit: boolean }>(
-  'SET_SOURCE_EDIT'
+export const editTrack = createAction<{ trackId: string; edit: boolean }>(
+  'SET_TRACK_EDIT'
 )
 
 export const addCue = createAction<{
-  sourceId: string
+  trackId: string
   cue: Types.Cue
   index?: number
 }>('ADD_CUE')
 
 export const deleteCue = createAction<{
-  sourceId: string
+  trackId: string
   index: number
 }>('DELETE_CUE')
 

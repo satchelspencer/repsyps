@@ -6,14 +6,14 @@ import * as Actions from 'render/redux/actions'
 import { getTimeFromPosition, getBoundIndex, getNextBoundIndex } from './utils'
 import * as Types from 'render/util/types'
 
-import { ClickEventContext, ViewContext } from './source'
+import { ClickEventContext, ViewContext } from './track'
 
 export interface ClickPos {
   x: number
   y: number
 }
 
-export function useResizeBounds(sourceId: string) {
+export function useResizeBounds(trackId: string) {
   const dispatch = useDispatch(),
     [boundIndex, setBoundIndex] = useState(-1)
 
@@ -41,7 +41,7 @@ export function useResizeBounds(sourceId: string) {
           const sample = getTimeFromPosition(pos.x, true, view),
             newBounds = [...bounds]
           newBounds[boundIndex] = sample
-          dispatch(Actions.setSourceBounds({ sourceId, bounds: newBounds }))
+          dispatch(Actions.setTrackBounds({ trackId, bounds: newBounds }))
         }
         return boundIndex !== -1
       },
@@ -51,11 +51,11 @@ export function useResizeBounds(sourceId: string) {
         return boundIndex !== -1
       },
     }),
-    [sourceId, boundIndex]
+    [trackId, boundIndex]
   )
 }
 
-export function useResizePlayback(sourceId: string) {
+export function useResizePlayback(trackId: string) {
   const dispatch = useDispatch(),
     [chunkIndex, setChunkIndex] = useState(-1)
 
@@ -102,8 +102,8 @@ export function useResizePlayback(sourceId: string) {
           }
 
           dispatch(
-            Actions.setSourcePlayback({
-              sourceId,
+            Actions.setTrackPlayback({
+              trackId,
               playback: {
                 chunks: newChunks,
               },
@@ -118,12 +118,12 @@ export function useResizePlayback(sourceId: string) {
         return chunkIndex !== -1
       },
     }),
-    [sourceId, chunkIndex]
+    [trackId, chunkIndex]
   )
 }
 
 /* click and or drag to select playback region */
-export function useSelectPlayback(sourceId: string) {
+export function useSelectPlayback(trackId: string) {
   const dispatch = useDispatch()
 
   return useMemo(
@@ -135,8 +135,8 @@ export function useSelectPlayback(sourceId: string) {
         if (dx < 3) {
           //click to play
           dispatch(
-            Actions.setSourcePlayback({
-              sourceId,
+            Actions.setTrackPlayback({
+              trackId,
               playback: {
                 chunks: [xPos, 0],
                 alpha: 1,
@@ -151,8 +151,8 @@ export function useSelectPlayback(sourceId: string) {
             len = Math.abs(xPos - start)
 
           dispatch(
-            Actions.setSourcePlayback({
-              sourceId,
+            Actions.setTrackPlayback({
+              trackId,
               playback: {
                 chunks: [Math.min(start, xPos), len],
                 alpha: 1,
@@ -165,11 +165,11 @@ export function useSelectPlayback(sourceId: string) {
         return true
       },
     }),
-    [sourceId]
+    [trackId]
   )
 }
 
-export function useSelectBound(sourceId: string) {
+export function useSelectBound(trackId: string) {
   const dispatch = useDispatch()
 
   return useMemo(
@@ -184,8 +184,8 @@ export function useSelectBound(sourceId: string) {
         const closeBoundIndex = getBoundIndex(pos.x, view, bounds)
         if (Math.abs(ctxt.clickX - pos.x) < 3 && closeBoundIndex !== -1) {
           dispatch(
-            Actions.setSourcePlayback({
-              sourceId,
+            Actions.setTrackPlayback({
+              trackId,
               playback: {
                 chunks: [bounds[closeBoundIndex], 0],
                 alpha: 1,
@@ -211,8 +211,8 @@ export function useSelectBound(sourceId: string) {
 
         if (prevBoundIndex >= 0) {
           dispatch(
-            Actions.setSourcePlayback({
-              sourceId,
+            Actions.setTrackPlayback({
+              trackId,
               playback: {
                 chunks: [start, next - start],
                 alpha: 1,
@@ -225,11 +225,11 @@ export function useSelectBound(sourceId: string) {
         } else return false
       },
     }),
-    [sourceId]
+    [trackId]
   )
 }
 
-export function usePlaybackBound(sourceId: string) {
+export function usePlaybackBound(trackId: string) {
   const dispatch = useDispatch()
 
   return useMemo(
@@ -256,8 +256,8 @@ export function usePlaybackBound(sourceId: string) {
               })
             )
           dispatch(
-            Actions.setSourcePlayback({
-              sourceId,
+            Actions.setTrackPlayback({
+              trackId,
               playback: {
                 chunks,
                 alpha: 1,
@@ -270,6 +270,6 @@ export function usePlaybackBound(sourceId: string) {
         return true
       },
     }),
-    [sourceId]
+    [trackId]
   )
 }

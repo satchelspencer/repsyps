@@ -49,17 +49,17 @@ const BodyInner = ctyled.div.styles({
 export default function App() {
   const getMappedState = useCallback((state: Types.State) => {
       return {
-        selected: Object.keys(state.sources).filter(
-          tid => state.sources[tid].selected
+        selected: Object.keys(state.tracks).filter(
+          tid => state.tracks[tid].selected
         )[0],
-        sources: state.sources,
+        tracks: state.tracks,
         playing: state.playback.playing,
       }
     }, []),
-    { selected, playing, sources } = useMappedState(getMappedState),
+    { selected, playing, tracks } = useMappedState(getMappedState),
     dispatch = useDispatch(),
-    sourceIds = Object.keys(sources),
-    sourcelen = sourceIds.length,
+    trackIds = Object.keys(tracks),
+    tracklen = trackIds.length,
     input = useRef(null)
 
   useEffect(() => {
@@ -81,10 +81,10 @@ export default function App() {
         if (e.key === ' ' && !e.shiftKey)
           selected &&
             dispatch(
-              Actions.setSourcePlayback({
-                sourceId: selected,
+              Actions.setTrackPlayback({
+                trackId: selected,
                 playback: {
-                  playing: !sources[selected].playback.playing,
+                  playing: !tracks[selected].playback.playing,
                   chunkIndex: -1,
                 },
               })
@@ -97,14 +97,14 @@ export default function App() {
           )
         if (e.key === 'ArrowUp')
           dispatch(
-            Actions.selectSourceExclusive(
-              sourceIds[(sourceIds.indexOf(selected) + sourcelen - 1) % sourcelen]
+            Actions.selectTrackExclusive(
+              trackIds[(trackIds.indexOf(selected) + tracklen - 1) % tracklen]
             )
           )
         if (e.key === 'ArrowDown')
           dispatch(
-            Actions.selectSourceExclusive(
-              sourceIds[(sourceIds.indexOf(selected) + sourcelen + 1) % sourcelen]
+            Actions.selectTrackExclusive(
+              trackIds[(trackIds.indexOf(selected) + tracklen + 1) % tracklen]
             )
           )
       }}

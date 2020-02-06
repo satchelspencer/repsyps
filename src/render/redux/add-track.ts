@@ -13,13 +13,13 @@ export default function(file: any, dispatch: any) {
 
     createBuffer(id, [audioBuff.getChannelData(0), audioBuff.getChannelData(1)])
     dispatch(
-      Actions.addSource({
-        sourceId: id,
+      Actions.addTrack({
+        trackId: id,
         name: file.name,
-        trackSources: { [id]: { name: 'Main', volume: 1 } },
+        trackChannels: { [id]: { name: 'Main', volume: 1 } },
       })
     )
-    dispatch(Actions.selectSourceExclusive(id))
+    dispatch(Actions.selectTrackExclusive(id))
   }
   reader.readAsArrayBuffer(file)
 }

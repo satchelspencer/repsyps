@@ -15,7 +15,7 @@ import { useSelection } from 'render/components/selection'
 import { getBuffer } from 'render/redux/buffers'
 
 export interface BoundsControlProps {
-  sourceId: string
+  trackId: string
 }
 
 const EditLink = ctyled.div
@@ -32,22 +32,22 @@ const EditLink = ctyled.div
 const BoundsControl = memo((props: BoundsControlProps) => {
   const getMappedState = useCallback(
       (state: Types.State) => {
-        const source = props.sourceId && state.sources[props.sourceId]
+        const track = props.trackId && state.tracks[props.trackId]
         return {
-          chunks: source && source.playback.chunks,
-          bounds: source && source.bounds,
-          editing: source && source.editing,
+          chunks: track && track.playback.chunks,
+          bounds: track && track.bounds,
+          editing: track && track.editing,
         }
       },
-      [props.sourceId]
+      [props.trackId]
     ),
     { chunks, bounds, editing } = useMappedState(getMappedState),
-    channels = getBuffer(props.sourceId),
+    channels = getBuffer(props.trackId),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection(),
-    impulses = useMemo(() => getImpulses(channels[0], props.sourceId), [
+    impulses = useMemo(() => getImpulses(channels[0], props.trackId), [
       channels,
-      props.sourceId,
+      props.trackId,
     ]),
     hasTimeBase = !!bounds.length,
     cstart = chunks[0],
@@ -55,8 +55,8 @@ const BoundsControl = memo((props: BoundsControlProps) => {
     inferLR = useCallback(() => {
       if (!clength) return
       dispatch(
-        Actions.setSourceBounds({
-          sourceId: props.sourceId,
+        Actions.setTrackBounds({
+          trackId: props.trackId,
           bounds: inferTimeBase(chunks, impulses),
         })
       )
@@ -70,8 +70,8 @@ const BoundsControl = memo((props: BoundsControlProps) => {
         existingBounds = bounds.filter(bound => bound > endPoint)
 
       dispatch(
-        Actions.setSourceBounds({
-          sourceId: props.sourceId,
+        Actions.setTrackBounds({
+          trackId: props.trackId,
           bounds: _.sortBy([...inferredBounds, ...existingBounds]),
         })
       )
@@ -85,8 +85,8 @@ const BoundsControl = memo((props: BoundsControlProps) => {
         existingBounds = bounds.filter(bound => bound < startPoint)
 
       dispatch(
-        Actions.setSourceBounds({
-          sourceId: props.sourceId,
+        Actions.setTrackBounds({
+          trackId: props.trackId,
           bounds: _.sortBy([...inferredBounds, ...existingBounds]),
         })
       )
@@ -104,19 +104,19 @@ const BoundsControl = memo((props: BoundsControlProps) => {
         console.log()
         const id = await getSelection()
         dispatch(
-          Actions.copySourceBounds({
+          Actions.copyTrackBounds({
             src: id,
-            dest: props.sourceId,
+            dest: props.trackId,
           })
         )
       }
-    }, [isSelecting, getSelection, props.sourceId])
+    }, [isSelecting, getSelection, props.trackId])
 
   return (
     <SidebarItem
       open={editing}
       onSetOpen={open =>
-        dispatch(Actions.editSource({ sourceId: props.sourceId, edit: open }))
+        dispatch(Actions.editTrack({ trackId: props.trackId, edit: open }))
       }
       title={
         <>
@@ -134,8 +134,8 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       <WideButton
         onClick={() =>
           dispatch(
-            Actions.setSourceBounds({
-              sourceId: props.sourceId,
+            Actions.setTrackBounds({
+              trackId: props.trackId,
               bounds: [],
             })
           )

@@ -21,7 +21,7 @@ import {
   usePlaybackBound,
 } from './mouse'
 
-const TrackContainer = ctyled.div.attrs({ selected: false }).styles({
+const TrackWrapper = ctyled.div.attrs({ selected: false }).styles({
   flex: 'none',
   color: (c, { selected }) => (selected ? c.contrast(0.3) : c.contrast(-0.1)),
 }).extendSheet`
@@ -78,14 +78,14 @@ const TrackArrow = ctyled.div.styles({
   clip-path: polygon(0 0, 100% 0, 100% 100%);
 `
 
-export interface SourceContainerProps {
-  sourceId: string
+export interface TrackContainerProps {
+  trackId: string
   vBounds: number[]
 }
 
-export interface SourceProps {
-  sourceId: string
-  source: Types.Source
+export interface TrackProps {
+  trackId: string
+  track: Types.Track
   visible: boolean
   noClick: boolean
 }
@@ -116,13 +116,13 @@ export interface ClickEventContext {
   width: number
 }
 
-const Source = memo(
-  function({ sourceId, source, noClick }: SourceProps) {
+const Track = memo(
+  function({ trackId, track, noClick }: TrackProps) {
     const dispatch = useDispatch()
 
     /* computed data */
-    const buffer = useMemo(() => getBuffer(sourceId)[1], [sourceId]),
-      impulses = useMemo(() => getImpulses(buffer, sourceId), [buffer, sourceId])
+    const buffer = useMemo(() => getBuffer(trackId)[1], [trackId]),
+      impulses = useMemo(() => getImpulses(buffer, trackId), [buffer, trackId])
 
     /* react state */
     const [center, setCenter] = useState(0),
@@ -156,39 +156,39 @@ const Source = memo(
     /* click event contexts */
     const clickCtxt: ClickEventContext = {
         clickX,
-        editing: source.editing,
-        selected: source.selected,
+        editing: track.editing,
+        selected: track.selected,
         height,
         width,
       },
       clickCtxtValues = _.values(clickCtxt)
 
     /* WAVEFORM DRAWING ON CANVAS */
-    const { canvasRef } = useWaveformCanvas(drawView, source, buffer, sourceId)
+    const { canvasRef } = useWaveformCanvas(drawView, track, buffer, trackId)
 
     /* mouse event handlers */
-    const selectPlaybackHandlers = useSelectPlayback(sourceId),
-      resizePlaybackHandlers = useResizePlayback(sourceId),
-      boundHandlers = useResizeBounds(sourceId),
-      selectBoundHandlers = useSelectBound(sourceId),
-      playbackBoundHandlers = usePlaybackBound(sourceId)
+    const selectPlaybackHandlers = useSelectPlayback(trackId),
+      resizePlaybackHandlers = useResizePlayback(trackId),
+      boundHandlers = useResizeBounds(trackId),
+      selectBoundHandlers = useSelectBound(trackId),
+      playbackBoundHandlers = usePlaybackBound(trackId)
 
     const handleMouseDown = useCallback(
         e => {
           const pos = getRelativePos(e, left, top)
-          resizePlaybackHandlers.mouseDown(clickCtxt, view, pos, source.playback.chunks)
-          boundHandlers.mouseDown(clickCtxt, view, pos, source.bounds)
+          resizePlaybackHandlers.mouseDown(clickCtxt, view, pos, track.playback.chunks)
+          boundHandlers.mouseDown(clickCtxt, view, pos, track.bounds)
           setClickX(pos.x)
           setMouseDown(true)
           setShiftKey(e.shiftKey)
         },
-        [...clickCtxtValues, ...viewValues, source.playback.chunks, source.bounds]
+        [...clickCtxtValues, ...viewValues, track.playback.chunks, track.bounds]
       ),
       handleMouseMove = useCallback(
         e => {
           const pos = getRelativePos(e, left, top)
-          boundHandlers.mouseMove(clickCtxt, view, pos, source.bounds)
-          resizePlaybackHandlers.mouseMove(clickCtxt, pos, view, source.playback.chunks)
+          boundHandlers.mouseMove(clickCtxt, view, pos, track.bounds)
+          resizePlaybackHandlers.mouseMove(clickCtxt, pos, view, track.playback.chunks)
           setCenter(pos.x)
         },
         [...clickCtxtValues, ...viewValues]
@@ -201,15 +201,15 @@ const Source = memo(
             clickCtxt,
             pos,
             view,
-            source.bounds,
-            source.selected
+            track.bounds,
+            track.selected
           )
 
           const didSelectBound = selectBoundHandlers.mouseUp(
               clickCtxt,
               pos,
               view,
-              source.bounds
+              track.bounds
             ),
             didResizeBound = boundHandlers.mouseUp(clickCtxt, pos, view),
             didResizePlayback = resizePlaybackHandlers.mouseUp(clickCtxt, pos, view)
@@ -220,16 +220,16 @@ const Source = memo(
           setMouseDown(false)
           setShiftKey(false)
         },
-        [...clickCtxtValues, ...viewValues, source.bounds, source.selected]
+        [...clickCtxtValues, ...viewValues, track.bounds, track.selected]
       ),
       handleDoubleClick = useCallback(
         e => {
           const pos = getRelativePos(e, left, top)
-          selectBoundHandlers.doubleClick(clickCtxt, pos, view, source.bounds)
+          selectBoundHandlers.doubleClick(clickCtxt, pos, view, track.bounds)
         },
-        [...clickCtxtValues, ...viewValues, source.bounds]
+        [...clickCtxtValues, ...viewValues, track.bounds]
       ),
-      rmTrack = useCallback(() => dispatch(Actions.rmSource(sourceId)), [sourceId])
+      rmTrack = useCallback(() => dispatch(Actions.rmTrack(trackId)), [trackId])
 
     /* styles */
     const delIconSty = useMemo(
@@ -250,14 +250,14 @@ const Source = memo(
           }}
         >
           <TrackCanvas
-            selected={source.selected}
+            selected={track.selected}
             inRef={canvasRef}
             width={width * 2}
             height={height * 2}
           />
           <CornerWrapper>
-            <TrackName selected={source.selected}>
-              {source.name}&nbsp;
+            <TrackName selected={track.selected}>
+              {track.name}&nbsp;
               <Icon asButton onClick={rmTrack} styles={delIconSty} name="close-thin" />
             </TrackName>
           </CornerWrapper>
@@ -268,19 +268,19 @@ const Source = memo(
   (prevProps, nextProps) => {
     return (
       !nextProps.visible || //if not visible never update
-      (prevProps.source === nextProps.source && prevProps.sourceId === nextProps.sourceId)
+      (prevProps.track === nextProps.track && prevProps.trackId === nextProps.trackId)
     )
   }
 )
 
 const OFFSCREEN_THRESH = 500
 
-export default function SourceContainer(props: SourceContainerProps) {
+export default function TrackContainer(props: TrackContainerProps) {
   const getMappedState = useCallback(
-      (state: Types.State) => state.sources[props.sourceId],
-      [props.sourceId]
+      (state: Types.State) => state.tracks[props.trackId],
+      [props.trackId]
     ),
-    source = useMappedState(getMappedState),
+    track = useMappedState(getMappedState),
     dispatch = useDispatch(),
     wrapperRef = useRef(null),
     [vstart, vend] = props.vBounds,
@@ -291,20 +291,20 @@ export default function SourceContainer(props: SourceContainerProps) {
       !visible && (start - vend > OFFSCREEN_THRESH || vstart - end > OFFSCREEN_THRESH),
     { isSelecting, onSelect } = useSelectable(),
     handleClick = useCallback(() => {
-      if (isSelecting) onSelect(props.sourceId)
-      else !source.selected && dispatch(Actions.selectSourceExclusive(props.sourceId))
-    }, [props.sourceId, isSelecting, onSelect])
+      if (isSelecting) onSelect(props.trackId)
+      else !track.selected && dispatch(Actions.selectTrackExclusive(props.trackId))
+    }, [props.trackId, isSelecting, onSelect])
 
   return (
-    <TrackContainer inRef={wrapperRef} onClick={handleClick} selected={source.selected}>
+    <TrackWrapper inRef={wrapperRef} onClick={handleClick} selected={track.selected}>
       {!wayOffScreen && (
-        <Source
+        <Track
           noClick={isSelecting}
           visible={visible}
-          sourceId={props.sourceId}
-          source={source}
+          trackId={props.trackId}
+          track={track}
         />
       )}
-    </TrackContainer>
+    </TrackWrapper>
   )
 }

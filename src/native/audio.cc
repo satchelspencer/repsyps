@@ -103,16 +103,11 @@ void addSource(const Napi::CallbackInfo &info){
     int len = buff.ByteLength() / sizeof(float);
     float* arrn = new float[len];
     std::memcpy(arrn, arr, buff.ByteLength());
-
-    // kfr::univector<float, 0> vect = kfr::make_univector(arrn, len);
-    // kfr::biquad_params<float> bq[]    = { kfr::biquad_lowpass(0.02, 0.1) };
-    // vect = kfr::biquad(bq, vect);
-
+  
     newSource->length = len;
     newSource->channels.push_back(arrn);
   }
 
-  //separate(newSource->channels, newSource->length);
   state.sources[sourceId] = newSource;
 }
 

@@ -12,7 +12,7 @@ const defaultPlayback: Types.Playback = {
     period: 2.7 * RATE,
     time: 0,
   },
-  defaultSources: Types.Sources = {},
+  defaultTracks: Types.Tracks = {},
   defaultTrackPlayback: Types.TrackPlayback = {
     chunks: [0, 0],
     alpha: 1,
@@ -46,10 +46,10 @@ export default combineReducers({
     handle(Actions.removeControl, (controls, { payload }) => {
       return _.omit(controls, payload)
     }),
-    handle(Actions.rmSource, (controls, { payload }) => {
+    handle(Actions.rmTrack, (controls, { payload }) => {
       return _.pickBy(
         controls,
-        control => !('sourceId' in control && control.sourceId === payload) //keep only controls that arent tied to a sourec
+        control => !('trackId' in control && control.trackId === payload) //keep only controls that arent tied to a sourec
       )
     }),
   ]),
@@ -75,43 +75,43 @@ export default combineReducers({
       }
     }),
   ]),
-  sources: createReducer(defaultSources, handle => [
-    handle(Actions.addCue, (sources, { payload }) => {
-      const source = sources[payload.sourceId],
-        newCues = [...source.cues]
+  tracks: createReducer(defaultTracks, handle => [
+    handle(Actions.addCue, (tracks, { payload }) => {
+      const track = tracks[payload.trackId],
+        newCues = [...track.cues]
       newCues[payload.index === undefined ? newCues.length : payload.index] = payload.cue
       return {
-        ...sources,
-        [payload.sourceId]: {
-          ...source,
+        ...tracks,
+        [payload.trackId]: {
+          ...track,
           cues: newCues,
         },
       }
     }),
-    handle(Actions.deleteCue, (sources, { payload }) => {
-      const source = sources[payload.sourceId],
-        newCues = [...source.cues]
+    handle(Actions.deleteCue, (tracks, { payload }) => {
+      const track = tracks[payload.trackId],
+        newCues = [...track.cues]
       newCues.splice(payload.index, 1)
       return {
-        ...sources,
-        [payload.sourceId]: {
-          ...source,
+        ...tracks,
+        [payload.trackId]: {
+          ...track,
           cues: newCues,
         },
       }
     }),
-    handle(Actions.applyControl, (sources, { payload }) => {
+    handle(Actions.applyControl, (tracks, { payload }) => {
       const control = payload.control
-      if (!('sourceId' in control)) return sources
-      else if ('trackSourceId' in control) {
+      if (!('trackId' in control)) return tracks
+      else if ('trackChannelId' in control) {
         return {
-          ...sources,
-          [control.sourceId]: {
-            ...sources[control.sourceId],
-            trackSources: {
-              ...sources[control.sourceId].trackSources,
-              [control.trackSourceId]: {
-                ...sources[control.sourceId].trackSources[control.trackSourceId],
+          ...tracks,
+          [control.trackId]: {
+            ...tracks[control.trackId],
+            trackChannels: {
+              ...tracks[control.trackId].trackChannels,
+              [control.trackChannelId]: {
+                ...tracks[control.trackId].trackChannels[control.trackChannelId],
                 [control.prop]: payload.value,
               },
             },
@@ -119,24 +119,24 @@ export default combineReducers({
         }
       } else if ('cueIndex' in control && payload.function === 'note-on') {
         return {
-          ...sources,
-          [control.sourceId]: {
-            ...sources[control.sourceId],
+          ...tracks,
+          [control.trackId]: {
+            ...tracks[control.trackId],
             playback: {
-              ...sources[control.sourceId].playback,
-              ...sources[control.sourceId].cues[control.cueIndex],
+              ...tracks[control.trackId].playback,
+              ...tracks[control.trackId].cues[control.cueIndex],
             },
           },
         }
-      } else return sources
+      } else return tracks
     }),
-    handle(Actions.addSource, (sources, { payload }) => {
+    handle(Actions.addTrack, (tracks, { payload }) => {
       return {
-        ...sources,
-        [payload.sourceId]: {
+        ...tracks,
+        [payload.trackId]: {
           name: payload.name,
           playback: defaultTrackPlayback,
-          trackSources: payload.trackSources,
+          trackChannels: payload.trackChannels,
           bounds: payload.bounds || [],
           selected: false,
           editing: true,
@@ -144,84 +144,84 @@ export default combineReducers({
         },
       }
     }),
-    handle(Actions.setSourceTrack, (sources, { payload }) => {
+    handle(Actions.setTrackChannels, (tracks, { payload }) => {
       return {
-        ...sources,
-        [payload.sourceId]: {
-          ...sources[payload.sourceId],
-          trackSources: {
-            ...sources[payload.sourceId].trackSources,
-            [payload.trackSourceId]: {
-              ...sources[payload.sourceId].trackSources[payload.trackSourceId],
-              ...payload.trackSource,
+        ...tracks,
+        [payload.trackId]: {
+          ...tracks[payload.trackId],
+          trackChannels: {
+            ...tracks[payload.trackId].trackChannels,
+            [payload.trackChannelId]: {
+              ...tracks[payload.trackId].trackChannels[payload.trackChannelId],
+              ...payload.trackChannel,
             },
           },
         },
       }
     }),
-    handle(Actions.rmSource, (sources, { payload }) => {
-      return _.omit(sources, payload)
+    handle(Actions.rmTrack, (tracks, { payload }) => {
+      return _.omit(tracks, payload)
     }),
-    handle(Actions.setSourcePlayback, (sources, { payload }) => {
+    handle(Actions.setTrackPlayback, (tracks, { payload }) => {
       return {
-        ...sources,
-        [payload.sourceId]: {
-          ...sources[payload.sourceId],
+        ...tracks,
+        [payload.trackId]: {
+          ...tracks[payload.trackId],
           playback: {
-            ...sources[payload.sourceId].playback,
+            ...tracks[payload.trackId].playback,
             ...payload.playback,
           },
         },
       }
     }),
-    handle(Actions.setSourceBounds, (sources, { payload }) => {
+    handle(Actions.setTrackBounds, (tracks, { payload }) => {
       return {
-        ...sources,
-        [payload.sourceId]: {
-          ...sources[payload.sourceId],
+        ...tracks,
+        [payload.trackId]: {
+          ...tracks[payload.trackId],
           bounds: payload.bounds,
         },
       }
     }),
-    handle(Actions.toggleSource, (sources, { payload }) => {
+    handle(Actions.toggleTrack, (tracks, { payload }) => {
       return {
-        ...sources,
+        ...tracks,
         [payload]: {
-          ...sources[payload],
+          ...tracks[payload],
           playback: {
-            ...sources[payload].playback,
-            playing: !sources[payload].playback.playing,
+            ...tracks[payload].playback,
+            playing: !tracks[payload].playback.playing,
           },
         },
       }
     }),
-    handle(Actions.selectSourceExclusive, (sources, { payload }) => {
-      return _.mapValues(sources, (source, sourceId) => {
-        if (payload === sourceId) {
-          return { ...source, selected: true }
-        } else if (source.selected) {
-          return { ...source, selected: false }
-        } else return source
+    handle(Actions.selectTrackExclusive, (tracks, { payload }) => {
+      return _.mapValues(tracks, (track, trackId) => {
+        if (payload === trackId) {
+          return { ...track, selected: true }
+        } else if (track.selected) {
+          return { ...track, selected: false }
+        } else return track
       })
     }),
-    handle(Actions.editSource, (sources, { payload }) => {
+    handle(Actions.editTrack, (tracks, { payload }) => {
       return {
-        ...sources,
-        [payload.sourceId]: {
-          ...sources[payload.sourceId],
+        ...tracks,
+        [payload.trackId]: {
+          ...tracks[payload.trackId],
           editing: payload.edit,
         },
       }
     }),
-    handle(Actions.updateTime, (sources, { payload }) => {
-      return _.mapValues(sources, (source, sourceId) => {
-        const isPlaying = source.playback.playing,
-          trackTiming = payload[sourceId]
+    handle(Actions.updateTime, (tracks, { payload }) => {
+      return _.mapValues(tracks, (track, trackId) => {
+        const isPlaying = track.playback.playing,
+          trackTiming = payload[trackId]
 
         let needsUpdate = false
         if (isPlaying) {
           for (let prop in trackTiming) {
-            if (trackTiming[prop] !== source.playback[prop]) {
+            if (trackTiming[prop] !== track.playback[prop]) {
               needsUpdate = true
               break
             }
@@ -229,28 +229,28 @@ export default combineReducers({
         }
         return needsUpdate
           ? {
-              ...source,
+              ...track,
               playback: {
-                ...source.playback,
+                ...track.playback,
                 ...trackTiming,
               },
             }
-          : source
+          : track
       })
     }),
-    handle(Actions.copySourceBounds, (sources, { payload }) => {
-      const from = sources[payload.src],
-        to = sources[payload.dest]
+    handle(Actions.copyTrackBounds, (tracks, { payload }) => {
+      const from = tracks[payload.src],
+        to = tracks[payload.dest]
 
       if (from && to)
         return {
-          ...sources,
+          ...tracks,
           [payload.dest]: {
             ...to,
             bounds: [...from.bounds],
           },
         }
-      else return sources
+      else return tracks
     }),
   ]),
 })

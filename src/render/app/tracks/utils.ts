@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import _ from 'lodash'
 
-import { ViewContext } from './source'
+import { ViewContext } from './track'
 import { BIN_SIZE } from 'render/util/impulse-detect'
 import * as Types from 'render/util/types'
 import snapSampleToImpulses from 'render/util/snap-sample'

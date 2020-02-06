@@ -4,7 +4,7 @@ import ctyled from 'ctyled'
 
 import Icon from 'render/components/icon'
 
-const SourceItem = ctyled.div.styles({
+const TrackItem = ctyled.div.styles({
   gutter: 1,
   column: true,
 })
@@ -36,7 +36,7 @@ interface SidebarItemProps {
 
 export default function SidebarItem(props: SidebarItemProps) {
   return (
-    <SourceItem style={{ cursor: 'pointer' }}>
+    <TrackItem style={{ cursor: 'pointer' }}>
       <Horizontal onClick={() => props.onSetOpen && props.onSetOpen(!props.open)}>
         {props.title}
         {props.children && props.caret &&  (
@@ -47,6 +47,6 @@ export default function SidebarItem(props: SidebarItemProps) {
         )}
       </Horizontal>
       {props.open && props.children && <SubItem>{props.children}</SubItem>}
-    </SourceItem>
+    </TrackItem>
   )
 }

@@ -5,19 +5,19 @@ import * as _ from 'lodash'
 import * as Types from 'render/util/types'
 import { BIN_SIZE } from 'render/util/impulse-detect'
 import getMinMaxes from 'render/util/min-maxes'
-import { DrawViewContext } from './source'
+import { DrawViewContext } from './track'
 
 export default function useWaveformCanvas(
   view: DrawViewContext,
-  source: Types.Source,
+  track: Types.Track,
   buffer: Float32Array,
-  sourceId: string
+  trackId: string
 ) {
   const canvasRef = useRef(null),
     ctxt = useRef(null),
     ctyledContext = useContext(CtyledContext),
-    minMaxes = useMemo(() => getMinMaxes(buffer, sourceId), [buffer]),
-    effectivePos = source.playback.playing ? 0 /* position */ : 0,
+    minMaxes = useMemo(() => getMinMaxes(buffer, trackId), [buffer]),
+    effectivePos = track.playback.playing ? 0 /* position */ : 0,
     { scale, start, impulses, width, height, clickX, center, mouseDown } = view
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function useWaveformCanvas(
         clickX: clickX * 2,
         center: center * 2,
         mouseDown,
-        sample: source.playback.sample,
+        sample: track.playback.sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
       }
 
@@ -48,16 +48,16 @@ export default function useWaveformCanvas(
 
     drawWaveform(drawContext, minMaxes)
     drawImpulses(drawContext, impulses)
-    drawPlayback(drawContext, source)
-    drawBounds(drawContext, source.bounds, source.editing)
+    drawPlayback(drawContext, track)
+    drawBounds(drawContext, track.bounds, track.editing)
     drawDrag(drawContext)
   }, [
     buffer,
-    source.playback,
+    track.playback,
     effectivePos,
-    source.bounds,
-    source.editing,
-    source.selected,
+    track.bounds,
+    track.editing,
+    track.selected,
     ..._.values(view),
   ])
 
@@ -131,20 +131,20 @@ export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
   }
 }
 
-export function drawPlayback(context: DrawingContext, source: Types.Source) {
+export function drawPlayback(context: DrawingContext, track: Types.Track) {
   const { pheight, scale, start, ctx, sample } = context
 
-  if (true || source.playback.playing) {
+  if (true || track.playback.playing) {
     let px = (sample - start) / scale
     ctx.fillStyle = context.color.fg + '33'
     ctx.fillRect(px - 10, 0, 20, pheight)
 
-    for (let i = 0; i < source.playback.chunks.length; i += 2) {
-      const cstart = source.playback.chunks[i],
-        clength = source.playback.chunks[i + 1],
+    for (let i = 0; i < track.playback.chunks.length; i += 2) {
+      const cstart = track.playback.chunks[i],
+        clength = track.playback.chunks[i + 1],
         startX = (cstart - start) / scale,
         endX = (cstart + clength - start) / scale,
-        isCurrent = source.playback.chunkIndex === i / 2
+        isCurrent = track.playback.chunkIndex === i / 2
 
       if (!clength) {
         ctx.lineWidth = 5

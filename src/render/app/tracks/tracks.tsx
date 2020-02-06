@@ -5,9 +5,9 @@ import ctyled from 'ctyled'
 
 import * as Types from 'render/util/types'
 
-import Source from './source'
+import Track from './track'
 
-const Sources = ctyled.div.styles({
+const TracksWrapper = ctyled.div.styles({
   column: true,
   lined: true,
   endLine: true,
@@ -22,10 +22,10 @@ const Sources = ctyled.div.styles({
 
 export default function Tracks() {
   const getMappedState = useCallback((state: Types.State) => {
-      return state.sources
+      return state.tracks
     }, []),
-    sources = useMappedState(getMappedState),
-    sourceIds = Object.keys(sources),
+    tracks = useMappedState(getMappedState),
+    trackIds = Object.keys(tracks),
     wrapperRef = useRef(null),
     [vBounds, setVBounds] = useState<number[]>([0, 0]),
     updateVisible = useCallback(() => {
@@ -35,7 +35,7 @@ export default function Tracks() {
       setVBounds([vstart, vend])
     }, []),
     handleScroll = useMemo(() => _.throttle(updateVisible, 100, { leading: false }), [
-      sourceIds,
+      trackIds,
     ])
 
   useEffect(() => updateVisible(), [wrapperRef.current])
@@ -46,10 +46,10 @@ export default function Tracks() {
   }, [])
 
   return (
-    <Sources onScroll={handleScroll} inRef={wrapperRef}>
-      {sourceIds.map(sourceId => (
-        <Source vBounds={vBounds} key={sourceId} sourceId={sourceId} />
+    <TracksWrapper onScroll={handleScroll} inRef={wrapperRef}>
+      {trackIds.map(trackId => (
+        <Track vBounds={vBounds} key={trackId} trackId={trackId} />
       ))}
-    </Sources>
+    </TracksWrapper>
   )
 }

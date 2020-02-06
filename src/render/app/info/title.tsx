@@ -4,12 +4,12 @@ import ctyled from 'ctyled'
 
 import Icon from 'render/components/icon'
 
-const SourceItem = ctyled.div.styles({
+const TrackItem = ctyled.div.styles({
   gutter: 1,
   column: true,
 })
 
-const SourceTitle = ctyled.div.styles({
+const TrackTitleWrapper = ctyled.div.styles({
   flex: 1,
 }).extend`
   overflow: hidden;
@@ -33,11 +33,11 @@ export interface TrackTitleProps {
 
 export default function TrackTitle(props: TrackTitleProps) {
   return (
-    <SourceItem styles={{ height: 1.3 }}>
+    <TrackItem styles={{ height: 1.3 }}>
       <HeaderContent>
         <Icon name={props.icon} styles={{ size: s => s * 1.5 }} />
-        <SourceTitle styles={{ size: s => s * 1.1 }}>{props.name}</SourceTitle>
+        <TrackTitleWrapper styles={{ size: s => s * 1.1 }}>{props.name}</TrackTitleWrapper>
       </HeaderContent>
-    </SourceItem>
+    </TrackItem>
   )
 }

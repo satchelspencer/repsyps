@@ -9,52 +9,52 @@ import ControlAdder from 'render/components/control-adder'
 import Volume from 'render/components/volume'
 import SidebarItem from './item'
 
-export interface SourceVolumeProps {
-  sourceId: string
+export interface TrackVolumeProps {
+  trackId: string
 }
 
-const SourceVolume = (props: SourceVolumeProps) => {
+const TrackVolume = (props: TrackVolumeProps) => {
   const getMappedState = useCallback(
       (state: Types.State) => {
-        const source = state.sources[props.sourceId]
+        const track = state.tracks[props.trackId]
         return {
-          sources: source && source.trackSources,
-          name: source.name,
+          tracks: track && track.trackChannels,
+          name: track && track.name,
         }
       },
-      [props.sourceId]
+      [props.trackId]
     ),
-    { sources, name } = useMappedState(getMappedState),
+    { tracks, name } = useMappedState(getMappedState),
     dispatch = useDispatch()
 
   return (
     <>
-      {!!sources &&
-        _.keys(sources).map(trackSourceId => {
-          const trackSource = sources[trackSourceId]
+      {!!tracks &&
+        _.keys(tracks).map(trackChannelId => {
+          const trackChannel = tracks[trackChannelId]
           return (
             <SidebarItem
-              key={trackSourceId}
+              key={trackChannelId}
               title={
                 <>
-                  <span>{trackSource.name}</span>
+                  <span>{trackChannel.name}</span>
                   <Volume
-                    volume={trackSource.volume}
+                    volume={trackChannel.volume}
                     onChange={v =>
                       dispatch(
-                        Actions.setSourceTrack({
-                          sourceId: props.sourceId,
-                          trackSourceId,
-                          trackSource: { volume: v },
+                        Actions.setTrackChannels({
+                          trackId: props.trackId,
+                          trackChannelId,
+                          trackChannel: { volume: v },
                         })
                       )
                     }
                   />
                   <ControlAdder
-                    name={trackSource.name + ' - ' + name}
+                    name={trackChannel.name + ' - ' + name}
                     params={{
-                      sourceId: props.sourceId,
-                      trackSourceId,
+                      trackId: props.trackId,
+                      trackChannelId,
                       prop: 'volume',
                     }}
                     type="value"
@@ -68,4 +68,4 @@ const SourceVolume = (props: SourceVolumeProps) => {
   )
 }
 
-export default SourceVolume
+export default TrackVolume

@@ -15,7 +15,7 @@ import ControlAdder from 'render/components/control-adder'
 import SidebarItem from './item'
 
 export interface CuesProps {
-  sourceId: string
+  trackId: string
 }
 
 const CueWrapper = ctyled.div.styles({
@@ -41,21 +41,21 @@ const CueTitle = ctyled.div.styles({
 const Cues = memo((props: CuesProps) => {
   const getMappedState = useCallback(
       (state: Types.State) => {
-        const source = state.sources[props.sourceId]
+        const track = state.tracks[props.trackId]
         return {
-          name: source && source.name,
-          chunks: source && source.playback.chunks,
-          cues: (source && source.cues) || [],
+          name: track && track.name,
+          chunks: track && track.playback.chunks,
+          cues: (track && track.cues) || [],
         }
       },
-      [props.sourceId]
+      [props.trackId]
     ),
     { name, chunks, cues } = useMappedState(getMappedState),
     dispatch = useDispatch(),
     handleAddCue = useCallback(() => {
       dispatch(
         Actions.addCue({
-          sourceId: props.sourceId,
+          trackId: props.trackId,
           cue: {
             chunks,
             chunkIndex: -1,
@@ -63,7 +63,7 @@ const Cues = memo((props: CuesProps) => {
           },
         })
       )
-    }, [props.sourceId, chunks, name]),
+    }, [props.trackId, chunks, name]),
     canAdd = chunks[1]
 
   return (
@@ -98,7 +98,7 @@ const Cues = memo((props: CuesProps) => {
                         control: {
                           name: '',
                           position: { x: 0, y: 0 },
-                          sourceId: props.sourceId,
+                          trackId: props.trackId,
                           type: 'note',
                           cueIndex,
                         },
@@ -114,7 +114,7 @@ const Cues = memo((props: CuesProps) => {
                   name={`Cue ${cueIndex + 1}: ${name}`}
                   params={{
                     cueIndex,
-                    sourceId: props.sourceId,
+                    trackId: props.trackId,
                   }}
                   type="note"
                 />
@@ -124,7 +124,7 @@ const Cues = memo((props: CuesProps) => {
                 name="close"
                 onClick={() =>
                   dispatch(
-                    Actions.deleteCue({ sourceId: props.sourceId, index: cueIndex })
+                    Actions.deleteCue({ trackId: props.trackId, index: cueIndex })
                   )
                 }
               />

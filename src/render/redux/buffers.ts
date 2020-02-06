@@ -1,15 +1,15 @@
 import * as Types from 'render/util/types'
 
-const buffers: { [sourceId: string]: Types.Channels } = {}
+const buffers: { [trackId: string]: Types.Channels } = {}
 
-export function createBuffer(sourceId: string, channels: Types.Channels) {
-  buffers[sourceId] = channels
+export function createBuffer(trackId: string, channels: Types.Channels) {
+  buffers[trackId] = channels
 }
 
-export function getBuffer(sourceId: string){
-  return buffers[sourceId]
+export function getBuffer(trackId: string){
+  return buffers[trackId]
 }
 
-export function delBuffer(sourceId: string){
-  delete buffers[sourceId]
+export function delBuffer(trackId: string){
+  delete buffers[trackId]
 }

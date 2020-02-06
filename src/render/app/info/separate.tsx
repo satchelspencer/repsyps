@@ -13,56 +13,56 @@ import { WideButton, HeaderContent } from 'render/components/misc'
 import SidebarItem from './item'
 
 export interface SeparateProps {
-  sourceId: string
+  trackId: string
 }
 
 const Separate = memo((props: SeparateProps) => {
   const getMappedState = useCallback(
       (state: Types.State) => {
-        const source = state.sources[props.sourceId]
+        const track = state.tracks[props.trackId]
         return {
-          name: source && source.name,
-          bounds: source && source.bounds,
+          name: track && track.name,
+          bounds: track && track.bounds,
         }
       },
-      [props.sourceId]
+      [props.trackId]
     ),
     { name, bounds } = useMappedState(getMappedState),
     dispatch = useDispatch(),
     handleSeparate = useCallback(() => {
       dispatch(
-        Actions.setSourcePlayback({
-          sourceId: props.sourceId,
+        Actions.setTrackPlayback({
+          trackId: props.trackId,
           playback: { playing: false },
         })
       )
 
-      const [vocal, instru] = _.chunk(audio.separateSource(getBuffer(props.sourceId)), 2)
+      const [vocal, instru] = _.chunk(audio.separateSource(getBuffer(props.trackId)), 2)
 
-      createBuffer(props.sourceId + '_vocal', vocal)
+      createBuffer(props.trackId + '_vocal', vocal)
       dispatch(
-        Actions.setSourceTrack({
-          sourceId: props.sourceId,
-          trackSourceId: props.sourceId + '_vocal',
-          trackSource: {
+        Actions.setTrackChannels({
+          trackId: props.trackId,
+          trackChannelId: props.trackId + '_vocal',
+          trackChannel: {
             name: 'Vocal',
             volume: 0,
           },
         })
       )
 
-      createBuffer(props.sourceId + '_instru', instru)
+      createBuffer(props.trackId + '_instru', instru)
       dispatch(
-        Actions.setSourceTrack({
-          sourceId: props.sourceId,
-          trackSourceId: props.sourceId + '_instru',
-          trackSource: {
+        Actions.setTrackChannels({
+          trackId: props.trackId,
+          trackChannelId: props.trackId + '_instru',
+          trackChannel: {
             name: 'Instru',
             volume: 0,
           },
         })
       )
-    }, [props.sourceId, name])
+    }, [props.trackId, name])
 
   return (
     <SidebarItem
@@ -70,7 +70,7 @@ const Separate = memo((props: SeparateProps) => {
         <>
           <HeaderContent>
             <Icon name="cut" />
-            <span>&nbsp;Source Separation</span>
+            <span>&nbsp;Track Separation</span>
           </HeaderContent>
           <WideButton styles={{ flex: 1 }} onClick={handleSeparate}>
             Separate

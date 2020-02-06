@@ -5,26 +5,26 @@ import mappings from 'render/redux/mappings'
 
 export function getValueControlId(
   state: Types.State,
-  sourceId: string,
-  trackSourceId: string,
+  trackId: string,
+  trackChannelId: string,
   prop: Types.TrackValueProp
 ) {
   return _.findKey(
     state.controls,
     control =>
-      'trackSourceId' in control &&
-      control.sourceId === sourceId &&
-      control.trackSourceId === trackSourceId &&
+      'trackChannelId' in control &&
+      control.trackId === trackId &&
+      control.trackChannelId === trackChannelId &&
       control.prop === prop
   )
 }
 
-export function getCueControlId(state: Types.State, sourceId: string, cueIndex: number) {
+export function getCueControlId(state: Types.State, trackId: string, cueIndex: number) {
   return _.findKey(
     state.controls,
     control =>
       'cueIndex' in control &&
-      control.sourceId === sourceId &&
+      control.trackId === trackId &&
       control.cueIndex === cueIndex
   )
 }
@@ -44,9 +44,9 @@ export function getControlId(state: Types.State, pcontrol: Partial<Types.Control
 
 export function getValueControlValue(state: Types.State, control: Types.ValueControl) {
   let value = null
-  if ('trackSourceId' in control) {
-    const source = state.sources[control.sourceId]
-    value = source.trackSources[control.trackSourceId][control.prop]
+  if ('trackChannelId' in control) {
+    const track = state.tracks[control.trackId]
+    value = track.trackChannels[control.trackChannelId][control.prop]
   } else if ('global' in control) {
     value = state.playback[control.prop]
   }
