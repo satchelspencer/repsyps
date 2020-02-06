@@ -1,9 +1,11 @@
 import { combineReducers } from 'redux'
 import { createReducer } from 'deox'
 import * as _ from 'lodash'
+import arrayMove from 'array-move'
 
-import * as Actions from './actions'
 import * as Types from 'render/util/types'
+import * as Actions from './actions'
+import * as Selectors from './selectors'
 import { RATE } from 'render/util/audio'
 
 const defaultPlayback: Types.Playback = {
@@ -52,6 +54,18 @@ export default combineReducers({
         control => !('trackId' in control && control.trackId === payload) //keep only controls that arent tied to a sourec
       )
     }),
+    handle(Actions.setControlPos, (controls, { payload }) => {
+      return {
+        ...controls,
+        [payload.controlId]: {
+          ...controls[payload.controlId],
+          position: {
+            ...controls[payload.controlId].position,
+            ...payload.position,
+          },
+        },
+      }
+    }),
   ]),
   playback: createReducer(defaultPlayback, handle => [
     handle(Actions.applyControl, (playback, { payload }) => {
@@ -76,6 +90,17 @@ export default combineReducers({
     }),
   ]),
   tracks: createReducer(defaultTracks, handle => [
+    handle(Actions.reorderCue, (tracks, { payload }) => {
+      const track = tracks[payload.trackId],
+        newCues = arrayMove(track.cues, payload.oldIndex, payload.newIndex)
+      return {
+        ...tracks,
+        [payload.trackId]: {
+          ...track,
+          cues: newCues,
+        },
+      }
+    }),
     handle(Actions.addCue, (tracks, { payload }) => {
       const track = tracks[payload.trackId],
         newCues = [...track.cues]
@@ -102,7 +127,7 @@ export default combineReducers({
     }),
     handle(Actions.applyControl, (tracks, { payload }) => {
       const control = payload.control
-      if (!('trackId' in control)) return tracks
+      if (!('trackId' in control) || !tracks[control.trackId]) return tracks
       else if ('trackChannelId' in control) {
         return {
           ...tracks,
@@ -128,6 +153,23 @@ export default combineReducers({
             },
           },
         }
+      } else if ('cueStep' in control) {
+        const track = tracks[control.trackId],
+          currentIndex = Selectors.getActiveCueIndex(track),
+          nextIndex = currentIndex + control.cueStep
+
+        if (nextIndex >= 0 && nextIndex < track.cues.length) {
+          return {
+            ...tracks,
+            [control.trackId]: {
+              ...track,
+              playback: {
+                ...track.playback,
+                ...track.cues[nextIndex],
+              },
+            },
+          }
+        } else return tracks
       } else return tracks
     }),
     handle(Actions.addTrack, (tracks, { payload }) => {

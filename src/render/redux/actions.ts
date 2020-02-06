@@ -59,10 +59,21 @@ export const deleteCue = createAction<{
   index: number
 }>('DELETE_CUE')
 
+export const reorderCue = createAction<{
+  trackId: string,
+  oldIndex: number,
+  newIndex: number
+}>('REORDER_CUE')
+
 export const addControl = createAction<{
   controlId: string
   control: Types.Control
 }>('ADD_CONTROL')
+
+export const setControlPos = createAction<{
+  controlId: string
+  position: Partial<Types.ControlPosition>
+}>('SET_CONTROL_POSITION')
 
 export const removeControl = createAction<string>('REMOVE_CONTROL')
 

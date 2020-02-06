@@ -2,6 +2,7 @@ import _ from 'lodash'
 
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
+import isEqual from 'render/util/is-equal'
 
 /* find an existing control that matches the would-be partial control */
 export function getMatchingControlId(
@@ -65,4 +66,10 @@ export function getOpenPosition(
       y: type === 'value' ? 0 : 1,
     }
   }
+}
+
+export function getActiveCueIndex(track: Types.Track) {
+  return (
+    track && _.findIndex(track.cues, cue => isEqual(cue.chunks, track.playback.chunks))
+  )
 }

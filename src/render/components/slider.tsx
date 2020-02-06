@@ -62,6 +62,8 @@ interface SliderProps {
   throttle?: number
   value: number
   markers?: number[]
+  onStart?: () => any
+  onFinish?: () => any
   onChange: (value: number) => any
 }
 
@@ -102,12 +104,14 @@ function Slider(props: SliderProps) {
     }, callbackDeps),
     handleMouseUp = useCallback(e => {
       e.preventDefault()
+      props.onFinish && props.onFinish()
       setDragOffset(null)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }, callbackDeps),
     handleMouseMove = useCallback(e => {
       e.preventDefault()
+      props.onStart && props.onStart()
       const offset =
         (props.column
           ? docOffset + size - e[props.column ? 'clientY' : 'clientX']

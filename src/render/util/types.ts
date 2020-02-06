@@ -73,6 +73,12 @@ export interface CueControl extends BaseControl {
   cueIndex: number
 }
 
+export interface CueStepControl extends BaseControl {
+  type: 'note'
+  trackId: string
+  cueStep: number
+}
+
 export type TrackValueProp = 'volume' | string //only vol for now
 
 export interface TrackValueControl extends BaseControl {
@@ -92,10 +98,16 @@ export interface GlobalValueControl extends BaseControl {
 
 export type ValueControl = TrackValueControl | GlobalValueControl
 
-export type Control = CueControl | TrackValueControl | GlobalValueControl
+export type NoteControl = CueControl | CueStepControl
+
+export type Control = CueControl | CueStepControl | TrackValueControl | GlobalValueControl
 
 export interface Controls {
   [controlId: string]: Control
+}
+
+export interface ControlValues {
+  [controlId: string]: number
 }
 
 export type MidiFunctionName =
