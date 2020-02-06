@@ -1,6 +1,7 @@
 import path from 'path'
 
 import * as Types from './types'
+import { isDev } from 'render/util/env'
 
 interface AudioAPI {
   init(root: string): void
@@ -13,10 +14,8 @@ interface AudioAPI {
   removeMixTrack(trackId: string)
   getTiming(): Types.TimingState
   separateSource(source: Types.Channels): Types.Channels
-  getDebug():any
+  getDebug(): any
 }
-
-const isDev = process.env.NODE_ENV === 'development'
 
 export default eval('require')(
   path.resolve(

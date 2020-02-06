@@ -4,13 +4,21 @@ import ctyled from 'ctyled'
 
 import Icon from 'render/components/icon'
 
-const TrackItem = ctyled.div.styles({
+const TitleWrapper = ctyled.div.styles({
   gutter: 1,
   column: true,
+  height: 1.3,
 })
 
-const TrackTitleWrapper = ctyled.div.styles({
+const HeaderContent = ctyled.div.styles({
+  size: s => s * 1.1,
+  align: 'center',
+  gutter: 0.5,
+})
+
+const TrackNameWrapper = ctyled.div.styles({
   flex: 1,
+  size: s => s * 1.1,
 }).extend`
   overflow: hidden;
   white-space: nowrap;
@@ -19,13 +27,6 @@ const TrackTitleWrapper = ctyled.div.styles({
   font-weight:bold;
 `
 
-const HeaderContent = ctyled.div.styles({
-  size: s => s * 1.1,
-  align: 'center',
-  //justify: 'space-between',
-  gutter: 0.5,
-})
-
 export interface TrackTitleProps {
   name: string
   icon: string
@@ -33,11 +34,11 @@ export interface TrackTitleProps {
 
 export default function TrackTitle(props: TrackTitleProps) {
   return (
-    <TrackItem styles={{ height: 1.3 }}>
+    <TitleWrapper>
       <HeaderContent>
         <Icon name={props.icon} styles={{ size: s => s * 1.5 }} />
-        <TrackTitleWrapper styles={{ size: s => s * 1.1 }}>{props.name}</TrackTitleWrapper>
+        <TrackNameWrapper>{props.name}</TrackNameWrapper>
       </HeaderContent>
-    </TrackItem>
+    </TitleWrapper>
   )
 }

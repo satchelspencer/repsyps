@@ -6,7 +6,7 @@ import ctyled from 'ctyled'
 
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
-import addTrack from 'render/redux/add-track'
+import addTrack from 'render/util/add-track'
 
 import Tracks from './tracks/tracks'
 import Sidebar from './info/sidebar'
@@ -49,9 +49,7 @@ const BodyInner = ctyled.div.styles({
 export default function App() {
   const getMappedState = useCallback((state: Types.State) => {
       return {
-        selected: Object.keys(state.tracks).filter(
-          tid => state.tracks[tid].selected
-        )[0],
+        selected: Object.keys(state.tracks).filter(tid => state.tracks[tid].selected)[0],
         tracks: state.tracks,
         playing: state.playback.playing,
       }
@@ -60,7 +58,13 @@ export default function App() {
     dispatch = useDispatch(),
     trackIds = Object.keys(tracks),
     tracklen = trackIds.length,
-    input = useRef(null)
+    input = useRef(null),
+    handleDragover = useCallback(e => e.preventDefault(), []),
+    handleDrop = useCallback(e => {
+      e.preventDefault()
+      const file = e.dataTransfer.files[0]
+      addTrack(file, dispatch)
+    }, [])
 
   useEffect(() => {
     input.current = document.createElement('input')
@@ -69,6 +73,13 @@ export default function App() {
       const { files } = input.current
       addTrack(files[0], dispatch)
       input.current.value = ''
+    }
+    window.addEventListener('dragover', handleDragover)
+    window.addEventListener('drop', handleDrop)
+
+    return () => {
+      window.removeEventListener('dragover', handleDragover)
+      window.removeEventListener('drop', handleDrop)
     }
   }, [])
 

@@ -1,4 +1,5 @@
 import { FFT } from 'dsp.js'
+import { RATE } from 'render/util/audio'
 
 const BIN_SIZE = 256, //size of each frame to measure
   SCAN_RANGE = 10 //number of adjacent frames to find maxes in
@@ -9,7 +10,7 @@ const cache: { [trackId: string]: Float32Array } = {}
 export default function(buffer: Float32Array, trackId?: string) {
   if (trackId && cache[trackId]) return cache[trackId]
 
-  const fft = new FFT(BIN_SIZE, 44100),
+  const fft = new FFT(BIN_SIZE, RATE),
     binCount = Math.floor(buffer.length / BIN_SIZE),
     bins = new Float32Array(binCount)
 

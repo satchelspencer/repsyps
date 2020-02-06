@@ -11,7 +11,6 @@ const SliderWrapper = ctyled.div
     column: (_, { column }) => column,
     height: (_, { column }) => (column ? '100%' : 1.5),
     width: (_, { column }) => (column ? 1.5 : '100%'),
-    //color: c => c.contrast(-0.15),
   }).extendSheet`
     -webkit-app-region: no-drag;
     cursor:pointer;

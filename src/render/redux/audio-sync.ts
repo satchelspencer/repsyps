@@ -7,7 +7,7 @@ import audio from 'render/util/audio'
 import { updateTime } from './actions'
 import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
-import { getBuffer } from 'render/redux/buffers'
+import { getBuffer } from 'render/util/buffers'
 import isEqual from 'render/util/is-equal'
 
 export const UPDATE_PERIOD = 50,

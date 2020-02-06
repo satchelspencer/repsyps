@@ -4,12 +4,14 @@ import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 
 import * as Types from 'render/util/types'
+import * as Actions from 'render/redux/actions'
+
+import { getBuffer } from 'render/util/buffers'
+import getImpulses from 'render/util/impulse-detect'
+
 import Icon from 'render/components/icon'
 import { getContainerPosition, getRelativePos } from './utils'
-import * as Actions from 'render/redux/actions'
-import getImpulses from 'render/util/impulse-detect'
 import { useSelectable } from 'render/components/selection'
-import { getBuffer } from 'render/redux/buffers'
 
 import useZoom from './zoom'
 import useWaveformCanvas from './canvas'
@@ -60,22 +62,6 @@ const TrackName = ctyled.div.attrs({ selected: false }).styles({
   rounded: 2,
 }).extendSheet`
   background:${({ color }, { selected }) => (selected ? '#ca5d5d99' : color.bg + '99')};
-`
-
-const TrackArrow = ctyled.div.styles({
-  width: 1.5,
-  height: 1.5,
-}).extendSheet`
-  position:absolute;
-  top:50%;
-  left:0%; 
-  background:rgb(237, 235, 235);
-  border: 1px solid #c1bfbf;
-  margin-top:-${({ size }) => Math.round(size * 0.75)}px;
-  margin-left:-${({ size }) => Math.round(size * 0.75) + 1}px;
-  transform-origin:50% 50%;
-  transform:rotate(45deg);
-  clip-path: polygon(0 0, 100% 0, 100% 100%);
 `
 
 export interface TrackContainerProps {

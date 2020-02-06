@@ -1,44 +1,15 @@
 import _ from 'lodash'
 
 import * as Types from 'render/util/types'
-import mappings from 'render/redux/mappings'
+import mappings from 'render/util/mappings'
 
-export function getValueControlId(
+/* find an existing control that matches the would-be partial control */
+export function getMatchingControlId(
   state: Types.State,
-  trackId: string,
-  trackChannelId: string,
-  prop: Types.TrackValueProp
+  partialControl: Partial<Types.Control>
 ) {
-  return _.findKey(
-    state.controls,
-    control =>
-      'trackChannelId' in control &&
-      control.trackId === trackId &&
-      control.trackChannelId === trackChannelId &&
-      control.prop === prop
-  )
-}
-
-export function getCueControlId(state: Types.State, trackId: string, cueIndex: number) {
-  return _.findKey(
-    state.controls,
-    control =>
-      'cueIndex' in control &&
-      control.trackId === trackId &&
-      control.cueIndex === cueIndex
-  )
-}
-
-export function getGlobalControlId(state: Types.State, prop: string) {
-  return _.findKey(
-    state.controls,
-    control => 'global' in control && control.prop === prop
-  )
-}
-
-export function getControlId(state: Types.State, pcontrol: Partial<Types.Control>) {
   return _.findKey(state.controls, control =>
-    _.every(_.keys(pcontrol), prop => control[prop] === pcontrol[prop])
+    _.every(_.keys(partialControl), prop => control[prop] === partialControl[prop])
   )
 }
 

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { memo, useCallback } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 
@@ -68,4 +68,4 @@ const TrackVolume = (props: TrackVolumeProps) => {
   )
 }
 
-export default TrackVolume
+export default memo(TrackVolume)

@@ -11,7 +11,6 @@ const TrackItem = ctyled.div.styles({
 
 const Horizontal = ctyled.div.styles({
   align: 'center',
-  //justify: 'space-between',
   gutter: 1,
 })
 

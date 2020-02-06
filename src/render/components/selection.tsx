@@ -1,4 +1,4 @@
-import React, { useContext, createContext, useState, useCallback, useMemo } from 'react'
+import React, { useContext, createContext, useState, useMemo } from 'react'
 
 export interface SelectionContextState {
   callback: (selected: string) => any

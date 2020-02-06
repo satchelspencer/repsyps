@@ -11,7 +11,7 @@ import { RATE, EPSILON } from 'render/util/audio'
 import { Value, SliderWrapper } from 'render/components/misc'
 import ControlAdder from 'render/components/control-adder'
 import PhaseDisplay from './phase-display'
-import mappings from 'render/redux/mappings'
+import mappings from 'render/util/mappings'
 
 const PeriodWrapper = ctyled.div.styles({
   align: 'center',

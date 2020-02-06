@@ -1,11 +1,12 @@
 import _ from 'lodash'
+import { Dispatch } from 'redux'
 
-import { createBuffer } from 'render/redux/buffers'
+import { createBuffer } from 'render/util/buffers'
 import * as Actions from 'render/redux/actions'
 
 const context = new AudioContext()
 
-export default function(file: any, dispatch: any) {
+export default function(file: any, dispatch: Dispatch<any>) {
   const reader = new FileReader()
   reader.onload = async (e: any) => {
     const audioBuff = await context.decodeAudioData(e.target.result),

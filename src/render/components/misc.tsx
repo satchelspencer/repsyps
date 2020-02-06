@@ -1,4 +1,3 @@
-import React from 'react'
 import * as _ from 'lodash'
 import ctyled, {inline} from 'ctyled'
 

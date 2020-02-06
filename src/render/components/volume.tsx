@@ -2,10 +2,10 @@ import React, { useState } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import Slider from './slider'
+import mappings from 'render/util/mappings'
 import Icon from 'render/components/icon'
+import Slider from './slider'
 import { SliderWrapper } from './misc'
-import mappings from 'render/redux/mappings'
 
 const VolumeWrapper = ctyled.div.styles({
   align: 'center',

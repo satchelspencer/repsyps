@@ -2,9 +2,10 @@ import { Store } from 'redux'
 import _ from 'lodash'
 
 import * as Types from 'render/util/types'
+import mappings from 'render/util/mappings'
+
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
-import mappings from 'render/redux/mappings'
 
 const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
     128: 'note-off',
@@ -20,9 +21,9 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
   getFunction = (byte: number) => midiFunctions[byte & midiFnMask],
   midiChannelMask = 0x0f,
   getChannel = (byte: number) => byte & midiChannelMask,
-  nav: any = navigator,
-  outputs: any[] = [],
-  sentValues: { [controlId: string]: number } = {}
+  nav: any = navigator, //any so as to allow web midi api
+  outputs: any[] = [], //web midi output (no type defs)
+  sentMidiValues: { [controlId: string]: number } = {}
 
 export default async function init(store: Store<Types.State>) {
   const handleMessage = ({ data }) => {
@@ -100,12 +101,12 @@ export default async function init(store: Store<Types.State>) {
           const control = state.controls[controlId]
           if (control.type === 'value') {
             const value = Selectors.getValueControlValue(state, control)
-            if (value !== sentValues[controlId]) {
+            if (value !== sentMidiValues[controlId]) {
               const binding = Selectors.getBindingByPosition(
                 state.bindings,
                 control.position
               )
-              sentValues[controlId] = value
+              sentMidiValues[controlId] = value
               if (binding && binding.note)
                 outputs.forEach(output =>
                   output.send([

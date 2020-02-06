@@ -5,10 +5,11 @@ import { keyframes } from 'react-emotion'
 import ctyled, { active } from 'ctyled'
 
 import * as Types from 'render/util/types'
-import uid from 'render/util/uid'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
-import mappings from 'render/redux/mappings'
+
+import mappings from 'render/util/mappings'
+import uid from 'render/util/uid'
 
 import Slider from 'render/components/slider'
 import Icon from 'render/components/icon'

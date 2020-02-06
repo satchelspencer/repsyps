@@ -1,33 +1,23 @@
 import React, { memo, useCallback, useMemo } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
-import ctyled, { inline, active } from 'ctyled'
 
 import * as Types from 'render/util/types'
-import getImpulses from 'render/util/impulse-detect'
 import * as Actions from 'render/redux/actions'
-import Icon from 'render/components/icon'
-import SidebarItem from './item'
-import { WideButton, SidebarValue, HeaderContent } from 'render/components/misc'
+
+import { getBuffer } from 'render/util/buffers'
+import getImpulses from 'render/util/impulse-detect'
 import inferTimeBase from 'render/util/infer-timebase'
 import { RATE } from 'render/util/audio'
+
+import Icon from 'render/components/icon'
+import { WideButton, SidebarValue, HeaderContent } from 'render/components/misc'
 import { useSelection } from 'render/components/selection'
-import { getBuffer } from 'render/redux/buffers'
+import SidebarItem from './item'
 
 export interface BoundsControlProps {
   trackId: string
 }
-
-const EditLink = ctyled.div
-  .class(inline)
-  .class(active)
-  .styles({
-    hover: true,
-    padd: 1,
-    bg: false,
-  }).extend`
-  text-decoration:underline;
-`
 
 const BoundsControl = memo((props: BoundsControlProps) => {
   const getMappedState = useCallback(

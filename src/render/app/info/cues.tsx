@@ -4,19 +4,14 @@ import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
 import * as Types from 'render/util/types'
-import uid from 'render/util/uid'
 import * as Actions from 'render/redux/actions'
-import * as Selectors from 'render/redux/selectors'
+import { RATE } from 'render/util/audio'
 
 import Icon from 'render/components/icon'
 import { WideButton, HeaderContent } from 'render/components/misc'
 import ControlAdder from 'render/components/control-adder'
 
 import SidebarItem from './item'
-
-export interface CuesProps {
-  trackId: string
-}
 
 const CueWrapper = ctyled.div.styles({
   align: 'center',
@@ -37,6 +32,10 @@ const CueTitle = ctyled.div.styles({
   align: 'center',
   gutter: 1,
 })
+
+export interface CuesProps {
+  trackId: string
+}
 
 const Cues = memo((props: CuesProps) => {
   const getMappedState = useCallback(
@@ -108,7 +107,7 @@ const Cues = memo((props: CuesProps) => {
                     )
                   }
                 >
-                  Cue {cueIndex + 1} at {_.round(cue.chunks[0] / 44100, 2)}s
+                  Cue {cueIndex + 1} at {_.round(cue.chunks[0] / RATE, 2)}s
                 </CueTitle>
                 <ControlAdder
                   name={`Cue ${cueIndex + 1}: ${name}`}

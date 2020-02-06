@@ -5,7 +5,7 @@ import * as _ from 'lodash'
 import * as Types from 'render/util/types'
 import audio from 'render/util/audio'
 import * as Actions from 'render/redux/actions'
-import { getBuffer, createBuffer } from 'render/redux/buffers'
+import { getBuffer, createBuffer } from 'render/util/buffers'
 
 import Icon from 'render/components/icon'
 import { WideButton, HeaderContent } from 'render/components/misc'
@@ -22,12 +22,11 @@ const Separate = memo((props: SeparateProps) => {
         const track = state.tracks[props.trackId]
         return {
           name: track && track.name,
-          bounds: track && track.bounds,
         }
       },
       [props.trackId]
     ),
-    { name, bounds } = useMappedState(getMappedState),
+    { name } = useMappedState(getMappedState),
     dispatch = useDispatch(),
     handleSeparate = useCallback(() => {
       dispatch(
