@@ -16,7 +16,7 @@ const [vocal, instru] = _.chunk(audio.separateSource(A), 2)
 
 
 audio.addSource('mysource', vocal)
-audio.setTrack('mytrack', {
+audio.setMixTrack('mytrack', {
   sourceId: 'mysource',
   chunks: [0, 5.41 * RATE],//[34.13 * RATE, 5.41 * RATE, 23.27 * RATE, 5.41 * RATE],
   playing: true

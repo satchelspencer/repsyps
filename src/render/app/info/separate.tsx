@@ -2,8 +2,8 @@ import React, { memo, useCallback } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 
-import * as Types from 'lib/types'
-import audio from 'lib/audio'
+import * as Types from 'render/util/types'
+import audio from 'render/util/audio'
 import * as Actions from 'render/redux/actions'
 import { getBuffer, createBuffer } from 'render/redux/buffers'
 

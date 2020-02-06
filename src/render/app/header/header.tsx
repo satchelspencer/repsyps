@@ -3,7 +3,7 @@ import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import * as Types from 'lib/types'
+import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 import Icon from 'render/components/icon'
 import Volume from 'render/components/volume'

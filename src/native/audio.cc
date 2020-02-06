@@ -132,21 +132,21 @@ Napi::Value removeSource(const Napi::CallbackInfo &info){
   return Napi::Boolean::New(env, false);
 }
 
-void setTrack(const Napi::CallbackInfo &info){
-  std::string trackId = info[0].As<Napi::String>().Utf8Value();
+void setMixTrack(const Napi::CallbackInfo &info){
+  std::string mixTrackId = info[0].As<Napi::String>().Utf8Value();
   Napi::Object update = info[1].As<Napi::Object>();
   Napi::Array props = update.GetPropertyNames();
 
-  if(state.tracks.find(trackId) == state.tracks.end()){
-    track * newTrack = new track{};
-    newTrack->sourceId = "";
-    newTrack->volume = 1.;
-    newTrack->chunkIndex = -1;
-    newTrack->alpha = 1.;
-    newTrack->playing = false;
-    newTrack->aperiodic = false;
-    newTrack->sample = 0;
-    state.tracks[trackId] = newTrack;
+  if(state.mixTracks.find(mixTrackId) == state.mixTracks.end()){
+    mixTrack * newMixTrack = new mixTrack{};
+    newMixTrack->sourceId = "";
+    newMixTrack->volume = 1.;
+    newMixTrack->chunkIndex = -1;
+    newMixTrack->alpha = 1.;
+    newMixTrack->playing = false;
+    newMixTrack->aperiodic = false;
+    newMixTrack->sample = 0;
+    state.mixTracks[mixTrackId] = newMixTrack;
   }
 
   for(uint32_t i=0;i<props.Length();i++){
@@ -155,38 +155,38 @@ void setTrack(const Napi::CallbackInfo &info){
     std::string propNameStr = propName.As<Napi::String>().Utf8Value();
 
     if(propNameStr == "sourceId"){
-      state.tracks[trackId]->sourceId = value.As<Napi::String>().Utf8Value();
+      state.mixTracks[mixTrackId]->sourceId = value.As<Napi::String>().Utf8Value();
     }else if(propNameStr == "volume"){
       float volume = value.As<Napi::Number>().FloatValue();
       // volume /= 0.666;
       // if(volume > 1) volume = pow(volume, 4);
-      state.tracks[trackId]->volume = volume;
+      state.mixTracks[mixTrackId]->volume = volume;
     }else if(propNameStr == "chunkIndex"){
-      state.tracks[trackId]->chunkIndex = value.As<Napi::Number>().Int32Value();
+      state.mixTracks[mixTrackId]->chunkIndex = value.As<Napi::Number>().Int32Value();
     }else if(propNameStr == "chunks"){
       Napi::Array chunks = value.As<Napi::Array>();
-      state.tracks[trackId]->chunks.clear();
+      state.mixTracks[mixTrackId]->chunks.clear();
       for(uint32_t i=0;i<chunks.Length();i++){
         int sample = chunks.Get(i).As<Napi::Number>().Int32Value();
-        state.tracks[trackId]->chunks.push_back(sample);
+        state.mixTracks[mixTrackId]->chunks.push_back(sample);
       }
     }else if(propNameStr == "alpha"){
-      state.tracks[trackId]->alpha = value.As<Napi::Number>().FloatValue();
+      state.mixTracks[mixTrackId]->alpha = value.As<Napi::Number>().FloatValue();
     }else if(propNameStr == "playing"){
-      state.tracks[trackId]->playing = value.As<Napi::Boolean>().Value();
+      state.mixTracks[mixTrackId]->playing = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "aperiodic"){
-      state.tracks[trackId]->aperiodic = value.As<Napi::Boolean>().Value();
+      state.mixTracks[mixTrackId]->aperiodic = value.As<Napi::Boolean>().Value();
     }
   }
 }
 
-Napi::Value removeTrack(const Napi::CallbackInfo &info){
+Napi::Value removeMixTrack(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
-  std::string trackId = info[0].As<Napi::String>().Utf8Value();
+  std::string mixTrackId = info[0].As<Napi::String>().Utf8Value();
   
-  if(state.tracks.find(trackId) != state.tracks.end()){
-    delete state.tracks[trackId];
-    state.tracks.erase(trackId);
+  if(state.mixTracks.find(mixTrackId) != state.mixTracks.end()){
+    delete state.mixTracks[mixTrackId];
+    state.mixTracks.erase(mixTrackId);
     return Napi::Boolean::New(env, true);
   }
   return Napi::Boolean::New(env, false);
@@ -196,11 +196,11 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
   Napi::Object timings = Napi::Object::New(env);
    timings.Set("playback", state.playback->time);
-  for(auto trackPair: state.tracks){
-    Napi::Object trackState = Napi::Object::New(env);
-    trackState.Set("sample", trackPair.second->sample);
-    trackState.Set("chunkIndex", trackPair.second->chunkIndex);
-    timings.Set(trackPair.first, trackState);
+  for(auto mixTrackPair: state.mixTracks){
+    Napi::Object mixTrackState = Napi::Object::New(env);
+    mixTrackState.Set("sample", mixTrackPair.second->sample);
+    mixTrackState.Set("chunkIndex", mixTrackPair.second->chunkIndex);
+    timings.Set(mixTrackPair.first, mixTrackState);
   }
   return timings;
 }
@@ -246,8 +246,8 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("updatePlayback", Napi::Function::New(env, updatePlayback));
   exports.Set("addSource", Napi::Function::New(env, addSource));
   exports.Set("removeSource", Napi::Function::New(env, removeSource));
-  exports.Set("setTrack", Napi::Function::New(env, setTrack));
-  exports.Set("removeTrack", Napi::Function::New(env, removeTrack));
+  exports.Set("setMixTrack", Napi::Function::New(env, setMixTrack));
+  exports.Set("removeMixTrack", Napi::Function::New(env, removeMixTrack));
   exports.Set("getTiming", Napi::Function::New(env, getTiming));
   exports.Set("separateSource", Napi::Function::New(env, separateSource));
   exports.Set("getDebug", Napi::Function::New(env, getDebug));

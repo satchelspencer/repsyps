@@ -32,7 +32,7 @@ export interface TrackSources {
   [trackSourceId: string]: TrackSource
 }
 
-export interface NativeTrack extends TrackPlayback, TrackSource {
+export interface MixTrack extends TrackPlayback, TrackSource {
   sourceId?: string
 }
 
@@ -113,6 +113,7 @@ export type Binding = {
   type: BindingType
   channel: number
   note: number
+  function: MidiFunctionName
   waiting?: boolean
   position: ControlPosition
 }

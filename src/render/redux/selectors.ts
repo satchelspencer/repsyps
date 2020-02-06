@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-import * as Types from 'lib/types'
+import * as Types from 'render/util/types'
 import mappings from 'render/redux/mappings'
 
 export function getValueControlId(

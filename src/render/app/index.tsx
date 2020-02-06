@@ -4,7 +4,7 @@ import { palette } from 'render/components/theme'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import * as Types from 'lib/types'
+import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 import addTrack from 'render/redux/add-track'
 

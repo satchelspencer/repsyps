@@ -3,8 +3,8 @@ import { createReducer } from 'deox'
 import * as _ from 'lodash'
 
 import * as Actions from './actions'
-import * as Types from 'lib/types'
-import { RATE } from 'lib/audio'
+import * as Types from 'render/util/types'
+import { RATE } from 'render/util/audio'
 
 const defaultPlayback: Types.Playback = {
     volume: 1,

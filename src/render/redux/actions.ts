@@ -1,7 +1,6 @@
 import { createActionCreator } from 'deox'
 
-import * as Types from 'lib/types'
-import { create } from 'redux-react-hook'
+import * as Types from 'render/util/types'
 
 function createAction<Payload>(name) {
   return createActionCreator(name, res => (payload: Payload) => res(payload))

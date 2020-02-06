@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 
-import * as Types from 'lib/types'
+import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 
 import ControlAdder from 'render/components/control-adder'

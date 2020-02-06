@@ -4,7 +4,7 @@ import _ from 'lodash'
 
 import * as Actions from 'render/redux/actions'
 import { getTimeFromPosition, getBoundIndex, getNextBoundIndex } from './utils'
-import * as Types from 'lib/types'
+import * as Types from 'render/util/types'
 
 import { ClickEventContext, ViewContext } from './source'
 

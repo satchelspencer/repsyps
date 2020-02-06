@@ -1,6 +1,6 @@
-import { BIN_SIZE } from 'lib/impulse-detect'
-import snapSampleToImpulses from 'lib/snap-sample'
-import * as Types from 'lib/types'
+import { BIN_SIZE } from './impulse-detect'
+import snapSampleToImpulses from './snap-sample'
+import * as Types from './types'
 
 const SNAP_SCALE = 400
 

@@ -3,11 +3,11 @@ import ctyled from 'ctyled'
 import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 
-import * as Types from 'lib/types'
+import * as Types from 'render/util/types'
 import Icon from 'render/components/icon'
 import { getContainerPosition, getRelativePos } from './utils'
 import * as Actions from 'render/redux/actions'
-import getImpulses from 'lib/impulse-detect'
+import getImpulses from 'render/util/impulse-detect'
 import { useSelectable } from 'render/components/selection'
 import { getBuffer } from 'render/redux/buffers'
 

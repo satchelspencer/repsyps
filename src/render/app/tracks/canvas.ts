@@ -2,9 +2,9 @@ import { useEffect, useMemo, useContext, useRef } from 'react'
 import { CtyledContext, Color } from 'ctyled'
 import * as _ from 'lodash'
 
-import * as Types from 'lib/types'
-import { BIN_SIZE } from 'lib/impulse-detect'
-import getMinMaxes from 'lib/min-maxes'
+import * as Types from 'render/util/types'
+import { BIN_SIZE } from 'render/util/impulse-detect'
+import getMinMaxes from 'render/util/min-maxes'
 import { DrawViewContext } from './source'
 
 export default function useWaveformCanvas(

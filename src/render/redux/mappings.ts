@@ -1,4 +1,4 @@
-import { RATE, EPSILON } from 'lib/audio'
+import { RATE, EPSILON } from 'render/util/audio'
 
 export interface Mapping {
   toStandard(number): number

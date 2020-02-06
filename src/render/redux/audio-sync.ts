@@ -2,13 +2,13 @@ import { Store } from 'redux'
 import _ from 'lodash'
 import { remote } from 'electron'
 
-import * as Types from 'lib/types'
-import audio, { RATE } from 'lib/audio'
+import * as Types from 'render/util/types'
+import audio from 'render/util/audio'
 import { updateTime } from './actions'
-import diff from 'lib/diff'
+import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
 import { getBuffer } from 'render/redux/buffers'
-import isEqual from 'lib/is-equal'
+import isEqual from 'render/util/is-equal'
 
 export const UPDATE_PERIOD = 50,
   isDev = process.env.NODE_ENV === 'development'
@@ -50,7 +50,7 @@ export default function syncAudio(store: Store<Types.State>) {
         _.keys(source.trackSources).forEach(trackSourceId => {
           //console.log('pbchange', trackSourceId, change)
           if (lastSource && lastSource.trackSources[trackSourceId]) {
-            audio.setTrack(trackSourceId, {
+            audio.setMixTrack(trackSourceId, {
               sourceId: trackSourceId,
               ..._.omit(change, 'sample'),
             })
@@ -72,25 +72,25 @@ export default function syncAudio(store: Store<Types.State>) {
             )
         if (trackIsNew) {
           audio.addSource(sourceTrackId, getBuffer(sourceTrackId))
-          audio.setTrack(sourceTrackId, {
+          audio.setMixTrack(sourceTrackId, {
             ...source.playback,
             ...source.trackSources[sourceTrackId],
           })
         } else if (trackHasChange)
-          audio.setTrack(sourceTrackId, {
+          audio.setMixTrack(sourceTrackId, {
             ...source.trackSources[sourceTrackId],
           })
       })
 
       lastSourceTrackIds.forEach(sourceTrackId => {
-        if (!sourceTrackIds.includes(sourceTrackId)) audio.removeTrack(sourceTrackId)
+        if (!sourceTrackIds.includes(sourceTrackId)) audio.removeMixTrack(sourceTrackId)
       })
     })
 
     if (lastState)
       _.keys(lastState.sources).forEach(sourceId => {
         if (!currentState.sources[sourceId]) {
-          audio.removeTrack(sourceId)
+          audio.removeMixTrack(sourceId)
           _.keys(lastState.sources[sourceId].trackSources).forEach(trackSourceId => {
             audio.removeSource(trackSourceId)
           })
@@ -112,19 +112,9 @@ export default function syncAudio(store: Store<Types.State>) {
       lastState = reducer(lastState, action)
       store.dispatch(action)
     }
-    setTimeout(update, Math.max(UPDATE_PERIOD-(new Date().getTime()-start), 0))
+    setTimeout(update, Math.max(UPDATE_PERIOD - (new Date().getTime() - start), 0))
   }
   update()
-  // setInterval(() => {
-  //   if (lastState && lastState.playback.playing) {
-  //     const currentTiming = audio.getTiming(),
-  //       action = updateTime(currentTiming)
-  //     //console.log(audio.getDebug())
-  //     /* override last state so this change won't be sent back to where it came from */
-  //     lastState = reducer(lastState, action)
-  //     store.dispatch(action)
-  //   }
-  // }, UPDATE_PERIOD)
 
   audio.start()
 }

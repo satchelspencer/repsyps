@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import _ from 'lodash'
 
 import { ViewContext } from './source'
-import { BIN_SIZE } from 'lib/impulse-detect'
-import * as Types from 'lib/types'
-import snapSampleToImpulses from 'lib/snap-sample'
+import { BIN_SIZE } from 'render/util/impulse-detect'
+import * as Types from 'render/util/types'
+import snapSampleToImpulses from 'render/util/snap-sample'
 
 export function getContainerPosition(container) {
   const [pos, setPos] = useState({

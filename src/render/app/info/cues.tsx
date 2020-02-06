@@ -3,8 +3,8 @@ import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import * as Types from 'lib/types'
-import uid from 'lib/uid'
+import * as Types from 'render/util/types'
+import uid from 'render/util/uid'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 

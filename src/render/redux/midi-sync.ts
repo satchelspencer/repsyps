@@ -1,7 +1,7 @@
 import { Store } from 'redux'
 import _ from 'lodash'
 
-import * as Types from 'lib/types'
+import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import mappings from 'render/redux/mappings'
@@ -41,12 +41,17 @@ export default async function init(store: Store<Types.State>) {
                 ...binding,
                 note,
                 channel,
+                function: fn,
                 waiting: false,
               },
             })
           )
           break
-        } else if (binding.note === note && binding.channel === channel) {
+        } else if (
+          binding.note === note &&
+          binding.channel === channel &&
+          binding.function === fn
+        ) {
           const control = Selectors.getControlByPosition(state.controls, binding.position)
           if (control) {
             let normedValue = value / 128

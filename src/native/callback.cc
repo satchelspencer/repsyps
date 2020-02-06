@@ -13,17 +13,17 @@ int paCallbackMethod(
   unsigned long frameIndex;
   unsigned int outputFrameIndex = 0;
 
-  double trackPhase;
+  double mixTrackPhase;
   double phaseStep = 1/(double)state->playback->period;
 
-  source* trackSource;
-  track* track;
-  unsigned int trackLength;
+  source* mixTrackSource;
+  mixTrack* mixTrack;
+  unsigned int mixTrackLength;
   int channelCount;
   int channelIndex;
   int chunkCount;
-  int tempTrackChunkIndex;
-  int tempTrackSample;
+  int tempMixTrackChunkIndex;
+  int tempMixTrackSample;
 
   unsigned int sampledFrameIndex;
   double samplePosition;
@@ -52,74 +52,74 @@ int paCallbackMethod(
   /* keep computing new windows until we fill the output buffer */
   while(outputFrameIndex < framesPerBuffer){
     /* compute a new window by summing each track' output */
-    for(auto trackPair: state->tracks){
-      track = trackPair.second;
+    for(auto mixTrackPair: state->mixTracks){
+      mixTrack = mixTrackPair.second;
       bufferHead = state->buffer->head;
 
-      trackPhase = state->playback->time*track->alpha;
-      trackPhase -= floor(trackPhase); 
+      mixTrackPhase = state->playback->time*mixTrack->alpha;
+      mixTrackPhase -= floor(mixTrackPhase); 
 
-      trackSource = state->sources[track->sourceId];
-      trackLength = trackSource->length;
-      channelCount = trackSource->channels.size();
-      chunkCount = track->chunks.size()/2;
+      mixTrackSource = state->sources[mixTrack->sourceId];
+      mixTrackLength = mixTrackSource->length;
+      channelCount = mixTrackSource->channels.size();
+      chunkCount = mixTrack->chunks.size()/2;
 
-      if(chunkCount == 0 || !track->playing) continue;
+      if(chunkCount == 0 || !mixTrack->playing) continue;
       
-      tempTrackChunkIndex = track->chunkIndex;
-      tempTrackSample = track->sample;
+      tempMixTrackChunkIndex = mixTrack->chunkIndex;
+      tempMixTrackSample = mixTrack->sample;
 
       /* add this computed track into the buffer */
       for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
         /* figure out which sample we're gonna fetch */
-        if(tempTrackChunkIndex == -1 && trackPhase >= 0){
-          tempTrackChunkIndex = 0;
-          tempTrackSample = track->chunks[tempTrackChunkIndex*2]; //reset the sample to the start
+        if(tempMixTrackChunkIndex == -1 && mixTrackPhase >= 0){
+          tempMixTrackChunkIndex = 0;
+          tempMixTrackSample = mixTrack->chunks[tempMixTrackChunkIndex*2]; //reset the sample to the start
         } //on first
-        if(tempTrackChunkIndex == -1) break; //before we should be playing
+        if(tempMixTrackChunkIndex == -1) break; //before we should be playing
 
-        if(track->aperiodic){
-          samplePosition = tempTrackSample + track->alpha;
-          if(track->chunks[tempTrackChunkIndex*2+1] > 0){ //chunk has end
-            if(samplePosition > track->chunks[tempTrackChunkIndex*2]+track->chunks[tempTrackChunkIndex*2+1]){
-              tempTrackChunkIndex = (tempTrackChunkIndex + 1) % chunkCount;
-              samplePosition = track->chunks[tempTrackChunkIndex*2];
+        if(mixTrack->aperiodic){
+          samplePosition = tempMixTrackSample + mixTrack->alpha;
+          if(mixTrack->chunks[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
+            if(samplePosition > mixTrack->chunks[tempMixTrackChunkIndex*2]+mixTrack->chunks[tempMixTrackChunkIndex*2+1]){
+              tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount;
+              samplePosition = mixTrack->chunks[tempMixTrackChunkIndex*2];
             }
           }
         }else{
-          samplePosition = track->chunks[tempTrackChunkIndex*2] + ( track->chunks[tempTrackChunkIndex*2+1] * trackPhase );
-          if( samplePosition < tempTrackSample) {  /* check if we looped around */
-            tempTrackChunkIndex = (tempTrackChunkIndex + 1) % chunkCount; //increment the chunk
-            samplePosition = track->chunks[tempTrackChunkIndex*2] + ( track->chunks[tempTrackChunkIndex*2+1] * trackPhase );
+          samplePosition = mixTrack->chunks[tempMixTrackChunkIndex*2] + ( mixTrack->chunks[tempMixTrackChunkIndex*2+1] * mixTrackPhase );
+          if( samplePosition < tempMixTrackSample) {  /* check if we looped around */
+            tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount; //increment the chunk
+            samplePosition = mixTrack->chunks[tempMixTrackChunkIndex*2] + ( mixTrack->chunks[tempMixTrackChunkIndex*2+1] * mixTrackPhase );
           }
         }
 
-        tempTrackSample = samplePosition; //casting back to int
+        tempMixTrackSample = samplePosition; //casting back to int
         samplePositionFrac = samplePosition-floor(samplePosition);
         sampledFrameIndex = samplePosition;
 
         /* at the step point commit the mutated index and sample */
         if(frameIndex == state->windowSize/2 - 1){
-          track->chunkIndex = tempTrackChunkIndex;
-          track->sample = tempTrackSample;
+          mixTrack->chunkIndex = tempMixTrackChunkIndex;
+          mixTrack->sample = tempMixTrackSample;
         }
 
 
         /* add the sample to the buffer */
         for(channelIndex=0;channelIndex<channelCount;channelIndex++){
           sampleValue = 0;
-          if(sampledFrameIndex >= 0 && sampledFrameIndex < trackLength-1 && track->volume > 0){
-            sampleValue = trackSource->channels[channelIndex][sampledFrameIndex];
-            sampleValueNext = trackSource->channels[channelIndex][sampledFrameIndex+1];
+          if(sampledFrameIndex >= 0 && sampledFrameIndex < mixTrackLength-1 && mixTrack->volume > 0){
+            sampleValue = mixTrackSource->channels[channelIndex][sampledFrameIndex];
+            sampleValueNext = mixTrackSource->channels[channelIndex][sampledFrameIndex+1];
             sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
             sampleValue *= state->playback->volume;
-            sampleValue *= track->volume;
+            sampleValue *= mixTrack->volume;
             sampleValue *= state->window[frameIndex]; //multiply by the window
           }
           state->buffer->channels[channelIndex][bufferHead] += sampleValue;
         }       
         bufferHead = (bufferHead+1)%state->buffer->size;
-        trackPhase += phaseStep*track->alpha;       
+        mixTrackPhase += phaseStep*mixTrack->alpha;       
       }
     }
     //head only moves forward by half the window size

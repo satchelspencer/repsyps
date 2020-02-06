@@ -3,7 +3,7 @@ import { useMappedState } from 'redux-react-hook'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import * as Types from 'lib/types'
+import * as Types from 'render/util/types'
 
 import Source from './source'
 

@@ -4,8 +4,8 @@ import * as _ from 'lodash'
 import { keyframes } from 'react-emotion'
 import ctyled, { active } from 'ctyled'
 
-import * as Types from 'lib/types'
-import uid from 'lib/uid'
+import * as Types from 'render/util/types'
+import uid from 'render/util/uid'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import mappings from 'render/redux/mappings'
@@ -223,6 +223,7 @@ function BindingController(props: BindingControllerProps) {
                 type: props.type,
                 note: null,
                 channel: null,
+                function: null,
                 waiting: !enabled,
                 position: { x: props.x, y: props.type === 'value' ? 0 : 1 }, //for now
               },
@@ -257,6 +258,7 @@ function BindingAdder(props: BindingAdderProps) {
               type: props.type,
               note: null,
               channel: null,
+              function: null,
               waiting: true,
               position: { x: props.x, y: 0 },
             },

@@ -1,4 +1,4 @@
-import * as Types from 'lib/types'
+import * as Types from 'render/util/types'
 
 const buffers: { [sourceId: string]: Types.Channels } = {}
 

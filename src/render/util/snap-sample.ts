@@ -1,4 +1,4 @@
-import { BIN_SIZE } from 'lib/impulse-detect'
+import { BIN_SIZE } from './impulse-detect'
 
 export default function snapSampleToImpulses(raw: number, scale: number, impulses: Float32Array) {
   const impulseIndex = Math.floor(raw / BIN_SIZE),

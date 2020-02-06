@@ -23,7 +23,7 @@ typedef struct{
   bool aperiodic;
   int chunkIndex;
   double sample;
-} track;
+} mixTrack;
 
 
 typedef struct{
@@ -43,7 +43,7 @@ typedef struct{
   float *window;
   unsigned int windowSize;
   playback *playback;
-  std::unordered_map<std::string, track*> tracks;
+  std::unordered_map<std::string, mixTrack*> mixTracks;
   std::unordered_map<std::string, source*> sources;
 } streamState;
 
