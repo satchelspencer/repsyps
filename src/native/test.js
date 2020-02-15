@@ -14,16 +14,18 @@ const A = wav.decode(fs.readFileSync(src)).channelData
 
 const [vocal, instru] = _.chunk(audio.separateSource(A), 2)
 
+const ssize = 5.41 * RATE /2
 
 audio.addSource('mysource', vocal)
 audio.setMixTrack('mytrack', {
   sourceId: 'mysource',
-  chunks: [0, 5.41 * RATE],//[34.13 * RATE, 5.41 * RATE, 23.27 * RATE, 5.41 * RATE],
-  playing: true
+  chunks: [0, ssize, ssize, ssize],
+  nextChunks: [ ssize*2, ssize],
+  playing: true,
 })
 
 audio.updatePlayback({
-  period: RATE * 5.5,
+  period: RATE * 5.5/2,
   volume: 0.5,
   playing: true,
 })
@@ -31,5 +33,5 @@ audio.updatePlayback({
 audio.start()
 
 setInterval(() => {
-  console.log(audio.getDebug())
+  console.log(audio.getTiming())
 }, 100)

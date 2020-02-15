@@ -22,8 +22,11 @@ int paCallbackMethod(
   int channelCount;
   int channelIndex;
   int chunkCount;
+  int nextChunkCount;
   int tempMixTrackChunkIndex;
   int tempMixTrackSample;
+  bool tempMixTrackAdvancedChunks;
+  std::vector<int> * tempMixTrackChunks;
 
   unsigned int sampledFrameIndex;
   double samplePosition;
@@ -63,34 +66,53 @@ int paCallbackMethod(
       mixTrackLength = mixTrackSource->length;
       channelCount = mixTrackSource->channels.size();
       chunkCount = mixTrack->chunks.size()/2;
+      nextChunkCount = mixTrack->nextChunks.size()/2;
 
       if(chunkCount == 0 || !mixTrack->playing) continue;
       
       tempMixTrackChunkIndex = mixTrack->chunkIndex;
       tempMixTrackSample = mixTrack->sample;
+      tempMixTrackAdvancedChunks = false;
+      tempMixTrackChunks = &mixTrack->chunks;
 
       /* add this computed track into the buffer */
       for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
         /* figure out which sample we're gonna fetch */
         if(tempMixTrackChunkIndex == -1 && mixTrackPhase >= 0){
           tempMixTrackChunkIndex = 0;
-          tempMixTrackSample = mixTrack->chunks[tempMixTrackChunkIndex*2]; //reset the sample to the start
+          tempMixTrackSample = (*tempMixTrackChunks)[tempMixTrackChunkIndex*2]; //reset the sample to the start
         } //on first
         if(tempMixTrackChunkIndex == -1) break; //before we should be playing
 
         if(mixTrack->aperiodic){
           samplePosition = tempMixTrackSample + mixTrack->alpha;
-          if(mixTrack->chunks[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
-            if(samplePosition > mixTrack->chunks[tempMixTrackChunkIndex*2]+mixTrack->chunks[tempMixTrackChunkIndex*2+1]){
+          if((*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
+            if(
+              samplePosition >
+              (
+                (*tempMixTrackChunks)[tempMixTrackChunkIndex*2] + 
+                (*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1]
+              )
+            ){ /* check if we looped around */
               tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount;
-              samplePosition = mixTrack->chunks[tempMixTrackChunkIndex*2];
+              if(tempMixTrackChunkIndex == 0 && nextChunkCount > 0){ //chunks looped and we have nextChunks
+                tempMixTrackAdvancedChunks = true;
+                tempMixTrackChunks = &mixTrack->nextChunks;
+              }
+              samplePosition = (*tempMixTrackChunks)[tempMixTrackChunkIndex*2];
             }
           }
         }else{
-          samplePosition = mixTrack->chunks[tempMixTrackChunkIndex*2] + ( mixTrack->chunks[tempMixTrackChunkIndex*2+1] * mixTrackPhase );
+          samplePosition = (*tempMixTrackChunks)[tempMixTrackChunkIndex*2] + 
+            ( (*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1] * mixTrackPhase );
+            
           if( samplePosition < tempMixTrackSample) {  /* check if we looped around */
             tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount; //increment the chunk
-            samplePosition = mixTrack->chunks[tempMixTrackChunkIndex*2] + ( mixTrack->chunks[tempMixTrackChunkIndex*2+1] * mixTrackPhase );
+            if(tempMixTrackChunkIndex == 0 && nextChunkCount > 0){ //chunks looped and we have nextChunks
+              tempMixTrackAdvancedChunks = true;
+              tempMixTrackChunks = &mixTrack->nextChunks;
+            }
+            samplePosition = (*tempMixTrackChunks)[tempMixTrackChunkIndex*2] + ( (*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1] * mixTrackPhase );
           }
         }
 
@@ -102,6 +124,12 @@ int paCallbackMethod(
         if(frameIndex == state->windowSize/2 - 1){
           mixTrack->chunkIndex = tempMixTrackChunkIndex;
           mixTrack->sample = tempMixTrackSample;
+          if(tempMixTrackAdvancedChunks){
+            mixTrack->chunks = mixTrack->nextChunks;
+            mixTrack->nextChunks.clear();
+            tempMixTrackAdvancedChunks = false;
+            tempMixTrackChunks = &mixTrack->chunks;
+          }
         }
 
 

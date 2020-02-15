@@ -62,6 +62,12 @@ const JumpInner = ctyled.div.styles({
   align: 'center',
 })
 
+const CueNumber = ctyled.div.styles({
+  size: s => s * 1.2,
+}).extend`
+  font-weight:bold;
+`
+
 export interface CuesProps {
   trackId: string
 }
@@ -71,6 +77,7 @@ interface CueProps {
   cueIndex: number
   active: boolean
   trackId: string
+  trackName: string
 }
 
 const Cue = SortableElement((props: CueProps) => {
@@ -95,10 +102,11 @@ const Cue = SortableElement((props: CueProps) => {
             )
           }
         >
-          Cue {props.cueIndex + 1} at {_.round(props.cue.chunks[0] / RATE, 2)}s
+          <CueNumber>{props.cueIndex + 1}</CueNumber>{' '}
+          <span>at {_.round(props.cue.chunks[0] / RATE, 2)}s</span>
         </CueTitle>
         <ControlAdder
-          name={`Cue ${props.cueIndex + 1}: ${name}`}
+          name={`Cue ${props.cueIndex + 1}: ${props.trackName}`}
           params={{
             cueIndex: props.cueIndex,
             trackId: props.trackId,
@@ -124,13 +132,14 @@ const Cues = memo((props: CuesProps) => {
         return {
           name: track && track.name,
           chunks: track && track.playback.chunks,
+          playing: track && track.playback.playing,
           cues: (track && track.cues) || [],
           activeCueIndex: Selectors.getActiveCueIndex(track),
         }
       },
       [props.trackId]
     ),
-    { name, chunks, cues, activeCueIndex } = useMappedState(getMappedState),
+    { name, chunks, playing, cues, activeCueIndex } = useMappedState(getMappedState),
     dispatch = useDispatch(),
     handleAddCue = useCallback(() => {
       dispatch(
@@ -146,8 +155,10 @@ const Cues = memo((props: CuesProps) => {
     }, [props.trackId, chunks, name]),
     canAdd = chunks[1],
     hasCues = !!cues.length,
-    canPrev = activeCueIndex > 0,
-    canNext = activeCueIndex !== -1 && activeCueIndex < cues.length - 1
+    atStart = playing && activeCueIndex === 0,
+    atEnd = playing && activeCueIndex === cues.length - 1,
+    canPrev = atStart || activeCueIndex > 0,
+    canNext = atEnd || (activeCueIndex !== -1 && activeCueIndex < cues.length - 1)
 
   return (
     <>
@@ -173,25 +184,25 @@ const Cues = memo((props: CuesProps) => {
             disabled={!canPrev}
             allowClick
             onClick={() => {
-              if (canPrev)
-                dispatch(
-                  Actions.applyControl({
-                    control: {
-                      name: '',
-                      position: { x: 0, y: 0 },
-                      trackId: props.trackId,
-                      type: 'note',
-                      cueStep: -1,
-                    },
-                    value: 127,
-                    function: 'note-on',
-                  })
-                )
+              if (!canPrev) return
+              dispatch(
+                Actions.applyControl({
+                  control: {
+                    name: '',
+                    position: { x: 0, y: 0 },
+                    trackId: props.trackId,
+                    type: 'note',
+                    cueStep: -1,
+                  },
+                  value: 127,
+                  function: 'note-on',
+                })
+              )
             }}
           >
             <JumpInner>
               <Icon name="prev" />
-              &nbsp;Prev
+              &nbsp;{atStart ? 'Stop' : 'Prev'}
             </JumpInner>
             <ControlAdder
               name={`Prev: ${name}`}
@@ -203,28 +214,26 @@ const Cues = memo((props: CuesProps) => {
             />
           </JumpButton>
           <JumpButton
-            disabled={!canNext}
             allowClick
             onClick={() => {
-              if (canNext)
-                dispatch(
-                  Actions.applyControl({
-                    control: {
-                      name: '',
-                      position: { x: 0, y: 0 },
-                      trackId: props.trackId,
-                      type: 'note',
-                      cueStep: 1,
-                    },
-                    value: 127,
-                    function: 'note-on',
-                  })
-                )
+              dispatch(
+                Actions.applyControl({
+                  control: {
+                    name: '',
+                    position: { x: 0, y: 0 },
+                    trackId: props.trackId,
+                    type: 'note',
+                    cueStep: 1,
+                  },
+                  value: 127,
+                  function: 'note-on',
+                })
+              )
             }}
           >
             <JumpInner>
               <Icon name="next" />
-              &nbsp;Next
+              &nbsp;{canNext ? (atEnd ? 'End' : 'Next') : 'Start'}
             </JumpInner>
             <ControlAdder
               name={`Next: ${name}`}
@@ -257,6 +266,7 @@ const Cues = memo((props: CuesProps) => {
               index={cueIndex}
               key={cueIndex}
               trackId={props.trackId}
+              trackName={name}
               cue={cue}
               cueIndex={cueIndex}
               active={activeCueIndex === cueIndex}

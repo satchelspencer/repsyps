@@ -17,6 +17,7 @@ const defaultPlayback: Types.Playback = {
   defaultTracks: Types.Tracks = {},
   defaultTrackPlayback: Types.TrackPlayback = {
     chunks: [0, 0],
+    nextChunks: [],
     alpha: 1,
     playing: false,
     aperiodic: true,
@@ -169,7 +170,16 @@ export default combineReducers({
               },
             },
           }
-        } else return tracks
+        } else return {
+          ...tracks,
+          [control.trackId]: {
+            ...track,
+            playback: {
+              ...track.playback,
+              playing: false,
+            },
+          },
+        }
       } else return tracks
     }),
     handle(Actions.addTrack, (tracks, { payload }) => {

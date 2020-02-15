@@ -18,6 +18,7 @@ typedef struct{
   std::string sourceId;
   float volume;
   std::vector<int> chunks;
+  std::vector<int> nextChunks;
   float alpha;
   bool playing;
   bool aperiodic;

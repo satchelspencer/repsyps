@@ -8,6 +8,8 @@ export interface Playback {
 export interface TrackTiming {
   chunkIndex: number
   sample: number
+  chunks: Chunks
+  nextChunks: Chunks
 }
 
 export interface TimingState {
@@ -17,7 +19,6 @@ export interface TimingState {
 export type Chunks = number[] //[start0,end0,start1,end1]
 
 export interface TrackPlayback extends TrackTiming {
-  chunks: Chunks
   alpha: number
   playing: boolean
   aperiodic: boolean

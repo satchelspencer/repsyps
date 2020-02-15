@@ -132,42 +132,41 @@ export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
 }
 
 export function drawPlayback(context: DrawingContext, track: Types.Track) {
-  const { pheight, scale, start, ctx, sample } = context
+  const { pheight, scale, start, ctx, sample } = context,
+    playing = track.playback.playing
 
-  if (true || track.playback.playing) {
-    let px = (sample - start) / scale
-    ctx.fillStyle = context.color.fg + '33'
-    ctx.fillRect(px - 10, 0, 20, pheight)
+  let px = (sample - start) / scale
+  ctx.fillStyle = context.color.fg + '33'
+  ctx.fillRect(px - 10, 0, 20, pheight)
 
-    for (let i = 0; i < track.playback.chunks.length; i += 2) {
-      const cstart = track.playback.chunks[i],
-        clength = track.playback.chunks[i + 1],
-        startX = (cstart - start) / scale,
-        endX = (cstart + clength - start) / scale,
-        isCurrent = track.playback.chunkIndex === i / 2
+  for (let i = 0; i < track.playback.chunks.length; i += 2) {
+    const cstart = track.playback.chunks[i],
+      clength = track.playback.chunks[i + 1],
+      startX = (cstart - start) / scale,
+      endX = (cstart + clength - start) / scale,
+      isCurrent = track.playback.chunkIndex === i / 2
 
-      if (!clength) {
-        ctx.lineWidth = 5
-        ctx.strokeStyle = 'rgba(255,0,0,0.5)'
-        ctx.beginPath()
-        ctx.lineTo(startX, 0)
-        ctx.lineTo(startX, pheight)
-        ctx.stroke()
-      } else {
-        ctx.fillStyle = 'rgba(255,0,0,0.1)'
-        ctx.fillRect(startX, 0, endX - startX, pheight)
+    if (!clength) {
+      ctx.lineWidth = 5
+      ctx.strokeStyle = 'rgba(255,0,0,0.5)'
+      ctx.beginPath()
+      ctx.lineTo(startX, 0)
+      ctx.lineTo(startX, pheight)
+      ctx.stroke()
+    } else {
+      ctx.fillStyle = playing?'rgba(255,0,0,0.1)':'rgba(0,0,0,0.1)'
+      ctx.fillRect(startX, 0, endX - startX, pheight)
 
-        ctx.lineWidth = 3
-        ctx.strokeStyle = 'rgba(255,0,0,0.5)'
-        ctx.beginPath()
-        ctx.lineTo(startX, 0)
-        ctx.lineTo(startX, pheight)
-        ctx.stroke()
-        ctx.beginPath()
-        ctx.lineTo(endX, 0)
-        ctx.lineTo(endX, pheight)
-        ctx.stroke()
-      }
+      ctx.lineWidth = 3
+      ctx.strokeStyle = 'rgba(255,0,0,0.5)'
+      ctx.beginPath()
+      ctx.lineTo(startX, 0)
+      ctx.lineTo(startX, pheight)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.lineTo(endX, 0)
+      ctx.lineTo(endX, pheight)
+      ctx.stroke()
     }
 
     ctx.lineWidth = 3

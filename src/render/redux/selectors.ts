@@ -70,6 +70,12 @@ export function getOpenPosition(
 
 export function getActiveCueIndex(track: Types.Track) {
   return (
-    track && _.findIndex(track.cues, cue => isEqual(cue.chunks, track.playback.chunks))
+    track &&
+    _.findIndex(track.cues, cue =>
+      _.every(
+        Object.keys(cue),
+        cprop => cprop === 'chunkIndex' || isEqual(cue[cprop], track.playback[cprop])
+      )
+    )
   )
 }

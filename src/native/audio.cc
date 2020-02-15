@@ -165,6 +165,13 @@ void setMixTrack(const Napi::CallbackInfo &info){
         int sample = chunks.Get(i).As<Napi::Number>().Int32Value();
         state.mixTracks[mixTrackId]->chunks.push_back(sample);
       }
+    }else if(propNameStr == "nextChunks"){
+      Napi::Array nextChunks = value.As<Napi::Array>();
+      state.mixTracks[mixTrackId]->nextChunks.clear();
+      for(uint32_t i=0;i<nextChunks.Length();i++){
+        int sample = nextChunks.Get(i).As<Napi::Number>().Int32Value();
+        state.mixTracks[mixTrackId]->nextChunks.push_back(sample);
+      }
     }else if(propNameStr == "alpha"){
       state.mixTracks[mixTrackId]->alpha = value.As<Napi::Number>().FloatValue();
     }else if(propNameStr == "playing"){
@@ -195,6 +202,17 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
     Napi::Object mixTrackState = Napi::Object::New(env);
     mixTrackState.Set("sample", mixTrackPair.second->sample);
     mixTrackState.Set("chunkIndex", mixTrackPair.second->chunkIndex);
+
+    Napi::Array chunks = Napi::Array::New(env);
+    for(unsigned int i=0;i<mixTrackPair.second->chunks.size();i++)
+      chunks.Set(i, mixTrackPair.second->chunks[i]);
+    mixTrackState.Set("chunks", chunks);
+
+    Napi::Array nextChunks = Napi::Array::New(env);
+    for(unsigned int i=0;i<mixTrackPair.second->nextChunks.size();i++)
+      nextChunks.Set(i, mixTrackPair.second->nextChunks[i]);
+    mixTrackState.Set("nextChunks", nextChunks);
+
     timings.Set(mixTrackPair.first, mixTrackState);
   }
   return timings;

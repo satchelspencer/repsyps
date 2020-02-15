@@ -8,7 +8,7 @@ repsyps depends on native libraries that must be installed manually for developm
 
 ### OSX Installation
  - prerequisites:
-   - Xcode, build essentials all of that
+   - Xcode, [homebrew](https://brew.sh/) all of that
    - cmake `brew install cmake`
    - ninja `brew install ninja`
    - nodejs 10+ [see installer](https://nodejs.org/en/download/)
