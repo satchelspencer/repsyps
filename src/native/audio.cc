@@ -202,6 +202,7 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
     Napi::Object mixTrackState = Napi::Object::New(env);
     mixTrackState.Set("sample", mixTrackPair.second->sample);
     mixTrackState.Set("chunkIndex", mixTrackPair.second->chunkIndex);
+    mixTrackState.Set("playing", mixTrackPair.second->playing);
 
     Napi::Array chunks = Napi::Array::New(env);
     for(unsigned int i=0;i<mixTrackPair.second->chunks.size();i++)

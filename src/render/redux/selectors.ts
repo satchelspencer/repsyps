@@ -67,9 +67,3 @@ export function getOpenPosition(
     }
   }
 }
-
-export function getActiveCueIndex(track: Types.Track) {
-  return (
-    track && _.findIndex(track.cues, cue => isEqual(cue.chunks, track.playback.chunks))
-  )
-}

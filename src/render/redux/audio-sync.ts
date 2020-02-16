@@ -4,7 +4,7 @@ import { remote } from 'electron'
 
 import * as Types from 'render/util/types'
 import audio from 'render/util/audio'
-import { updateTime } from './actions'
+import * as Actions from './actions'
 import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
 import { getBuffer } from 'render/util/buffers'
@@ -83,7 +83,8 @@ export default function syncAudio(store: Store<Types.State>) {
       })
 
       lastTrackChannelIds.forEach(trackChannelId => {
-        if (!trackChannelIds.includes(trackChannelId)) audio.removeMixTrack(trackChannelId)
+        if (!trackChannelIds.includes(trackChannelId))
+          audio.removeMixTrack(trackChannelId)
       })
     })
 
@@ -106,8 +107,8 @@ export default function syncAudio(store: Store<Types.State>) {
     let start = new Date().getTime()
     if (lastState && lastState.playback.playing) {
       const currentTiming = audio.getTiming(),
-        action = updateTime(currentTiming)
-      //console.log(audio.getDebug())
+        action = Actions.updateTime(currentTiming)
+
       /* override last state so this change won't be sent back to where it came from */
       lastState = reducer(lastState, action)
       store.dispatch(action)

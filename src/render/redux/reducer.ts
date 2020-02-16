@@ -27,6 +27,13 @@ const defaultPlayback: Types.Playback = {
   defaultControls: Types.Controls = {},
   defaultBindings: Types.Bindings = {}
 
+function applyCue(track: Types.Track, cueIndex: number): Types.Track {
+  return {
+    ...track,
+    cueIndex,
+  }
+}
+
 export default combineReducers({
   bindings: createReducer(defaultBindings, handle => [
     handle(Actions.addBinding, (bindings, { payload }) => {
@@ -146,31 +153,17 @@ export default combineReducers({
       } else if ('cueIndex' in control && payload.function === 'note-on') {
         return {
           ...tracks,
-          [control.trackId]: {
-            ...tracks[control.trackId],
-            playback: {
-              ...tracks[control.trackId].playback,
-              chunks: tracks[control.trackId].cues[control.cueIndex].chunks,
-              chunkIndex: -1,
-            },
-          },
+          [control.trackId]: applyCue(tracks[control.trackId], control.cueIndex),
         }
       } else if ('cueStep' in control) {
         const track = tracks[control.trackId],
-          currentIndex = Selectors.getActiveCueIndex(track),
+          currentIndex = track.cueIndex,
           nextIndex = currentIndex + control.cueStep
 
         if (nextIndex >= 0 && nextIndex < track.cues.length) {
           return {
             ...tracks,
-            [control.trackId]: {
-              ...track,
-              playback: {
-                ...track.playback,
-                chunks: track.cues[nextIndex].chunks,
-                chunkIndex: -1,
-              },
-            },
+            [control.trackId]: applyCue(track, nextIndex),
           }
         } else
           return {
@@ -180,7 +173,9 @@ export default combineReducers({
               playback: {
                 ...track.playback,
                 playing: false,
+                nextChunks: [],
               },
+              cueIndex: -1,
             },
           }
       } else return tracks
@@ -226,7 +221,9 @@ export default combineReducers({
           playback: {
             ...tracks[payload.trackId].playback,
             ...payload.playback,
+            nextChunks: [],
           },
+          cueIndex: -1,
         },
       }
     }),
@@ -271,7 +268,7 @@ export default combineReducers({
     }),
     handle(Actions.updateTime, (tracks, { payload }) => {
       return _.mapValues(tracks, (track, trackId) => {
-        const isPlaying = track.playback.playing,
+        const isPlaying = payload[trackId].playing,
           trackTiming = payload[trackId]
 
         let needsUpdate = false

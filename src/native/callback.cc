@@ -20,6 +20,7 @@ int paCallbackMethod(
   float *out = (float*)outputBuffer;
   unsigned long frameIndex;
   unsigned int outputFrameIndex = 0;
+  double startTime = state->playback->time;
 
   double mixTrackPhase;
   double phaseStep = 1/(double)state->playback->period;
@@ -88,20 +89,14 @@ int paCallbackMethod(
         /* figure out which sample we're gonna fetch */
         if(tempMixTrackChunkIndex == -1 && mixTrackPhase >= 0){
           tempMixTrackChunkIndex = 0;
-          tempMixTrackSample = (*tempMixTrackChunks)[tempMixTrackChunkIndex*2]; //reset the sample to the start
+          tempMixTrackSample = getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, 0); //reset the sample to the start
         } //on first
         if(tempMixTrackChunkIndex == -1) break; //before we should be playing
 
         if(mixTrack->aperiodic){
           samplePosition = tempMixTrackSample + mixTrack->alpha;
           if((*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
-            if(
-              samplePosition >
-              (
-                (*tempMixTrackChunks)[tempMixTrackChunkIndex*2] + 
-                (*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1]
-              )
-            ){ /* check if we looped around */
+            if(samplePosition > getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, 1)){ /* check if we looped around */
               tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount;
               if(tempMixTrackChunkIndex == 0 && nextChunkCount > 0){ //chunks looped and we have nextChunks
                 tempMixTrackAdvancedChunks = true;
@@ -138,7 +133,6 @@ int paCallbackMethod(
           }
         }
 
-
         /* add the sample to the buffer */
         for(channelIndex=0;channelIndex<channelCount;channelIndex++){
           sampleValue = 0;
@@ -173,5 +167,18 @@ int paCallbackMethod(
   
   state->playback->out = state->buffer->tail;
   state->playback->time += (double)framesPerBuffer/state->playback->period;
+
+  /* phase wrapped drung this callback */
+  if(startTime-floor(startTime) > state->playback->time-floor(state->playback->time)){
+    for(auto mixTrackPair: state->mixTracks){
+      mixTrack = mixTrackPair.second;
+      if(mixTrack->nextChunks.size() > 0 && !mixTrack->playing){
+        mixTrack->chunks = mixTrack->nextChunks;
+        mixTrack->nextChunks.clear();
+        mixTrack->playing = true;
+      }
+    }
+  }
+
   return paContinue;
 }
