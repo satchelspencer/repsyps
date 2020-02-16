@@ -16,7 +16,7 @@ import ControlAdder from 'render/components/control-adder'
 import SidebarItem from './item'
 
 const CueWrapper = ctyled.div
-  .attrs({ active: false })
+  .attrs<{ active?: boolean }>({ active: false })
   .class(inline)
   .styles({
     align: 'center',
@@ -24,8 +24,9 @@ const CueWrapper = ctyled.div
     justify: 'space-between',
     color: c => c.nudge(0.05),
     rounded: true,
-    flex: 1,
     border: 1,
+    height: 2,
+    flex: 1,
     borderColor: c => c.contrast(-0.1),
   }).extend`
   background:${({ color }, { active }) => (active ? color.nudge(-0.2).bg : color.bg)};
@@ -68,6 +69,13 @@ const CueNumber = ctyled.div.styles({
   font-weight:bold;
 `
 
+const CueBehavior = CueWrapper.styles({
+  flex: 'none',
+  width: 2,
+  align: 'center',
+  justify: 'center',
+})
+
 export interface CuesProps {
   trackId: string
 }
@@ -78,10 +86,15 @@ interface CueProps {
   active: boolean
   trackId: string
   trackName: string
+  children?: any
 }
 
-const Cue = SortableElement((props: CueProps) => {
-  const dispatch = useDispatch()
+const startBehaviors: Types.CueStartBehavior[] = ['on-chunk', 'immediate'],
+  endBehaviors: Types.CueEndBehavior[] = ['loop', 'next']
+
+const Cue = SortableElement((xprops: any) => {
+  const props = xprops as CueProps,
+    dispatch = useDispatch()
   return (
     <CueH>
       <CueWrapper active={props.active}>
@@ -102,7 +115,7 @@ const Cue = SortableElement((props: CueProps) => {
             )
           }
         >
-          <CueNumber>{props.cueIndex + 1}</CueNumber>{' '}
+          <CueNumber>{props.cueIndex + 1}</CueNumber>
           <span>at {_.round(props.cue.chunks[0] / RATE, 2)}s</span>
         </CueTitle>
         <ControlAdder
@@ -114,6 +127,47 @@ const Cue = SortableElement((props: CueProps) => {
           type="note"
         />
       </CueWrapper>
+      <CueBehavior
+        onClick={() => {
+          const nextBehavior =
+            startBehaviors[
+              (startBehaviors.indexOf(props.cue.startBehavior) + 1) %
+                startBehaviors.length
+            ]
+          dispatch(
+            Actions.addCue({
+              trackId: props.trackId,
+              cue: {
+                ...props.cue,
+                startBehavior: nextBehavior,
+              },
+              index: props.cueIndex,
+            })
+          )
+        }}
+      >
+        <Icon name={props.cue.startBehavior} />
+      </CueBehavior>
+      <CueBehavior
+        onClick={() => {
+          const nextBehavior =
+            endBehaviors[
+              (endBehaviors.indexOf(props.cue.endBehavior) + 1) % endBehaviors.length
+            ]
+          dispatch(
+            Actions.addCue({
+              trackId: props.trackId,
+              cue: {
+                ...props.cue,
+                endBehavior: nextBehavior,
+              },
+              index: props.cueIndex,
+            })
+          )
+        }}
+      >
+        <Icon name={props.cue.endBehavior} />
+      </CueBehavior>
       <Icon
         asButton
         name="close"
@@ -134,7 +188,7 @@ const Cues = memo((props: CuesProps) => {
           chunks: track && track.playback.chunks,
           playing: track && track.playback.playing,
           cues: (track && track.cues) || [],
-          activeCueIndex: Selectors.getActiveCueIndex(track),
+          activeCueIndex: track.cueIndex,
         }
       },
       [props.trackId]
@@ -147,8 +201,8 @@ const Cues = memo((props: CuesProps) => {
           trackId: props.trackId,
           cue: {
             chunks,
-            chunkIndex: -1,
-            playing: true,
+            startBehavior: 'immediate',
+            endBehavior: 'loop',
           },
         })
       )

@@ -41,7 +41,15 @@ export type Channels = Float32Array[] //array of arrays... 1 per channel
 
 export type Bounds = number[]
 
-export type Cue = Partial<TrackPlayback>
+export type CueStartBehavior = 'immediate' | 'on-chunk'
+
+export type CueEndBehavior = 'loop' | 'next'
+
+export interface Cue {
+  chunks: Chunks,
+  startBehavior: CueStartBehavior,
+  endBehavior: CueEndBehavior
+}
 
 export interface Track {
   name: string
@@ -51,6 +59,7 @@ export interface Track {
   selected: boolean
   editing: boolean
   cues: Cue[]
+  cueIndex: number
 }
 
 export interface Tracks {

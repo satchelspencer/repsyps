@@ -150,7 +150,8 @@ export default combineReducers({
             ...tracks[control.trackId],
             playback: {
               ...tracks[control.trackId].playback,
-              ...tracks[control.trackId].cues[control.cueIndex],
+              chunks: tracks[control.trackId].cues[control.cueIndex].chunks,
+              chunkIndex: -1,
             },
           },
         }
@@ -166,20 +167,22 @@ export default combineReducers({
               ...track,
               playback: {
                 ...track.playback,
-                ...track.cues[nextIndex],
+                chunks: track.cues[nextIndex].chunks,
+                chunkIndex: -1,
               },
             },
           }
-        } else return {
-          ...tracks,
-          [control.trackId]: {
-            ...track,
-            playback: {
-              ...track.playback,
-              playing: false,
+        } else
+          return {
+            ...tracks,
+            [control.trackId]: {
+              ...track,
+              playback: {
+                ...track.playback,
+                playing: false,
+              },
             },
-          },
-        }
+          }
       } else return tracks
     }),
     handle(Actions.addTrack, (tracks, { payload }) => {
@@ -193,6 +196,7 @@ export default combineReducers({
           selected: false,
           editing: true,
           cues: [],
+          cueIndex: -1,
         },
       }
     }),

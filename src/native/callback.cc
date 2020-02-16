@@ -1,5 +1,13 @@
 #include "callback.h"
 
+double getSamplePosition(
+  std::vector<int> * chunks,
+  int chunkIndex,
+  double phase
+){
+  return (*chunks)[chunkIndex*2] + ( (*chunks)[chunkIndex*2+1] * phase );
+}
+
 int paCallbackMethod(
   const void *inputBuffer, 
   void *outputBuffer,
@@ -103,16 +111,14 @@ int paCallbackMethod(
             }
           }
         }else{
-          samplePosition = (*tempMixTrackChunks)[tempMixTrackChunkIndex*2] + 
-            ( (*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1] * mixTrackPhase );
-            
+          samplePosition = getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, mixTrackPhase);
           if( samplePosition < tempMixTrackSample) {  /* check if we looped around */
             tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount; //increment the chunk
             if(tempMixTrackChunkIndex == 0 && nextChunkCount > 0){ //chunks looped and we have nextChunks
               tempMixTrackAdvancedChunks = true;
               tempMixTrackChunks = &mixTrack->nextChunks;
             }
-            samplePosition = (*tempMixTrackChunks)[tempMixTrackChunkIndex*2] + ( (*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1] * mixTrackPhase );
+            samplePosition = getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, mixTrackPhase);
           }
         }
 
