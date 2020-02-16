@@ -6,7 +6,10 @@ function createAction<Payload>(name) {
   return createActionCreator(name, res => (payload: Payload) => res(payload))
 }
 
-export const updateTime = createAction<Types.TimingState>('UPDATE_TIMES')
+export const updateTime = createAction<{
+  timing: Types.TimingState,
+  commit: boolean
+}>('UPDATE_TIMES')
 
 export const addTrack = createAction<{
   trackId: string

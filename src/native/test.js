@@ -21,6 +21,7 @@ audio.setMixTrack('mytrack', {
   sourceId: 'mysource',
   chunks: [0, ssize, ssize, ssize],
   nextChunks: [ ssize*2, ssize],
+  nextAtChunk: false,
   playing: true,
 })
 
@@ -33,5 +34,5 @@ audio.updatePlayback({
 audio.start()
 
 setInterval(() => {
-  console.log(audio.getTiming())
+  console.log(audio.getTiming().tracks['mytrack'])
 }, 100)

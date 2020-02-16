@@ -106,12 +106,14 @@ export default function syncAudio(store: Store<Types.State>) {
   function update() {
     let start = new Date().getTime()
     if (lastState && lastState.playback.playing) {
-      const currentTiming = audio.getTiming(),
-        action = Actions.updateTime(currentTiming)
+      const currentTiming = audio.getTiming()
 
       /* override last state so this change won't be sent back to where it came from */
-      lastState = reducer(lastState, action)
-      store.dispatch(action)
+      lastState = reducer(
+        lastState,
+        Actions.updateTime({ timing: currentTiming, commit: false })
+      )
+      store.dispatch(Actions.updateTime({ timing: currentTiming, commit: true }))
     }
     setTimeout(update, Math.max(UPDATE_PERIOD - (new Date().getTime() - start), 0))
   }

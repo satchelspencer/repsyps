@@ -98,7 +98,7 @@ int paCallbackMethod(
           if((*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
             if(samplePosition > getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, 1)){ /* check if we looped around */
               tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount;
-              if(tempMixTrackChunkIndex == 0 && nextChunkCount > 0){ //chunks looped and we have nextChunks
+              if(nextChunkCount > 0 && (tempMixTrackChunkIndex == 0 || mixTrack->nextAtChunk)){ //chunks looped and we have nextChunks
                 tempMixTrackAdvancedChunks = true;
                 tempMixTrackChunks = &mixTrack->nextChunks;
               }
@@ -109,7 +109,8 @@ int paCallbackMethod(
           samplePosition = getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, mixTrackPhase);
           if( samplePosition < tempMixTrackSample) {  /* check if we looped around */
             tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount; //increment the chunk
-            if(tempMixTrackChunkIndex == 0 && nextChunkCount > 0){ //chunks looped and we have nextChunks
+            if(nextChunkCount > 0 && (tempMixTrackChunkIndex == 0 || mixTrack->nextAtChunk)){ //chunks looped and we have nextChunks
+              tempMixTrackChunkIndex = 0;
               tempMixTrackAdvancedChunks = true;
               tempMixTrackChunks = &mixTrack->nextChunks;
             }

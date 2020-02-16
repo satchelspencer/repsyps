@@ -7,6 +7,7 @@ import * as Types from 'render/util/types'
 import * as Actions from './actions'
 import * as Selectors from './selectors'
 import { RATE } from 'render/util/audio'
+import isEqual from '../util/is-equal'
 
 const defaultPlayback: Types.Playback = {
     volume: 1,
@@ -22,16 +23,43 @@ const defaultPlayback: Types.Playback = {
     playing: false,
     aperiodic: true,
     chunkIndex: -1,
+    nextAtChunk: false,
     sample: 0,
   },
   defaultControls: Types.Controls = {},
   defaultBindings: Types.Bindings = {}
 
 function applyCue(track: Types.Track, cueIndex: number): Types.Track {
-  return {
-    ...track,
-    cueIndex,
-  }
+  const cue = track.cues[cueIndex],
+    followingCue = track.cues[cueIndex + 1]
+
+  if (!cue) return track
+  else if (cue.startBehavior === 'immediate') {
+    const hasFollowing = cue.endBehavior === 'next' && followingCue
+    return {
+      ...track,
+      cueIndex: cueIndex,
+      nextCueIndex: hasFollowing ? cueIndex + 1 : -1,
+      playback: {
+        ...track.playback,
+        chunks: cue.chunks,
+        nextAtChunk: false,
+        chunkIndex: -1,
+        nextChunks: hasFollowing ? followingCue.chunks : [],
+        playing: true,
+      },
+    }
+  } else if (cue.startBehavior === 'on-chunk' || cue.startBehavior === 'on-end') {
+    return {
+      ...track,
+      nextCueIndex: cueIndex,
+      playback: {
+        ...track.playback,
+        nextChunks: cue.chunks,
+        nextAtChunk: cue.startBehavior === 'on-chunk',
+      },
+    }
+  } else return track
 }
 
 export default combineReducers({
@@ -93,7 +121,7 @@ export default combineReducers({
     handle(Actions.updateTime, (playback, { payload }) => {
       return {
         ...playback,
-        time: (payload as any).playback,
+        time: payload.timing.time,
       }
     }),
   ]),
@@ -192,6 +220,7 @@ export default combineReducers({
           editing: true,
           cues: [],
           cueIndex: -1,
+          nextCueIndex: -1,
         },
       }
     }),
@@ -214,18 +243,32 @@ export default combineReducers({
       return _.omit(tracks, payload)
     }),
     handle(Actions.setTrackPlayback, (tracks, { payload }) => {
-      return {
-        ...tracks,
-        [payload.trackId]: {
-          ...tracks[payload.trackId],
-          playback: {
-            ...tracks[payload.trackId].playback,
-            ...payload.playback,
-            nextChunks: [],
+      if (!!payload.playback.chunks)
+        return {
+          ...tracks,
+          [payload.trackId]: {
+            ...tracks[payload.trackId],
+            playback: {
+              ...tracks[payload.trackId].playback,
+              ...payload.playback,
+              nextChunks: [],
+              nextAtChunk: false,
+            },
+            cueIndex: -1,
+            nextCueIndex: -1,
           },
-          cueIndex: -1,
-        },
-      }
+        }
+      else
+        return {
+          ...tracks,
+          [payload.trackId]: {
+            ...tracks[payload.trackId],
+            playback: {
+              ...tracks[payload.trackId].playback,
+              ...payload.playback,
+            },
+          },
+        }
     }),
     handle(Actions.setTrackBounds, (tracks, { payload }) => {
       return {
@@ -268,27 +311,34 @@ export default combineReducers({
     }),
     handle(Actions.updateTime, (tracks, { payload }) => {
       return _.mapValues(tracks, (track, trackId) => {
-        const isPlaying = payload[trackId].playing,
-          trackTiming = payload[trackId]
+        const trackTiming = payload.timing.tracks[trackId],
+          isPlaying = trackTiming.playing,
+          chunksChanged = !isEqual(track.playback.chunks, trackTiming.chunks)
 
-        let needsUpdate = false
-        if (isPlaying) {
-          for (let prop in trackTiming) {
-            if (trackTiming[prop] !== track.playback[prop]) {
-              needsUpdate = true
-              break
-            }
+        if (chunksChanged && payload.commit && track.nextCueIndex !== -1) {
+          const appliedCue = track.cues[track.nextCueIndex],
+            followingCue = track.cues[track.nextCueIndex + 1],
+            hasFollowing = appliedCue.endBehavior === 'next' && followingCue
+          return {
+            ...track,
+            cueIndex: track.nextCueIndex,
+            nextCueIndex: hasFollowing ? track.nextCueIndex + 1 : -1,
+            playback: {
+              ...track.playback,
+              ...trackTiming,
+              nextAtChunk: false, //wait till end to apply nextChunks
+              nextChunks: hasFollowing ? followingCue.chunks : [],
+            },
           }
-        }
-        return needsUpdate
-          ? {
-              ...track,
-              playback: {
-                ...track.playback,
-                ...trackTiming,
-              },
-            }
-          : track
+        } else if (isPlaying) {
+          return {
+            ...track,
+            playback: {
+              ...track.playback,
+              ...trackTiming,
+            },
+          }
+        } else return track
       })
     }),
     handle(Actions.copyTrackBounds, (tracks, { payload }) => {

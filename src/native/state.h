@@ -22,6 +22,7 @@ typedef struct{
   float alpha;
   bool playing;
   bool aperiodic;
+  bool nextAtChunk;
   int chunkIndex;
   double sample;
 } mixTrack;

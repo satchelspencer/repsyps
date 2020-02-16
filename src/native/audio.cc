@@ -140,6 +140,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->alpha = 1.;
     newMixTrack->playing = false;
     newMixTrack->aperiodic = false;
+    newMixTrack->nextAtChunk = false;
     newMixTrack->sample = 0;
     state.mixTracks[mixTrackId] = newMixTrack;
   }
@@ -178,6 +179,8 @@ void setMixTrack(const Napi::CallbackInfo &info){
       state.mixTracks[mixTrackId]->playing = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "aperiodic"){
       state.mixTracks[mixTrackId]->aperiodic = value.As<Napi::Boolean>().Value();
+    }else if(propNameStr == "nextAtChunk"){
+      state.mixTracks[mixTrackId]->nextAtChunk = value.As<Napi::Boolean>().Value();
     }
   }
 }
@@ -197,7 +200,7 @@ Napi::Value removeMixTrack(const Napi::CallbackInfo &info){
 Napi::Value getTiming(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
   Napi::Object timings = Napi::Object::New(env);
-   timings.Set("playback", state.playback->time);
+  Napi::Object tracktimings = Napi::Object::New(env);
   for(auto mixTrackPair: state.mixTracks){
     Napi::Object mixTrackState = Napi::Object::New(env);
     mixTrackState.Set("sample", mixTrackPair.second->sample);
@@ -214,8 +217,10 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
       nextChunks.Set(i, mixTrackPair.second->nextChunks[i]);
     mixTrackState.Set("nextChunks", nextChunks);
 
-    timings.Set(mixTrackPair.first, mixTrackState);
+    tracktimings.Set(mixTrackPair.first, mixTrackState);
   }
+  timings.Set("tracks", tracktimings);
+  timings.Set("time", state.playback->time);
   return timings;
 }
 

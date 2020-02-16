@@ -14,7 +14,8 @@ export interface TrackTiming {
 }
 
 export interface TimingState {
-  [trackId: string]: TrackTiming
+  time: number
+  tracks: { [trackId: string]: TrackTiming }
 }
 
 export type Chunks = number[] //[start0,end0,start1,end1]
@@ -22,6 +23,7 @@ export type Chunks = number[] //[start0,end0,start1,end1]
 export interface TrackPlayback extends TrackTiming {
   alpha: number
   aperiodic: boolean
+  nextAtChunk: boolean
 }
 
 export interface TrackChannel {
@@ -41,13 +43,13 @@ export type Channels = Float32Array[] //array of arrays... 1 per channel
 
 export type Bounds = number[]
 
-export type CueStartBehavior = 'immediate' | 'on-chunk'
+export type CueStartBehavior = 'immediate' | 'on-chunk' | 'on-end'
 
 export type CueEndBehavior = 'loop' | 'next'
 
 export interface Cue {
-  chunks: Chunks,
-  startBehavior: CueStartBehavior,
+  chunks: Chunks
+  startBehavior: CueStartBehavior
   endBehavior: CueEndBehavior
 }
 
@@ -60,6 +62,7 @@ export interface Track {
   editing: boolean
   cues: Cue[]
   cueIndex: number
+  nextCueIndex: number
 }
 
 export interface Tracks {

@@ -6,7 +6,6 @@ import { SortableContainer, SortableElement } from 'react-sortable-hoc'
 
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
-import * as Selectors from 'render/redux/selectors'
 import { RATE } from 'render/util/audio'
 
 import Icon from 'render/components/icon'
@@ -16,7 +15,7 @@ import ControlAdder from 'render/components/control-adder'
 import SidebarItem from './item'
 
 const CueWrapper = ctyled.div
-  .attrs<{ active?: boolean }>({ active: false })
+  .attrs<{ active?: boolean; next?: boolean }>({ active: false, next: false })
   .class(inline)
   .styles({
     align: 'center',
@@ -29,7 +28,8 @@ const CueWrapper = ctyled.div
     flex: 1,
     borderColor: c => c.contrast(-0.1),
   }).extend`
-  background:${({ color }, { active }) => (active ? color.nudge(-0.2).bg : color.bg)};
+  background:${({ color }, { active, next }) =>
+    active ? color.nudge(-0.2).bg : next ? color.nudge(-0.1).bg : color.bg};
 `
 
 const CuesListWrapper = ctyled.div.styles({
@@ -84,12 +84,13 @@ interface CueProps {
   cue: Types.Cue
   cueIndex: number
   active: boolean
+  next: boolean
   trackId: string
   trackName: string
   children?: any
 }
 
-const startBehaviors: Types.CueStartBehavior[] = ['on-chunk', 'immediate'],
+const startBehaviors: Types.CueStartBehavior[] = ['on-chunk', 'on-end', 'immediate'],
   endBehaviors: Types.CueEndBehavior[] = ['loop', 'next']
 
 const Cue = SortableElement((xprops: any) => {
@@ -97,7 +98,7 @@ const Cue = SortableElement((xprops: any) => {
     dispatch = useDispatch()
   return (
     <CueH>
-      <CueWrapper active={props.active}>
+      <CueWrapper active={props.active} next={props.next}>
         <CueTitle
           onClick={() =>
             dispatch(
@@ -189,11 +190,14 @@ const Cues = memo((props: CuesProps) => {
           playing: track && track.playback.playing,
           cues: (track && track.cues) || [],
           activeCueIndex: track.cueIndex,
+          nextCueIndex: track.nextCueIndex,
         }
       },
       [props.trackId]
     ),
-    { name, chunks, playing, cues, activeCueIndex } = useMappedState(getMappedState),
+    { name, chunks, playing, cues, activeCueIndex, nextCueIndex } = useMappedState(
+      getMappedState
+    ),
     dispatch = useDispatch(),
     handleAddCue = useCallback(() => {
       dispatch(
@@ -324,6 +328,7 @@ const Cues = memo((props: CuesProps) => {
               cue={cue}
               cueIndex={cueIndex}
               active={activeCueIndex === cueIndex}
+              next={nextCueIndex === cueIndex}
             />
           ))}
         </CuesList>
