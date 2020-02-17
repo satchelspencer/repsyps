@@ -24,6 +24,7 @@ export interface TrackPlayback extends TrackTiming {
   alpha: number
   aperiodic: boolean
   nextAtChunk: boolean
+  muted: boolean
 }
 
 export interface TrackChannel {

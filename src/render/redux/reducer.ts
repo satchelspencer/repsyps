@@ -25,6 +25,7 @@ const defaultPlayback: Types.Playback = {
     chunkIndex: -1,
     nextAtChunk: false,
     sample: 0,
+    muted: false,
   },
   defaultControls: Types.Controls = {},
   defaultBindings: Types.Bindings = {}
@@ -126,6 +127,29 @@ export default combineReducers({
     }),
   ]),
   tracks: createReducer(defaultTracks, handle => [
+    handle(Actions.setTrackMuted, (tracks, { payload }) => {
+      return {
+        ...tracks,
+        [payload.trackId]: {
+          ...tracks[payload.trackId],
+          playback: {
+            ...tracks[payload.trackId].playback,
+            muted: payload.muted,
+          },
+        },
+      }
+    }),
+    handle(Actions.setTrackSolo, (tracks, { payload }) => {
+      return _.mapValues(tracks, (track, trackId) => {
+        return {
+          ...track,
+          playback: {
+            ...track.playback,
+            muted: payload.solo ? payload.trackId !== trackId : false,
+          },
+        }
+      })
+    }),
     handle(Actions.reorderCue, (tracks, { payload }) => {
       const track = tracks[payload.trackId],
         newCues = arrayMove(track.cues, payload.oldIndex, payload.newIndex)

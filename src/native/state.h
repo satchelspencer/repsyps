@@ -21,6 +21,7 @@ typedef struct{
   std::vector<int> nextChunks;
   float alpha;
   bool playing;
+  bool muted;
   bool aperiodic;
   bool nextAtChunk;
   int chunkIndex;

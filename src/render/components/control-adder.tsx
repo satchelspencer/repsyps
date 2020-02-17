@@ -42,7 +42,9 @@ export default function ControlAdder(props: ControlProps) {
   return (
     <ControlWrapper
       enabled={!!control}
-      onClick={() => {
+      onClick={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
         if (!control)
           dispatch(
             Actions.addControl({

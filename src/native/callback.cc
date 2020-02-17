@@ -137,7 +137,12 @@ int paCallbackMethod(
         /* add the sample to the buffer */
         for(channelIndex=0;channelIndex<channelCount;channelIndex++){
           sampleValue = 0;
-          if(sampledFrameIndex >= 0 && sampledFrameIndex < mixTrackLength-1 && mixTrack->volume > 0){
+          if(
+            sampledFrameIndex >= 0 &&
+            sampledFrameIndex < mixTrackLength-1 &&
+            mixTrack->volume > 0 && 
+            !mixTrack->muted
+          ){
             sampleValue = mixTrackSource->channels[channelIndex][sampledFrameIndex];
             sampleValueNext = mixTrackSource->channels[channelIndex][sampledFrameIndex+1];
             sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp

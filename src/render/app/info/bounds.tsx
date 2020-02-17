@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useMemo } from 'react'
 import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
+import ctyled from 'ctyled'
 
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
@@ -14,6 +15,15 @@ import Icon from 'render/components/icon'
 import { WideButton, SidebarValue, HeaderContent } from 'render/components/misc'
 import { useSelection } from 'render/components/selection'
 import SidebarItem from './item'
+import { palette } from 'src/render/components/theme'
+
+const ButtonGroup = ctyled.div.styles({
+  gutter: 1,
+})
+
+const BoundsButton = WideButton.styles({
+  flex: 1,
+})
 
 export interface BoundsControlProps {
   trackId: string
@@ -117,40 +127,45 @@ const BoundsControl = memo((props: BoundsControlProps) => {
               {hasTimeBase ? _.round(60 / (avgBar / RATE), 0) + '/m' : '??'}
             </SidebarValue>
           </HeaderContent>
-          <WideButton styles={{ flex: 1 }}>{editing ? 'Done' : 'Edit'}</WideButton>
+          <BoundsButton>{editing ? 'Save' : 'Edit'}</BoundsButton>
         </>
       }
     >
-      <WideButton
-        onClick={() =>
-          dispatch(
-            Actions.setTrackBounds({
-              trackId: props.trackId,
-              bounds: [],
-            })
-          )
-        }
-      >
-        <Icon name="close-thin" />
-        <span>reset divisions</span>
-      </WideButton>
-      <WideButton onClick={inferLR}>
-        <Icon name="cheveron-left" />
-        <span>infer from selection</span>
-        <Icon name="cheveron-right" />
-      </WideButton>
-      <WideButton onClick={inferLeft}>
-        <Icon name="cheveron-left" />
-        <span>infer selection left </span>
-      </WideButton>
-      <WideButton onClick={inferRight}>
-        <span>infer selection right</span>
-        <Icon name="cheveron-right" />
-      </WideButton>
-      <WideButton onClick={handleSelect}>
-        <Icon name="eyedropper" />
-        <span>{isSelecting ? 'select a track...' : 'select from track'}</span>
-      </WideButton>
+      <ButtonGroup>
+        <BoundsButton onClick={inferLeft}>
+          <Icon name="cheveron-left" />
+          <span>left </span>
+        </BoundsButton>
+        <BoundsButton onClick={inferLR}>
+          <Icon name="cheveron-left" />
+          <span>infer</span>
+          <Icon name="cheveron-right" />
+        </BoundsButton>
+        <BoundsButton onClick={inferRight}>
+          <span>right</span>
+          <Icon name="cheveron-right" />
+        </BoundsButton>
+      </ButtonGroup>
+      <ButtonGroup>
+        <BoundsButton onClick={handleSelect}>
+          <Icon name="eyedropper" />
+          <span>{isSelecting ? 'select a track...' : 'select from track'}</span>
+        </BoundsButton>
+        <BoundsButton
+          styles={{ color: c => c.as(palette.red) }}
+          onClick={() =>
+            dispatch(
+              Actions.setTrackBounds({
+                trackId: props.trackId,
+                bounds: [],
+              })
+            )
+          }
+        >
+          <Icon name="close-thin" />
+          <span>reset divisions</span>
+        </BoundsButton>
+      </ButtonGroup>
     </SidebarItem>
   )
 })

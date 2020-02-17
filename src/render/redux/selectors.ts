@@ -67,3 +67,10 @@ export function getOpenPosition(
     }
   }
 }
+
+export function getTrackIsSolo(state: Types.State, trackId: string) {
+  return _.every(state.tracks, (track, thisTrackId) => {
+    if (trackId === thisTrackId) return !track.playback.muted
+    else return track.playback.muted
+  })
+}

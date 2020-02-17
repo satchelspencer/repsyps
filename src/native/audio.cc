@@ -139,6 +139,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->chunkIndex = -1;
     newMixTrack->alpha = 1.;
     newMixTrack->playing = false;
+    newMixTrack->muted = false;
     newMixTrack->aperiodic = false;
     newMixTrack->nextAtChunk = false;
     newMixTrack->sample = 0;
@@ -177,6 +178,8 @@ void setMixTrack(const Napi::CallbackInfo &info){
       state.mixTracks[mixTrackId]->alpha = value.As<Napi::Number>().FloatValue();
     }else if(propNameStr == "playing"){
       state.mixTracks[mixTrackId]->playing = value.As<Napi::Boolean>().Value();
+    }else if(propNameStr == "muted"){
+      state.mixTracks[mixTrackId]->muted = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "aperiodic"){
       state.mixTracks[mixTrackId]->aperiodic = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "nextAtChunk"){

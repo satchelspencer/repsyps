@@ -23,6 +23,7 @@ audio.setMixTrack('mytrack', {
   nextChunks: [ ssize*2, ssize],
   nextAtChunk: false,
   playing: true,
+  muted: false
 })
 
 audio.updatePlayback({

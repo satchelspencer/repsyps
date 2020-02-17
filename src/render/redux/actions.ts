@@ -7,7 +7,7 @@ function createAction<Payload>(name) {
 }
 
 export const updateTime = createAction<{
-  timing: Types.TimingState,
+  timing: Types.TimingState
   commit: boolean
 }>('UPDATE_TIMES')
 
@@ -51,6 +51,14 @@ export const editTrack = createAction<{ trackId: string; edit: boolean }>(
   'SET_TRACK_EDIT'
 )
 
+export const setTrackMuted = createAction<{ trackId: string; muted: boolean }>(
+  'SET_TRACK_MUTE'
+)
+
+export const setTrackSolo = createAction<{ trackId: string; solo: boolean }>(
+  'SET_TRACK_SOLO'
+)
+
 export const addCue = createAction<{
   trackId: string
   cue: Types.Cue
@@ -63,8 +71,8 @@ export const deleteCue = createAction<{
 }>('DELETE_CUE')
 
 export const reorderCue = createAction<{
-  trackId: string,
-  oldIndex: number,
+  trackId: string
+  oldIndex: number
   newIndex: number
 }>('REORDER_CUE')
 

@@ -101,8 +101,8 @@ export function drawWaveform(
   for (let i = 0; i < pwidth; i++) {
     let iStart = start + i * scale
     const minMaxSample = Math.floor(iStart / minMaxSize)
-    const maxp = minMax[1][minMaxSample],
-      maxn = minMax[0][minMaxSample]
+    const maxp = minMax[1][minMaxSample]*0.75,
+      maxn = minMax[0][minMaxSample]*0.75
 
     if (maxp) ctx.lineTo(i, maxp * halfHeight + halfHeight)
     if (maxn) ctx.lineTo(i, maxn * halfHeight + halfHeight)
@@ -154,7 +154,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       ctx.lineTo(startX, pheight)
       ctx.stroke()
     } else {
-      ctx.fillStyle = playing?'rgba(255,0,0,0.1)':'rgba(0,0,0,0.1)'
+      ctx.fillStyle = playing ? 'rgba(255,0,0,0.1)' : 'rgba(0,0,0,0.05)'
       ctx.fillRect(startX, 0, endX - startX, pheight)
 
       ctx.lineWidth = 3
@@ -168,14 +168,26 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       ctx.lineTo(endX, pheight)
       ctx.stroke()
     }
-
-    ctx.lineWidth = 3
-    ctx.strokeStyle = 'rgb(255,0,0)'
-    ctx.beginPath()
-    ctx.lineTo(px, 0)
-    ctx.lineTo(px, pheight)
-    ctx.stroke()
   }
+
+  for (let i = 0; i < track.playback.nextChunks.length; i += 2) {
+    const cstart = track.playback.nextChunks[i],
+      clength = track.playback.nextChunks[i + 1],
+      startX = (cstart - start) / scale,
+      endX = (cstart + clength - start) / scale
+
+    if (clength) {
+      ctx.fillStyle = playing ? 'rgba(255,0,0,0.03)' : 'rgba(0,0,0,0.03)'
+      ctx.fillRect(startX, 0, endX - startX, pheight)
+    }
+  }
+
+  ctx.lineWidth = 3
+  ctx.strokeStyle = 'rgb(255,0,0)'
+  ctx.beginPath()
+  ctx.lineTo(px, 0)
+  ctx.lineTo(px, pheight)
+  ctx.stroke()
 }
 
 export function drawBounds(context: DrawingContext, bounds: number[], editing: boolean) {
@@ -189,14 +201,14 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
     const next = bounds[i + 1],
       px = (sample - start) / scale
 
-    ctx.lineWidth = 7
-    ctx.strokeStyle = highContrast.bg
-    ctx.beginPath()
-    ctx.lineTo(px, 0)
-    ctx.lineTo(px, pheight)
-    ctx.stroke()
+    // ctx.lineWidth = 7
+    // ctx.strokeStyle = highContrast.bg
+    // ctx.beginPath()
+    // ctx.lineTo(px, 0)
+    // ctx.lineTo(px, pheight)
+    // ctx.stroke()
     // bar line
-    ctx.lineWidth = 3
+    ctx.lineWidth = 1
     ctx.strokeStyle = highContrast.fg
     if (editing) ctx.setLineDash([10, 10])
     ctx.beginPath()

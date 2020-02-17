@@ -9,9 +9,9 @@ import * as Actions from 'render/redux/actions'
 import { getBuffer } from 'render/util/buffers'
 import getImpulses from 'render/util/impulse-detect'
 
-import Icon from 'render/components/icon'
 import { getContainerPosition, getRelativePos } from './utils'
 import { useSelectable } from 'render/components/selection'
+import Icon from 'render/components/icon'
 
 import useZoom from './zoom'
 import useWaveformCanvas from './canvas'
@@ -22,10 +22,13 @@ import {
   useSelectBound,
   usePlaybackBound,
 } from './mouse'
+import TrackControls from './track-control'
 
 const TrackWrapper = ctyled.div.attrs({ selected: false }).styles({
   flex: 'none',
-  color: (c, { selected }) => (selected ? c.contrast(0.3) : c.contrast(-0.1)),
+  lined: true,
+  color: (c, { selected }) => (selected ? c.contrast(0.2) : c.contrast(0.1)),
+  borderColor: c => c.contrast(-0.2),
 }).extendSheet`
   height:${({ size }) => Math.ceil(size * 8) + 4}px;
 `
@@ -44,24 +47,13 @@ const TrackCanvas = ctyled.canvas.attrs({ selected: false }).extend`
 `
 
 const CornerWrapper = ctyled.div.styles({
-  padd: 2,
+  padd: 0.5,
   gutter: 1,
   align: 'center',
 }).extend`
   top:0;
   right:0;
   position:absolute;
-`
-
-const TrackName = ctyled.div.attrs({ selected: false }).styles({
-  align: 'center',
-  gutter: 1,
-  flex: 1,
-  padd: 0.7,
-  color: c => c.invert(),
-  rounded: 2,
-}).extendSheet`
-  background:${({ color }, { selected }) => (selected ? '#ca5d5d99' : color.bg + '99')};
 `
 
 export interface TrackContainerProps {
@@ -242,10 +234,7 @@ const Track = memo(
             height={height * 2}
           />
           <CornerWrapper>
-            <TrackName selected={track.selected}>
-              {track.name}&nbsp;
-              <Icon asButton onClick={rmTrack} styles={delIconSty} name="close-thin" />
-            </TrackName>
+            <Icon asButton onClick={rmTrack} styles={delIconSty} name="close-thin" />
           </CornerWrapper>
         </TrackCanvasWrapper>
       </>
@@ -284,12 +273,15 @@ export default function TrackContainer(props: TrackContainerProps) {
   return (
     <TrackWrapper inRef={wrapperRef} onClick={handleClick} selected={track.selected}>
       {!wayOffScreen && (
-        <Track
-          noClick={isSelecting}
-          visible={visible}
-          trackId={props.trackId}
-          track={track}
-        />
+        <>
+          <TrackControls trackId={props.trackId} />
+          <Track
+            noClick={isSelecting}
+            visible={visible}
+            trackId={props.trackId}
+            track={track}
+          />
+        </>
       )}
     </TrackWrapper>
   )

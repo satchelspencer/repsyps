@@ -98,24 +98,26 @@ const Cue = SortableElement((xprops: any) => {
     dispatch = useDispatch()
   return (
     <CueH>
-      <CueWrapper active={props.active} next={props.next}>
-        <CueTitle
-          onClick={() =>
-            dispatch(
-              Actions.applyControl({
-                control: {
-                  name: '',
-                  position: { x: 0, y: 0 },
-                  trackId: props.trackId,
-                  type: 'note',
-                  cueIndex: props.cueIndex,
-                },
-                value: 127,
-                function: 'note-on',
-              })
-            )
-          }
-        >
+      <CueWrapper
+        active={props.active}
+        next={props.next}
+        onClick={() =>
+          dispatch(
+            Actions.applyControl({
+              control: {
+                name: '',
+                position: { x: 0, y: 0 },
+                trackId: props.trackId,
+                type: 'note',
+                cueIndex: props.cueIndex,
+              },
+              value: 127,
+              function: 'note-on',
+            })
+          )
+        }
+      >
+        <CueTitle>
           <CueNumber>{props.cueIndex + 1}</CueNumber>
           <span>at {_.round(props.cue.chunks[0] / RATE, 2)}s</span>
         </CueTitle>
@@ -189,8 +191,8 @@ const Cues = memo((props: CuesProps) => {
           chunks: track && track.playback.chunks,
           playing: track && track.playback.playing,
           cues: (track && track.cues) || [],
-          activeCueIndex: track.cueIndex,
-          nextCueIndex: track.nextCueIndex,
+          activeCueIndex: track ? track.cueIndex : -1,
+          nextCueIndex: track ? track.nextCueIndex : -1,
         }
       },
       [props.trackId]
