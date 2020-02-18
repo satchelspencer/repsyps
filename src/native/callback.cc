@@ -27,6 +27,7 @@ int paCallbackMethod(
 
   source* mixTrackSource;
   mixTrack* mixTrack;
+  mixTrackSourceConfig* mixTrackSourceConfig;
   unsigned int mixTrackLength;
   int channelCount;
   int channelIndex;
@@ -71,9 +72,6 @@ int paCallbackMethod(
       mixTrackPhase = state->playback->time*mixTrack->alpha;
       mixTrackPhase -= floor(mixTrackPhase); 
 
-      mixTrackSource = state->sources[mixTrack->sourceId];
-      mixTrackLength = mixTrackSource->length;
-      channelCount = mixTrackSource->channels.size();
       chunkCount = mixTrack->chunks.size()/2;
       nextChunkCount = mixTrack->nextChunks.size()/2;
 
@@ -134,24 +132,32 @@ int paCallbackMethod(
           }
         }
 
-        /* add the sample to the buffer */
-        for(channelIndex=0;channelIndex<channelCount;channelIndex++){
-          sampleValue = 0;
-          if(
-            sampledFrameIndex >= 0 &&
-            sampledFrameIndex < mixTrackLength-1 &&
-            mixTrack->volume > 0 && 
-            !mixTrack->muted
-          ){
-            sampleValue = mixTrackSource->channels[channelIndex][sampledFrameIndex];
-            sampleValueNext = mixTrackSource->channels[channelIndex][sampledFrameIndex+1];
-            sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
-            sampleValue *= state->playback->volume;
-            sampleValue *= mixTrack->volume;
-            sampleValue *= state->window[frameIndex]; //multiply by the window
-          }
-          state->buffer->channels[channelIndex][bufferHead] += sampleValue;
-        }       
+        for(auto sourcePair: mixTrack->sources){
+          mixTrackSourceConfig = sourcePair.second;
+          mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
+          mixTrackLength = mixTrackSource->length;
+          channelCount = mixTrackSource->channels.size();
+
+          /* add the sample to the buffer */
+          for(channelIndex=0;channelIndex<channelCount;channelIndex++){
+            sampleValue = 0;
+            if(
+              sampledFrameIndex >= 0 &&
+              sampledFrameIndex < mixTrackLength-1 &&
+              mixTrackSourceConfig->volume > 0 && 
+              !mixTrack->muted
+            ){
+              sampleValue = mixTrackSource->channels[channelIndex][sampledFrameIndex];
+              sampleValueNext = mixTrackSource->channels[channelIndex][sampledFrameIndex+1];
+              sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
+              sampleValue *= state->playback->volume;
+              sampleValue *= mixTrackSourceConfig->volume;
+              sampleValue *= state->window[frameIndex]; //multiply by the window
+            }
+            state->buffer->channels[channelIndex][bufferHead] += sampleValue;
+          }   
+        }
+
         bufferHead = (bufferHead+1)%state->buffer->size;
         mixTrackPhase += phaseStep*mixTrack->alpha;       
       }

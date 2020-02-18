@@ -134,8 +134,6 @@ void setMixTrack(const Napi::CallbackInfo &info){
 
   if(state.mixTracks.find(mixTrackId) == state.mixTracks.end()){
     mixTrack * newMixTrack = new mixTrack{};
-    newMixTrack->sourceId = "";
-    newMixTrack->volume = 1.;
     newMixTrack->chunkIndex = -1;
     newMixTrack->alpha = 1.;
     newMixTrack->playing = false;
@@ -151,13 +149,30 @@ void setMixTrack(const Napi::CallbackInfo &info){
     Napi::Value value = update.Get(propName);
     std::string propNameStr = propName.As<Napi::String>().Utf8Value();
 
-    if(propNameStr == "sourceId"){
-      state.mixTracks[mixTrackId]->sourceId = value.As<Napi::String>().Utf8Value();
-    }else if(propNameStr == "volume"){
-      float volume = value.As<Napi::Number>().FloatValue();
-      // volume /= 0.666;
-      // if(volume > 1) volume = pow(volume, 4);
-      state.mixTracks[mixTrackId]->volume = volume;
+    if(propNameStr == "sources"){
+      Napi::Object sources = value.As<Napi::Object>();
+      Napi::Array sourceIds = sources.GetPropertyNames();
+      
+      /* addd new and update existing */
+      for(uint32_t c=0;c<sourceIds.Length();c++){
+        std::string sourceId = sourceIds.Get(c).As<Napi::String>().Utf8Value();
+        Napi::Object source = sources.Get(sourceId).As<Napi::Object>();
+        if(
+          state.mixTracks[mixTrackId]->sources.find(sourceId) == 
+          state.mixTracks[mixTrackId]->sources.end()
+        ){ //source is new
+          mixTrackSourceConfig * newMixTrackSource = new mixTrackSourceConfig{};
+          newMixTrackSource->volume = source.Get("volume").As<Napi::Number>().FloatValue();
+          state.mixTracks[mixTrackId]->sources[sourceId] = newMixTrackSource;
+        }else{
+          state.mixTracks[mixTrackId]->sources[sourceId]->volume = 
+            source.Get("volume").As<Napi::Number>().FloatValue();
+        }
+      }
+      /* find removed */
+      for(auto sourcePair: state.mixTracks[mixTrackId]->sources){
+        if(!sources.Has(sourcePair.first)) state.mixTracks[mixTrackId]->sources.erase(sourcePair.first);
+      }
     }else if(propNameStr == "chunkIndex"){
       state.mixTracks[mixTrackId]->chunkIndex = value.As<Napi::Number>().Int32Value();
     }else if(propNameStr == "chunks"){

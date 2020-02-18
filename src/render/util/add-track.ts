@@ -21,7 +21,7 @@ export default function(file: any, dispatch: Dispatch<any>, sceneIndex: number) 
       Actions.addTrack({
         trackId: id,
         name: file.name,
-        trackChannels: { [id]: { name: 'Main', volume: 1, source: file.path } },
+        trackSources: { [id]: { name: 'Main', volume: 1, source: file.path } },
         sceneIndex,
       })
     )

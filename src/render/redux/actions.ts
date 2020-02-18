@@ -13,7 +13,7 @@ export const updateTime = createAction<{
 
 export const addTrack = createAction<{
   trackId: string
-  trackChannels: Types.TrackChannels
+  trackSources: Types.TrackSources
   name: string
   bounds?: Types.Bounds
   sceneIndex: number
@@ -21,11 +21,11 @@ export const addTrack = createAction<{
 
 export const rmTrack = createAction<string>('REMOVE_TRACK')
 
-export const setTrackChannels = createAction<{
+export const setTrackSource = createAction<{
   trackId: string
-  trackChannelId: string
-  trackChannel: Partial<Types.TrackChannel>
-}>('SET_TRACK_CHANNEL')
+  sourceId: string
+  trackSource: Partial<Types.TrackSource>
+}>('SET_TRACK_SOURCE')
 
 export const setTrackPlayback = createAction<{
   trackId: string

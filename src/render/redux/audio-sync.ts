@@ -36,69 +36,31 @@ export default function syncAudio(store: Store<Types.State>) {
         trackIsNew = !lastState || !lastTrackIds.includes(trackId),
         lastTrack = lastState && lastState.tracks[trackId],
         trackPlaybackHasChanged =
-          trackIsNew ||
-          !isEqual(
-            lastState.tracks[trackId].playback,
-            currentState.tracks[trackId].playback
-          )
+          trackIsNew || !isEqual(lastTrack.playback, track.playback)
 
-      if (trackIsNew) {
-        console.log('new track', trackId)
-        audio.addSource(trackId, getBuffer(trackId))
-      }
+      _.keys(track.playback.sources).forEach(sourceId => {
+        const sourceIsNew = trackIsNew || !lastTrack.playback.sources[sourceId]
+        if (sourceIsNew) audio.addSource(sourceId, getBuffer(sourceId))
+      })
+
+      if (!trackIsNew)
+        _.keys(lastTrack.playback.sources).forEach(sourceId => {
+          if (!track.playback.sources[sourceId]) audio.removeSource(sourceId)
+        })
 
       if (trackPlaybackHasChanged) {
-        const change = diff(!lastTrack ? {} : lastTrack.playback, track.playback)
-        //console.log('track change', change)
-        /* update all the trackChannels to have the same playback state */
-        _.keys(track.trackChannels).forEach(trackChannelId => {
-          //console.log('pbchange', trackChannelid, change)
-          if (lastTrack && lastTrack.trackChannels[trackChannelId]) {
-            audio.setMixTrack(trackChannelId, {
-              sourceId: trackChannelId,
-              ..._.omit(change, 'sample'),
-            })
-          }
-        })
+        const change = diff(trackIsNew ? {} : lastTrack.playback, track.playback)
+        audio.setMixTrack(trackId, _.omit(change, 'sample'))
       }
-
-      /* create and remove native tracks for each trackChannel */
-      const trackChannelIds = _.keys(track.trackChannels),
-        lastTrackChannelIds = trackIsNew ? [] : _.keys(lastTrack.trackChannels)
-
-      trackChannelIds.forEach(trackChannelId => {
-        const trackIsNew = !lastTrackChannelIds.includes(trackChannelId),
-          trackHasChange =
-            trackIsNew ||
-            !isEqual(
-              lastTrack.trackChannels[trackChannelId],
-              track.trackChannels[trackChannelId]
-            )
-        if (trackIsNew) {
-          audio.addSource(trackChannelId, getBuffer(trackChannelId))
-          audio.setMixTrack(trackChannelId, {
-            ...track.playback,
-            ...track.trackChannels[trackChannelId],
-          })
-        } else if (trackHasChange)
-          audio.setMixTrack(trackChannelId, {
-            ...track.trackChannels[trackChannelId],
-          })
-      })
-
-      lastTrackChannelIds.forEach(trackChannelId => {
-        if (!trackChannelIds.includes(trackChannelId))
-          audio.removeMixTrack(trackChannelId)
-      })
     })
 
     if (lastState)
       lastTrackIds.forEach(trackId => {
         if (!trackIds.includes(trackId)) {
-          _.keys(lastState.tracks[trackId].trackChannels).forEach(trackChannelId => {
-            audio.removeMixTrack(trackChannelId)
-            audio.removeSource(trackChannelId)
-          })
+          audio.removeMixTrack(trackId)
+          _.keys(lastState.tracks[trackId].playback.sources).forEach(sourceId =>
+            audio.removeSource(sourceId)
+          )
         }
       })
 

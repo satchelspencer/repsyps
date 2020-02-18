@@ -15,8 +15,11 @@ typedef struct{
 } playback;
 
 typedef struct{
-  std::string sourceId;
   float volume;
+} mixTrackSourceConfig;
+
+typedef struct{
+  std::unordered_map<std::string, mixTrackSourceConfig*> sources;
   std::vector<int> chunks;
   std::vector<int> nextChunks;
   float alpha;
@@ -27,7 +30,6 @@ typedef struct{
   int chunkIndex;
   double sample;
 } mixTrack;
-
 
 typedef struct{
   std::vector<float*>  channels;

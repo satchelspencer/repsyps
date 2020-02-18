@@ -35,21 +35,15 @@ export default async function separate(
     const [vocal, instru] = _.chunk(audio.separateSource(getBuffer(trackId)), 2)
     createBuffer(trackId + '_vocal', vocal)
     createBuffer(trackId + '_instru', instru)
-    await fs.promises.writeFile(
-      vocalCachePath,
-      wav.encode(vocal, { sampleRate: RATE })
-    )
-    await fs.promises.writeFile(
-      instruCachePath,
-      wav.encode(instru, { sampleRate: RATE })
-    )
+    await fs.promises.writeFile(vocalCachePath, wav.encode(vocal, { sampleRate: RATE }))
+    await fs.promises.writeFile(instruCachePath, wav.encode(instru, { sampleRate: RATE }))
   }
 
   dispatch(
-    Actions.setTrackChannels({
+    Actions.setTrackSource({
       trackId: trackId,
-      trackChannelId: trackId + '_vocal',
-      trackChannel: {
+      sourceId: trackId + '_vocal',
+      trackSource: {
         name: 'Vocal',
         volume: 0,
         source: vocalCachePath,
@@ -58,10 +52,10 @@ export default async function separate(
   )
 
   dispatch(
-    Actions.setTrackChannels({
+    Actions.setTrackSource({
       trackId: trackId,
-      trackChannelId: trackId + '_instru',
-      trackChannel: {
+      sourceId: trackId + '_instru',
+      trackSource: {
         name: 'Instru',
         volume: 0,
         source: instruCachePath,

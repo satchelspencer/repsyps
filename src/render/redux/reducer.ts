@@ -25,6 +25,7 @@ const defaultPlayback: Types.Playback = {
     nextAtChunk: false,
     sample: 0,
     muted: false,
+    sources: {},
   },
   defaultBindings: Types.Bindings = {},
   defaultScene: Types.Scene = {
@@ -288,16 +289,19 @@ export default combineReducers({
     handle(Actions.applyControl, (tracks, { payload }) => {
       const control = payload.control
       if (!('trackId' in control) || !tracks[control.trackId]) return tracks
-      else if ('trackChannelId' in control) {
+      else if ('sourceId' in control) {
         return {
           ...tracks,
           [control.trackId]: {
             ...tracks[control.trackId],
-            trackChannels: {
-              ...tracks[control.trackId].trackChannels,
-              [control.trackChannelId]: {
-                ...tracks[control.trackId].trackChannels[control.trackChannelId],
-                [control.prop]: payload.value,
+            playback: {
+              ...tracks[control.trackId].playback,
+              sources: {
+                ...tracks[control.trackId].playback.sources,
+                [control.sourceId]: {
+                  ...tracks[control.trackId].playback.sources[control.sourceId],
+                  [control.prop]: payload.value,
+                },
               },
             },
           },
@@ -337,8 +341,10 @@ export default combineReducers({
         ...tracks,
         [payload.trackId]: {
           name: payload.name,
-          playback: defaultTrackPlayback,
-          trackChannels: payload.trackChannels,
+          playback: {
+            ...defaultTrackPlayback,
+            sources: payload.trackSources
+          },
           bounds: payload.bounds || [],
           selected: false,
           editing: true,
@@ -349,16 +355,19 @@ export default combineReducers({
         },
       }
     }),
-    handle(Actions.setTrackChannels, (tracks, { payload }) => {
+    handle(Actions.setTrackSource, (tracks, { payload }) => {
       return {
         ...tracks,
         [payload.trackId]: {
           ...tracks[payload.trackId],
-          trackChannels: {
-            ...tracks[payload.trackId].trackChannels,
-            [payload.trackChannelId]: {
-              ...tracks[payload.trackId].trackChannels[payload.trackChannelId],
-              ...payload.trackChannel,
+          playback: {
+            ...tracks[payload.trackId].playback,
+            sources: {
+              ...tracks[payload.trackId].playback.sources,
+              [payload.sourceId]: {
+                ...tracks[payload.trackId].playback.sources[payload.sourceId],
+                ...payload.trackSource,
+              },
             },
           },
         },

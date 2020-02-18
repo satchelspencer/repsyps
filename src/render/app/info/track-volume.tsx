@@ -18,43 +18,43 @@ const TrackVolume = (props: TrackVolumeProps) => {
       (state: Types.State) => {
         const track = state.tracks[props.trackId]
         return {
-          tracks: track && track.trackChannels,
+          sources: track && track.playback.sources,
           name: track && track.name,
         }
       },
       [props.trackId]
     ),
-    { tracks, name } = useMappedState(getMappedState),
+    { sources, name } = useMappedState(getMappedState),
     dispatch = useDispatch()
 
   return (
     <>
-      {!!tracks &&
-        _.keys(tracks).map(trackChannelId => {
-          const trackChannel = tracks[trackChannelId]
+      {!!sources &&
+        _.keys(sources).map(sourceId => {
+          const trackSource = sources[sourceId]
           return (
             <SidebarItem
-              key={trackChannelId}
+              key={sourceId}
               title={
                 <>
-                  <span>{trackChannel.name}</span>
+                  <span>{trackSource.name}</span>
                   <Volume
-                    volume={trackChannel.volume}
+                    volume={trackSource.volume}
                     onChange={v =>
                       dispatch(
-                        Actions.setTrackChannels({
+                        Actions.setTrackSource({
                           trackId: props.trackId,
-                          trackChannelId,
-                          trackChannel: { volume: v },
+                          sourceId,
+                          trackSource: { volume: v },
                         })
                       )
                     }
                   />
                   <ControlAdder
-                    name={trackChannel.name + ' - ' + name}
+                    name={trackSource.name + ' - ' + name}
                     params={{
                       trackId: props.trackId,
-                      trackChannelId,
+                      sourceId,
                       prop: 'volume',
                     }}
                     type="value"

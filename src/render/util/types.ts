@@ -5,7 +5,25 @@ export interface Playback {
   period: number
 }
 
-export interface TrackTiming {
+export interface TrackSource {
+  name: string
+  volume: number
+  source: string //source path
+}
+
+export interface TrackSources {
+  [sourceId: string]: TrackSource
+}
+
+export type Chunks = number[] //[start0,end0,start1,end1]
+
+export interface TrackPlayback {
+  alpha: number
+  aperiodic: boolean
+  nextAtChunk: boolean
+  muted: boolean
+  sources: TrackSources
+  /* timing info */
   chunkIndex: number
   sample: number
   chunks: Chunks
@@ -13,32 +31,11 @@ export interface TrackTiming {
   playing: boolean
 }
 
+export type TrackTiming = Partial<TrackPlayback>
+
 export interface TimingState {
   time: number
   tracks: { [trackId: string]: TrackTiming }
-}
-
-export type Chunks = number[] //[start0,end0,start1,end1]
-
-export interface TrackPlayback extends TrackTiming {
-  alpha: number
-  aperiodic: boolean
-  nextAtChunk: boolean
-  muted: boolean
-}
-
-export interface TrackChannel {
-  name: string
-  volume: number
-  source: string //source path
-}
-
-export interface TrackChannels {
-  [trackChannelId: string]: TrackChannel
-}
-
-export interface MixTrack extends TrackPlayback, TrackChannel {
-  sourceId?: string
 }
 
 export type Channels = Float32Array[] //array of arrays... 1 per channel
@@ -58,7 +55,6 @@ export interface Cue {
 export interface Track {
   name: string
   playback: TrackPlayback
-  trackChannels: TrackChannels
   bounds: Bounds
   selected: boolean
   editing: boolean
@@ -100,7 +96,7 @@ export type TrackValueProp = 'volume' | string //only vol for now
 export interface TrackValueControl extends BaseControl {
   type: 'value'
   trackId: string
-  trackChannelId?: string
+  sourceId?: string
   prop: TrackValueProp
 }
 

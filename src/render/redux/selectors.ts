@@ -24,9 +24,9 @@ export function getMatchingControlId(
 
 export function getValueControlValue(state: Types.State, control: Types.ValueControl) {
   let value = null
-  if ('trackChannelId' in control) {
+  if ('sourceId' in control) {
     const track = state.tracks[control.trackId]
-    value = track.trackChannels[control.trackChannelId][control.prop]
+    value = track.playback.sources[control.sourceId][control.prop]
   } else if ('global' in control) {
     value = state.playback[control.prop]
   }
