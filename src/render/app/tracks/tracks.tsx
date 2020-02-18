@@ -4,6 +4,7 @@ import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
 import * as Types from 'render/util/types'
+import * as Selectors from 'render/redux/selectors'
 
 import Track from './track'
 
@@ -11,7 +12,7 @@ const TracksWrapper = ctyled.div.styles({
   column: true,
   lined: true,
   endLine: true,
-  height:'70%',
+  height: '70%',
   flex: 'none',
   scroll: true,
   color: c => c.nudge(0.025),
@@ -22,10 +23,11 @@ const TracksWrapper = ctyled.div.styles({
 
 export default function Tracks() {
   const getMappedState = useCallback((state: Types.State) => {
-      return state.tracks
+      return {
+        trackIds: Selectors.getCurrentScene(state).trackIds,
+      }
     }, []),
-    tracks = useMappedState(getMappedState),
-    trackIds = Object.keys(tracks),
+    { trackIds } = useMappedState(getMappedState),
     wrapperRef = useRef(null),
     [vBounds, setVBounds] = useState<number[]>([0, 0]),
     updateVisible = useCallback(() => {

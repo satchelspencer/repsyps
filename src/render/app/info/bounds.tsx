@@ -132,16 +132,16 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       }
     >
       <ButtonGroup>
-        <BoundsButton onClick={inferLeft}>
+        <BoundsButton disabled={!clength} onClick={inferLeft}>
           <Icon name="cheveron-left" />
           <span>left </span>
         </BoundsButton>
-        <BoundsButton onClick={inferLR}>
+        <BoundsButton disabled={!clength} onClick={inferLR}>
           <Icon name="cheveron-left" />
           <span>infer</span>
           <Icon name="cheveron-right" />
         </BoundsButton>
-        <BoundsButton onClick={inferRight}>
+        <BoundsButton disabled={!clength} onClick={inferRight}>
           <span>right</span>
           <Icon name="cheveron-right" />
         </BoundsButton>
@@ -163,7 +163,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
           }
         >
           <Icon name="close-thin" />
-          <span>reset divisions</span>
+          <span>clear divisions</span>
         </BoundsButton>
       </ButtonGroup>
     </SidebarItem>

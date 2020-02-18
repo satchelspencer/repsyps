@@ -5,7 +5,6 @@ import arrayMove from 'array-move'
 
 import * as Types from 'render/util/types'
 import * as Actions from './actions'
-import * as Selectors from './selectors'
 import { RATE } from 'render/util/audio'
 import isEqual from '../util/is-equal'
 
@@ -27,8 +26,15 @@ const defaultPlayback: Types.Playback = {
     sample: 0,
     muted: false,
   },
-  defaultControls: Types.Controls = {},
-  defaultBindings: Types.Bindings = {}
+  defaultBindings: Types.Bindings = {},
+  defaultScene: Types.Scene = {
+    controls: {},
+    trackIds: [],
+  },
+  defaultScenes: Types.Scenes = {
+    sceneIndex: 0,
+    list: [defaultScene],
+  }
 
 function applyCue(track: Types.Track, cueIndex: number): Types.Track {
   const cue = track.cues[cueIndex],
@@ -64,6 +70,129 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
 }
 
 export default combineReducers({
+  scenes: createReducer(defaultScenes, handle => [
+    handle(Actions.createScene, (scenes, { payload: sceneIndex }) => {
+      const newList = [...scenes.list]
+      if (!newList[sceneIndex]) newList[sceneIndex] = defaultScene
+      return {
+        ...scenes,
+        list: newList,
+      }
+    }),
+    handle(Actions.deleteScene, (scenes, { payload: sceneIndex }) => {
+      const newList = [...scenes.list]
+      newList.splice(sceneIndex, 1)
+      return {
+        ...scenes,
+        list: newList,
+      }
+    }),
+    handle(Actions.setSceneIndex, (scenes, { payload: sceneIndex }) => {
+      return {
+        list: scenes.list.filter((scene, i) => i <= sceneIndex || scene.trackIds.length),
+        sceneIndex,
+      }
+    }),
+    handle(Actions.addTrack, (scenes, { payload }) => {
+      const currentScene = scenes.list[payload.sceneIndex],
+        newList = [...scenes.list]
+
+      newList[payload.sceneIndex] = {
+        ...currentScene,
+        trackIds: _.uniq(currentScene.trackIds.concat(payload.trackId)),
+      }
+      return {
+        ...scenes,
+        list: newList,
+      }
+    }),
+    handle(Actions.addTrackToScene, (scenes, { payload }) => {
+      const currentScene = scenes.list[payload.toSceneIndex] || defaultScene,
+        newList = [...scenes.list],
+        trackControls = _.pickBy(
+          scenes.list[payload.fromSceneIndex].controls,
+          control => 'trackId' in control && control.trackId === payload.trackId
+        )
+      newList[payload.toSceneIndex] = {
+        ...currentScene,
+        trackIds: _.uniq(currentScene.trackIds.concat(payload.trackId)),
+        controls: {
+          ...currentScene.controls,
+          ...trackControls,
+        },
+      }
+      return {
+        ...scenes,
+        list: newList,
+      }
+    }),
+    handle(Actions.rmTrackFromScene, (scenes, { payload }) => {
+      const newList = [...scenes.list]
+      newList[payload.sceneIndex] = {
+        ...newList[payload.sceneIndex],
+        trackIds: newList[payload.sceneIndex].trackIds.filter(
+          id => id !== payload.trackId
+        ),
+        controls: _.omitBy(
+          newList[payload.sceneIndex].controls,
+          control => 'trackId' in control && control.trackId === payload.trackId
+        ),
+      }
+      return {
+        ...scenes,
+        list: newList,
+      }
+    }),
+    handle(Actions.addControl, (scenes, { payload }) => {
+      const newList = [...scenes.list]
+
+      newList[scenes.sceneIndex] = {
+        ...newList[scenes.sceneIndex],
+        controls: {
+          ...newList[scenes.sceneIndex].controls,
+          [payload.controlId]: payload.control,
+        },
+      }
+      return {
+        ...scenes,
+        list: newList,
+      }
+    }),
+    handle(Actions.removeControl, (scenes, { payload: controlId }) => {
+      const newList = [...scenes.list]
+
+      newList[scenes.sceneIndex] = {
+        ...newList[scenes.sceneIndex],
+        controls: _.omit(newList[scenes.sceneIndex].controls, controlId),
+      }
+      return {
+        ...scenes,
+        list: newList,
+      }
+    }),
+    handle(Actions.setControlPos, (scenes, { payload }) => {
+      const newList = [...scenes.list],
+        controls = newList[scenes.sceneIndex].controls
+
+      newList[scenes.sceneIndex] = {
+        ...newList[scenes.sceneIndex],
+        controls: {
+          ...controls,
+          [payload.controlId]: {
+            ...controls[payload.controlId],
+            position: {
+              ...controls[payload.controlId].position,
+              ...payload.position,
+            },
+          },
+        },
+      }
+      return {
+        ...scenes,
+        list: newList,
+      }
+    }),
+  ]),
   bindings: createReducer(defaultBindings, handle => [
     handle(Actions.addBinding, (bindings, { payload }) => {
       return {
@@ -73,35 +202,6 @@ export default combineReducers({
     }),
     handle(Actions.removeBinding, (bindings, { payload }) => {
       return _.omit(bindings, payload)
-    }),
-  ]),
-  controls: createReducer(defaultControls, handle => [
-    handle(Actions.addControl, (controls, { payload }) => {
-      return {
-        ...controls,
-        [payload.controlId]: payload.control,
-      }
-    }),
-    handle(Actions.removeControl, (controls, { payload }) => {
-      return _.omit(controls, payload)
-    }),
-    handle(Actions.rmTrack, (controls, { payload }) => {
-      return _.pickBy(
-        controls,
-        control => !('trackId' in control && control.trackId === payload) //keep only controls that arent tied to a sourec
-      )
-    }),
-    handle(Actions.setControlPos, (controls, { payload }) => {
-      return {
-        ...controls,
-        [payload.controlId]: {
-          ...controls[payload.controlId],
-          position: {
-            ...controls[payload.controlId].position,
-            ...payload.position,
-          },
-        },
-      }
     }),
   ]),
   playback: createReducer(defaultPlayback, handle => [
@@ -245,6 +345,7 @@ export default combineReducers({
           cues: [],
           cueIndex: -1,
           nextCueIndex: -1,
+          sceneIndicies: [payload.sceneIndex],
         },
       }
     }),
@@ -265,6 +366,51 @@ export default combineReducers({
     }),
     handle(Actions.rmTrack, (tracks, { payload }) => {
       return _.omit(tracks, payload)
+    }),
+    handle(Actions.setSceneIndex, (tracks, { payload: sceneIndex }) => {
+      return _.mapValues(tracks, track => {
+        if (!track.sceneIndicies.includes(sceneIndex))
+          return {
+            ...track,
+            playback: {
+              ...track.playback,
+              playing: false,
+            },
+            cueIndex: -1,
+            nextCueIndex: -1,
+            selected: false,
+          }
+        else return track
+      })
+    }),
+    handle(Actions.addTrackToScene, (tracks, { payload }) => {
+      return {
+        ...tracks,
+        [payload.trackId]: {
+          ...tracks[payload.trackId],
+          sceneIndicies: _.uniq(
+            tracks[payload.trackId].sceneIndicies.concat(payload.toSceneIndex)
+          ),
+        },
+      }
+    }),
+    handle(Actions.rmTrackFromScene, (tracks, { payload }) => {
+      const newSceneIndicies = tracks[payload.trackId].sceneIndicies.filter(
+        i => i !== payload.sceneIndex
+      )
+      if (newSceneIndicies.length)
+        return {
+          ...tracks,
+          [payload.trackId]: {
+            ...tracks[payload.trackId],
+            playback: {
+              ...tracks[payload.trackId].playback,
+              playing: false,
+            },
+            sceneIndicies: newSceneIndicies,
+          },
+        }
+      else return _.omit(tracks, payload.trackId)
     }),
     handle(Actions.setTrackPlayback, (tracks, { payload }) => {
       if (!!payload.playback.chunks)
@@ -335,8 +481,10 @@ export default combineReducers({
     }),
     handle(Actions.updateTime, (tracks, { payload }) => {
       return _.mapValues(tracks, (track, trackId) => {
-        const trackTiming = payload.timing.tracks[trackId],
-          isPlaying = trackTiming.playing,
+        const trackTiming = payload.timing.tracks[trackId]
+        if (!trackTiming) return track
+
+        const isPlaying = trackTiming.playing,
           chunksChanged = !isEqual(track.playback.chunks, trackTiming.chunks)
 
         if (chunksChanged && payload.commit && track.nextCueIndex !== -1) {

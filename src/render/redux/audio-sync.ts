@@ -5,6 +5,7 @@ import { remote } from 'electron'
 import * as Types from 'render/util/types'
 import audio from 'render/util/audio'
 import * as Actions from './actions'
+import * as Selectors from './selectors'
 import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
 import { getBuffer } from 'render/util/buffers'
@@ -20,16 +21,19 @@ export default function syncAudio(store: Store<Types.State>) {
   audio.init(appPath)
 
   const handleUpdate = () => {
-    const currentState = store.getState()
+    const currentState = store.getState(),
+      trackIds = Selectors.getCurrentScene(currentState).trackIds,
+      lastTrackIds = lastState ? Selectors.getCurrentScene(lastState).trackIds : []
+
     if (!lastState || !isEqual(currentState.playback, lastState.playback)) {
       const change = diff(!lastState ? {} : lastState.playback, currentState.playback)
       //console.log('update playback', change)
       audio.updatePlayback(change)
     }
 
-    _.keys(currentState.tracks).forEach(trackId => {
+    trackIds.forEach(trackId => {
       const track = currentState.tracks[trackId],
-        trackIsNew = !lastState || !lastState.tracks[trackId],
+        trackIsNew = !lastState || !lastTrackIds.includes(trackId),
         lastTrack = lastState && lastState.tracks[trackId],
         trackPlaybackHasChanged =
           trackIsNew ||
@@ -89,8 +93,8 @@ export default function syncAudio(store: Store<Types.State>) {
     })
 
     if (lastState)
-      _.keys(lastState.tracks).forEach(trackId => {
-        if (!currentState.tracks[trackId]) {
+      lastTrackIds.forEach(trackId => {
+        if (!trackIds.includes(trackId)) {
           audio.removeMixTrack(trackId)
           _.keys(lastState.tracks[trackId].trackChannels).forEach(trackChannelId => {
             audio.removeSource(trackChannelId)

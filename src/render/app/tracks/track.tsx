@@ -66,6 +66,7 @@ export interface TrackProps {
   track: Types.Track
   visible: boolean
   noClick: boolean
+  sceneIndex: number
 }
 
 export interface ViewContext {
@@ -95,7 +96,7 @@ export interface ClickEventContext {
 }
 
 const Track = memo(
-  function({ trackId, track, noClick }: TrackProps) {
+  function({ trackId, track, noClick, sceneIndex }: TrackProps) {
     const dispatch = useDispatch()
 
     /* computed data */
@@ -207,7 +208,10 @@ const Track = memo(
         },
         [...clickCtxtValues, ...viewValues, track.bounds]
       ),
-      rmTrack = useCallback(() => dispatch(Actions.rmTrack(trackId)), [trackId])
+      rmTrack = useCallback(
+        () => dispatch(Actions.rmTrackFromScene({ trackId, sceneIndex })),
+        [trackId, sceneIndex]
+      )
 
     /* styles */
     const delIconSty = useMemo(
@@ -252,10 +256,13 @@ const OFFSCREEN_THRESH = 500
 
 export default function TrackContainer(props: TrackContainerProps) {
   const getMappedState = useCallback(
-      (state: Types.State) => state.tracks[props.trackId],
+      (state: Types.State) => ({
+        track: state.tracks[props.trackId],
+        sceneIndex: state.scenes.sceneIndex,
+      }),
       [props.trackId]
     ),
-    track = useMappedState(getMappedState),
+    { track, sceneIndex } = useMappedState(getMappedState),
     dispatch = useDispatch(),
     wrapperRef = useRef(null),
     [vstart, vend] = props.vBounds,
@@ -279,6 +286,7 @@ export default function TrackContainer(props: TrackContainerProps) {
             noClick={isSelecting}
             visible={visible}
             trackId={props.trackId}
+            sceneIndex={sceneIndex}
             track={track}
           />
         </>

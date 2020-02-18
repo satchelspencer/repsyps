@@ -8,16 +8,20 @@ import * as Selectors from 'render/redux/selectors'
 
 import NoteControls from './notes'
 import ValueControls from './values'
+import SceneControl from './scene-control'
 
 const ControlsWrapper = ctyled.div.styles({
   height: '30%',
   flex: 'none',
   color: c => c.nudge(0),
   bg: true,
+  column: true,
+  lined: true,
 }).extendSheet`
   height:100%;
-  border-top:2px solid ${({ color }) => color.bq} !important;
 `
+
+const ControlsH = ctyled.div.styles({ flex: 1 })
 
 export const TitleInner = ctyled.div.styles({ flex: 'none' }).extendSheet`
 position:absolute;
@@ -36,10 +40,11 @@ export interface ControlsProps {
 
 export default function ControlsContainer() {
   const getMappedState = useCallback((state: Types.State) => {
+      const controls = Selectors.getControls(state)
       return {
-        controls: state.controls,
+        controls,
         bindings: state.bindings,
-        values: _.mapValues(state.controls, control => {
+        values: _.mapValues(controls, control => {
           if (control.type === 'value')
             return Selectors.getValueControlValue(state, control)
           else return 0
@@ -49,8 +54,11 @@ export default function ControlsContainer() {
     cprops = useMappedState(getMappedState)
   return (
     <ControlsWrapper>
-      <ValueControls {...cprops} />
-      <NoteControls {...cprops} />
+      <SceneControl />
+      <ControlsH>
+        <ValueControls {...cprops} />
+        <NoteControls {...cprops} />
+      </ControlsH>
     </ControlsWrapper>
   )
 }

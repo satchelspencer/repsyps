@@ -52,26 +52,30 @@ export default function App() {
         selected: Object.keys(state.tracks).filter(tid => state.tracks[tid].selected)[0],
         tracks: state.tracks,
         playing: state.playback.playing,
+        sceneIndex: state.scenes.sceneIndex,
       }
     }, []),
-    { selected, playing, tracks } = useMappedState(getMappedState),
+    { selected, playing, tracks, sceneIndex } = useMappedState(getMappedState),
     dispatch = useDispatch(),
     trackIds = Object.keys(tracks),
     tracklen = trackIds.length,
     input = useRef(null),
     handleDragover = useCallback(e => e.preventDefault(), []),
-    handleDrop = useCallback(e => {
-      e.preventDefault()
-      const file = e.dataTransfer.files[0]
-      addTrack(file, dispatch)
-    }, [])
+    handleDrop = useCallback(
+      e => {
+        e.preventDefault()
+        const file = e.dataTransfer.files[0]
+        addTrack(file, dispatch, sceneIndex)
+      },
+      [sceneIndex]
+    )
 
   useEffect(() => {
     input.current = document.createElement('input')
     input.current.type = 'file'
     input.current.onchange = e => {
       const { files } = input.current
-      addTrack(files[0], dispatch)
+      addTrack(files[0], dispatch, sceneIndex)
       input.current.value = ''
     }
     window.addEventListener('dragover', handleDragover)
@@ -81,7 +85,7 @@ export default function App() {
       window.removeEventListener('dragover', handleDragover)
       window.removeEventListener('drop', handleDrop)
     }
-  }, [])
+  }, [sceneIndex])
 
   return (
     <Wrapper

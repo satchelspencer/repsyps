@@ -16,6 +16,7 @@ export const addTrack = createAction<{
   trackChannels: Types.TrackChannels
   name: string
   bounds?: Types.Bounds
+  sceneIndex: number
 }>('ADD_TRACK')
 
 export const rmTrack = createAction<string>('REMOVE_TRACK')
@@ -100,3 +101,19 @@ export const applyControl = createAction<{
   value: number
   function: Types.MidiFunctionName
 }>('APPLY_CONTROL')
+
+export const setSceneIndex = createAction<number>('SET_SCENE_INDEX')
+
+export const addTrackToScene = createAction<{
+  trackId: string
+  toSceneIndex: number
+  fromSceneIndex: number
+}>('ADD_TRACK_TO_SCENE')
+
+export const rmTrackFromScene = createAction<{ trackId: string; sceneIndex: number }>(
+  'REMOVE_TRACK_FROM_SCENE'
+)
+
+export const createScene = createAction<number>('CREATE_SCENE')
+
+export const deleteScene = createAction<number>('DELETE_SCENE')

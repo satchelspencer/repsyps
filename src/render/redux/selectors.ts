@@ -4,12 +4,20 @@ import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
 import isEqual from 'render/util/is-equal'
 
+export function getCurrentScene(state: Types.State): Types.Scene{
+  return state.scenes.list[state.scenes.sceneIndex]
+}
+
+export function getControls(state: Types.State): Types.Controls {
+  return getCurrentScene(state).controls
+}
+
 /* find an existing control that matches the would-be partial control */
 export function getMatchingControlId(
   state: Types.State,
   partialControl: Partial<Types.Control>
 ) {
-  return _.findKey(state.controls, control =>
+  return _.findKey(getControls(state), control =>
     _.every(_.keys(partialControl), prop => control[prop] === partialControl[prop])
   )
 }
@@ -53,11 +61,11 @@ export function getOpenPosition(
   const openVbinding = _.find(
     _.sortBy(_.values(state.bindings), b => b.position.x),
     binding =>
-      binding.type === type && !getControlByPosition(state.controls, binding.position)
+      binding.type === type && !getControlByPosition(getControls(state), binding.position)
   )
   if (openVbinding) return openVbinding.position
   else {
-    const corbs = _.values({ ...state.controls, ...state.bindings }),
+    const corbs = _.values({ ...getControls(state), ...state.bindings }),
       maxX =
         _.max(corbs.filter(corb => corb.type === type).map(c => c.position.x + 1)) || 0
 

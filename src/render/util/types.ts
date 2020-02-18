@@ -64,6 +64,7 @@ export interface Track {
   cues: Cue[]
   cueIndex: number
   nextCueIndex: number
+  sceneIndicies: number[]
 }
 
 export interface Tracks {
@@ -148,9 +149,19 @@ export interface Bindings {
   [bindingId: string]: Binding
 }
 
+export interface Scene {
+  controls: Controls
+  trackIds: string[]
+}
+
+export interface Scenes {
+  sceneIndex: number
+  list: Scene[]
+}
+
 export interface State {
   playback: Playback
   tracks: Tracks
-  controls: Controls
+  scenes: Scenes
   bindings: Bindings
 }

@@ -28,6 +28,7 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
 export default async function init(store: Store<Types.State>) {
   const handleMessage = ({ data }) => {
       const state = store.getState(),
+        controls = Selectors.getControls(state),
         [fnbyte, note, value] = data,
         fn = getFunction(fnbyte),
         channel = getChannel(fnbyte)
@@ -53,7 +54,7 @@ export default async function init(store: Store<Types.State>) {
           binding.channel === channel &&
           binding.function === fn
         ) {
-          const control = Selectors.getControlByPosition(state.controls, binding.position)
+          const control = Selectors.getControlByPosition(controls, binding.position)
           if (control) {
             let normedValue = value / 128
             if ('prop' in control)
@@ -95,10 +96,11 @@ export default async function init(store: Store<Types.State>) {
   store.subscribe(
     _.throttle(
       () => {
-        const state = store.getState()
+        const state = store.getState(),
+          controls = Selectors.getControls(state)
         /* make values reflect state */
-        for (let controlId in state.controls) {
-          const control = state.controls[controlId]
+        for (let controlId in controls) {
+          const control = controls[controlId]
           if (control.type === 'value') {
             const value = Selectors.getValueControlValue(state, control)
             if (value !== sentMidiValues[controlId]) {

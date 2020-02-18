@@ -30,7 +30,7 @@ export default function ControlAdder(props: ControlProps) {
         const controlId = Selectors.getMatchingControlId(state, props.params)
         return {
           controlId,
-          control: state.controls[controlId],
+          control: Selectors.getControls(state)[controlId],
           insertPosition: Selectors.getOpenPosition(state, props.type),
         }
       },
