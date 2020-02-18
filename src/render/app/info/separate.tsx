@@ -6,6 +6,7 @@ import * as Types from 'render/util/types'
 import audio from 'render/util/audio'
 import * as Actions from 'render/redux/actions'
 import { getBuffer, createBuffer } from 'render/util/buffers'
+import separate from 'render/util/separate'
 
 import Icon from 'render/components/icon'
 import { WideButton, HeaderContent } from 'render/components/misc'
@@ -36,31 +37,7 @@ const Separate = memo((props: SeparateProps) => {
         })
       )
 
-      const [vocal, instru] = _.chunk(audio.separateSource(getBuffer(props.trackId)), 2)
-
-      createBuffer(props.trackId + '_vocal', vocal)
-      dispatch(
-        Actions.setTrackChannels({
-          trackId: props.trackId,
-          trackChannelId: props.trackId + '_vocal',
-          trackChannel: {
-            name: 'Vocal',
-            volume: 0,
-          },
-        })
-      )
-
-      createBuffer(props.trackId + '_instru', instru)
-      dispatch(
-        Actions.setTrackChannels({
-          trackId: props.trackId,
-          trackChannelId: props.trackId + '_instru',
-          trackChannel: {
-            name: 'Instru',
-            volume: 0,
-          },
-        })
-      )
+      separate(name, props.trackId, dispatch)
     }, [props.trackId, name])
 
   return (

@@ -30,6 +30,7 @@ export interface TrackPlayback extends TrackTiming {
 export interface TrackChannel {
   name: string
   volume: number
+  source: string //source path
 }
 
 export interface TrackChannels {

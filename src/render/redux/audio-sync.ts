@@ -95,8 +95,8 @@ export default function syncAudio(store: Store<Types.State>) {
     if (lastState)
       lastTrackIds.forEach(trackId => {
         if (!trackIds.includes(trackId)) {
-          audio.removeMixTrack(trackId)
           _.keys(lastState.tracks[trackId].trackChannels).forEach(trackChannelId => {
+            audio.removeMixTrack(trackChannelId)
             audio.removeSource(trackChannelId)
           })
         }

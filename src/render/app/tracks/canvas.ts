@@ -119,7 +119,7 @@ export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
   ctx.strokeStyle = `rgba(${r},${r},${r},1)`
 
   for (let i = Math.floor(start / BIN_SIZE); i < Math.floor(end / BIN_SIZE); i++) {
-    const value = impulses[i],
+    const value = impulses[i]*0.75,
       x = (i * BIN_SIZE - start) / scale
 
     if (value) {
