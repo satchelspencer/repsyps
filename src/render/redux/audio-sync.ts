@@ -78,7 +78,7 @@ export default function syncAudio(store: Store<Types.State>) {
     let start = new Date().getTime()
     if (lastState && lastState.playback.playing) {
       const currentTiming = audio.getTiming()
-
+      //console.log('a', audio.getDebug())
       /* override last state so this change won't be sent back to where it came from */
       lastState = reducer(
         lastState,

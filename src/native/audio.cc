@@ -210,9 +210,9 @@ void setMixTrack(const Napi::CallbackInfo &info){
   }
 
   setMixTrackPlayback(state.mixTracks[mixTrackId]->playback, playback);
+
   if(nextPlayback.IsNull()){
     state.mixTracks[mixTrackId]->hasNext = false;
-    delete state.mixTracks[mixTrackId]->nextPlayback;
   }else {
     state.mixTracks[mixTrackId]->nextPlayback = initMixTrackPlayback();
     setMixTrackPlayback(state.mixTracks[mixTrackId]->nextPlayback, nextPlayback);
