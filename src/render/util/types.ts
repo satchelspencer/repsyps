@@ -6,13 +6,20 @@ export interface Playback {
 }
 
 export interface TrackSource {
-  name: string
   volume: number
-  source: string //source path
 }
 
 export interface TrackSources {
   [sourceId: string]: TrackSource
+}
+
+export interface Source {
+  name: string
+  source: string
+}
+
+export interface Sources {
+  [sourceId: string]: Source
 }
 
 export type Chunks = number[] //[start0,end0,start1,end1]
@@ -25,13 +32,13 @@ export interface TrackPlayback {
   sources: TrackSources
   /* timing info */
   chunkIndex: number
-  sample: number
   chunks: Chunks
-  nextChunks: Chunks
   playing: boolean
 }
 
-export type TrackTiming = Partial<TrackPlayback>
+export interface TrackTiming extends NativeTrackChange {
+  sample: number
+}
 
 export interface TimingState {
   time: number
@@ -47,14 +54,24 @@ export type CueStartBehavior = 'immediate' | 'on-chunk' | 'on-end'
 export type CueEndBehavior = 'loop' | 'next'
 
 export interface Cue {
-  chunks: Chunks
+  playback: TrackPlayback
   startBehavior: CueStartBehavior
   endBehavior: CueEndBehavior
 }
 
-export interface Track {
-  name: string
+export interface NativeTrack {
   playback: TrackPlayback
+  nextPlayback: TrackPlayback
+}
+
+export interface NativeTrackChange {
+  playback: Partial<TrackPlayback>
+  nextPlayback: Partial<TrackPlayback>
+}
+
+export interface Track extends NativeTrack {
+  name: string
+  sample: number
   bounds: Bounds
   selected: boolean
   editing: boolean
@@ -161,4 +178,5 @@ export interface State {
   tracks: Tracks
   scenes: Scenes
   bindings: Bindings
+  sources: Sources
 }

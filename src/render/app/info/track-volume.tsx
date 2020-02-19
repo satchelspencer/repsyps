@@ -18,26 +18,28 @@ const TrackVolume = (props: TrackVolumeProps) => {
       (state: Types.State) => {
         const track = state.tracks[props.trackId]
         return {
-          sources: track && track.playback.sources,
+          trackSources: track && track.playback.sources,
+          sources: state.sources,
           name: track && track.name,
         }
       },
       [props.trackId]
     ),
-    { sources, name } = useMappedState(getMappedState),
+    { trackSources, sources, name } = useMappedState(getMappedState),
     dispatch = useDispatch()
 
   return (
     <>
-      {!!sources &&
-        _.keys(sources).map(sourceId => {
-          const trackSource = sources[sourceId]
+      {!!trackSources &&
+        _.keys(trackSources).map(sourceId => {
+          const trackSource = trackSources[sourceId],
+            source = sources[sourceId]
           return (
             <SidebarItem
               key={sourceId}
               title={
                 <>
-                  <span>{trackSource.name}</span>
+                  <span>{source.name}</span>
                   <Volume
                     volume={trackSource.volume}
                     onChange={v =>
@@ -51,7 +53,7 @@ const TrackVolume = (props: TrackVolumeProps) => {
                     }
                   />
                   <ControlAdder
-                    name={trackSource.name + ' - ' + name}
+                    name={source.name + ' - ' + name}
                     params={{
                       trackId: props.trackId,
                       sourceId,

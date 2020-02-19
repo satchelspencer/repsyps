@@ -19,20 +19,34 @@ const ssize = (5.41 * RATE) / 2
 audio.addSource('mysource_vocal', vocal)
 audio.addSource('mysource_instru', instru)
 
-
 audio.setMixTrack('mytrack', {
-  chunks: [0, ssize, ssize, ssize],
-  nextChunks: [ssize * 2, ssize],
-  nextAtChunk: false,
-  playing: true,
-  muted: false,
-  sources: {
-    mysource_vocal: {
-      volume: 1,
+  playback: {
+    chunks: [0, ssize, ssize, ssize],
+    nextAtChunk: false,
+    playing: true,
+    muted: false,
+    sources: {
+      mysource_vocal: {
+        volume: 1,
+      },
+      // mysource_instru: {
+      //   volume: 0.1,
+      // },
     },
-    mysource_instru: {
-      volume: 0.1
-    }
+  },
+  nextPlayback: {
+    chunks: [ssize * 2, ssize],
+    nextAtChunk: false,
+    playing: true,
+    muted: false,
+    sources: {
+      mysource_vocal: {
+        volume: 0.5,
+      },
+      mysource_instru: {
+        volume: 0.5,
+      },
+    },
   },
 })
 
@@ -45,5 +59,5 @@ audio.updatePlayback({
 audio.start()
 
 setInterval(() => {
-  console.log(audio.getTiming().tracks['mytrack'])
+  console.log(audio.getTiming().tracks['mytrack'], audio.getDebug())
 }, 100)

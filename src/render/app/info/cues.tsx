@@ -119,7 +119,7 @@ const Cue = SortableElement((xprops: any) => {
       >
         <CueTitle>
           <CueNumber>{props.cueIndex + 1}</CueNumber>
-          <span>at {_.round(props.cue.chunks[0] / RATE, 2)}s</span>
+          <span>at {_.round(props.cue.playback.chunks[0] / RATE, 2)}s</span>
         </CueTitle>
         <ControlAdder
           name={`Cue ${props.cueIndex + 1}: ${props.trackName}`}
@@ -190,6 +190,7 @@ const Cues = memo((props: CuesProps) => {
           name: track && track.name,
           chunks: track && track.playback.chunks,
           playing: track && track.playback.playing,
+          playback: track && track.playback,
           cues: (track && track.cues) || [],
           activeCueIndex: track ? track.cueIndex : -1,
           nextCueIndex: track ? track.nextCueIndex : -1,
@@ -197,7 +198,7 @@ const Cues = memo((props: CuesProps) => {
       },
       [props.trackId]
     ),
-    { name, chunks, playing, cues, activeCueIndex, nextCueIndex } = useMappedState(
+    { name, playback, cues, activeCueIndex, nextCueIndex } = useMappedState(
       getMappedState
     ),
     dispatch = useDispatch(),
@@ -206,17 +207,21 @@ const Cues = memo((props: CuesProps) => {
         Actions.addCue({
           trackId: props.trackId,
           cue: {
-            chunks,
+            playback: {
+              ...playback,
+              chunkIndex: -1,
+              playing: true,
+            },
             startBehavior: 'immediate',
             endBehavior: 'loop',
           },
         })
       )
-    }, [props.trackId, chunks, name]),
-    canAdd = chunks[1],
+    }, [props.trackId, playback, name]),
+    canAdd = playback.chunks[1],
     hasCues = !!cues.length,
-    atStart = playing && activeCueIndex === 0,
-    atEnd = playing && activeCueIndex === cues.length - 1,
+    atStart = playback.playing && activeCueIndex === 0,
+    atEnd = playback.playing && activeCueIndex === cues.length - 1,
     canPrev = atStart || activeCueIndex > 0,
     canNext = atEnd || (activeCueIndex !== -1 && activeCueIndex < cues.length - 1)
 

@@ -10,7 +10,7 @@ interface AudioAPI {
   updatePlayback(playback: Partial<Types.Playback>): void
   addSource(sourceId: string, source: Types.Channels): void
   removeSource(sourceId: string): boolean
-  setMixTrack(trackId: string, track: Partial<Types.TrackPlayback>)
+  setMixTrack(trackId: string, track: Types.NativeTrackChange)
   removeMixTrack(trackId: string)
   getTiming(): Types.TimingState
   separateSource(source: Types.Channels): Types.Channels

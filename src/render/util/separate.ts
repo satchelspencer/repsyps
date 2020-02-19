@@ -40,25 +40,33 @@ export default async function separate(
   }
 
   dispatch(
+    Actions.setSource({
+      sourceId: trackId + '_vocal',
+      source: { name: 'Vocal', source: vocalCachePath },
+    })
+  )
+  dispatch(
     Actions.setTrackSource({
       trackId: trackId,
       sourceId: trackId + '_vocal',
       trackSource: {
-        name: 'Vocal',
         volume: 0,
-        source: vocalCachePath,
       },
     })
   )
 
   dispatch(
+    Actions.setSource({
+      sourceId: trackId + '_instru',
+      source: { name: 'Instru', source: vocalCachePath },
+    })
+  )
+  dispatch(
     Actions.setTrackSource({
       trackId: trackId,
       sourceId: trackId + '_instru',
       trackSource: {
-        name: 'Instru',
         volume: 0,
-        source: instruCachePath,
       },
     })
   )

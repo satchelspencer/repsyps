@@ -18,10 +18,16 @@ export default function(file: any, dispatch: Dispatch<any>, sceneIndex: number) 
     const id = _.snakeCase(file.name.substr(0, 15)) + new Date().getTime()
     await addBufferFromAudio(id, e.target.result)
     dispatch(
+      Actions.setSource({
+        sourceId: id,
+        source: { name: 'Main', source: file.path },
+      })
+    )
+    dispatch(
       Actions.addTrack({
         trackId: id,
         name: file.name,
-        trackSources: { [id]: { name: 'Main', volume: 1, source: file.path } },
+        trackSources: { [id]: { volume: 1 } },
         sceneIndex,
       })
     )

@@ -138,12 +138,12 @@ export default function TrackControls(props: TrackControlsProps) {
     barLen = useMemo(() => {
       const currentIndex = _.findIndex(
           track.bounds,
-          bound => bound >= track.playback.sample
+          bound => bound >= track.sample
         ),
         index = Math.max(currentIndex, 1),
         inBound = track.bounds[index] && track.bounds[index - 1]
       return inBound && track.bounds[index] - track.bounds[index - 1]
-    }, [track.bounds, track.playback.sample]),
+    }, [track.bounds, track.sample]),
     activeCueIndex = track.cueIndex,
     playing = track.playback.playing,
     hasCues = !!track.cues.length,

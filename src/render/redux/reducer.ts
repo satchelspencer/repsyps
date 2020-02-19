@@ -17,13 +17,11 @@ const defaultPlayback: Types.Playback = {
   defaultTracks: Types.Tracks = {},
   defaultTrackPlayback: Types.TrackPlayback = {
     chunks: [0, 0],
-    nextChunks: [],
     alpha: 1,
     playing: false,
     aperiodic: true,
     chunkIndex: -1,
     nextAtChunk: false,
-    sample: 0,
     muted: false,
     sources: {},
   },
@@ -35,7 +33,26 @@ const defaultPlayback: Types.Playback = {
   defaultScenes: Types.Scenes = {
     sceneIndex: 0,
     list: [defaultScene],
-  }
+  },
+  defaultSources: Types.Sources = {}
+
+/* if a cue doesnt esist in the new sources, just set its volume in the old to 0. */
+function mergeTrackSources(dest: Types.TrackSources, src: Types.TrackSources) {
+  return _.mapValues(
+    {
+      ...dest,
+      ...src,
+    },
+    (srcConfig, sourceId) => {
+      if (!src[sourceId])
+        return {
+          ...srcConfig,
+          volume: 0,
+        }
+      else return srcConfig
+    }
+  )
+}
 
 function applyCue(track: Types.Track, cueIndex: number): Types.Track {
   const cue = track.cues[cueIndex],
@@ -50,12 +67,10 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
       nextCueIndex: hasFollowing ? cueIndex + 1 : -1,
       playback: {
         ...track.playback,
-        chunks: cue.chunks,
-        nextAtChunk: false,
-        chunkIndex: -1,
-        nextChunks: hasFollowing ? followingCue.chunks : [],
-        playing: true,
+        ...cue.playback,
+        sources: mergeTrackSources(track.playback.sources, cue.playback.sources),
       },
+      nextPlayback: hasFollowing ? followingCue.playback : null,
     }
   } else if (cue.startBehavior === 'on-chunk' || cue.startBehavior === 'on-end') {
     return {
@@ -63,14 +78,25 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
       nextCueIndex: cueIndex,
       playback: {
         ...track.playback,
-        nextChunks: cue.chunks,
         nextAtChunk: cue.startBehavior === 'on-chunk',
       },
+      nextPlayback: cue.playback,
     }
   } else return track
 }
 
 export default combineReducers({
+  sources: createReducer(defaultSources, handle => [
+    handle(Actions.setSource, (sources, { payload }) => {
+      return {
+        ...sources,
+        [payload.sourceId]: {
+          ...sources[payload.sourceId],
+          ...payload.source,
+        },
+      }
+    }),
+  ]),
   scenes: createReducer(defaultScenes, handle => [
     handle(Actions.createScene, (scenes, { payload: sceneIndex }) => {
       const newList = [...scenes.list]
@@ -329,8 +355,8 @@ export default combineReducers({
               playback: {
                 ...track.playback,
                 playing: false,
-                nextChunks: [],
               },
+              nextPlayback: null,
               cueIndex: -1,
             },
           }
@@ -343,8 +369,10 @@ export default combineReducers({
           name: payload.name,
           playback: {
             ...defaultTrackPlayback,
-            sources: payload.trackSources
+            sources: payload.trackSources,
           },
+          nextPlayback: null,
+          sample: 0,
           bounds: payload.bounds || [],
           selected: false,
           editing: true,
@@ -430,9 +458,9 @@ export default combineReducers({
             playback: {
               ...tracks[payload.trackId].playback,
               ...payload.playback,
-              nextChunks: [],
               nextAtChunk: false,
             },
+            nextPlayback: null,
             cueIndex: -1,
             nextCueIndex: -1,
           },
@@ -492,11 +520,10 @@ export default combineReducers({
       return _.mapValues(tracks, (track, trackId) => {
         const trackTiming = payload.timing.tracks[trackId]
         if (!trackTiming) return track
+        const isPlaying = trackTiming.playback.playing,
+          didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback
 
-        const isPlaying = trackTiming.playing,
-          chunksChanged = !isEqual(track.playback.chunks, trackTiming.chunks)
-
-        if (chunksChanged && payload.commit && track.nextCueIndex !== -1) {
+        if (didAdvancePlayback && payload.commit && track.nextCueIndex !== -1) {
           const appliedCue = track.cues[track.nextCueIndex],
             followingCue = track.cues[track.nextCueIndex + 1],
             hasFollowing = appliedCue.endBehavior === 'next' && followingCue
@@ -506,18 +533,28 @@ export default combineReducers({
             nextCueIndex: hasFollowing ? track.nextCueIndex + 1 : -1,
             playback: {
               ...track.playback,
-              ...trackTiming,
-              nextAtChunk: false, //wait till end to apply nextChunks
-              nextChunks: hasFollowing ? followingCue.chunks : [],
+              ...trackTiming.playback,
+              sources: mergeTrackSources(
+                track.playback.sources,
+                trackTiming.playback.sources
+              ),
+              nextAtChunk: false, //wait till end to apply nextPlayback
             },
+            nextPlayback: hasFollowing ? followingCue.playback : null,
+            sample: trackTiming.sample,
           }
         } else if (isPlaying) {
           return {
             ...track,
             playback: {
               ...track.playback,
-              ...trackTiming,
+              ...trackTiming.playback,
+              sources: mergeTrackSources(
+                track.playback.sources,
+                trackTiming.playback.sources
+              ),
             },
+            sample: trackTiming.sample,
           }
         } else return track
       })

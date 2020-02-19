@@ -34,9 +34,11 @@ export default function syncAudio(store: Store<Types.State>) {
     trackIds.forEach(trackId => {
       const track = currentState.tracks[trackId],
         trackIsNew = !lastState || !lastTrackIds.includes(trackId),
-        lastTrack = lastState && lastState.tracks[trackId],
+        lastTrack = lastState && (lastState.tracks[trackId] as Types.Track),
         trackPlaybackHasChanged =
-          trackIsNew || !isEqual(lastTrack.playback, track.playback)
+          trackIsNew ||
+          !isEqual(lastTrack.playback, track.playback) ||
+          lastTrack.nextPlayback !== track.nextPlayback
 
       _.keys(track.playback.sources).forEach(sourceId => {
         const sourceIsNew = trackIsNew || !lastTrack.playback.sources[sourceId]
@@ -49,8 +51,11 @@ export default function syncAudio(store: Store<Types.State>) {
         })
 
       if (trackPlaybackHasChanged) {
-        const change = diff(trackIsNew ? {} : lastTrack.playback, track.playback)
-        audio.setMixTrack(trackId, _.omit(change, 'sample'))
+        const change: Types.NativeTrackChange = {
+          playback: diff(trackIsNew ? {} : lastTrack.playback, track.playback),
+          nextPlayback: track.nextPlayback,
+        }
+        audio.setMixTrack(trackId, change)
       }
     })
 

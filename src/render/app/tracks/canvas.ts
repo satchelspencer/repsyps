@@ -40,7 +40,7 @@ export default function useWaveformCanvas(
         clickX: clickX * 2,
         center: center * 2,
         mouseDown,
-        sample: track.playback.sample,
+        sample: track.sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
       }
 
@@ -101,8 +101,8 @@ export function drawWaveform(
   for (let i = 0; i < pwidth; i++) {
     let iStart = start + i * scale
     const minMaxSample = Math.floor(iStart / minMaxSize)
-    const maxp = minMax[1][minMaxSample]*0.75,
-      maxn = minMax[0][minMaxSample]*0.75
+    const maxp = minMax[1][minMaxSample] * 0.75,
+      maxn = minMax[0][minMaxSample] * 0.75
 
     if (maxp) ctx.lineTo(i, maxp * halfHeight + halfHeight)
     if (maxn) ctx.lineTo(i, maxn * halfHeight + halfHeight)
@@ -119,7 +119,7 @@ export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
   ctx.strokeStyle = `rgba(${r},${r},${r},1)`
 
   for (let i = Math.floor(start / BIN_SIZE); i < Math.floor(end / BIN_SIZE); i++) {
-    const value = impulses[i]*0.75,
+    const value = impulses[i] * 0.75,
       x = (i * BIN_SIZE - start) / scale
 
     if (value) {
@@ -170,15 +170,17 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
     }
   }
 
-  for (let i = 0; i < track.playback.nextChunks.length; i += 2) {
-    const cstart = track.playback.nextChunks[i],
-      clength = track.playback.nextChunks[i + 1],
-      startX = (cstart - start) / scale,
-      endX = (cstart + clength - start) / scale
+  if (track.nextPlayback) {
+    for (let i = 0; i < track.nextPlayback.chunks.length; i += 2) {
+      const cstart = track.nextPlayback.chunks[i],
+        clength = track.nextPlayback.chunks[i + 1],
+        startX = (cstart - start) / scale,
+        endX = (cstart + clength - start) / scale
 
-    if (clength) {
-      ctx.fillStyle = playing ? 'rgba(255,0,0,0.03)' : 'rgba(0,0,0,0.03)'
-      ctx.fillRect(startX, 0, endX - startX, pheight)
+      if (clength) {
+        ctx.fillStyle = playing ? 'rgba(255,0,0,0.03)' : 'rgba(0,0,0,0.03)'
+        ctx.fillRect(startX, 0, endX - startX, pheight)
+      }
     }
   }
 

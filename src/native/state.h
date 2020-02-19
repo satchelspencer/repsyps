@@ -21,13 +21,18 @@ typedef struct{
 typedef struct{
   std::unordered_map<std::string, mixTrackSourceConfig*> sources;
   std::vector<int> chunks;
-  std::vector<int> nextChunks;
   float alpha;
   bool playing;
   bool muted;
   bool aperiodic;
   bool nextAtChunk;
   int chunkIndex;
+} mixTrackPlayback;
+
+typedef struct{
+  mixTrackPlayback* playback;
+  mixTrackPlayback* nextPlayback;
+  bool hasNext;
   double sample;
 } mixTrack;
 

@@ -1,11 +1,21 @@
 #include "callback.h"
 
 double getSamplePosition(
-  std::vector<int> * chunks,
+  mixTrackPlayback* playback,
   int chunkIndex,
   double phase
 ){
-  return (*chunks)[chunkIndex*2] + ( (*chunks)[chunkIndex*2+1] * phase );
+  return playback->chunks[chunkIndex*2] +
+  ( playback->chunks[chunkIndex*2+1] * phase );
+}
+
+double getMixTrackPhase(
+  playback* playback,
+  mixTrackPlayback* mixTrackPlayback
+){
+  double mixTrackPhase = playback->time*mixTrackPlayback->alpha;
+  mixTrackPhase -= floor(mixTrackPhase); 
+  return mixTrackPhase;
 }
 
 int paCallbackMethod(
@@ -32,11 +42,10 @@ int paCallbackMethod(
   int channelCount;
   int channelIndex;
   int chunkCount;
-  int nextChunkCount;
   int tempMixTrackChunkIndex;
   int tempMixTrackSample;
-  bool tempMixTrackAdvancedChunks;
-  std::vector<int> * tempMixTrackChunks;
+  bool didAdvancePlayback;
+  mixTrackPlayback* mixTrackPlayback;
 
   unsigned int sampledFrameIndex;
   double samplePosition;
@@ -68,51 +77,51 @@ int paCallbackMethod(
     for(auto mixTrackPair: state->mixTracks){
       mixTrack = mixTrackPair.second;
       bufferHead = state->buffer->head;
-
-      mixTrackPhase = state->playback->time*mixTrack->alpha;
-      mixTrackPhase -= floor(mixTrackPhase); 
-
-      chunkCount = mixTrack->chunks.size()/2;
-      nextChunkCount = mixTrack->nextChunks.size()/2;
-
-      if(chunkCount == 0 || !mixTrack->playing) continue;
       
-      tempMixTrackChunkIndex = mixTrack->chunkIndex;
+      mixTrackPlayback = mixTrack->playback;
+      mixTrackPhase = getMixTrackPhase(state->playback, mixTrackPlayback);
+      chunkCount = mixTrackPlayback->chunks.size()/2;
+
+      if(chunkCount == 0 || !mixTrackPlayback->playing) continue;
+      tempMixTrackChunkIndex = mixTrackPlayback->chunkIndex;
       tempMixTrackSample = mixTrack->sample;
-      tempMixTrackAdvancedChunks = false;
-      tempMixTrackChunks = &mixTrack->chunks;
+      didAdvancePlayback = false;
 
       /* add this computed track into the buffer */
       for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
         /* figure out which sample we're gonna fetch */
         if(tempMixTrackChunkIndex == -1 && mixTrackPhase >= 0){
           tempMixTrackChunkIndex = 0;
-          tempMixTrackSample = getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, 0); //reset the sample to the start
+          tempMixTrackSample = getSamplePosition(mixTrackPlayback, tempMixTrackChunkIndex, 0); //reset the sample to the start
         } //on first
         if(tempMixTrackChunkIndex == -1) break; //before we should be playing
 
-        if(mixTrack->aperiodic){
-          samplePosition = tempMixTrackSample + mixTrack->alpha;
-          if((*tempMixTrackChunks)[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
-            if(samplePosition > getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, 1)){ /* check if we looped around */
+        if(mixTrackPlayback->aperiodic){
+          samplePosition = tempMixTrackSample + mixTrackPlayback->alpha;
+          if(mixTrackPlayback->chunks[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
+            if(samplePosition > getSamplePosition(mixTrackPlayback, tempMixTrackChunkIndex, 1)){ /* check if we looped around */
               tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount;
-              if(nextChunkCount > 0 && (tempMixTrackChunkIndex == 0 || mixTrack->nextAtChunk)){ //chunks looped and we have nextChunks
-                tempMixTrackAdvancedChunks = true;
-                tempMixTrackChunks = &mixTrack->nextChunks;
+              if(mixTrack->hasNext && (tempMixTrackChunkIndex == 0 || mixTrackPlayback->nextAtChunk)){ //chunks looped and we have next
+                didAdvancePlayback = true;
+                mixTrackPlayback = mixTrack->nextPlayback;
+                mixTrackPhase = getMixTrackPhase(state->playback, mixTrackPlayback);
+                chunkCount = mixTrackPlayback->chunks.size()/2;
               }
-              samplePosition = (*tempMixTrackChunks)[tempMixTrackChunkIndex*2];
+              samplePosition = getSamplePosition(mixTrackPlayback,tempMixTrackChunkIndex, 0);
             }
           }
         }else{
-          samplePosition = getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, mixTrackPhase);
+          samplePosition = getSamplePosition(mixTrackPlayback,tempMixTrackChunkIndex, mixTrackPhase);
           if( samplePosition < tempMixTrackSample) {  /* check if we looped around */
             tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount; //increment the chunk
-            if(nextChunkCount > 0 && (tempMixTrackChunkIndex == 0 || mixTrack->nextAtChunk)){ //chunks looped and we have nextChunks
+            if(mixTrack->hasNext && (tempMixTrackChunkIndex == 0 || mixTrackPlayback->nextAtChunk)){ //chunks looped and we have next
+              didAdvancePlayback = true;
               tempMixTrackChunkIndex = 0;
-              tempMixTrackAdvancedChunks = true;
-              tempMixTrackChunks = &mixTrack->nextChunks;
+              mixTrackPlayback = mixTrack->nextPlayback;
+              mixTrackPhase = getMixTrackPhase(state->playback, mixTrackPlayback);
+              chunkCount = mixTrackPlayback->chunks.size()/2;
             }
-            samplePosition = getSamplePosition(tempMixTrackChunks, tempMixTrackChunkIndex, mixTrackPhase);
+            samplePosition = getSamplePosition(mixTrackPlayback, tempMixTrackChunkIndex, mixTrackPhase);
           }
         }
 
@@ -122,17 +131,18 @@ int paCallbackMethod(
 
         /* at the step point commit the mutated index and sample */
         if(frameIndex == state->windowSize/2 - 1){
-          mixTrack->chunkIndex = tempMixTrackChunkIndex;
+          mixTrack->playback->chunkIndex = tempMixTrackChunkIndex;
           mixTrack->sample = tempMixTrackSample;
-          if(tempMixTrackAdvancedChunks){
-            mixTrack->chunks = mixTrack->nextChunks;
-            mixTrack->nextChunks.clear();
-            tempMixTrackAdvancedChunks = false;
-            tempMixTrackChunks = &mixTrack->chunks;
+          if(didAdvancePlayback){
+            mixTrack->playback = mixTrack->nextPlayback;
+            mixTrack->nextPlayback = NULL;
+            mixTrack->hasNext = false;
+            didAdvancePlayback = false;
           }
         }
 
-        for(auto sourcePair: mixTrack->sources){
+        /* add sample to ringbuffer */ 
+        for(auto sourcePair: mixTrackPlayback->sources){
           mixTrackSourceConfig = sourcePair.second;
           mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
           mixTrackLength = mixTrackSource->length;
@@ -145,7 +155,7 @@ int paCallbackMethod(
               sampledFrameIndex >= 0 &&
               sampledFrameIndex < mixTrackLength-1 &&
               mixTrackSourceConfig->volume > 0 && 
-              !mixTrack->muted
+              !mixTrackPlayback->muted
             ){
               sampleValue = mixTrackSource->channels[channelIndex][sampledFrameIndex];
               sampleValueNext = mixTrackSource->channels[channelIndex][sampledFrameIndex+1];
@@ -157,9 +167,9 @@ int paCallbackMethod(
             state->buffer->channels[channelIndex][bufferHead] += sampleValue;
           }   
         }
-
+      
         bufferHead = (bufferHead+1)%state->buffer->size;
-        mixTrackPhase += phaseStep*mixTrack->alpha;       
+        mixTrackPhase += phaseStep*mixTrackPlayback->alpha; 
       }
     }
     //head only moves forward by half the window size
@@ -177,17 +187,16 @@ int paCallbackMethod(
     }
   }
   
-  state->playback->out = state->buffer->tail;
   state->playback->time += (double)framesPerBuffer/state->playback->period;
 
   /* phase wrapped drung this callback */
   if(startTime-floor(startTime) > state->playback->time-floor(state->playback->time)){
     for(auto mixTrackPair: state->mixTracks){
       mixTrack = mixTrackPair.second;
-      if(mixTrack->nextChunks.size() > 0 && !mixTrack->playing){
-        mixTrack->chunks = mixTrack->nextChunks;
-        mixTrack->nextChunks.clear();
-        mixTrack->playing = true;
+      if(mixTrack->hasNext && !mixTrack->playback->playing){
+        mixTrack->playback = mixTrack->nextPlayback;
+        mixTrack->nextPlayback = NULL;
+        mixTrack->hasNext = false;
       }
     }
   }

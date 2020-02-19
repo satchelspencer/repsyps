@@ -27,6 +27,11 @@ export const setTrackSource = createAction<{
   trackSource: Partial<Types.TrackSource>
 }>('SET_TRACK_SOURCE')
 
+export const setSource = createAction<{
+  sourceId: string
+  source: Partial<Types.Source>
+}>('SET_SOURCE')
+
 export const setTrackPlayback = createAction<{
   trackId: string
   playback: Partial<Types.TrackPlayback>
