@@ -3,7 +3,6 @@ import { Dispatch } from 'redux'
 
 import { createBuffer } from 'render/util/buffers'
 import * as Actions from 'render/redux/actions'
-import * as Types from 'render/util/types'
 
 export const context = new AudioContext()
 

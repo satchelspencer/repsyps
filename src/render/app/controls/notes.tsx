@@ -37,9 +37,9 @@ const NoteBindings = ctyled.div.styles({
   width: 5,
 }).extendSheet`min-height: max-content;`
 
-const NoteControlWrapper = ctyled.div.styles({
+const NoteControlWrapper = ctyled.div.attrs({ fixed: false }).styles({
   height: 2.5,
-  color: c => c.contrast(0.1),
+  color: (c, { fixed }) => (fixed ? c.contrast(-0.1) : c.contrast(0.1)),
 }).extendSheet`
   font-size:${({ size }) => size}px;
 `
@@ -85,12 +85,13 @@ const NoteControlsSorter = SortableContainer<any>((props: any) => (
 
 interface NoteControlProps {
   control: Types.NoteControl
+  lastOfPrev: boolean
 }
 
 const NoteControl = SortableElement((props: NoteControlProps) => {
   const dispatch = useDispatch()
   return (
-    <NoteControlWrapper>
+    <NoteControlWrapper fixed={props.lastOfPrev}>
       {props.control && (
         <NoteControlInner
           onClick={() =>
@@ -115,7 +116,7 @@ const NoteControl = SortableElement((props: NoteControlProps) => {
 
 const NoteControls = memo((props: ControlsProps) => {
   const dispatch = useDispatch(),
-    { controls, bindings } = props,
+    { controls, bindings, lastOfPrevIds } = props,
     corbs = _.values({ ...controls, ...bindings }),
     maxNoteX =
       _.max(corbs.filter(corb => corb.type === 'note').map(c => c.position.x + 1)) || 0,
@@ -134,9 +135,29 @@ const NoteControls = memo((props: ControlsProps) => {
         lockAxis="y"
         lockToContainerEdges
         onSortEnd={({ oldIndex, newIndex }) => {
-          arrayMove(noteControlIds, oldIndex, newIndex).forEach((controlId, newX) => {
-            if (controlId)
+          const newNoteControlIds = arrayMove(noteControlIds, oldIndex, newIndex)
+          lastOfPrevIds.forEach(controlId => {
+            const properIndex = noteControlIds.indexOf(controlId),
+              currentAtProperIndex = newNoteControlIds[properIndex],
+              currentIndex = newNoteControlIds.indexOf(controlId)
+            if (properIndex !== -1 && currentAtProperIndex !== controlId) {
+              newNoteControlIds[properIndex] = controlId
+              newNoteControlIds[currentIndex] = undefined
+              if (currentAtProperIndex) {
+                newNoteControlIds[
+                  newNoteControlIds.findIndex(v => v === undefined)
+                ] = currentAtProperIndex
+              }
+            }
+          })
+          newNoteControlIds.forEach((controlId, newX) => {
+            if (
+              controlId &&
+              !lastOfPrevIds.includes(controlId) &&
+              noteControlIds.indexOf(controlId) !== newX
+            ) {
               dispatch(Actions.setControlPos({ controlId, position: { x: newX } }))
+            }
           })
         }}
         distance={5}
@@ -145,6 +166,7 @@ const NoteControls = memo((props: ControlsProps) => {
         {noteControlIds.map((controlId, x) => {
           return (
             <NoteControl
+              lastOfPrev={lastOfPrevIds.includes(controlId)}
               key={x}
               index={x}
               control={controls[controlId] as Types.NoteControl}

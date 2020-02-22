@@ -22,8 +22,8 @@ export default function syncAudio(store: Store<Types.State>) {
 
   const handleUpdate = () => {
     const currentState = store.getState(),
-      trackIds = Selectors.getCurrentScene(currentState).trackIds,
-      lastTrackIds = lastState ? Selectors.getCurrentScene(lastState).trackIds : []
+      trackIds = Selectors.getActiveTrackIds(currentState),
+      lastTrackIds = lastState ? Selectors.getActiveTrackIds(lastState) : []
 
     if (!lastState || !isEqual(currentState.playback, lastState.playback)) {
       const change = diff(!lastState ? {} : lastState.playback, currentState.playback)

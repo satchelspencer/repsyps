@@ -8,8 +8,8 @@ import * as Types from 'render/util/types'
 import uid from 'render/util/uid'
 
 const ControlWrapper = ctyled.div.attrs({ enabled: false }).styles({
-  width: 0.8,
-  height: 0.8,
+  width: 1,
+  height: 1,
   border: true,
   color: c => c.nudge(0.1),
 }).extendSheet`
@@ -30,8 +30,8 @@ export default function ControlAdder(props: ControlProps) {
         const controlId = Selectors.getMatchingControlId(state, props.params)
         return {
           controlId,
-          control: Selectors.getControls(state)[controlId],
-          insertPosition: Selectors.getOpenPosition(state, props.type),
+          control: Selectors.getControls(state.scenes)[controlId],
+          insertPosition: Selectors.getOpenPosition(state.scenes, props.type),
         }
       },
       [props.params, props.type]

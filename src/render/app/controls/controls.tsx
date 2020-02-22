@@ -36,13 +36,15 @@ export interface ControlsProps {
   controls: Types.Controls
   bindings: Types.Bindings
   values: Types.ControlValues
+  lastOfPrevIds: string[]
 }
 
 export default function ControlsContainer() {
   const getMappedState = useCallback((state: Types.State) => {
-      const controls = Selectors.getControls(state)
+      const controls = Selectors.getControls(state.scenes)
       return {
         controls,
+        lastOfPrevIds: Selectors.getLastOfPrevControlIds(state),
         bindings: state.bindings,
         values: _.mapValues(controls, control => {
           if (control.type === 'value')

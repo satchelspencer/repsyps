@@ -113,11 +113,8 @@ export const addTrackToScene = createAction<{
   trackId: string
   toSceneIndex: number
   fromSceneIndex: number
+  trackIndex?: number
 }>('ADD_TRACK_TO_SCENE')
-
-export const rmTrackFromScene = createAction<{ trackId: string; sceneIndex: number }>(
-  'REMOVE_TRACK_FROM_SCENE'
-)
 
 export const createScene = createAction<number>('CREATE_SCENE')
 

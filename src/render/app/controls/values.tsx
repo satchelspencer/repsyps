@@ -14,10 +14,10 @@ import Slider from 'render/components/slider'
 import { TitleInner, ControlsProps } from './controls'
 import { BindingController, BindingAdder } from './bindings'
 
-const ValueControlWrapper = ctyled.div.styles({
+const ValueControlWrapper = ctyled.div.attrs({ fixed: false }).styles({
   bg: true,
   width: 5,
-  color: c => c.contrast(0.05),
+  color: (c, { fixed }) => (fixed ? c.contrast(-0.1) : c.contrast(0.05)),
   borderColor: c => c.contrast(-0.175),
   column: true,
   lined: true,
@@ -77,6 +77,7 @@ const ValueControlsSorter = SortableContainer<any>((props: any) => (
 interface ValueControlProps {
   control: Types.ValueControl
   value: number
+  lastOfPrev: boolean
 }
 
 const ValueHandle = SortableHandle((props: any) => <ValueControlTitle {...props} />)
@@ -84,7 +85,7 @@ const ValueHandle = SortableHandle((props: any) => <ValueControlTitle {...props}
 const ValueControl = SortableElement((props: ValueControlProps) => {
   const dispatch = useDispatch()
   return (
-    <ValueControlWrapper>
+    <ValueControlWrapper fixed={props.lastOfPrev}>
       <ValueControlBody>
         {!!props.control && (
           <>
@@ -113,7 +114,7 @@ const ValueControl = SortableElement((props: ValueControlProps) => {
 
 const ValueControls = memo((props: ControlsProps) => {
   const dispatch = useDispatch(),
-    { controls, bindings, values } = props,
+    { controls, bindings, values, lastOfPrevIds } = props,
     corbs = _.values({ ...controls, ...bindings }),
     maxValueX =
       _.max(corbs.filter(corb => corb.type === 'value').map(c => c.position.x + 1)) || 0,
@@ -138,9 +139,29 @@ const ValueControls = memo((props: ControlsProps) => {
         useDragHandle
         lockToContainerEdges
         onSortEnd={({ oldIndex, newIndex }) => {
-          arrayMove(valueControlIds, oldIndex, newIndex).forEach((controlId, newX) => {
-            if (controlId)
+          const newValueControlIds = arrayMove(valueControlIds, oldIndex, newIndex)
+          lastOfPrevIds.forEach(controlId => {
+            const properIndex = valueControlIds.indexOf(controlId),
+              currentAtProperIndex = newValueControlIds[properIndex],
+              currentIndex = newValueControlIds.indexOf(controlId)
+            if (properIndex !== -1 && currentAtProperIndex !== controlId) {
+              newValueControlIds[properIndex] = controlId
+              newValueControlIds[currentIndex] = undefined
+              if (currentAtProperIndex) {
+                newValueControlIds[
+                  newValueControlIds.findIndex(v => v === undefined)
+                ] = currentAtProperIndex
+              }
+            }
+          })
+          newValueControlIds.forEach((controlId, newX) => {
+            if (
+              controlId &&
+              !lastOfPrevIds.includes(controlId) &&
+              valueControlIds.indexOf(controlId) !== newX
+            ) {
               dispatch(Actions.setControlPos({ controlId, position: { x: newX } }))
+            }
           })
         }}
         distance={5}
@@ -149,7 +170,13 @@ const ValueControls = memo((props: ControlsProps) => {
         {valueControlIds.map((controlId, x) => {
           const control = controls[controlId] as Types.ValueControl
           return (
-            <ValueControl index={x} key={x} control={control} value={values[controlId]} />
+            <ValueControl
+              lastOfPrev={lastOfPrevIds.includes(controlId)}
+              index={x}
+              key={x}
+              control={control}
+              value={values[controlId]}
+            />
           )
         })}
       </ValueControlsSorter>

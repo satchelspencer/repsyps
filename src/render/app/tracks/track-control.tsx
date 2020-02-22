@@ -2,6 +2,7 @@ import React, { memo, useRef, useMemo, useState, useCallback } from 'react'
 import ctyled, { active } from 'ctyled'
 import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
+import { SortableHandle } from 'react-sortable-hoc'
 
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
@@ -17,14 +18,14 @@ const TrackControlsWrapper = ctyled.div.styles({
   color: c => c.contrast(-0.1).nudge(0.05),
 })
 
-const TrackHandle = ctyled.div
+const TrackHandle = SortableHandle(ctyled.div
   .attrs({ selected: false })
   .styles({ color: c => c.nudge(0.2), width: 1 }).extend`
   position:absolute;
   left:0;
   height:100%;
   background:${({ color }, { selected }) => (selected ? '#ca5d5dbf' : color.bg + 'ff')};
-`
+`)
 
 const TrackControlsBody = ctyled.div.styles({
   column: true,

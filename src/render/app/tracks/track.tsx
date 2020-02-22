@@ -2,6 +2,7 @@ import React, { memo, useRef, useMemo, useState, useCallback } from 'react'
 import ctyled from 'ctyled'
 import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
+import { SortableElement } from 'react-sortable-hoc'
 
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
@@ -24,14 +25,14 @@ import {
 } from './mouse'
 import TrackControls from './track-control'
 
-const TrackWrapper = ctyled.div.attrs({ selected: false }).styles({
+const TrackWrapper = SortableElement(ctyled.div.attrs({ selected: false }).styles({
   flex: 'none',
   lined: true,
   color: (c, { selected }) => (selected ? c.contrast(0.2) : c.contrast(0.1)),
   borderColor: c => c.contrast(-0.2),
 }).extendSheet`
   height:${({ size }) => Math.ceil(size * 8) + 4}px;
-`
+`)
 
 const TrackCanvasWrapper = ctyled.div.styles({
   flex: 1,
@@ -52,12 +53,13 @@ const CornerWrapper = ctyled.div.styles({
   align: 'center',
 }).extend`
   top:0;
-  right:0;
+  right:15px;
   position:absolute;
 `
 
 export interface TrackContainerProps {
   trackId: string
+  index: number
   vBounds: number[]
 }
 
@@ -207,10 +209,6 @@ const Track = memo(
           selectBoundHandlers.doubleClick(clickCtxt, pos, view, track.bounds)
         },
         [...clickCtxtValues, ...viewValues, track.bounds]
-      ),
-      rmTrack = useCallback(
-        () => dispatch(Actions.rmTrackFromScene({ trackId, sceneIndex })),
-        [trackId, sceneIndex]
       )
 
     /* styles */
@@ -238,7 +236,15 @@ const Track = memo(
             height={height * 2}
           />
           <CornerWrapper>
-            <Icon asButton onClick={rmTrack} styles={delIconSty} name="close-thin" />
+            <Icon
+              asButton
+              onClick={e => {
+                e.stopPropagation()
+                dispatch(Actions.rmTrack(trackId))
+              }}
+              styles={delIconSty}
+              name="close-thin"
+            />
           </CornerWrapper>
         </TrackCanvasWrapper>
       </>
@@ -252,7 +258,7 @@ const Track = memo(
   }
 )
 
-const OFFSCREEN_THRESH = 500
+const OFFSCREEN_THRESH = 250
 
 export default function TrackContainer(props: TrackContainerProps) {
   const getMappedState = useCallback(
@@ -278,7 +284,12 @@ export default function TrackContainer(props: TrackContainerProps) {
     }, [props.trackId, isSelecting, onSelect])
 
   return (
-    <TrackWrapper inRef={wrapperRef} onClick={handleClick} selected={track.selected}>
+    <TrackWrapper
+      index={props.index}
+      inRef={wrapperRef}
+      onClick={handleClick}
+      selected={track.selected}
+    >
       {!wayOffScreen && (
         <>
           <TrackControls trackId={props.trackId} />

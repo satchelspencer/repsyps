@@ -53,11 +53,11 @@ export default function App() {
         tracks: state.tracks,
         playing: state.playback.playing,
         sceneIndex: state.scenes.sceneIndex,
+        trackIds: _.flatMap(state.scenes.list, scene => scene.trackIds)
       }
     }, []),
-    { selected, playing, tracks, sceneIndex } = useMappedState(getMappedState),
+    { selected, playing, tracks, sceneIndex, trackIds } = useMappedState(getMappedState),
     dispatch = useDispatch(),
-    trackIds = Object.keys(tracks),
     tracklen = trackIds.length,
     input = useRef(null),
     handleDragover = useCallback(e => e.preventDefault(), []),

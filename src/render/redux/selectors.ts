@@ -4,12 +4,59 @@ import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
 import isEqual from 'render/util/is-equal'
 
-export function getCurrentScene(state: Types.State): Types.Scene{
+export function getCurrentScene(state: Types.State): Types.Scene {
   return state.scenes.list[state.scenes.sceneIndex]
 }
 
-export function getControls(state: Types.State): Types.Controls {
-  return getCurrentScene(state).controls
+export function getActiveTrackIds(state: Types.State): string[] {
+  const currentScene = state.scenes.list[state.scenes.sceneIndex],
+    prevScene = state.scenes.list[state.scenes.sceneIndex - 1],
+    lastOfPrev = prevScene && _.last(prevScene.trackIds)
+
+  return lastOfPrev ? [lastOfPrev, ...currentScene.trackIds] : currentScene.trackIds
+}
+
+export function getLastOfPrevControlIds(state: Types.State): string[] {
+  const prevScene = state.scenes.list[state.scenes.sceneIndex - 1],
+    lastOfPrev = prevScene && _.last(prevScene.trackIds)
+  return lastOfPrev
+    ? Object.keys(prevScene.controls).filter(controlId => {
+        const control = prevScene.controls[controlId]
+        return 'trackId' in control && control.trackId === lastOfPrev
+      })
+    : []
+}
+
+export function getLastOfPrevControls(
+  scenes: Types.Scenes,
+  sceneIndex: number
+): Types.Controls {
+  const prevScene = scenes.list[sceneIndex - 1],
+    lastOfPrev = prevScene && _.last(prevScene.trackIds)
+
+  return lastOfPrev
+    ? _.pickBy(
+        prevScene.controls,
+        control => 'trackId' in control && control.trackId === lastOfPrev
+      )
+    : {}
+}
+
+export function getControlsAtIndex(
+  scenes: Types.Scenes,
+  sceneIndex: number
+): Types.Controls {
+  const currentScene = scenes.list[sceneIndex],
+    lastControls = getLastOfPrevControls(scenes, sceneIndex)
+
+  return {
+    ...currentScene.controls,
+    ...lastControls,
+  }
+}
+
+export function getControls(scenes: Types.Scenes): Types.Controls {
+  return getControlsAtIndex(scenes, scenes.sceneIndex)
 }
 
 /* find an existing control that matches the would-be partial control */
@@ -17,7 +64,7 @@ export function getMatchingControlId(
   state: Types.State,
   partialControl: Partial<Types.Control>
 ) {
-  return _.findKey(getControls(state), control =>
+  return _.findKey(getControls(state.scenes), control =>
     _.every(_.keys(partialControl), prop => control[prop] === partialControl[prop])
   )
 }
@@ -54,26 +101,44 @@ export function getBindingByPosition(
   )
 }
 
-export function getOpenPosition(
-  state: Types.State,
+export function getOpenContolPos(
+  controls: Types.Controls,
   type: Types.BindingType
 ): Types.ControlPosition {
-  const openVbinding = _.find(
-    _.sortBy(_.values(state.bindings), b => b.position.x),
-    binding =>
-      binding.type === type && !getControlByPosition(getControls(state), binding.position)
-  )
-  if (openVbinding) return openVbinding.position
-  else {
-    const corbs = _.values({ ...getControls(state), ...state.bindings }),
-      maxX =
-        _.max(corbs.filter(corb => corb.type === type).map(c => c.position.x + 1)) || 0
-
-    return {
-      x: maxX,
-      y: type === 'value' ? 0 : 1,
-    }
+  const usedXes: { [x: number]: boolean } = {},
+    controlValues = _.values(controls),
+    maxX = controlValues.length
+      ? _.maxBy(controlValues, control => {
+          if (control.type !== type) return 0
+          else {
+            const x = control.position.x
+            usedXes[x] = true
+            return x
+          }
+        }).position.x
+      : 0,
+    freeX = _.range(maxX + 2).find(x => !usedXes[x])
+  return {
+    x: freeX,
+    y: type === 'value' ? 0 : 1,
   }
+}
+
+export function getOpenPositionAtIndex(
+  scenes: Types.Scenes,
+  type: Types.BindingType,
+  sceneIndex: number
+){
+  const controls = getControlsAtIndex(scenes, sceneIndex)
+  return getOpenContolPos(controls, type)
+}
+
+export function getOpenPosition(
+  scenes: Types.Scenes,
+  type: Types.BindingType
+): Types.ControlPosition {
+  const controls = getControls(scenes)
+  return getOpenContolPos(controls, type)
 }
 
 export function getTrackIsSolo(state: Types.State, trackId: string) {

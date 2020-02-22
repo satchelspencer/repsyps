@@ -78,7 +78,7 @@ export interface Track extends NativeTrack {
   cues: Cue[]
   cueIndex: number
   nextCueIndex: number
-  sceneIndicies: number[]
+  sceneIndex: number
 }
 
 export interface Tracks {

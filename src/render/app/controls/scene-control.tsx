@@ -17,7 +17,7 @@ const ScenesWrapper = ctyled.div.styles({
   bg: true,
   align: 'center',
   justify: 'center',
-  gutter: 3,
+  gutter: 1,
 }).extendSheet`
   border-top:1px solid ${({ color }) => color.contrast(0.1).bq} !important;
 `
@@ -34,6 +34,13 @@ const SceneNumber = ctyled.div.class(inline).styles({
   borderColor: c => c.contrast(-0.3),
 })
 
+const Side = ctyled.div.styles({
+  flex: 1,
+  padd: 2,
+  align: 'center',
+  gutter: 2,
+})
+
 export default function ScenesContainer() {
   const getMappedState = useCallback((state: Types.State) => {
       return {
@@ -45,38 +52,53 @@ export default function ScenesContainer() {
     dispatch = useDispatch(),
     canBack = scenes.sceneIndex > 0,
     isLast = scenes.sceneIndex === scenes.list.length - 1,
-    canForward = (isLast && selected) || scenes.sceneIndex < scenes.list.length - 1
+    currentScene = scenes.list[scenes.sceneIndex]
 
   return (
     <ScenesWrapper>
-      <Icon
-        asButton
-        style={{ opacity: canBack ? 1 : 0.1, pointerEvents: canBack ? 'all' : 'none' }}
-        styles={{ size: s => s * 2 }}
-        onClick={() => dispatch(Actions.setSceneIndex(scenes.sceneIndex - 1))}
-        name="prev"
-      />
-      <SceneNumber>{scenes.sceneIndex + 1}</SceneNumber>
-      <Icon
-        asButton
-        style={{
-          opacity: canForward ? 1 : 0.1,
-          pointerEvents: canForward ? 'all' : 'none',
-        }}
-        styles={{ size: s => s * 2 }}
-        onClick={() => {
-          if (selected && isLast)
+      <Side styles={{ justify: 'flex-end' }}>
+        <Icon
+          asButton
+          styles={{ size: s => s * 1.7 }}
+          onClick={() => {
+            dispatch(Actions.deleteScene(scenes.sceneIndex))
+          }}
+          name="remove"
+        />
+        <Icon
+          asButton
+          style={{ opacity: canBack ? 1 : 0.1, pointerEvents: canBack ? 'all' : 'none' }}
+          styles={{ size: s => s * 2 }}
+          onClick={() => {
+            dispatch(Actions.setSceneIndex(scenes.sceneIndex - 1))
             dispatch(
-              Actions.addTrackToScene({
-                fromSceneIndex: scenes.sceneIndex,
-                toSceneIndex: scenes.sceneIndex + 1,
-                trackId: selected,
-              })
+              Actions.selectTrackExclusive(scenes.list[scenes.sceneIndex - 1].trackIds[0])
             )
-          dispatch(Actions.setSceneIndex(scenes.sceneIndex + 1))
-        }}
-        name={isLast ? 'add' : 'next'}
-      />
+          }}
+          name="prev"
+        />
+      </Side>
+      <SceneNumber>{scenes.sceneIndex + 1}</SceneNumber>
+      <Side styles={{ justify: 'flex-start' }}>
+        <Icon
+          asButton
+          styles={{ size: s => s * 2 }}
+          onClick={() => {
+            const nextScene = scenes.list[scenes.sceneIndex + 1]
+            dispatch(Actions.setSceneIndex(scenes.sceneIndex + 1))
+            dispatch(Actions.selectTrackExclusive(nextScene && nextScene.trackIds[0]))
+          }}
+          name="next"
+        />
+        <Icon
+          asButton
+          styles={{ size: s => s * 1.7 }}
+          onClick={() => {
+            dispatch(Actions.createScene(scenes.sceneIndex + 1))
+          }}
+          name="add"
+        />
+      </Side>
     </ScenesWrapper>
   )
 }
