@@ -1,10 +1,10 @@
 import React, { memo, useRef, useMemo, useState, useCallback } from 'react'
 import ctyled from 'ctyled'
-import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 import { SortableElement } from 'react-sortable-hoc'
 
 import * as Types from 'render/util/types'
+import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 
 import { getBuffer } from 'render/util/buffers'
@@ -66,9 +66,10 @@ export interface TrackContainerProps {
 export interface TrackProps {
   trackId: string
   track: Types.Track
+  source: Types.Source
   visible: boolean
   noClick: boolean
-  sceneIndex: number
+  sample: number
 }
 
 export interface ViewContext {
@@ -98,7 +99,7 @@ export interface ClickEventContext {
 }
 
 const Track = memo(
-  function({ trackId, track, noClick, sceneIndex }: TrackProps) {
+  function({ trackId, track, noClick, sample, source }: TrackProps) {
     const dispatch = useDispatch()
 
     /* computed data */
@@ -145,7 +146,7 @@ const Track = memo(
       clickCtxtValues = _.values(clickCtxt)
 
     /* WAVEFORM DRAWING ON CANVAS */
-    const { canvasRef } = useWaveformCanvas(drawView, track, buffer, trackId)
+    const { canvasRef } = useWaveformCanvas(drawView, track, source, buffer, trackId, sample)
 
     /* mouse event handlers */
     const selectPlaybackHandlers = useSelectPlayback(trackId),
@@ -158,17 +159,17 @@ const Track = memo(
         e => {
           const pos = getRelativePos(e, left, top)
           resizePlaybackHandlers.mouseDown(clickCtxt, view, pos, track.playback.chunks)
-          boundHandlers.mouseDown(clickCtxt, view, pos, track.bounds)
+          boundHandlers.mouseDown(clickCtxt, view, pos, source.bounds)
           setClickX(pos.x)
           setMouseDown(true)
           setShiftKey(e.shiftKey)
         },
-        [...clickCtxtValues, ...viewValues, track.playback.chunks, track.bounds]
+        [...clickCtxtValues, ...viewValues, track.playback.chunks, source.bounds]
       ),
       handleMouseMove = useCallback(
         e => {
           const pos = getRelativePos(e, left, top)
-          boundHandlers.mouseMove(clickCtxt, view, pos, track.bounds)
+          boundHandlers.mouseMove(clickCtxt, view, pos, source.bounds)
           resizePlaybackHandlers.mouseMove(clickCtxt, pos, view, track.playback.chunks)
           setCenter(pos.x)
         },
@@ -182,7 +183,7 @@ const Track = memo(
             clickCtxt,
             pos,
             view,
-            track.bounds,
+            source.bounds,
             track.selected
           )
 
@@ -190,7 +191,7 @@ const Track = memo(
               clickCtxt,
               pos,
               view,
-              track.bounds
+              source.bounds
             ),
             didResizeBound = boundHandlers.mouseUp(clickCtxt, pos, view),
             didResizePlayback = resizePlaybackHandlers.mouseUp(clickCtxt, pos, view)
@@ -201,14 +202,14 @@ const Track = memo(
           setMouseDown(false)
           setShiftKey(false)
         },
-        [...clickCtxtValues, ...viewValues, track.bounds, track.selected]
+        [...clickCtxtValues, ...viewValues, source.bounds, track.selected]
       ),
       handleDoubleClick = useCallback(
         e => {
           const pos = getRelativePos(e, left, top)
-          selectBoundHandlers.doubleClick(clickCtxt, pos, view, track.bounds)
+          selectBoundHandlers.doubleClick(clickCtxt, pos, view, source.bounds)
         },
-        [...clickCtxtValues, ...viewValues, track.bounds]
+        [...clickCtxtValues, ...viewValues, source.bounds]
       )
 
     /* styles */
@@ -253,7 +254,9 @@ const Track = memo(
   (prevProps, nextProps) => {
     return (
       !nextProps.visible || //if not visible never update
-      (prevProps.track === nextProps.track && prevProps.trackId === nextProps.trackId)
+      (prevProps.track === nextProps.track &&
+        prevProps.trackId === nextProps.trackId &&
+        prevProps.sample === nextProps.sample)
     )
   }
 )
@@ -261,14 +264,9 @@ const Track = memo(
 const OFFSCREEN_THRESH = 250
 
 export default function TrackContainer(props: TrackContainerProps) {
-  const getMappedState = useCallback(
-      (state: Types.State) => ({
-        track: state.tracks[props.trackId],
-        sceneIndex: state.scenes.sceneIndex,
-      }),
-      [props.trackId]
-    ),
-    { track, sceneIndex } = useMappedState(getMappedState),
+  const track = useSelector(state => state.scenes.tracks[props.trackId]),
+    source = useSelector(state => state.sources[props.trackId]),
+    sample = useSelector(state => state.timing.tracks[props.trackId]),
     dispatch = useDispatch(),
     wrapperRef = useRef(null),
     [vstart, vend] = props.vBounds,
@@ -297,8 +295,9 @@ export default function TrackContainer(props: TrackContainerProps) {
             noClick={isSelecting}
             visible={visible}
             trackId={props.trackId}
-            sceneIndex={sceneIndex}
             track={track}
+            source={source}
+            sample={sample}
           />
         </>
       )}

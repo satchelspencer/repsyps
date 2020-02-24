@@ -1,9 +1,9 @@
 import React from 'react'
-import { useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 import { keyframes } from 'react-emotion'
 
+import { useDispatch } from 'render/redux/react'
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 import uid from 'render/util/uid'

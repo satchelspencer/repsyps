@@ -13,34 +13,37 @@ export const updateTime = createAction<{
 
 export const addTrack = createAction<{
   trackId: string
-  trackSources: Types.TrackSources
-  name: string
-  bounds?: Types.Bounds
-  sceneIndex: number
+  trackSourcesParams: Types.TrackSourcesParams
 }>('ADD_TRACK')
 
 export const rmTrack = createAction<string>('REMOVE_TRACK')
 
-export const setTrackSource = createAction<{
+export const setTrackSourceParams = createAction<{
   trackId: string
-  sourceId: string
-  trackSource: Partial<Types.TrackSource>
+  trackSourceId: string
+  trackSourceParams: Partial<Types.TrackSourceParams>
 }>('SET_TRACK_SOURCE')
 
-export const setSource = createAction<{
-  sourceId: string
-  source: Partial<Types.Source>
-}>('SET_SOURCE')
+export const createSource = createAction<{
+  sourceId: string,
+  source: Types.Source
+}>('CREATE_SOURCE')
+
+export const createTrackSource = createAction<{
+  sourceId: string,
+  trackSourceId: string,
+  trackSource: Types.TrackSource
+}>('CREATE_TRACKSOURCE')
 
 export const setTrackPlayback = createAction<{
   trackId: string
   playback: Partial<Types.TrackPlayback>
 }>('SET_TRACK_PLAYBACK')
 
-export const setTrackBounds = createAction<{
-  trackId: string
+export const setSourceBounds = createAction<{
+  sourceId: string
   bounds: number[]
-}>('SET_TRACK_BOUNDS')
+}>('SET_SOURCE_BOUNDS')
 
 export const copyTrackBounds = createAction<{
   src: string
@@ -48,6 +51,10 @@ export const copyTrackBounds = createAction<{
 }>('COPY_TRACK_BOUNDS')
 
 export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAYBACK')
+
+export const updatePlaybackTime = createAction<number>('UPDATE_PLAYBACK_TIME')
+
+export const resetPlaybackTime = createAction<{}>('RESET_PLAYBACK_TIME')
 
 export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
 

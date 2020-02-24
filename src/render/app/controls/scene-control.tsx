@@ -1,14 +1,12 @@
-import React, { useCallback } from 'react'
-import { useMappedState, useDispatch } from 'redux-react-hook'
+import React from 'react'
 import * as _ from 'lodash'
 import ctyled, { inline } from 'ctyled'
 
-import * as Types from 'render/util/types'
+import { useDispatch, useSelector } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 
 import Icon from 'render/components/icon'
-import Button from 'render/components/button'
 
 const ScenesWrapper = ctyled.div.styles({
   height: 3,
@@ -42,17 +40,11 @@ const Side = ctyled.div.styles({
 })
 
 export default function ScenesContainer() {
-  const getMappedState = useCallback((state: Types.State) => {
-      return {
-        scenes: state.scenes,
-        selected: Object.keys(state.tracks).filter(tid => state.tracks[tid].selected)[0],
-      }
-    }, []),
-    { scenes, selected } = useMappedState(getMappedState),
+  const sceneIndex = useSelector(state => state.scenes.sceneIndex),
+    nextScene = useSelector(Selectors.getNextScene),
+    prevScene = useSelector(Selectors.getPrevScene),
     dispatch = useDispatch(),
-    canBack = scenes.sceneIndex > 0,
-    isLast = scenes.sceneIndex === scenes.list.length - 1,
-    currentScene = scenes.list[scenes.sceneIndex]
+    canBack = sceneIndex > 0
 
   return (
     <ScenesWrapper>
@@ -61,7 +53,7 @@ export default function ScenesContainer() {
           asButton
           styles={{ size: s => s * 1.7 }}
           onClick={() => {
-            dispatch(Actions.deleteScene(scenes.sceneIndex))
+            dispatch(Actions.deleteScene(sceneIndex))
           }}
           name="remove"
         />
@@ -70,22 +62,19 @@ export default function ScenesContainer() {
           style={{ opacity: canBack ? 1 : 0.1, pointerEvents: canBack ? 'all' : 'none' }}
           styles={{ size: s => s * 2 }}
           onClick={() => {
-            dispatch(Actions.setSceneIndex(scenes.sceneIndex - 1))
-            dispatch(
-              Actions.selectTrackExclusive(scenes.list[scenes.sceneIndex - 1].trackIds[0])
-            )
+            dispatch(Actions.setSceneIndex(sceneIndex - 1))
+            dispatch(Actions.selectTrackExclusive(prevScene.trackIds[0]))
           }}
           name="prev"
         />
       </Side>
-      <SceneNumber>{scenes.sceneIndex + 1}</SceneNumber>
+      <SceneNumber>{sceneIndex + 1}</SceneNumber>
       <Side styles={{ justify: 'flex-start' }}>
         <Icon
           asButton
           styles={{ size: s => s * 2 }}
           onClick={() => {
-            const nextScene = scenes.list[scenes.sceneIndex + 1]
-            dispatch(Actions.setSceneIndex(scenes.sceneIndex + 1))
+            dispatch(Actions.setSceneIndex(sceneIndex + 1))
             dispatch(Actions.selectTrackExclusive(nextScene && nextScene.trackIds[0]))
           }}
           name="next"
@@ -94,7 +83,7 @@ export default function ScenesContainer() {
           asButton
           styles={{ size: s => s * 1.7 }}
           onClick={() => {
-            dispatch(Actions.createScene(scenes.sceneIndex + 1))
+            dispatch(Actions.createScene(sceneIndex + 1))
           }}
           name="add"
         />

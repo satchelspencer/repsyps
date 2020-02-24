@@ -32,22 +32,22 @@ export default function syncAudio(store: Store<Types.State>) {
     }
 
     trackIds.forEach(trackId => {
-      const track = currentState.tracks[trackId],
+      const track = currentState.scenes.tracks[trackId],
         trackIsNew = !lastState || !lastTrackIds.includes(trackId),
-        lastTrack = lastState && (lastState.tracks[trackId] as Types.Track),
+        lastTrack = lastState && (lastState.scenes.tracks[trackId] as Types.Track),
         trackPlaybackHasChanged =
           trackIsNew ||
           !isEqual(lastTrack.playback, track.playback) ||
           lastTrack.nextPlayback !== track.nextPlayback
 
-      _.keys(track.playback.sources).forEach(sourceId => {
-        const sourceIsNew = trackIsNew || !lastTrack.playback.sources[sourceId]
+      _.keys(track.playback.trackSourcesParams).forEach(sourceId => {
+        const sourceIsNew = trackIsNew || !lastTrack.playback.trackSourcesParams[sourceId]
         if (sourceIsNew) audio.addSource(sourceId, getBuffer(sourceId))
       })
 
       if (!trackIsNew)
-        _.keys(lastTrack.playback.sources).forEach(sourceId => {
-          if (!track.playback.sources[sourceId]) audio.removeSource(sourceId)
+        _.keys(lastTrack.playback.trackSourcesParams).forEach(sourceId => {
+          if (!track.playback.trackSourcesParams[sourceId]) audio.removeSource(sourceId)
         })
 
       if (trackPlaybackHasChanged) {
@@ -63,7 +63,7 @@ export default function syncAudio(store: Store<Types.State>) {
       lastTrackIds.forEach(trackId => {
         if (!trackIds.includes(trackId)) {
           audio.removeMixTrack(trackId)
-          _.keys(lastState.tracks[trackId].playback.sources).forEach(sourceId =>
+          _.keys(lastState.scenes.tracks[trackId].playback.trackSourcesParams).forEach(sourceId =>
             audio.removeSource(sourceId)
           )
         }
@@ -78,7 +78,6 @@ export default function syncAudio(store: Store<Types.State>) {
     let start = new Date().getTime()
     if (lastState && lastState.playback.playing) {
       const currentTiming = audio.getTiming()
-      //console.log('a', audio.getDebug())
       /* override last state so this change won't be sent back to where it came from */
       lastState = reducer(
         lastState,

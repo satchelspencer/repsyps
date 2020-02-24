@@ -1,12 +1,27 @@
 import _ from 'lodash'
+import { createSelector } from 'reselect'
 
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
-import isEqual from 'render/util/is-equal'
 
-export function getCurrentScene(state: Types.State): Types.Scene {
-  return state.scenes.list[state.scenes.sceneIndex]
-}
+export const getSelectedTrackId = (state: Types.State) =>
+  Object.keys(state.scenes.tracks).filter(tid => state.scenes.tracks[tid].selected)[0]
+
+export const getSelectedTrack = createSelector(
+  [getSelectedTrackId, state => state.scenes.tracks],
+  (trackId, tracks) => {
+    return tracks[trackId]
+  }
+)
+
+export const getCurrentScene = (state: Types.State) =>
+  state.scenes.list[state.scenes.sceneIndex]
+
+export const getPrevScene = (state: Types.State) =>
+  state.scenes.list[state.scenes.sceneIndex - 1]
+
+export const getNextScene = (state: Types.State) =>
+  state.scenes.list[state.scenes.sceneIndex + 1]
 
 export function getActiveTrackIds(state: Types.State): string[] {
   const currentScene = state.scenes.list[state.scenes.sceneIndex],
@@ -14,17 +29,6 @@ export function getActiveTrackIds(state: Types.State): string[] {
     lastOfPrev = prevScene && _.last(prevScene.trackIds)
 
   return lastOfPrev ? [lastOfPrev, ...currentScene.trackIds] : currentScene.trackIds
-}
-
-export function getLastOfPrevControlIds(state: Types.State): string[] {
-  const prevScene = state.scenes.list[state.scenes.sceneIndex - 1],
-    lastOfPrev = prevScene && _.last(prevScene.trackIds)
-  return lastOfPrev
-    ? Object.keys(prevScene.controls).filter(controlId => {
-        const control = prevScene.controls[controlId]
-        return 'trackId' in control && control.trackId === lastOfPrev
-      })
-    : []
 }
 
 export function getLastOfPrevControls(
@@ -59,27 +63,69 @@ export function getControls(scenes: Types.Scenes): Types.Controls {
   return getControlsAtIndex(scenes, scenes.sceneIndex)
 }
 
-/* find an existing control that matches the would-be partial control */
-export function getMatchingControlId(
-  state: Types.State,
-  partialControl: Partial<Types.Control>
-) {
-  return _.findKey(getControls(state.scenes), control =>
-    _.every(_.keys(partialControl), prop => control[prop] === partialControl[prop])
+export const getSeparatedCurrentControls = createSelector(
+  [(state: Types.State) => state.scenes],
+  scenes => {
+    //getControlsAtIndex(scenes, scenes.sceneIndex)
+    const sceneIndex = scenes.sceneIndex,
+      currentScene = scenes.list[sceneIndex]
+    return {
+      currentControls: currentScene.controls,
+      lastControls: getLastOfPrevControls(scenes, sceneIndex),
+    }
+  }
+) //could be more optimized to depend more specifically on current and prev scene
+
+export const getCurrentControls = createSelector([getSeparatedCurrentControls], sep => ({
+  ...sep.lastControls,
+  ...sep.currentControls,
+}))
+
+export const makeGetMatchingControl = () =>
+  createSelector(
+    [getCurrentControls, (_, partialControl: Partial<Types.Control>) => partialControl],
+    (controls, partialControl) => {
+      const controlId = _.findKey(controls, control =>
+        _.every(_.keys(partialControl), prop => control[prop] === partialControl[prop])
+      )
+      return {
+        controlId,
+        control: controls[controlId],
+      }
+    }
   )
-}
 
 export function getValueControlValue(state: Types.State, control: Types.ValueControl) {
   let value = null
-  if ('sourceId' in control) {
-    const track = state.tracks[control.trackId]
-    value = track.playback.sources[control.sourceId][control.prop]
+  if ('trackSourceId' in control) {
+    const track = state.scenes.tracks[control.trackId]
+    value = track.playback.trackSourcesParams[control.trackSourceId][control.prop]
   } else if ('global' in control) {
     value = state.playback[control.prop]
   }
   value = mappings[control.prop].toStandard(value)
   return value
 }
+
+/* TOFIX */
+export const getCurrentValueControlsValues = createSelector(
+  [getCurrentControls, state => state.scenes.tracks, state => state.playback],
+  (controls, tracks, playback) => {
+    return _.mapValues(controls, control => {
+      if ('prop' in control) {
+        let value = null
+        if ('trackId' in control && 'trackSourceId' in control) {
+          const track = tracks[control.trackId]
+          value = track.playback.trackSourcesParams[control.trackSourceId][control.prop]
+        } else if ('global' in control) {
+          value = playback[control.prop]
+        }
+        value = mappings[control.prop].toStandard(value)
+        return value
+      } else return 0
+    })
+  }
+)
 
 export function getControlByPosition(
   controls: Types.Controls,
@@ -101,10 +147,7 @@ export function getBindingByPosition(
   )
 }
 
-export function getOpenContolPos(
-  controls: Types.Controls,
-  type: Types.BindingType
-): Types.ControlPosition {
+function getOpenPosition(controls: Types.Controls, type: Types.BindingType) {
   const usedXes: { [x: number]: boolean } = {},
     controlValues = _.values(controls),
     maxX = controlValues.length
@@ -128,21 +171,30 @@ export function getOpenPositionAtIndex(
   scenes: Types.Scenes,
   type: Types.BindingType,
   sceneIndex: number
-){
+) {
   const controls = getControlsAtIndex(scenes, sceneIndex)
-  return getOpenContolPos(controls, type)
+  return getOpenPosition(controls, type)
 }
 
-export function getOpenPosition(
-  scenes: Types.Scenes,
-  type: Types.BindingType
-): Types.ControlPosition {
-  const controls = getControls(scenes)
-  return getOpenContolPos(controls, type)
-}
+export const makeGetOpenPosition = () =>
+  createSelector(
+    [getCurrentControls, (_, type: Types.BindingType) => type],
+    (controls, type) => getOpenPosition(controls, type)
+  )
+
+export const makeGetTrackIsSolo = () =>
+  createSelector(
+    [(state: Types.State) => state.scenes.tracks, (_, trackId: string) => trackId],
+    (tracks, trackId) => {
+      return _.every(tracks, (track, thisTrackId) => {
+        if (trackId === thisTrackId) return !track.playback.muted
+        else return track.playback.muted
+      })
+    }
+  )
 
 export function getTrackIsSolo(state: Types.State, trackId: string) {
-  return _.every(state.tracks, (track, thisTrackId) => {
+  return _.every(state.scenes.tracks, (track, thisTrackId) => {
     if (trackId === thisTrackId) return !track.playback.muted
     else return track.playback.muted
   })

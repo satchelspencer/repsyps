@@ -15,7 +15,7 @@
   "build": {
     "appId": "repsyps",
     "asar": false,
-    "files": [
+    "files": [ 
       "!src/*",
       "!docs/*",
       "build/*/*",
@@ -30,7 +30,8 @@
     "title": "repsyps",
     "whiteListedModules": [
       "ctyled",
-      "redux-react-hook"
+      "redux",
+      "react-redux"
     ],
     "renderer": {
       "sourceDirectory": "src/render",
@@ -43,6 +44,7 @@
   "dependencies": {
     "@google-cloud/speech": "^3.2.2",
     "@types/lodash": "^4.14.137",
+    "@types/react-redux": "^7.1.7",
     "@types/svgo": "^1.2.0",
     "array-move": "^2.2.1",
     "bindings": "^1.5.0",
@@ -58,12 +60,14 @@
     "node-gyp": "^6.1.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
+    "react-redux": "^7.2.0",
     "react-sortable-hoc": "^1.11.0",
     "react-svg-loader": "^3.0.3",
     "redux": "^4.0.5",
     "redux-devtools-extension": "^2.13.8",
-    "redux-react-hook": "^4.0.1",
+    "reselect": "^4.0.0",
     "resize-observer-polyfill": "^1.5.1",
+    "rxjs": "^6.5.4",
     "socket.io": "^2.2.0",
     "source-map-support": "^0.5.12",
     "svgo": "^1.2.2"

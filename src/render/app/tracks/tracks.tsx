@@ -1,13 +1,11 @@
 import React, { useCallback, useRef, useMemo, useState, useEffect, memo } from 'react'
-import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 import ctyled, { active } from 'ctyled'
 import { SortableContainer, SortableElement } from 'react-sortable-hoc'
 import arrayMove from 'array-move'
 
-import * as Types from 'render/util/types'
+import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
-import * as Selectors from 'render/redux/selectors'
 
 import Track from './track'
 
@@ -54,13 +52,8 @@ function getSceneIndex(items: any[], sceneCount: number, itemIndex: number): num
 }
 
 function Tracks() {
-  const getMappedState = useCallback((state: Types.State) => {
-      return {
-        scenes: state.scenes,
-        trackIds: Selectors.getCurrentScene(state).trackIds,
-      }
-    }, []),
-    { trackIds, scenes } = useMappedState(getMappedState),
+  const list = useSelector(state => state.scenes.list),
+    currentSceneIndex = useSelector(state => state.scenes.sceneIndex),
     dispatch = useDispatch(),
     wrapperRef = useRef(null),
     [vBounds, setVBounds] = useState<number[]>([0, 0]),
@@ -71,18 +64,16 @@ function Tracks() {
       setVBounds([vstart, vend])
     }, []),
     handleScroll = useMemo(() => _.throttle(updateVisible, 100, { leading: false }), [
-      trackIds,
+      list,
     ]),
     handleSelectScene = useCallback(
       sceneIndex => {
         dispatch(Actions.setSceneIndex(sceneIndex))
         dispatch(
-          Actions.selectTrackExclusive(
-            scenes.list[sceneIndex] && scenes.list[sceneIndex].trackIds[0]
-          )
+          Actions.selectTrackExclusive(list[sceneIndex] && list[sceneIndex].trackIds[0])
         )
       },
-      [scenes]
+      [list]
     )
 
   useEffect(() => updateVisible(), [wrapperRef.current])
@@ -92,7 +83,7 @@ function Tracks() {
     return () => window.removeEventListener('resize', updateVisible)
   }, [])
 
-  const listItems: (number | string)[] = scenes.list
+  const listItems: (number | string)[] = list
     .reduce((memo, scene, sceneIndex) => {
       return [...memo, sceneIndex, ...scene.trackIds]
     }, [])
@@ -107,8 +98,8 @@ function Tracks() {
       onSortEnd={({ oldIndex, newIndex }) => {
         const newItems = arrayMove(listItems, oldIndex, newIndex),
           item = newItems[newIndex],
-          oldSceneIndex = getSceneIndex(listItems, scenes.list.length, oldIndex),
-          newSceneIndex = getSceneIndex(newItems, scenes.list.length, newIndex)
+          oldSceneIndex = getSceneIndex(listItems, list.length, oldIndex),
+          newSceneIndex = getSceneIndex(newItems, list.length, newIndex)
 
         dispatch(
           Actions.addTrackToScene({
@@ -128,7 +119,7 @@ function Tracks() {
     >
       <SceneDivider
         onClick={() => handleSelectScene(0)}
-        selected={scenes.sceneIndex === 0}
+        selected={currentSceneIndex === 0}
       >
         1
       </SceneDivider>
@@ -138,7 +129,7 @@ function Tracks() {
         else
           return (
             <SortableSceneDivider
-              selected={scenes.sceneIndex === item}
+              selected={currentSceneIndex === item}
               index={index}
               onClick={() => handleSelectScene(item)}
               key={item}

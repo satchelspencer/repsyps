@@ -1,10 +1,10 @@
-import React, { useCallback, memo } from 'react'
-import { useMappedState, useDispatch } from 'redux-react-hook'
+import React, {  memo } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import * as Types from 'render/util/types'
+import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+
 import Icon from 'render/components/icon'
 import { Value } from 'render/components/misc'
 import { isMac } from 'render/util/env'
@@ -19,10 +19,8 @@ const ControlsWrapper = ctyled.div.styles({
 `
 
 const Playback = memo(() => {
-  const getMappedState = useCallback((state: Types.State) => {
-      return { playing: state.playback.playing, time: state.playback.time }
-    }, []),
-    { playing, time } = useMappedState(getMappedState),
+  const playing = useSelector(state => state.playback.playing),
+    time = useSelector(state => Math.floor(state.timing.time)),
     dispatch = useDispatch()
 
   return (
@@ -31,7 +29,7 @@ const Playback = memo(() => {
         styles={{ size: s => s * 2 }}
         asButton
         name="prev"
-        onClick={() => dispatch(Actions.updatePlayback({ time: time - 1 }))}
+        onClick={() => dispatch(Actions.updatePlaybackTime(-1))}
       />
       <Icon
         styles={{ size: s => s * 2 }}
@@ -43,15 +41,15 @@ const Playback = memo(() => {
         styles={{ size: s => s * 2 }}
         asButton
         name="next"
-        onClick={() => dispatch(Actions.updatePlayback({ time: time + 1 }))}
+        onClick={() => dispatch(Actions.updatePlaybackTime(+11))}
       />
       <Icon
         styles={{ size: s => s * 2 }}
         asButton
         name="replay"
-        onClick={() => dispatch(Actions.updatePlayback({ time: 0 }))}
+        onClick={() => dispatch(Actions.resetPlaybackTime({}))}
       />
-      <Value>{Math.floor(time)}</Value>
+      <Value>{time}</Value>
     </ControlsWrapper>
   )
 })

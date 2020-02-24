@@ -1,8 +1,7 @@
-import React, { memo, useCallback } from 'react'
-import { useMappedState, useDispatch } from 'redux-react-hook'
+import React, { memo } from 'react'
 import * as _ from 'lodash'
 
-import * as Types from 'render/util/types'
+import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 
 import ControlAdder from 'render/components/control-adder'
@@ -14,58 +13,49 @@ export interface TrackVolumeProps {
 }
 
 const TrackVolume = (props: TrackVolumeProps) => {
-  const getMappedState = useCallback(
-      (state: Types.State) => {
-        const track = state.tracks[props.trackId]
-        return {
-          trackSources: track && track.playback.sources,
-          sources: state.sources,
-          name: track && track.name,
-        }
-      },
-      [props.trackId]
+  const trackSourcesParams = useSelector(
+      state => state.scenes.tracks[props.trackId].playback.trackSourcesParams
     ),
-    { trackSources, sources, name } = useMappedState(getMappedState),
+    source = useSelector(state => state.sources[props.trackId]),
     dispatch = useDispatch()
 
   return (
     <>
-      {!!trackSources &&
-        _.keys(trackSources).map(sourceId => {
-          const trackSource = trackSources[sourceId],
-            source = sources[sourceId]
-          return (
-            <SidebarItem
-              key={sourceId}
-              title={
-                <>
-                  <span>{source.name}</span>
-                  <Volume
-                    volume={trackSource.volume}
-                    onChange={v =>
-                      dispatch(
-                        Actions.setTrackSource({
-                          trackId: props.trackId,
-                          sourceId,
-                          trackSource: { volume: v },
-                        })
-                      )
-                    }
-                  />
-                  <ControlAdder
-                    name={source.name + ' - ' + name}
-                    params={{
-                      trackId: props.trackId,
-                      sourceId,
-                      prop: 'volume',
-                    }}
-                    type="value"
-                  />
-                </>
-              }
-            />
-          )
-        })}
+      {_.keys(source.trackSources).map(trackSourceId => {
+        const trackSourceParams = trackSourcesParams[trackSourceId],
+          { name } = source.trackSources[trackSourceId]
+        return (
+          <SidebarItem
+            key={trackSourceId}
+            title={
+              <>
+                <span>{name}</span>
+                <Volume
+                  volume={trackSourceParams.volume}
+                  onChange={v =>
+                    dispatch(
+                      Actions.setTrackSourceParams({
+                        trackId: props.trackId,
+                        trackSourceId,
+                        trackSourceParams: { volume: v },
+                      })
+                    )
+                  }
+                />
+                <ControlAdder
+                  name={name + ' - ' + source.name}
+                  params={{
+                    trackId: props.trackId,
+                    trackSourceId,
+                    prop: 'volume',
+                  }}
+                  type="value"
+                />
+              </>
+            }
+          />
+        )
+      })}
     </>
   )
 }

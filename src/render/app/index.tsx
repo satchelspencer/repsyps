@@ -1,11 +1,11 @@
-import React, { useCallback, useRef, useEffect } from 'react'
-import { useMappedState, useDispatch } from 'redux-react-hook'
+import React, { memo, useCallback, useRef, useEffect, useMemo } from 'react'
 import { palette } from 'render/components/theme'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import * as Types from 'render/util/types'
+import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import * as Selectors from 'render/redux/selectors'
 import addTrack from 'render/util/add-track'
 
 import Tracks from './tracks/tracks'
@@ -46,36 +46,28 @@ const BodyInner = ctyled.div.styles({
   height: '100%',
 })
 
-export default function App() {
-  const getMappedState = useCallback((state: Types.State) => {
-      return {
-        selected: Object.keys(state.tracks).filter(tid => state.tracks[tid].selected)[0],
-        tracks: state.tracks,
-        playing: state.playback.playing,
-        sceneIndex: state.scenes.sceneIndex,
-        trackIds: _.flatMap(state.scenes.list, scene => scene.trackIds)
-      }
-    }, []),
-    { selected, playing, tracks, sceneIndex, trackIds } = useMappedState(getMappedState),
+function App() {
+  const selectedTrackId = useSelector(Selectors.getSelectedTrackId),
+    selectedTrack = useSelector(Selectors.getSelectedTrack),
+    playing = useSelector(state => state.playback.playing),
+    list = useSelector(state => state.scenes.list),
+    trackIds = useMemo(() => _.flatMap(list, scene => scene.trackIds), [list]),
     dispatch = useDispatch(),
     tracklen = trackIds.length,
     input = useRef(null),
     handleDragover = useCallback(e => e.preventDefault(), []),
-    handleDrop = useCallback(
-      e => {
-        e.preventDefault()
-        const file = e.dataTransfer.files[0]
-        addTrack(file, dispatch, sceneIndex)
-      },
-      [sceneIndex]
-    )
+    handleDrop = useCallback(e => {
+      e.preventDefault()
+      const file = e.dataTransfer.files[0]
+      addTrack(file, dispatch)
+    }, [])
 
   useEffect(() => {
     input.current = document.createElement('input')
     input.current.type = 'file'
     input.current.onchange = e => {
       const { files } = input.current
-      addTrack(files[0], dispatch, sceneIndex)
+      addTrack(files[0], dispatch)
       input.current.value = ''
     }
     window.addEventListener('dragover', handleDragover)
@@ -85,7 +77,7 @@ export default function App() {
       window.removeEventListener('dragover', handleDragover)
       window.removeEventListener('drop', handleDrop)
     }
-  }, [sceneIndex])
+  }, [])
 
   return (
     <Wrapper
@@ -94,12 +86,12 @@ export default function App() {
         if (e.key === 'o' && e.metaKey) input.current.click()
         if (e.key === ' ') e.preventDefault()
         if (e.key === ' ' && !e.shiftKey)
-          selected &&
+          selectedTrackId &&
             dispatch(
               Actions.setTrackPlayback({
-                trackId: selected,
+                trackId: selectedTrackId,
                 playback: {
-                  playing: !tracks[selected].playback.playing,
+                  playing: !selectedTrack.playback.playing,
                   chunkIndex: -1,
                 },
               })
@@ -113,13 +105,13 @@ export default function App() {
         if (e.key === 'ArrowUp')
           dispatch(
             Actions.selectTrackExclusive(
-              trackIds[(trackIds.indexOf(selected) + tracklen - 1) % tracklen]
+              trackIds[(trackIds.indexOf(selectedTrackId) + tracklen - 1) % tracklen]
             )
           )
         if (e.key === 'ArrowDown')
           dispatch(
             Actions.selectTrackExclusive(
-              trackIds[(trackIds.indexOf(selected) + tracklen + 1) % tracklen]
+              trackIds[(trackIds.indexOf(selectedTrackId) + tracklen + 1) % tracklen]
             )
           )
       }}
@@ -135,3 +127,5 @@ export default function App() {
     </Wrapper>
   )
 }
+
+export default memo(App)

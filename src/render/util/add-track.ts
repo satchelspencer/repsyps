@@ -11,23 +11,25 @@ export async function addBufferFromAudio(id: string, rawData: ArrayBuffer) {
   createBuffer(id, [audioBuff.getChannelData(0), audioBuff.getChannelData(1)])
 }
 
-export default function(file: any, dispatch: Dispatch<any>, sceneIndex: number) {
+export default function(file: any, dispatch: Dispatch<any>) {
   const reader = new FileReader()
   reader.onload = async (e: any) => {
     const id = _.snakeCase(file.name.substr(0, 15)) + new Date().getTime()
     await addBufferFromAudio(id, e.target.result)
     dispatch(
-      Actions.setSource({
+      Actions.createSource({
         sourceId: id,
-        source: { name: 'Main', source: file.path },
+        source: {
+          name: file.name,
+          bounds: [],
+          trackSources: { [id]: { name: 'Main', source: file.path } },
+        },
       })
     )
     dispatch(
       Actions.addTrack({
         trackId: id,
-        name: file.name,
-        trackSources: { [id]: { volume: 1 } },
-        sceneIndex,
+        trackSourcesParams: { [id]: { volume: 1 } },
       })
     )
     dispatch(Actions.selectTrackExclusive(id))

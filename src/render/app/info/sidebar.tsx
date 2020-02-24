@@ -1,9 +1,9 @@
-import React, { useCallback, useMemo } from 'react'
-import { useMappedState } from 'redux-react-hook'
+import React, { useMemo } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import * as Types from 'render/util/types'
+import { useSelector } from 'render/redux/react'
+import * as Selectors from 'render/redux/selectors'
 
 import Title from './title'
 import BoundsControl from './bounds'
@@ -27,25 +27,16 @@ const TrackDetailsWrapper = ctyled.div.styles({
 })
 
 const Sidebar = () => {
-  const getMappedState = useCallback((state: Types.State) => {
-      const selectedId = Object.keys(state.tracks).filter(
-          tid => state.tracks[tid].selected
-        )[0],
-        track = selectedId && state.tracks[selectedId]
-      return {
-        trackId: selectedId,
-        trackExists: !!track,
-        name: track && track.name,
-      }
-    }, []),
-    { trackId, trackExists, name } = useMappedState(getMappedState)
+  const trackId = useSelector(Selectors.getSelectedTrackId),
+    track = useSelector(Selectors.getSelectedTrack),
+    source = useSelector(state => state.sources[trackId])
 
   return useMemo(
     () => (
       <SidebarWrapper>
-        {trackExists && (
+        {!!track && (
           <TrackDetailsWrapper>
-            <Title name={name} icon="wave" />
+            <Title name={source.name} icon="wave" />
             <TrackVolume trackId={trackId} />
             <BoundsControl trackId={trackId} />
             <Separate trackId={trackId} />
@@ -54,7 +45,7 @@ const Sidebar = () => {
         )}
       </SidebarWrapper>
     ),
-    [trackId, trackExists, name]
+    [trackId, source && source.name]
   )
 }
 

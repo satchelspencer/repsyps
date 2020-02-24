@@ -1,10 +1,10 @@
 import React, { memo, useCallback } from 'react'
-import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 import ctyled, { inline } from 'ctyled'
 import { SortableContainer, SortableElement } from 'react-sortable-hoc'
 
 import * as Types from 'render/util/types'
+import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import { RATE } from 'render/util/audio'
 
@@ -183,24 +183,10 @@ const Cue = SortableElement((xprops: any) => {
 })
 
 const Cues = memo((props: CuesProps) => {
-  const getMappedState = useCallback(
-      (state: Types.State) => {
-        const track = state.tracks[props.trackId]
-        return {
-          name: track && track.name,
-          chunks: track && track.playback.chunks,
-          playing: track && track.playback.playing,
-          playback: track && track.playback,
-          cues: (track && track.cues) || [],
-          activeCueIndex: track ? track.cueIndex : -1,
-          nextCueIndex: track ? track.nextCueIndex : -1,
-        }
-      },
-      [props.trackId]
+  const { playback, cues, cueIndex, nextCueIndex } = useSelector(
+      state => state.scenes.tracks[props.trackId]
     ),
-    { name, playback, cues, activeCueIndex, nextCueIndex } = useMappedState(
-      getMappedState
-    ),
+    { name } = useSelector(state => state.sources[props.trackId]),
     dispatch = useDispatch(),
     handleAddCue = useCallback(() => {
       dispatch(
@@ -220,10 +206,10 @@ const Cues = memo((props: CuesProps) => {
     }, [props.trackId, playback, name]),
     canAdd = playback.chunks[1],
     hasCues = !!cues.length,
-    atStart = playback.playing && activeCueIndex === 0,
-    atEnd = playback.playing && activeCueIndex === cues.length - 1,
-    canPrev = atStart || activeCueIndex > 0,
-    canNext = atEnd || (activeCueIndex !== -1 && activeCueIndex < cues.length - 1)
+    atStart = playback.playing && cueIndex === 0,
+    atEnd = playback.playing && cueIndex === cues.length - 1,
+    canPrev = atStart || cueIndex > 0,
+    canNext = atEnd || (cueIndex !== -1 && cueIndex < cues.length - 1)
 
   return (
     <>
@@ -326,16 +312,16 @@ const Cues = memo((props: CuesProps) => {
           distance={5}
           transitionDuration={0}
         >
-          {cues.map((cue, cueIndex) => (
+          {cues.map((cue, thisCueIndex) => (
             <Cue
-              index={cueIndex}
-              key={cueIndex}
+              index={thisCueIndex}
+              key={thisCueIndex}
               trackId={props.trackId}
               trackName={name}
               cue={cue}
-              cueIndex={cueIndex}
-              active={activeCueIndex === cueIndex}
-              next={nextCueIndex === cueIndex}
+              cueIndex={thisCueIndex}
+              active={thisCueIndex === cueIndex}
+              next={nextCueIndex === thisCueIndex}
             />
           ))}
         </CuesList>

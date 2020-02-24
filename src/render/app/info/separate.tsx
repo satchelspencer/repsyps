@@ -1,11 +1,8 @@
 import React, { memo, useCallback } from 'react'
-import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 
-import * as Types from 'render/util/types'
-import audio from 'render/util/audio'
+import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
-import { getBuffer, createBuffer } from 'render/util/buffers'
 import separate from 'render/util/separate'
 
 import Icon from 'render/components/icon'
@@ -18,16 +15,7 @@ export interface SeparateProps {
 }
 
 const Separate = memo((props: SeparateProps) => {
-  const getMappedState = useCallback(
-      (state: Types.State) => {
-        const track = state.tracks[props.trackId]
-        return {
-          name: track && track.name,
-        }
-      },
-      [props.trackId]
-    ),
-    { name } = useMappedState(getMappedState),
+  const name = useSelector(state => state.sources[props.trackId].name),
     dispatch = useDispatch(),
     handleSeparate = useCallback(() => {
       dispatch(

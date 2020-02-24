@@ -1,10 +1,9 @@
-import React, { memo, useRef, useMemo, useState, useCallback } from 'react'
+import React, { memo, useMemo } from 'react'
 import ctyled, { active } from 'ctyled'
-import { useDispatch, useMappedState } from 'redux-react-hook'
 import _ from 'lodash'
 import { SortableHandle } from 'react-sortable-hoc'
 
-import * as Types from 'render/util/types'
+import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import { RATE } from 'render/util/audio'
@@ -123,28 +122,22 @@ export interface TrackControlsProps {
   trackId: string
 }
 
-export default function TrackControls(props: TrackControlsProps) {
-  const getMappedState = useCallback(
-      (state: Types.State) => ({
-        track: state.tracks[props.trackId],
-        period: state.playback.period,
-        isSolo: Selectors.getTrackIsSolo(state, props.trackId),
-      }),
-      [props.trackId]
-    ),
-    { track, period, isSolo } = useMappedState(getMappedState),
+function TrackControls(props: TrackControlsProps) {
+  const getTrackIsSolo = useMemo(() => Selectors.makeGetTrackIsSolo(), []),
+    track = useSelector(state => state.scenes.tracks[props.trackId]),
+    period = useSelector(state => state.playback.period),
+    isSolo = useSelector(state => getTrackIsSolo(state, props.trackId)),
+    sample = useSelector(state => state.timing.tracks[props.trackId]),
+    source = useSelector(state => state.sources[props.trackId]),
     dispatch = useDispatch()
 
-  const hasBounds = track && track.bounds.length,
+  const hasBounds = track && source.bounds.length,
     barLen = useMemo(() => {
-      const currentIndex = _.findIndex(
-          track.bounds,
-          bound => bound >= track.sample
-        ),
+      const currentIndex = _.findIndex(source.bounds, bound => bound >= sample),
         index = Math.max(currentIndex, 1),
-        inBound = track.bounds[index] && track.bounds[index - 1]
-      return inBound && track.bounds[index] - track.bounds[index - 1]
-    }, [track.bounds, track.sample]),
+        inBound = source.bounds[index] && source.bounds[index - 1]
+      return inBound && source.bounds[index] - source.bounds[index - 1]
+    }, [source.bounds, sample]),
     activeCueIndex = track.cueIndex,
     playing = track.playback.playing,
     hasCues = !!track.cues.length,
@@ -159,7 +152,7 @@ export default function TrackControls(props: TrackControlsProps) {
     <TrackControlsWrapper>
       <TrackHandle selected={track.selected} />
       <TrackControlsBody>
-        <TrackTitle>{track.name}</TrackTitle>
+        <TrackTitle>{source.name}</TrackTitle>
         <TrackControlsInner>
           <InnerV>
             <SpeedWrapper>
@@ -251,3 +244,5 @@ export default function TrackControls(props: TrackControlsProps) {
     </TrackControlsWrapper>
   )
 }
+
+export default memo(TrackControls)

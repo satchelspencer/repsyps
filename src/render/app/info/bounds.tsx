@@ -1,9 +1,8 @@
 import React, { memo, useCallback, useMemo } from 'react'
-import { useMappedState, useDispatch } from 'redux-react-hook'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import * as Types from 'render/util/types'
+import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 
 import { getBuffer } from 'render/util/buffers'
@@ -30,18 +29,10 @@ export interface BoundsControlProps {
 }
 
 const BoundsControl = memo((props: BoundsControlProps) => {
-  const getMappedState = useCallback(
-      (state: Types.State) => {
-        const track = props.trackId && state.tracks[props.trackId]
-        return {
-          chunks: track && track.playback.chunks,
-          bounds: track && track.bounds,
-          editing: track && track.editing,
-        }
-      },
-      [props.trackId]
+  const { playback, editing } = useSelector(
+      state => state.scenes.tracks[props.trackId]
     ),
-    { chunks, bounds, editing } = useMappedState(getMappedState),
+    { bounds } = useSelector(state => state.sources[props.trackId]),
     channels = getBuffer(props.trackId),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection(),
@@ -50,47 +41,47 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       props.trackId,
     ]),
     hasTimeBase = !!bounds.length,
-    cstart = chunks[0],
-    clength = chunks[1],
+    cstart = playback.chunks[0],
+    clength = playback.chunks[1],
     inferLR = useCallback(() => {
       if (!clength) return
       dispatch(
-        Actions.setTrackBounds({
-          trackId: props.trackId,
-          bounds: inferTimeBase(chunks, impulses),
+        Actions.setSourceBounds({
+          sourceId: props.trackId,
+          bounds: inferTimeBase(playback.chunks, impulses),
         })
       )
-    }, [chunks, impulses]),
+    }, [playback.chunks, impulses]),
     inferLeft = useCallback(() => {
       if (!clength) return
       const endPoint = cstart + clength,
-        inferredBounds = inferTimeBase(chunks, impulses).filter(
+        inferredBounds = inferTimeBase(playback.chunks, impulses).filter(
           bound => bound <= endPoint
         ),
         existingBounds = bounds.filter(bound => bound > endPoint)
 
       dispatch(
-        Actions.setTrackBounds({
-          trackId: props.trackId,
+        Actions.setSourceBounds({
+          sourceId: props.trackId,
           bounds: _.sortBy([...inferredBounds, ...existingBounds]),
         })
       )
-    }, [chunks, bounds, impulses]),
+    }, [playback.chunks, bounds, impulses]),
     inferRight = useCallback(() => {
       if (!clength) return
       const startPoint = cstart,
-        inferredBounds = inferTimeBase(chunks, impulses).filter(
+        inferredBounds = inferTimeBase(playback.chunks, impulses).filter(
           bound => bound >= startPoint
         ),
         existingBounds = bounds.filter(bound => bound < startPoint)
 
       dispatch(
-        Actions.setTrackBounds({
-          trackId: props.trackId,
+        Actions.setSourceBounds({
+          sourceId: props.trackId,
           bounds: _.sortBy([...inferredBounds, ...existingBounds]),
         })
       )
-    }, [chunks, bounds, impulses]),
+    }, [playback.chunks, bounds, impulses]),
     avgBar = useMemo(() => {
       let sum = 0
       bounds.forEach((bound, i) => {
@@ -155,8 +146,8 @@ const BoundsControl = memo((props: BoundsControlProps) => {
           styles={{ color: c => c.as(palette.red) }}
           onClick={() =>
             dispatch(
-              Actions.setTrackBounds({
-                trackId: props.trackId,
+              Actions.setSourceBounds({
+                sourceId: props.trackId,
                 bounds: [],
               })
             )

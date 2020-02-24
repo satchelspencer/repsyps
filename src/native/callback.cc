@@ -142,7 +142,7 @@ int paCallbackMethod(
         }
 
         /* add sample to ringbuffer */ 
-        for(auto sourcePair: mixTrackPlayback->sources){
+        for(auto sourcePair: mixTrackPlayback->trackSourcesParams){
           mixTrackSourceConfig = sourcePair.second;
           mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
           mixTrackLength = mixTrackSource->length;

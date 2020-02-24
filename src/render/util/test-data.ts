@@ -5,7 +5,7 @@ import * as Actions from 'render/redux/actions'
 import { createBuffer } from 'render/util/buffers'
 
 export default function(store: Store) {
-  const addTrack = (id, sceneIndex) => {
+  const addTrack = id => {
     const f = Math.random() * 100 + 50
     const channels = _.range(2).map(() => {
       const arr = new Float32Array(44100 * 20)
@@ -18,24 +18,26 @@ export default function(store: Store) {
     createBuffer(id, channels)
 
     store.dispatch(
-      Actions.setSource({
+      Actions.createSource({
         sourceId: id,
-        source: { name: 'Main', source: 'huh' },
+        source: {
+          name: id + 'name',
+          bounds: [],
+          trackSources: { [id]: { name: 'Main', source: 'huh' } },
+        },
       })
     )
     store.dispatch(
       Actions.addTrack({
         trackId: id,
-        name: id,
-        trackSources: { [id]: { volume: 1 } },
-        sceneIndex,
+        trackSourcesParams: { [id]: { volume: 1 } },
       })
     )
   }
 
   _.times(3, sceneIndex => {
     store.dispatch(Actions.createScene(sceneIndex))
-    _.times(3, i => addTrack('s' + sceneIndex + ':' + i, sceneIndex))
+    _.times(3, i => addTrack('s' + sceneIndex + ':' + i))
   })
   store.dispatch(Actions.setSceneIndex(0))
 }

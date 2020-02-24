@@ -10,8 +10,10 @@ import { DrawViewContext } from './track'
 export default function useWaveformCanvas(
   view: DrawViewContext,
   track: Types.Track,
+  source: Types.Source,
   buffer: Float32Array,
-  trackId: string
+  trackId: string,
+  sample: number
 ) {
   const canvasRef = useRef(null),
     ctxt = useRef(null),
@@ -40,24 +42,27 @@ export default function useWaveformCanvas(
         clickX: clickX * 2,
         center: center * 2,
         mouseDown,
-        sample: track.sample,
+        sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
       }
 
     ctx.clearRect(0, 0, pwidth, pheight)
 
+    
     drawWaveform(drawContext, minMaxes)
     drawImpulses(drawContext, impulses)
     drawPlayback(drawContext, track)
-    drawBounds(drawContext, track.bounds, track.editing)
+    drawBounds(drawContext, source.bounds, track.editing)
     drawDrag(drawContext)
   }, [
     buffer,
     track.playback,
     effectivePos,
-    track.bounds,
+    source.bounds,
     track.editing,
     track.selected,
+    sample,
+    source.bounds,
     ..._.values(view),
   ])
 

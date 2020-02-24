@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
-import { useDispatch } from 'redux-react-hook'
 import _ from 'lodash'
 
+import { useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import { getTimeFromPosition, getBoundIndex, getNextBoundIndex } from './utils'
 import * as Types from 'render/util/types'
@@ -41,7 +41,7 @@ export function useResizeBounds(trackId: string) {
           const sample = getTimeFromPosition(pos.x, true, view),
             newBounds = [...bounds]
           newBounds[boundIndex] = sample
-          dispatch(Actions.setTrackBounds({ trackId, bounds: newBounds }))
+          dispatch(Actions.setSourceBounds({ sourceId: trackId, bounds: newBounds }))
         }
         return boundIndex !== -1
       },

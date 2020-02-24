@@ -1,8 +1,8 @@
-import React, { useCallback } from 'react'
-import { useMappedState } from 'redux-react-hook'
+import React from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
+import { useSelector } from 'render/redux/react'
 import * as Types from 'render/util/types'
 import * as Selectors from 'render/redux/selectors'
 
@@ -40,20 +40,20 @@ export interface ControlsProps {
 }
 
 export default function ControlsContainer() {
-  const getMappedState = useCallback((state: Types.State) => {
-      const controls = Selectors.getControls(state.scenes)
-      return {
-        controls,
-        lastOfPrevIds: Selectors.getLastOfPrevControlIds(state),
-        bindings: state.bindings,
-        values: _.mapValues(controls, control => {
-          if (control.type === 'value')
-            return Selectors.getValueControlValue(state, control)
-          else return 0
-        }) as Types.ControlValues,
-      }
-    }, []),
-    cprops = useMappedState(getMappedState)
+  const { currentControls, lastControls } = useSelector(
+      Selectors.getSeparatedCurrentControls
+    ),
+    bindings = useSelector(state => state.bindings),
+    values = useSelector(Selectors.getCurrentValueControlsValues),
+    cprops = {
+      bindings,
+      controls: {
+        ...currentControls,
+        ...lastControls,
+      },
+      lastOfPrevIds: _.keys(lastControls),
+      values,
+    }
   return (
     <ControlsWrapper>
       <SceneControl />

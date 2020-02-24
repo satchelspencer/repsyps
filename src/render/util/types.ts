@@ -1,21 +1,26 @@
 export interface Playback {
   volume: number
-  time: number //floor(time) is phase
   playing: boolean
   period: number
 }
 
-export interface TrackSource {
+export interface TrackSourceParams {
   volume: number
 }
 
-export interface TrackSources {
-  [sourceId: string]: TrackSource
+export interface TrackSourcesParams {
+  [trackSourceId: string]: TrackSourceParams
+}
+
+export interface TrackSource {
+  name: string
+  source: string
 }
 
 export interface Source {
   name: string
-  source: string
+  bounds: Bounds
+  trackSources: { [trackSourceId: string]: TrackSource }
 }
 
 export interface Sources {
@@ -29,7 +34,7 @@ export interface TrackPlayback {
   aperiodic: boolean
   nextAtChunk: boolean
   muted: boolean
-  sources: TrackSources
+  trackSourcesParams: TrackSourcesParams
   /* timing info */
   chunkIndex: number
   chunks: Chunks
@@ -43,6 +48,11 @@ export interface TrackTiming extends NativeTrackChange {
 export interface TimingState {
   time: number
   tracks: { [trackId: string]: TrackTiming }
+}
+
+export interface Times {
+  time: number
+  tracks: { [trackId: string]: number }
 }
 
 export type Channels = Float32Array[] //array of arrays... 1 per channel
@@ -70,15 +80,11 @@ export interface NativeTrackChange {
 }
 
 export interface Track extends NativeTrack {
-  name: string
-  sample: number
-  bounds: Bounds
   selected: boolean
   editing: boolean
   cues: Cue[]
   cueIndex: number
   nextCueIndex: number
-  sceneIndex: number
 }
 
 export interface Tracks {
@@ -113,7 +119,7 @@ export type TrackValueProp = 'volume' | string //only vol for now
 export interface TrackValueControl extends BaseControl {
   type: 'value'
   trackId: string
-  sourceId?: string
+  trackSourceId?: string
   prop: TrackValueProp
 }
 
@@ -171,12 +177,13 @@ export interface Scene {
 export interface Scenes {
   sceneIndex: number
   list: Scene[]
+  tracks: Tracks
 }
 
 export interface State {
   playback: Playback
-  tracks: Tracks
   scenes: Scenes
   bindings: Bindings
   sources: Sources
+  timing: Times
 }

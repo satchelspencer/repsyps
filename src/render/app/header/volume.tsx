@@ -1,17 +1,13 @@
-import React, { useCallback, memo } from 'react'
-import { useMappedState, useDispatch } from 'redux-react-hook'
+import React, { memo } from 'react'
 import * as _ from 'lodash'
 
-import * as Types from 'render/util/types'
+import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 
 import Volume from 'render/components/volume'
 
 const VolumeControl = memo(() => {
-  const getMappedState = useCallback((state: Types.State) => {
-      return state.playback.volume
-    }, []),
-    volume = useMappedState(getMappedState),
+  const volume = useSelector(state => state.playback.volume),
     dispatch = useDispatch()
 
   return (

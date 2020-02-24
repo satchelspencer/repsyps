@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react'
+import React, { useMemo } from 'react'
 import ctyled from 'ctyled'
-import { useMappedState, useDispatch } from 'redux-react-hook'
 
+import { useSelector, useDispatch } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 import * as Types from 'render/util/types'
@@ -25,24 +25,19 @@ export interface ControlProps {
 }
 
 export default function ControlAdder(props: ControlProps) {
-  const getMappedState = useCallback(
-      (state: Types.State) => {
-        const controlId = Selectors.getMatchingControlId(state, props.params)
-        return {
-          controlId,
-          control: Selectors.getControls(state.scenes)[controlId],
-          insertPosition: Selectors.getOpenPosition(state.scenes, props.type),
-        }
-      },
-      [props.params, props.type]
+  const getMatchingControl = useMemo(() => Selectors.makeGetMatchingControl(), []),
+    getOpenPosition = useMemo(() => Selectors.makeGetOpenPosition(), [])
+
+  const { controlId, control } = useSelector(state =>
+      getMatchingControl(state, props.params)
     ),
-    { control, controlId, insertPosition } = useMappedState(getMappedState),
+    insertPosition = useSelector(state => getOpenPosition(state, props.type)),
     dispatch = useDispatch()
 
   return (
     <ControlWrapper
       enabled={!!control}
-      onClick={(e) => {
+      onClick={e => {
         e.preventDefault()
         e.stopPropagation()
         if (!control)
