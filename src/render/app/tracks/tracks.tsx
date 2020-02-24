@@ -52,8 +52,8 @@ function getSceneIndex(items: any[], sceneCount: number, itemIndex: number): num
 }
 
 function Tracks() {
-  const list = useSelector(state => state.scenes.list),
-    currentSceneIndex = useSelector(state => state.scenes.sceneIndex),
+  const scenes = useSelector(state => state.live.scenes),
+    currentSceneIndex = useSelector(state => state.live.sceneIndex),
     dispatch = useDispatch(),
     wrapperRef = useRef(null),
     [vBounds, setVBounds] = useState<number[]>([0, 0]),
@@ -64,16 +64,16 @@ function Tracks() {
       setVBounds([vstart, vend])
     }, []),
     handleScroll = useMemo(() => _.throttle(updateVisible, 100, { leading: false }), [
-      list,
+      scenes,
     ]),
     handleSelectScene = useCallback(
       sceneIndex => {
         dispatch(Actions.setSceneIndex(sceneIndex))
         dispatch(
-          Actions.selectTrackExclusive(list[sceneIndex] && list[sceneIndex].trackIds[0])
+          Actions.selectTrackExclusive(scenes[sceneIndex] && scenes[sceneIndex].trackIds[0])
         )
       },
-      [list]
+      [scenes]
     )
 
   useEffect(() => updateVisible(), [wrapperRef.current])
@@ -83,7 +83,7 @@ function Tracks() {
     return () => window.removeEventListener('resize', updateVisible)
   }, [])
 
-  const listItems: (number | string)[] = list
+  const scenesItems: (number | string)[] = scenes
     .reduce((memo, scene, sceneIndex) => {
       return [...memo, sceneIndex, ...scene.trackIds]
     }, [])
@@ -96,10 +96,10 @@ function Tracks() {
       useDragHandle
       lockToContainerEdges
       onSortEnd={({ oldIndex, newIndex }) => {
-        const newItems = arrayMove(listItems, oldIndex, newIndex),
+        const newItems = arrayMove(scenesItems, oldIndex, newIndex),
           item = newItems[newIndex],
-          oldSceneIndex = getSceneIndex(listItems, list.length, oldIndex),
-          newSceneIndex = getSceneIndex(newItems, list.length, newIndex)
+          oldSceneIndex = getSceneIndex(scenesItems, scenes.length, oldIndex),
+          newSceneIndex = getSceneIndex(newItems, scenes.length, newIndex)
 
         dispatch(
           Actions.addTrackToScene({
@@ -123,7 +123,7 @@ function Tracks() {
       >
         1
       </SceneDivider>
-      {listItems.map((item, index) => {
+      {scenesItems.map((item, index) => {
         if (typeof item === 'string')
           return <Track index={index} vBounds={vBounds} key={item} trackId={item} />
         else

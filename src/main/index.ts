@@ -51,8 +51,10 @@ app.on('activate', () => {
 // create main BrowserWindow when electron is ready
 app.on('ready', () => {
   mainWindow = createMainWindow()
-  imp.default(
-    [imp.REACT_DEVELOPER_TOOLS, imp.REDUX_DEVTOOLS],
-    process.env.UPDATE_DEVTOOLS === 'true'
-  )
+  mainWindow.webContents.on('did-frame-finish-load', () => {
+    imp.default(
+      [imp.REACT_DEVELOPER_TOOLS, imp.REDUX_DEVTOOLS],
+      process.env.UPDATE_DEVTOOLS === 'true'
+    )
+  })
 })

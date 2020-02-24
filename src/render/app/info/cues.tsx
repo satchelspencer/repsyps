@@ -184,7 +184,7 @@ const Cue = SortableElement((xprops: any) => {
 
 const Cues = memo((props: CuesProps) => {
   const { playback, cues, cueIndex, nextCueIndex } = useSelector(
-      state => state.scenes.tracks[props.trackId]
+      state => state.live.tracks[props.trackId]
     ),
     { name } = useSelector(state => state.sources[props.trackId]),
     dispatch = useDispatch(),

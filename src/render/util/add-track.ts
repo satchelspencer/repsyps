@@ -22,14 +22,14 @@ export default function(file: any, dispatch: Dispatch<any>) {
         source: {
           name: file.name,
           bounds: [],
-          trackSources: { [id]: { name: 'Main', source: file.path } },
+          sourceTracks: { [id]: { name: 'Main', source: file.path } },
         },
       })
     )
     dispatch(
       Actions.addTrack({
         trackId: id,
-        trackSourcesParams: { [id]: { volume: 1 } },
+        sourceTracksParams: { [id]: { volume: 1 } },
       })
     )
     dispatch(Actions.selectTrackExclusive(id))

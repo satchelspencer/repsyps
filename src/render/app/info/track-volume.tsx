@@ -13,31 +13,31 @@ export interface TrackVolumeProps {
 }
 
 const TrackVolume = (props: TrackVolumeProps) => {
-  const trackSourcesParams = useSelector(
-      state => state.scenes.tracks[props.trackId].playback.trackSourcesParams
+  const sourceTracksParams = useSelector(
+      state => state.live.tracks[props.trackId].playback.sourceTracksParams
     ),
     source = useSelector(state => state.sources[props.trackId]),
     dispatch = useDispatch()
 
   return (
     <>
-      {_.keys(source.trackSources).map(trackSourceId => {
-        const trackSourceParams = trackSourcesParams[trackSourceId],
-          { name } = source.trackSources[trackSourceId]
+      {_.keys(source.sourceTracks).map(sourceTrackId => {
+        const sourceTrackParams = sourceTracksParams[sourceTrackId],
+          { name } = source.sourceTracks[sourceTrackId]
         return (
           <SidebarItem
-            key={trackSourceId}
+            key={sourceTrackId}
             title={
               <>
                 <span>{name}</span>
                 <Volume
-                  volume={trackSourceParams.volume}
+                  volume={sourceTrackParams.volume}
                   onChange={v =>
                     dispatch(
                       Actions.setTrackSourceParams({
                         trackId: props.trackId,
-                        trackSourceId,
-                        trackSourceParams: { volume: v },
+                        sourceTrackId,
+                        sourceTrackParams: { volume: v },
                       })
                     )
                   }
@@ -46,7 +46,7 @@ const TrackVolume = (props: TrackVolumeProps) => {
                   name={name + ' - ' + source.name}
                   params={{
                     trackId: props.trackId,
-                    trackSourceId,
+                    sourceTrackId,
                     prop: 'volume',
                   }}
                   type="value"

@@ -30,7 +30,7 @@ export interface BoundsControlProps {
 
 const BoundsControl = memo((props: BoundsControlProps) => {
   const { playback, editing } = useSelector(
-      state => state.scenes.tracks[props.trackId]
+      state => state.live.tracks[props.trackId]
     ),
     { bounds } = useSelector(state => state.sources[props.trackId]),
     channels = getBuffer(props.trackId),

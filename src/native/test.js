@@ -25,7 +25,7 @@ audio.setMixTrack('mytrack', {
     nextAtChunk: false,
     playing: true,
     muted: false,
-    trackSourcesParams: {
+    sourceTracksParams: {
       mysource_vocal: {
         volume: 1,
       },
@@ -39,7 +39,7 @@ audio.setMixTrack('mytrack', {
     nextAtChunk: false,
     playing: true,
     muted: false,
-    trackSourcesParams: {
+    sourceTracksParams: {
       mysource_vocal: {
         volume: 0.5,
       },

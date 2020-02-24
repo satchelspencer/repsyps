@@ -124,7 +124,7 @@ export interface TrackControlsProps {
 
 function TrackControls(props: TrackControlsProps) {
   const getTrackIsSolo = useMemo(() => Selectors.makeGetTrackIsSolo(), []),
-    track = useSelector(state => state.scenes.tracks[props.trackId]),
+    track = useSelector(state => state.live.tracks[props.trackId]),
     period = useSelector(state => state.playback.period),
     isSolo = useSelector(state => getTrackIsSolo(state, props.trackId)),
     sample = useSelector(state => state.timing.tracks[props.trackId]),

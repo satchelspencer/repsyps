@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {memo} from 'react'
 import * as _ from 'lodash'
 import ctyled, { inline } from 'ctyled'
 
@@ -39,8 +39,8 @@ const Side = ctyled.div.styles({
   gutter: 2,
 })
 
-export default function ScenesContainer() {
-  const sceneIndex = useSelector(state => state.scenes.sceneIndex),
+function ScenesContainer() {
+  const sceneIndex = useSelector(state => state.live.sceneIndex),
     nextScene = useSelector(Selectors.getNextScene),
     prevScene = useSelector(Selectors.getPrevScene),
     dispatch = useDispatch(),
@@ -59,7 +59,7 @@ export default function ScenesContainer() {
         />
         <Icon
           asButton
-          style={{ opacity: canBack ? 1 : 0.1, pointerEvents: canBack ? 'all' : 'none' }}
+          style={{ opacity: canBack ? undefined : 0.1, pointerEvents: canBack ? 'all' : 'none' }}
           styles={{ size: s => s * 2 }}
           onClick={() => {
             dispatch(Actions.setSceneIndex(sceneIndex - 1))
@@ -91,3 +91,5 @@ export default function ScenesContainer() {
     </ScenesWrapper>
   )
 }
+
+export default memo(ScenesContainer)

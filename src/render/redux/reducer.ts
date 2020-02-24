@@ -22,16 +22,16 @@ const defaultPlayback: Types.Playback = {
     chunkIndex: -1,
     nextAtChunk: false,
     muted: false,
-    trackSourcesParams: {},
+    sourceTracksParams: {},
   },
   defaultBindings: Types.Bindings = {},
   defaultScene: Types.Scene = {
     controls: {},
     trackIds: [],
   },
-  defaultScenes: Types.Scenes = {
+  defaultLive: Types.Live = {
     sceneIndex: 0,
-    list: [defaultScene],
+    scenes: [defaultScene],
     tracks: {},
   },
   defaultSources: Types.Sources = {},
@@ -76,9 +76,9 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
       playback: {
         ...track.playback,
         ...cue.playback,
-        trackSourcesParams: mergeTrackSourcesParams(
-          track.playback.trackSourcesParams,
-          cue.playback.trackSourcesParams
+        sourceTracksParams: mergeTrackSourcesParams(
+          track.playback.sourceTracksParams,
+          cue.playback.sourceTracksParams
         ),
       },
       nextPlayback: hasFollowing ? followingCue.playback : null,
@@ -96,24 +96,24 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
   } else return track
 }
 
-function propogagteControlPositions(scenes: Types.Scenes, startSceneIndex: number) {
-  const newScenes = {
-    ...scenes,
-    list: [...scenes.list],
+function propogagteControlPositions(live: Types.Live, startSceneIndex: number) {
+  const newLive = {
+    ...live,
+    scenes: [...live.scenes],
   }
 
   for (
     let sceneIndex = startSceneIndex + 1;
-    sceneIndex < scenes.list.length;
+    sceneIndex < live.scenes.length;
     sceneIndex++
   ) {
-    const lastOfPrev = Selectors.getLastOfPrevControls(newScenes, sceneIndex)
+    const lastOfPrev = Selectors.getLastOfPrevControls(newLive.scenes, sceneIndex)
     // if we have no lastOfPrev then we can break
     if (_.keys(lastOfPrev).length > 0) {
-      newScenes.list[sceneIndex] = {
-        ...newScenes.list[sceneIndex],
+      newLive.scenes[sceneIndex] = {
+        ...newLive.scenes[sceneIndex],
         controls: {
-          ...newScenes.list[sceneIndex].controls,
+          ...newLive.scenes[sceneIndex].controls,
         },
       }
 
@@ -121,22 +121,22 @@ function propogagteControlPositions(scenes: Types.Scenes, startSceneIndex: numbe
 
       _.values(lastOfPrev).forEach(lastControl => {
         const conflictingId = _.find(
-            _.keys(newScenes.list[sceneIndex].controls),
+            _.keys(newLive.scenes[sceneIndex].controls),
             controlId =>
               isEqual(
                 lastControl.position,
-                newScenes.list[sceneIndex].controls[controlId].position
+                newLive.scenes[sceneIndex].controls[controlId].position
               )
           ),
           conflictingControl =
-            conflictingId && newScenes.list[sceneIndex].controls[conflictingId]
+            conflictingId && newLive.scenes[sceneIndex].controls[conflictingId]
 
         if (conflictingId) {
           madeChange = true
-          newScenes.list[sceneIndex].controls[conflictingId] = {
-            ...newScenes.list[sceneIndex].controls[conflictingId],
+          newLive.scenes[sceneIndex].controls[conflictingId] = {
+            ...newLive.scenes[sceneIndex].controls[conflictingId],
             position: Selectors.getOpenPositionAtIndex(
-              newScenes,
+              newLive,
               conflictingControl.type,
               sceneIndex
             ),
@@ -147,7 +147,7 @@ function propogagteControlPositions(scenes: Types.Scenes, startSceneIndex: numbe
     } else break
   }
 
-  return newScenes
+  return newLive
 }
 
 export default combineReducers({
@@ -186,9 +186,9 @@ export default combineReducers({
         ...sources,
         [payload.sourceId]: {
           ...sources[payload.sourceId],
-          trackSources: {
-            ...sources[payload.sourceId].trackSources,
-            [payload.trackSourceId]: payload.trackSource,
+          sourceTracks: {
+            ...sources[payload.sourceId].sourceTracks,
+            [payload.sourceTrackId]: payload.sourceTrack,
           },
         },
       }
@@ -217,26 +217,26 @@ export default combineReducers({
       }
     }),
   ]),
-  scenes: createReducer(defaultScenes, handle => [
-    handle(Actions.setTrackMuted, (scenes, { payload }) => {
+  live: createReducer(defaultLive, handle => [
+    handle(Actions.setTrackMuted, (live, { payload }) => {
       return {
-        ...scenes,
+        ...live,
         tracks: {
-          ...scenes.tracks,
+          ...live.tracks,
           [payload.trackId]: {
-            ...scenes.tracks[payload.trackId],
+            ...live.tracks[payload.trackId],
             playback: {
-              ...scenes.tracks[payload.trackId].playback,
+              ...live.tracks[payload.trackId].playback,
               muted: payload.muted,
             },
           },
         },
       }
     }),
-    handle(Actions.setTrackSolo, (scenes, { payload }) => {
+    handle(Actions.setTrackSolo, (live, { payload }) => {
       return {
-        ...scenes,
-        tracks: _.mapValues(scenes.tracks, (track, trackId) => {
+        ...live,
+        tracks: _.mapValues(live.tracks, (track, trackId) => {
           return {
             ...track,
             playback: {
@@ -247,13 +247,13 @@ export default combineReducers({
         }),
       }
     }),
-    handle(Actions.reorderCue, (scenes, { payload }) => {
-      const track = scenes.tracks[payload.trackId],
+    handle(Actions.reorderCue, (live, { payload }) => {
+      const track = live.tracks[payload.trackId],
         newCues = arrayMove(track.cues, payload.oldIndex, payload.newIndex)
       return {
-        ...scenes,
+        ...live,
         tracks: {
-          ...scenes.tracks,
+          ...live.tracks,
           [payload.trackId]: {
             ...track,
             cues: newCues,
@@ -261,14 +261,14 @@ export default combineReducers({
         },
       }
     }),
-    handle(Actions.addCue, (scenes, { payload }) => {
-      const track = scenes.tracks[payload.trackId],
+    handle(Actions.addCue, (live, { payload }) => {
+      const track = live.tracks[payload.trackId],
         newCues = [...track.cues]
       newCues[payload.index === undefined ? newCues.length : payload.index] = payload.cue
       return {
-        ...scenes,
+        ...live,
         tracks: {
-          ...scenes.tracks,
+          ...live.tracks,
           [payload.trackId]: {
             ...track,
             cues: newCues,
@@ -276,14 +276,14 @@ export default combineReducers({
         },
       }
     }),
-    handle(Actions.deleteCue, (scenes, { payload }) => {
-      const track = scenes.tracks[payload.trackId],
+    handle(Actions.deleteCue, (live, { payload }) => {
+      const track = live.tracks[payload.trackId],
         newCues = [...track.cues]
       newCues.splice(payload.index, 1)
       return {
-        ...scenes,
+        ...live,
         tracks: {
-          ...scenes.tracks,
+          ...live.tracks,
           [payload.trackId]: {
             ...track,
             cues: newCues,
@@ -291,23 +291,23 @@ export default combineReducers({
         },
       }
     }),
-    handle(Actions.applyControl, (scenes, { payload }) => {
+    handle(Actions.applyControl, (live, { payload }) => {
       const control = payload.control
-      if (!('trackId' in control) || !scenes.tracks[control.trackId]) return scenes
-      else if ('trackSourceId' in control) {
+      if (!('trackId' in control) || !live.tracks[control.trackId]) return live
+      else if ('sourceTrackId' in control) {
         return {
-          ...scenes,
+          ...live,
           tracks: {
-            ...scenes.tracks,
+            ...live.tracks,
             [control.trackId]: {
-              ...scenes.tracks[control.trackId],
+              ...live.tracks[control.trackId],
               playback: {
-                ...scenes.tracks[control.trackId].playback,
-                trackSourcesParams: {
-                  ...scenes.tracks[control.trackId].playback.trackSourcesParams,
-                  [control.trackSourceId]: {
-                    ...scenes.tracks[control.trackId].playback.trackSourcesParams[
-                      control.trackSourceId
+                ...live.tracks[control.trackId].playback,
+                sourceTracksParams: {
+                  ...live.tracks[control.trackId].playback.sourceTracksParams,
+                  [control.sourceTrackId]: {
+                    ...live.tracks[control.trackId].playback.sourceTracksParams[
+                      control.sourceTrackId
                     ],
                     [control.prop]: payload.value,
                   },
@@ -318,30 +318,30 @@ export default combineReducers({
         }
       } else if ('cueIndex' in control && payload.function === 'note-on') {
         return {
-          ...scenes,
+          ...live,
           tracks: {
-            ...scenes.tracks,
-            [control.trackId]: applyCue(scenes.tracks[control.trackId], control.cueIndex),
+            ...live.tracks,
+            [control.trackId]: applyCue(live.tracks[control.trackId], control.cueIndex),
           },
         }
       } else if ('cueStep' in control) {
-        const track = scenes.tracks[control.trackId],
+        const track = live.tracks[control.trackId],
           currentIndex = track.cueIndex,
           nextIndex = currentIndex + control.cueStep
 
         if (nextIndex >= 0 && nextIndex < track.cues.length) {
           return {
-            ...scenes,
+            ...live,
             tracks: {
-              ...scenes.tracks,
+              ...live.tracks,
               [control.trackId]: applyCue(track, nextIndex),
             },
           }
         } else
           return {
-            ...scenes,
+            ...live,
             tracks: {
-              ...scenes.tracks,
+              ...live.tracks,
               [control.trackId]: {
                 ...track,
                 playback: {
@@ -353,24 +353,24 @@ export default combineReducers({
               },
             },
           }
-      } else return scenes
+      } else return live
     }),
-    handle(Actions.setTrackSourceParams, (scenes, { payload }) => {
+    handle(Actions.setTrackSourceParams, (live, { payload }) => {
       return {
-        ...scenes,
+        ...live,
         tracks: {
-          ...scenes.tracks,
+          ...live.tracks,
           [payload.trackId]: {
-            ...scenes.tracks[payload.trackId],
+            ...live.tracks[payload.trackId],
             playback: {
-              ...scenes.tracks[payload.trackId].playback,
-              trackSourcesParams: {
-                ...scenes.tracks[payload.trackId].playback.trackSourcesParams,
-                [payload.trackSourceId]: {
-                  ...scenes.tracks[payload.trackId].playback.trackSourcesParams[
-                    payload.trackSourceId
+              ...live.tracks[payload.trackId].playback,
+              sourceTracksParams: {
+                ...live.tracks[payload.trackId].playback.sourceTracksParams,
+                [payload.sourceTrackId]: {
+                  ...live.tracks[payload.trackId].playback.sourceTracksParams[
+                    payload.sourceTrackId
                   ],
-                  ...payload.trackSourceParams,
+                  ...payload.sourceTrackParams,
                 },
               },
             },
@@ -378,34 +378,34 @@ export default combineReducers({
         },
       }
     }),
-    handle(Actions.createTrackSource, (scenes, { payload }) => {
+    handle(Actions.createTrackSource, (live, { payload }) => {
       return {
-        ...scenes,
+        ...live,
         tracks: {
-          ...scenes.tracks,
+          ...live.tracks,
           [payload.sourceId]: {
-            ...scenes.tracks[payload.sourceId],
+            ...live.tracks[payload.sourceId],
             playback: {
-              ...scenes.tracks[payload.sourceId].playback,
-              trackSourcesParams: {
-                ...scenes.tracks[payload.sourceId].playback.trackSourcesParams,
-                [payload.trackSourceId]: defaultTrackSourceParams,
+              ...live.tracks[payload.sourceId].playback,
+              sourceTracksParams: {
+                ...live.tracks[payload.sourceId].playback.sourceTracksParams,
+                [payload.sourceTrackId]: defaultTrackSourceParams,
               },
             },
           },
         },
       }
     }),
-    handle(Actions.setTrackPlayback, (scenes, { payload }) => {
+    handle(Actions.setTrackPlayback, (live, { payload }) => {
       if (!!payload.playback.chunks)
         return {
-          ...scenes,
+          ...live,
           tracks: {
-            ...scenes.tracks,
+            ...live.tracks,
             [payload.trackId]: {
-              ...scenes.tracks[payload.trackId],
+              ...live.tracks[payload.trackId],
               playback: {
-                ...scenes.tracks[payload.trackId].playback,
+                ...live.tracks[payload.trackId].playback,
                 ...payload.playback,
                 nextAtChunk: false,
               },
@@ -417,50 +417,51 @@ export default combineReducers({
         }
       else
         return {
-          ...scenes,
+          ...live,
           tracks: {
-            ...scenes.tracks,
+            ...live.tracks,
             [payload.trackId]: {
-              ...scenes.tracks[payload.trackId],
+              ...live.tracks[payload.trackId],
               playback: {
-                ...scenes.tracks[payload.trackId].playback,
+                ...live.tracks[payload.trackId].playback,
                 ...payload.playback,
               },
             },
           },
         }
     }),
-    handle(Actions.toggleTrack, (scenes, { payload }) => {
+    handle(Actions.toggleTrack, (live, { payload }) => {
       return {
-        ...scenes,
+        ...live,
         tracks: {
-          ...scenes.tracks,
+          ...live.tracks,
           [payload]: {
-            ...scenes.tracks[payload],
+            ...live.tracks[payload],
             playback: {
-              ...scenes.tracks[payload].playback,
-              playing: !scenes.tracks[payload].playback.playing,
+              ...live.tracks[payload].playback,
+              playing: !live.tracks[payload].playback.playing,
             },
           },
         },
       }
     }),
-    handle(Actions.editTrack, (scenes, { payload }) => {
+    handle(Actions.editTrack, (live, { payload }) => {
       return {
-        ...scenes,
+        ...live,
         tracks: {
-          ...scenes.tracks,
+          ...live.tracks,
           [payload.trackId]: {
-            ...scenes.tracks[payload.trackId],
+            ...live.tracks[payload.trackId],
             editing: payload.edit,
           },
         },
       }
     }),
-    handle(Actions.updateTime, (scenes, { payload }) => {
+    /* FIX */
+    handle(Actions.updateTime, (live, { payload }) => {
       return {
-        ...scenes,
-        tracks: _.mapValues(scenes.tracks, (track, trackId) => {
+        ...live,
+        tracks: _.mapValues(live.tracks, (track, trackId) => {
           const trackTiming = payload.timing.tracks[trackId]
           if (!trackTiming) return track
           const didAdvanceChunk =
@@ -478,9 +479,9 @@ export default combineReducers({
               playback: {
                 ...track.playback,
                 ...trackTiming.playback,
-                trackSourcesParams: mergeTrackSourcesParams(
-                  track.playback.trackSourcesParams,
-                  trackTiming.playback.trackSourcesParams
+                sourceTracksParams: mergeTrackSourcesParams(
+                  track.playback.sourceTracksParams,
+                  trackTiming.playback.sourceTracksParams
                 ),
                 nextAtChunk: false, //wait till end to apply nextPlayback
               },
@@ -492,9 +493,9 @@ export default combineReducers({
               playback: {
                 ...track.playback,
                 ...trackTiming.playback,
-                trackSourcesParams: mergeTrackSourcesParams(
-                  track.playback.trackSourcesParams,
-                  trackTiming.playback.trackSourcesParams
+                sourceTracksParams: mergeTrackSourcesParams(
+                  track.playback.sourceTracksParams,
+                  trackTiming.playback.sourceTracksParams
                 ),
               },
             }
@@ -502,60 +503,60 @@ export default combineReducers({
         }),
       }
     }),
-    handle(Actions.deleteScene, (scenes, { payload: sceneIndex }) => {
-      const newList = [...scenes.list],
-        deletedScene = scenes.list[sceneIndex]
+    handle(Actions.deleteScene, (live, { payload: sceneIndex }) => {
+      const newScenes = [...live.scenes],
+        deletedScene = live.scenes[sceneIndex]
 
-      newList.splice(sceneIndex, 1)
+      newScenes.splice(sceneIndex, 1)
       return {
-        ...scenes,
-        tracks: _.omitBy(scenes.tracks, (track, trackId) =>
+        ...live,
+        tracks: _.omitBy(live.tracks, (track, trackId) =>
           deletedScene.trackIds.includes(trackId)
         ),
-        list: newList,
-        sceneIndex: Math.min(scenes.sceneIndex, newList.length - 1),
+        scenes: newScenes,
+        sceneIndex: Math.min(live.sceneIndex, newScenes.length - 1),
       }
     }),
-    handle(Actions.selectTrackExclusive, (scenes, { payload: trackId }) => {
-      const containingIndex = scenes.list.findIndex(scene =>
+    handle(Actions.selectTrackExclusive, (live, { payload: trackId }) => {
+      const containingIndex = live.scenes.findIndex(scene =>
           scene.trackIds.includes(trackId)
         ),
         inScene = containingIndex !== -1,
         isLastOfScene =
           inScene &&
-          scenes.list[containingIndex].trackIds.indexOf(trackId) ===
-            scenes.list[containingIndex].trackIds.length - 1,
+          live.scenes[containingIndex].trackIds.indexOf(trackId) ===
+            live.scenes[containingIndex].trackIds.length - 1,
         shouldNotJump =
-          (isLastOfScene && scenes.sceneIndex === containingIndex + 1) || !inScene
+          (isLastOfScene && live.sceneIndex === containingIndex + 1) || !inScene
 
       return {
-        ...scenes,
-        tracks: _.mapValues(scenes.tracks, (track, thisTrackId) => {
+        ...live,
+        tracks: _.mapValues(live.tracks, (track, thisTrackId) => {
           if (thisTrackId === trackId) {
             return { ...track, selected: true }
           } else if (track.selected) {
             return { ...track, selected: false }
           } else return track
         }),
-        sceneIndex: shouldNotJump ? scenes.sceneIndex : containingIndex,
+        sceneIndex: shouldNotJump ? live.sceneIndex : containingIndex,
       }
     }),
-    handle(Actions.addTrack, (scenes, { payload }) => {
-      const currentScene = scenes.list[scenes.sceneIndex],
-        newList = [...scenes.list]
-      newList[scenes.sceneIndex] = {
+    handle(Actions.addTrack, (live, { payload }) => {
+      const currentScene = live.scenes[live.sceneIndex],
+        newScenes = [...live.scenes]
+      newScenes[live.sceneIndex] = {
         ...currentScene,
         trackIds: _.uniq(currentScene.trackIds.concat(payload.trackId)),
       }
 
       return {
-        ...scenes,
+        ...live,
         tracks: {
-          ...scenes.tracks,
+          ...live.tracks,
           [payload.trackId]: {
             playback: {
               ...defaultTrackPlayback,
-              trackSourcesParams: payload.trackSourcesParams,
+              sourceTracksParams: payload.sourceTracksParams,
             },
             nextPlayback: null,
             selected: false,
@@ -565,12 +566,12 @@ export default combineReducers({
             nextCueIndex: -1,
           },
         },
-        list: newList,
+        scenes: newScenes,
       }
     }),
-    handle(Actions.addTrackToScene, (scenes, { payload }) => {
-      const currentScene = scenes.list[payload.toSceneIndex] || defaultScene,
-        newList = [...scenes.list],
+    handle(Actions.addTrackToScene, (live, { payload }) => {
+      const currentScene = live.scenes[payload.toSceneIndex] || defaultScene,
+        newScenes = [...live.scenes],
         isNewToScene = !currentScene.trackIds.includes(payload.trackId),
         insertIndex =
           payload.trackIndex === undefined
@@ -578,16 +579,16 @@ export default combineReducers({
             : payload.trackIndex
 
       const newTracks = {
-        ...scenes.tracks,
+        ...live.tracks,
         [payload.trackId]: {
-          ...scenes.tracks[payload.trackId],
+          ...live.tracks[payload.trackId],
           sceneIndex: payload.toSceneIndex,
         },
       }
 
       if (!isNewToScene) {
         //already in scene just reordering
-        newList[payload.toSceneIndex] = {
+        newScenes[payload.toSceneIndex] = {
           ...currentScene,
           trackIds: arrayMove(
             currentScene.trackIds,
@@ -596,18 +597,18 @@ export default combineReducers({
           ),
         }
         return {
-          ...scenes,
-          list: newList,
+          ...live,
+          scenes: newScenes,
           tracks: newTracks,
         }
       } else {
         const trackControls = _.pickBy(
-          scenes.list[payload.fromSceneIndex].controls,
+          live.scenes[payload.fromSceneIndex].controls,
           control => 'trackId' in control && control.trackId === payload.trackId
         )
 
         // add track to this scene
-        newList[payload.toSceneIndex] = {
+        newScenes[payload.toSceneIndex] = {
           ...currentScene,
           trackIds: arrayMove(
             [payload.trackId, ...currentScene.trackIds],
@@ -620,41 +621,41 @@ export default combineReducers({
           },
         }
         // remove from old scene
-        newList[payload.fromSceneIndex] = {
-          ...newList[payload.fromSceneIndex],
-          trackIds: newList[payload.fromSceneIndex].trackIds.filter(
+        newScenes[payload.fromSceneIndex] = {
+          ...newScenes[payload.fromSceneIndex],
+          trackIds: newScenes[payload.fromSceneIndex].trackIds.filter(
             id => id !== payload.trackId
           ),
           controls: _.omitBy(
-            newList[payload.fromSceneIndex].controls,
+            newScenes[payload.fromSceneIndex].controls,
             control => 'trackId' in control && control.trackId === payload.trackId
           ),
         }
 
-        const newScenes = {
-          ...scenes,
-          list: newList,
+        const newLive = {
+          ...live,
+          scenes: newScenes,
           tracks: newTracks,
         }
 
         // get the controls of the scene with the new track in valid positions
         _.keys(trackControls).forEach(controlId => {
-          const control = newScenes.list[payload.toSceneIndex].controls[controlId]
-          newScenes.list[payload.toSceneIndex].controls[controlId] = {
+          const control = newLive.scenes[payload.toSceneIndex].controls[controlId]
+          newLive.scenes[payload.toSceneIndex].controls[controlId] = {
             ...control,
             position: Selectors.getOpenPositionAtIndex(
-              newScenes,
+              newLive,
               control.type,
               payload.toSceneIndex
             ),
           }
         })
 
-        return propogagteControlPositions(newScenes, payload.toSceneIndex)
+        return propogagteControlPositions(newLive, payload.toSceneIndex)
       }
     }),
-    handle(Actions.rmTrack, (scenes, { payload: trackId }) => {
-      const newScenesList = scenes.list.map(scene => {
+    handle(Actions.rmTrack, (live, { payload: trackId }) => {
+      const newScenes = live.scenes.map(scene => {
         if (scene.trackIds.includes(trackId)) {
           return {
             ...scene,
@@ -668,80 +669,80 @@ export default combineReducers({
       })
 
       return {
-        ...scenes,
-        list: newScenesList,
-        sceneIndex: Math.min(newScenesList.length - 1, scenes.sceneIndex),
-        tracks: _.omit(scenes.tracks, trackId),
+        ...live,
+        scenes: newScenes,
+        sceneIndex: Math.min(newScenes.length - 1, live.sceneIndex),
+        tracks: _.omit(live.tracks, trackId),
       }
     }),
-    handle(Actions.createScene, (scenes, { payload: sceneIndex }) => {
-      const newList = [...scenes.list]
-      if (!newList[sceneIndex] || !newList[sceneIndex].trackIds.length)
-        newList[sceneIndex] = defaultScene
-      else newList.splice(sceneIndex, 0, defaultScene)
+    handle(Actions.createScene, (live, { payload: sceneIndex }) => {
+      const newScenes = [...live.scenes]
+      if (!newScenes[sceneIndex] || !newScenes[sceneIndex].trackIds.length)
+        newScenes[sceneIndex] = defaultScene
+      else newScenes.splice(sceneIndex, 0, defaultScene)
       return {
-        ...scenes,
-        list: newList,
+        ...live,
+        scenes: newScenes,
         sceneIndex,
       }
     }),
-    handle(Actions.setSceneIndex, (scenes, { payload: sceneIndex }) => {
-      const newList = [...scenes.list]
-      if (!newList[sceneIndex]) newList[sceneIndex] = defaultScene
+    handle(Actions.setSceneIndex, (live, { payload: sceneIndex }) => {
+      const newScenes = [...live.scenes]
+      if (!newScenes[sceneIndex]) newScenes[sceneIndex] = defaultScene
       return {
-        ...scenes,
-        list: newList,
+        ...live,
+        scenes: newScenes,
         sceneIndex,
       }
     }),
-    handle(Actions.addControl, (scenes, { payload }) => {
-      const newList = [...scenes.list],
+    handle(Actions.addControl, (live, { payload }) => {
+      const newScenes = [...live.scenes],
         sceneIndex =
           'trackId' in payload.control
-            ? scenes.list.findIndex(scene =>
+            ? live.scenes.findIndex(scene =>
                 scene.trackIds.includes((payload.control as any).trackId)
               )
-            : scenes.sceneIndex
+            : live.sceneIndex
 
-      newList[sceneIndex] = {
-        ...newList[sceneIndex],
+      newScenes[sceneIndex] = {
+        ...newScenes[sceneIndex],
         controls: {
-          ...newList[sceneIndex].controls,
+          ...newScenes[sceneIndex].controls,
           [payload.controlId]: payload.control,
         },
       }
       return propogagteControlPositions(
         {
-          ...scenes,
-          list: newList,
+          ...live,
+          scenes: newScenes,
         },
         sceneIndex
       )
     }),
-    handle(Actions.removeControl, (scenes, { payload: controlId }) => {
-      const newList = [...scenes.list],
-        sceneIndex = scenes.list.findIndex(scene =>
+    handle(Actions.removeControl, (live, { payload: controlId }) => {
+      const newScenes = [...live.scenes],
+        sceneIndex = live.scenes.findIndex(scene =>
           _.keys(scene.controls).includes(controlId)
         )
 
-      newList[sceneIndex] = {
-        ...newList[sceneIndex],
-        controls: _.omit(newList[sceneIndex].controls, controlId),
+      newScenes[sceneIndex] = {
+        ...newScenes[sceneIndex],
+        controls: _.omit(newScenes[sceneIndex].controls, controlId),
       }
       return {
-        ...scenes,
-        list: newList,
+        ...live,
+        scenes: newScenes,
       }
     }),
-    handle(Actions.setControlPos, (scenes, { payload }) => {
-      const newList = [...scenes.list],
-        sceneIndex = scenes.list.findIndex(scene =>
+    handle(Actions.setControlPos, (live, { payload }) => {
+      const newScenes = [...live.scenes],
+        sceneIndex = live.scenes.findIndex(scene =>
           _.keys(scene.controls).includes(payload.controlId)
         ),
-        controls = newList[sceneIndex].controls
+        controls = newScenes[sceneIndex].controls
 
-      newList[sceneIndex] = {
-        ...newList[sceneIndex],
+      newScenes[sceneIndex] = {
+        ...newScenes[sceneIndex],
         controls: {
           ...controls,
           [payload.controlId]: {
@@ -755,8 +756,8 @@ export default combineReducers({
       }
       return propogagteControlPositions(
         {
-          ...scenes,
-          list: newList,
+          ...live,
+          scenes: newScenes,
         },
         sceneIndex
       )

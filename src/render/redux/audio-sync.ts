@@ -32,22 +32,22 @@ export default function syncAudio(store: Store<Types.State>) {
     }
 
     trackIds.forEach(trackId => {
-      const track = currentState.scenes.tracks[trackId],
+      const track = currentState.live.tracks[trackId],
         trackIsNew = !lastState || !lastTrackIds.includes(trackId),
-        lastTrack = lastState && (lastState.scenes.tracks[trackId] as Types.Track),
+        lastTrack = lastState && (lastState.live.tracks[trackId] as Types.Track),
         trackPlaybackHasChanged =
           trackIsNew ||
           !isEqual(lastTrack.playback, track.playback) ||
           lastTrack.nextPlayback !== track.nextPlayback
 
-      _.keys(track.playback.trackSourcesParams).forEach(sourceId => {
-        const sourceIsNew = trackIsNew || !lastTrack.playback.trackSourcesParams[sourceId]
+      _.keys(track.playback.sourceTracksParams).forEach(sourceId => {
+        const sourceIsNew = trackIsNew || !lastTrack.playback.sourceTracksParams[sourceId]
         if (sourceIsNew) audio.addSource(sourceId, getBuffer(sourceId))
       })
 
       if (!trackIsNew)
-        _.keys(lastTrack.playback.trackSourcesParams).forEach(sourceId => {
-          if (!track.playback.trackSourcesParams[sourceId]) audio.removeSource(sourceId)
+        _.keys(lastTrack.playback.sourceTracksParams).forEach(sourceId => {
+          if (!track.playback.sourceTracksParams[sourceId]) audio.removeSource(sourceId)
         })
 
       if (trackPlaybackHasChanged) {
@@ -63,7 +63,7 @@ export default function syncAudio(store: Store<Types.State>) {
       lastTrackIds.forEach(trackId => {
         if (!trackIds.includes(trackId)) {
           audio.removeMixTrack(trackId)
-          _.keys(lastState.scenes.tracks[trackId].playback.trackSourcesParams).forEach(sourceId =>
+          _.keys(lastState.live.tracks[trackId].playback.sourceTracksParams).forEach(sourceId =>
             audio.removeSource(sourceId)
           )
         }

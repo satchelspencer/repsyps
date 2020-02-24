@@ -13,15 +13,15 @@ export const updateTime = createAction<{
 
 export const addTrack = createAction<{
   trackId: string
-  trackSourcesParams: Types.TrackSourcesParams
+  sourceTracksParams: Types.TrackSourcesParams
 }>('ADD_TRACK')
 
 export const rmTrack = createAction<string>('REMOVE_TRACK')
 
 export const setTrackSourceParams = createAction<{
   trackId: string
-  trackSourceId: string
-  trackSourceParams: Partial<Types.TrackSourceParams>
+  sourceTrackId: string
+  sourceTrackParams: Partial<Types.TrackSourceParams>
 }>('SET_TRACK_SOURCE')
 
 export const createSource = createAction<{
@@ -31,8 +31,8 @@ export const createSource = createAction<{
 
 export const createTrackSource = createAction<{
   sourceId: string,
-  trackSourceId: string,
-  trackSource: Types.TrackSource
+  sourceTrackId: string,
+  sourceTrack: Types.TrackSource
 }>('CREATE_TRACKSOURCE')
 
 export const setTrackPlayback = createAction<{

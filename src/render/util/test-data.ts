@@ -23,14 +23,14 @@ export default function(store: Store) {
         source: {
           name: id + 'name',
           bounds: [],
-          trackSources: { [id]: { name: 'Main', source: 'huh' } },
+          sourceTracks: { [id]: { name: 'Main', source: 'huh' } },
         },
       })
     )
     store.dispatch(
       Actions.addTrack({
         trackId: id,
-        trackSourcesParams: { [id]: { volume: 1 } },
+        sourceTracksParams: { [id]: { volume: 1 } },
       })
     )
   }

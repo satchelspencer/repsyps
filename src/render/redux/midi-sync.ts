@@ -28,7 +28,7 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
 export default async function init(store: Store<Types.State>) {
   const handleMessage = ({ data }) => {
       const state = store.getState(),
-        controls = Selectors.getControls(state.scenes),
+        controls = Selectors.getControls(state.live),
         [fnbyte, note, value] = data,
         fn = getFunction(fnbyte),
         channel = getChannel(fnbyte)
@@ -97,7 +97,7 @@ export default async function init(store: Store<Types.State>) {
     _.throttle(
       () => {
         const state = store.getState(),
-          controls = Selectors.getControls(state.scenes)
+          controls = Selectors.getControls(state.live)
         /* make values reflect state */
         for (let controlId in controls) {
           const control = controls[controlId]

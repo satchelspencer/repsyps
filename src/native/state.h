@@ -19,7 +19,7 @@ typedef struct{
 } mixTrackSourceConfig;
 
 typedef struct{
-  std::unordered_map<std::string, mixTrackSourceConfig*> trackSourcesParams;
+  std::unordered_map<std::string, mixTrackSourceConfig*> sourceTracksParams;
   std::vector<int> chunks;
   float alpha;
   bool playing;

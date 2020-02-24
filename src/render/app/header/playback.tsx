@@ -41,7 +41,7 @@ const Playback = memo(() => {
         styles={{ size: s => s * 2 }}
         asButton
         name="next"
-        onClick={() => dispatch(Actions.updatePlaybackTime(+11))}
+        onClick={() => dispatch(Actions.updatePlaybackTime(+1))}
       />
       <Icon
         styles={{ size: s => s * 2 }}

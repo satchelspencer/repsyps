@@ -9,7 +9,7 @@ export interface TrackSourceParams {
 }
 
 export interface TrackSourcesParams {
-  [trackSourceId: string]: TrackSourceParams
+  [sourceTrackId: string]: TrackSourceParams
 }
 
 export interface TrackSource {
@@ -20,7 +20,7 @@ export interface TrackSource {
 export interface Source {
   name: string
   bounds: Bounds
-  trackSources: { [trackSourceId: string]: TrackSource }
+  sourceTracks: { [sourceTrackId: string]: TrackSource }
 }
 
 export interface Sources {
@@ -34,7 +34,7 @@ export interface TrackPlayback {
   aperiodic: boolean
   nextAtChunk: boolean
   muted: boolean
-  trackSourcesParams: TrackSourcesParams
+  sourceTracksParams: TrackSourcesParams
   /* timing info */
   chunkIndex: number
   chunks: Chunks
@@ -119,7 +119,7 @@ export type TrackValueProp = 'volume' | string //only vol for now
 export interface TrackValueControl extends BaseControl {
   type: 'value'
   trackId: string
-  trackSourceId?: string
+  sourceTrackId?: string
   prop: TrackValueProp
 }
 
@@ -174,15 +174,15 @@ export interface Scene {
   trackIds: string[]
 }
 
-export interface Scenes {
+export interface Live {
   sceneIndex: number
-  list: Scene[]
+  scenes: Scene[]
   tracks: Tracks
 }
 
 export interface State {
   playback: Playback
-  scenes: Scenes
+  live: Live
   bindings: Bindings
   sources: Sources
   timing: Times

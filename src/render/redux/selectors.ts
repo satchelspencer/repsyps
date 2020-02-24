@@ -5,37 +5,37 @@ import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
 
 export const getSelectedTrackId = (state: Types.State) =>
-  Object.keys(state.scenes.tracks).filter(tid => state.scenes.tracks[tid].selected)[0]
+  Object.keys(state.live.tracks).filter(tid => state.live.tracks[tid].selected)[0]
 
 export const getSelectedTrack = createSelector(
-  [getSelectedTrackId, state => state.scenes.tracks],
+  [getSelectedTrackId, state => state.live.tracks],
   (trackId, tracks) => {
     return tracks[trackId]
   }
 )
 
 export const getCurrentScene = (state: Types.State) =>
-  state.scenes.list[state.scenes.sceneIndex]
+  state.live.scenes[state.live.sceneIndex]
 
 export const getPrevScene = (state: Types.State) =>
-  state.scenes.list[state.scenes.sceneIndex - 1]
+  state.live.scenes[state.live.sceneIndex - 1]
 
 export const getNextScene = (state: Types.State) =>
-  state.scenes.list[state.scenes.sceneIndex + 1]
+  state.live.scenes[state.live.sceneIndex + 1]
 
 export function getActiveTrackIds(state: Types.State): string[] {
-  const currentScene = state.scenes.list[state.scenes.sceneIndex],
-    prevScene = state.scenes.list[state.scenes.sceneIndex - 1],
+  const currentScene = state.live.scenes[state.live.sceneIndex],
+    prevScene = state.live.scenes[state.live.sceneIndex - 1],
     lastOfPrev = prevScene && _.last(prevScene.trackIds)
 
   return lastOfPrev ? [lastOfPrev, ...currentScene.trackIds] : currentScene.trackIds
 }
 
 export function getLastOfPrevControls(
-  scenes: Types.Scenes,
+  scenes: Types.Scene[],
   sceneIndex: number
 ): Types.Controls {
-  const prevScene = scenes.list[sceneIndex - 1],
+  const prevScene = scenes[sceneIndex - 1],
     lastOfPrev = prevScene && _.last(prevScene.trackIds)
 
   return lastOfPrev
@@ -46,12 +46,9 @@ export function getLastOfPrevControls(
     : {}
 }
 
-export function getControlsAtIndex(
-  scenes: Types.Scenes,
-  sceneIndex: number
-): Types.Controls {
-  const currentScene = scenes.list[sceneIndex],
-    lastControls = getLastOfPrevControls(scenes, sceneIndex)
+export function getControlsAtIndex(live: Types.Live, sceneIndex: number): Types.Controls {
+  const currentScene = live.scenes[sceneIndex],
+    lastControls = getLastOfPrevControls(live.scenes, sceneIndex)
 
   return {
     ...currentScene.controls,
@@ -59,27 +56,35 @@ export function getControlsAtIndex(
   }
 }
 
-export function getControls(scenes: Types.Scenes): Types.Controls {
-  return getControlsAtIndex(scenes, scenes.sceneIndex)
+export function getControls(live: Types.Live): Types.Controls {
+  return getControlsAtIndex(live, live.sceneIndex)
 }
 
-export const getSeparatedCurrentControls = createSelector(
-  [(state: Types.State) => state.scenes],
-  scenes => {
-    //getControlsAtIndex(scenes, scenes.sceneIndex)
-    const sceneIndex = scenes.sceneIndex,
-      currentScene = scenes.list[sceneIndex]
+export const getScenes = (state: Types.State) => state.live.scenes
+
+export const getSceneIndex = (state: Types.State) => state.live.sceneIndex
+
+export const getOnlyCurrentControls = createSelector(
+  [getScenes, getSceneIndex],
+  (scenes, sceneIndex) => {
+    return scenes[sceneIndex].controls
+  }
+)
+
+export const getCurrentLastOfPrev = createSelector(
+  [getScenes, getSceneIndex],
+  (scenes, sceneIndex) => getLastOfPrevControls(scenes, sceneIndex)
+)
+
+export const getCurrentControls = createSelector(
+  [getOnlyCurrentControls, getCurrentLastOfPrev],
+  (current, last) => {
     return {
-      currentControls: currentScene.controls,
-      lastControls: getLastOfPrevControls(scenes, sceneIndex),
+      ...current,
+      ...last,
     }
   }
-) //could be more optimized to depend more specifically on current and prev scene
-
-export const getCurrentControls = createSelector([getSeparatedCurrentControls], sep => ({
-  ...sep.lastControls,
-  ...sep.currentControls,
-}))
+)
 
 export const makeGetMatchingControl = () =>
   createSelector(
@@ -97,9 +102,9 @@ export const makeGetMatchingControl = () =>
 
 export function getValueControlValue(state: Types.State, control: Types.ValueControl) {
   let value = null
-  if ('trackSourceId' in control) {
-    const track = state.scenes.tracks[control.trackId]
-    value = track.playback.trackSourcesParams[control.trackSourceId][control.prop]
+  if ('sourceTrackId' in control) {
+    const track = state.live.tracks[control.trackId]
+    value = track.playback.sourceTracksParams[control.sourceTrackId][control.prop]
   } else if ('global' in control) {
     value = state.playback[control.prop]
   }
@@ -109,14 +114,14 @@ export function getValueControlValue(state: Types.State, control: Types.ValueCon
 
 /* TOFIX */
 export const getCurrentValueControlsValues = createSelector(
-  [getCurrentControls, state => state.scenes.tracks, state => state.playback],
+  [getCurrentControls, state => state.live.tracks, state => state.playback],
   (controls, tracks, playback) => {
     return _.mapValues(controls, control => {
       if ('prop' in control) {
         let value = null
-        if ('trackId' in control && 'trackSourceId' in control) {
+        if ('trackId' in control && 'sourceTrackId' in control) {
           const track = tracks[control.trackId]
-          value = track.playback.trackSourcesParams[control.trackSourceId][control.prop]
+          value = track.playback.sourceTracksParams[control.sourceTrackId][control.prop]
         } else if ('global' in control) {
           value = playback[control.prop]
         }
@@ -168,11 +173,11 @@ function getOpenPosition(controls: Types.Controls, type: Types.BindingType) {
 }
 
 export function getOpenPositionAtIndex(
-  scenes: Types.Scenes,
+  live: Types.Live,
   type: Types.BindingType,
   sceneIndex: number
 ) {
-  const controls = getControlsAtIndex(scenes, sceneIndex)
+  const controls = getControlsAtIndex(live, sceneIndex)
   return getOpenPosition(controls, type)
 }
 
@@ -184,7 +189,7 @@ export const makeGetOpenPosition = () =>
 
 export const makeGetTrackIsSolo = () =>
   createSelector(
-    [(state: Types.State) => state.scenes.tracks, (_, trackId: string) => trackId],
+    [(state: Types.State) => state.live.tracks, (_, trackId: string) => trackId],
     (tracks, trackId) => {
       return _.every(tracks, (track, thisTrackId) => {
         if (trackId === thisTrackId) return !track.playback.muted
@@ -194,7 +199,7 @@ export const makeGetTrackIsSolo = () =>
   )
 
 export function getTrackIsSolo(state: Types.State, trackId: string) {
-  return _.every(state.scenes.tracks, (track, thisTrackId) => {
+  return _.every(state.live.tracks, (track, thisTrackId) => {
     if (trackId === thisTrackId) return !track.playback.muted
     else return track.playback.muted
   })

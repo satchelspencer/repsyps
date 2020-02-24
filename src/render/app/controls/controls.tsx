@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { memo, useMemo } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
+import { shallowEqual } from 'react-redux'
 
 import { useSelector } from 'render/redux/react'
 import * as Types from 'render/util/types'
@@ -39,21 +40,23 @@ export interface ControlsProps {
   lastOfPrevIds: string[]
 }
 
-export default function ControlsContainer() {
-  const { currentControls, lastControls } = useSelector(
-      Selectors.getSeparatedCurrentControls
-    ),
+function ControlsContainer() {
+  const currentControls = useSelector(Selectors.getOnlyCurrentControls),
+    lastControls = useSelector(Selectors.getCurrentLastOfPrev),
     bindings = useSelector(state => state.bindings),
     values = useSelector(Selectors.getCurrentValueControlsValues),
-    cprops = {
-      bindings,
-      controls: {
-        ...currentControls,
-        ...lastControls,
-      },
-      lastOfPrevIds: _.keys(lastControls),
-      values,
-    }
+    cprops = useMemo(
+      () => ({
+        bindings,
+        controls: {
+          ...currentControls,
+          ...lastControls,
+        },
+        lastOfPrevIds: _.keys(lastControls),
+        values,
+      }),
+      [currentControls, lastControls, bindings, values]
+    )
   return (
     <ControlsWrapper>
       <SceneControl />
@@ -64,3 +67,5 @@ export default function ControlsContainer() {
     </ControlsWrapper>
   )
 }
+
+export default memo(ControlsContainer)

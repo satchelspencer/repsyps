@@ -264,7 +264,7 @@ const Track = memo(
 const OFFSCREEN_THRESH = 250
 
 export default function TrackContainer(props: TrackContainerProps) {
-  const track = useSelector(state => state.scenes.tracks[props.trackId]),
+  const track = useSelector(state => state.live.tracks[props.trackId]),
     source = useSelector(state => state.sources[props.trackId]),
     sample = useSelector(state => state.timing.tracks[props.trackId]),
     dispatch = useDispatch(),
