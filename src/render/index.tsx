@@ -18,5 +18,5 @@ ReactDOM.render(
   document.getElementById('app')
 )
 
-testData(store)
+//testData(store)
  

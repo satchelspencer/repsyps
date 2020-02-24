@@ -457,51 +457,56 @@ export default combineReducers({
         },
       }
     }),
-    /* FIX */
     handle(Actions.updateTime, (live, { payload }) => {
-      return {
-        ...live,
-        tracks: _.mapValues(live.tracks, (track, trackId) => {
-          const trackTiming = payload.timing.tracks[trackId]
-          if (!trackTiming) return track
-          const didAdvanceChunk =
-              track.playback.chunkIndex !== trackTiming.playback.chunkIndex,
-            didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback
+      let needsUpdate = false
+      const newTracks = _.mapValues(live.tracks, (track, trackId) => {
+        const trackTiming = payload.timing.tracks[trackId]
+        if (!trackTiming) return track
+        const didAdvanceChunk =
+            track.playback.chunkIndex !== trackTiming.playback.chunkIndex,
+          didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback
 
-          if (didAdvancePlayback && payload.commit && track.nextCueIndex !== -1) {
-            const appliedCue = track.cues[track.nextCueIndex],
-              followingCue = track.cues[track.nextCueIndex + 1],
-              hasFollowing = appliedCue.endBehavior === 'next' && followingCue
-            return {
-              ...track,
-              cueIndex: track.nextCueIndex,
-              nextCueIndex: hasFollowing ? track.nextCueIndex + 1 : -1,
-              playback: {
-                ...track.playback,
-                ...trackTiming.playback,
-                sourceTracksParams: mergeTrackSourcesParams(
-                  track.playback.sourceTracksParams,
-                  trackTiming.playback.sourceTracksParams
-                ),
-                nextAtChunk: false, //wait till end to apply nextPlayback
-              },
-              nextPlayback: hasFollowing ? followingCue.playback : null,
-            }
-          } else if (didAdvanceChunk) {
-            return {
-              ...track,
-              playback: {
-                ...track.playback,
-                ...trackTiming.playback,
-                sourceTracksParams: mergeTrackSourcesParams(
-                  track.playback.sourceTracksParams,
-                  trackTiming.playback.sourceTracksParams
-                ),
-              },
-            }
-          } else return track
-        }),
-      }
+        if (didAdvancePlayback && payload.commit && track.nextCueIndex !== -1) {
+          needsUpdate = true
+          const appliedCue = track.cues[track.nextCueIndex],
+            followingCue = track.cues[track.nextCueIndex + 1],
+            hasFollowing = appliedCue.endBehavior === 'next' && followingCue
+          return {
+            ...track,
+            cueIndex: track.nextCueIndex,
+            nextCueIndex: hasFollowing ? track.nextCueIndex + 1 : -1,
+            playback: {
+              ...track.playback,
+              ...trackTiming.playback,
+              sourceTracksParams: mergeTrackSourcesParams(
+                track.playback.sourceTracksParams,
+                trackTiming.playback.sourceTracksParams
+              ),
+              nextAtChunk: false, //wait till end to apply nextPlayback
+            },
+            nextPlayback: hasFollowing ? followingCue.playback : null,
+          }
+        } else if (didAdvanceChunk) {
+          needsUpdate = true
+          return {
+            ...track,
+            playback: {
+              ...track.playback,
+              ...trackTiming.playback,
+              sourceTracksParams: mergeTrackSourcesParams(
+                track.playback.sourceTracksParams,
+                trackTiming.playback.sourceTracksParams
+              ),
+            },
+          }
+        } else return track
+      })
+      return needsUpdate
+        ? {
+            ...live,
+            tracks: newTracks,
+          }
+        : live
     }),
     handle(Actions.deleteScene, (live, { payload: sceneIndex }) => {
       const newScenes = [...live.scenes],

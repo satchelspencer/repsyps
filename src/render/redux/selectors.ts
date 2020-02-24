@@ -112,7 +112,6 @@ export function getValueControlValue(state: Types.State, control: Types.ValueCon
   return value
 }
 
-/* TOFIX */
 export const getCurrentValueControlsValues = createSelector(
   [getCurrentControls, state => state.live.tracks, state => state.playback],
   (controls, tracks, playback) => {
