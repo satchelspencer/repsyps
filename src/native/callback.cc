@@ -18,6 +18,23 @@ double getMixTrackPhase(
   return mixTrackPhase;
 }
 
+void copyToOut(
+  ringbuffer * buffer, 
+  float * out, 
+  unsigned int & outputFrameIndex,
+  unsigned long framesPerBuffer 
+){
+  int bufferChannelCount = buffer->channels.size();
+  while(buffer->head != buffer->tail && outputFrameIndex < framesPerBuffer){
+    for(int channelIndex=0;channelIndex<bufferChannelCount;channelIndex++){
+      *out++ += buffer->channels[channelIndex][buffer->tail];
+      buffer->channels[channelIndex][buffer->tail] = 0; //reset it to 0
+    }
+    outputFrameIndex++;
+    buffer->tail = (buffer->tail+1)%buffer->size;
+  }
+}
+
 int paCallbackMethod(
   const void *inputBuffer, 
   void *outputBuffer,
@@ -53,7 +70,6 @@ int paCallbackMethod(
   float sampleValue;
   float sampleValueNext;
 
-  int bufferChannelCount = state->buffer->channels.size();
   int bufferHead;
 
   /* fill the output buffer with zeros */
@@ -62,14 +78,7 @@ int paCallbackMethod(
 
   /* empty the ringbuffer into the output, if available */
   out = (float*)outputBuffer;
-  while(state->buffer->head != state->buffer->tail && outputFrameIndex < framesPerBuffer){
-    for(channelIndex=0;channelIndex<bufferChannelCount;channelIndex++){
-      *out++ += state->buffer->channels[channelIndex][state->buffer->tail];
-      state->buffer->channels[channelIndex][state->buffer->tail] = 0; //reset it to 0
-    }
-    outputFrameIndex++;
-    state->buffer->tail = (state->buffer->tail+1)%state->buffer->size;
-  }
+  copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer);
 
   /* keep computing new windows until we fill the output buffer */
   while(outputFrameIndex < framesPerBuffer){
@@ -141,7 +150,7 @@ int paCallbackMethod(
           }
         }
 
-        /* add sample to ringbuffer */ 
+        /* add sample to filterbuffer */ 
         for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
           mixTrackSourceConfig = sourcePair.second;
           mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
@@ -162,14 +171,41 @@ int paCallbackMethod(
               sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
               sampleValue *= state->playback->volume;
               sampleValue *= mixTrackSourceConfig->volume;
-              sampleValue *= state->window[frameIndex]; //multiply by the window
             }
-            state->buffer->channels[channelIndex][bufferHead] += sampleValue;
+            mixTrackSource->filterBuffers[channelIndex][frameIndex] = sampleValue;
           }   
         }
-      
-        bufferHead = (bufferHead+1)%state->buffer->size;
         mixTrackPhase += phaseStep*mixTrackPlayback->alpha; 
+      }/* end compute window */
+
+      /* apply filters */
+      for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
+        mixTrackSourceConfig = sourcePair.second;
+        mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
+        channelCount = mixTrackSource->channels.size();
+
+        for(channelIndex=0;channelIndex<channelCount;channelIndex++){
+          for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
+            if(mixTrack->hasFilter){
+              firfilt_rrrf_push(mixTrack->filter, mixTrackSource->filterBuffers[channelIndex][frameIndex]);   
+              firfilt_rrrf_execute(mixTrack->filter, &mixTrackSource->filterBuffers[channelIndex][frameIndex]);
+            }
+          }
+        }
+      }
+
+      /* copy from filterbuffer to ringbuffer */
+      for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
+        for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
+          mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
+          channelCount = mixTrackSource->channels.size();
+
+          for(channelIndex=0;channelIndex<channelCount;channelIndex++){
+            state->buffer->channels[channelIndex][bufferHead] += 
+              mixTrackSource->filterBuffers[channelIndex][frameIndex] * state->window[frameIndex];
+          }
+        }
+        bufferHead = (bufferHead+1)%state->buffer->size;
       }
     }
     //head only moves forward by half the window size
@@ -177,14 +213,7 @@ int paCallbackMethod(
 
     /* empty the ringbuffer into the output... again */
     out = (float*)outputBuffer;
-    while(outputFrameIndex < framesPerBuffer){
-      for(channelIndex=0;channelIndex<bufferChannelCount;channelIndex++){
-        *out++ += state->buffer->channels[channelIndex][state->buffer->tail];
-        state->buffer->channels[channelIndex][state->buffer->tail] = 0;
-      }
-      outputFrameIndex++;
-      state->buffer->tail = (state->buffer->tail+1)%state->buffer->size;
-    }
+    copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer);
   }
   
   state->playback->time += (double)framesPerBuffer/state->playback->period;

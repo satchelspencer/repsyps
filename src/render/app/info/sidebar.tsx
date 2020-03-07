@@ -10,6 +10,7 @@ import BoundsControl from './bounds'
 import TrackVolume from './track-volume'
 import Separate from './separate'
 import Cues from './cues'
+import Filter from './filter'
 
 const SidebarWrapper = ctyled.div.styles({
   column: true,
@@ -39,6 +40,7 @@ const Sidebar = () => {
             <Title name={source.name} icon="wave" />
             <TrackVolume trackId={trackId} />
             <BoundsControl trackId={trackId} />
+            <Filter trackId={trackId} />
             <Separate trackId={trackId} />
             <Cues trackId={trackId} />
           </TrackDetailsWrapper>

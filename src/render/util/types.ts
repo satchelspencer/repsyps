@@ -34,6 +34,7 @@ export interface TrackPlayback {
   aperiodic: boolean
   nextAtChunk: boolean
   muted: boolean
+  filter: number
   sourceTracksParams: TrackSourcesParams
   /* timing info */
   chunkIndex: number
@@ -114,7 +115,7 @@ export interface CueStepControl extends BaseControl {
   cueStep: number
 }
 
-export type TrackValueProp = 'volume' | string //only vol for now
+export type TrackValueProp = 'volume' | 'filter' | string //only vol for now
 
 export interface TrackValueControl extends BaseControl {
   type: 'value'

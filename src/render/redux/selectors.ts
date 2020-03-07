@@ -121,6 +121,9 @@ export const getCurrentValueControlsValues = createSelector(
         if ('trackId' in control && 'sourceTrackId' in control) {
           const track = tracks[control.trackId]
           value = track.playback.sourceTracksParams[control.sourceTrackId][control.prop]
+        } else if ('trackId' in control) {
+          const track = tracks[control.trackId]
+          value = track.playback[control.prop]
         } else if ('global' in control) {
           value = playback[control.prop]
         }

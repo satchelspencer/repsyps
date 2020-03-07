@@ -16,6 +16,7 @@ const [vocal, instru] = _.chunk(audio.separateSource(A), 2)
 
 const ssize = (5.41 * RATE) / 2
 
+audio.addSource('mysource_main', A)
 audio.addSource('mysource_vocal', vocal)
 audio.addSource('mysource_instru', instru)
 
@@ -25,13 +26,11 @@ audio.setMixTrack('mytrack', {
     nextAtChunk: false,
     playing: true,
     muted: false,
+    filter: 0.1,
     sourceTracksParams: {
       mysource_vocal: {
         volume: 1,
       },
-      // mysource_instru: {
-      //   volume: 0.1,
-      // },
     },
   },
   nextPlayback: {
@@ -58,6 +57,14 @@ audio.updatePlayback({
 
 audio.start()
 
+
+let i = 0
 setInterval(() => {
+  // audio.setMixTrack('mytrack', {
+  //   playback: {
+  //     filter: Math.sin(i / 10) / 4 + 0.5,
+  //   }
+  // })
   console.log(audio.getTiming().tracks['mytrack'], audio.getDebug())
+  i++
 }, 100)

@@ -19,6 +19,7 @@ const defaultPlayback: Types.Playback = {
     alpha: 1,
     playing: false,
     aperiodic: true,
+    filter: 0.5,
     chunkIndex: -1,
     nextAtChunk: false,
     muted: false,
@@ -312,6 +313,20 @@ export default combineReducers({
                     [control.prop]: payload.value,
                   },
                 },
+              },
+            },
+          },
+        }
+      } else if ('prop' in control) {
+        return {
+          ...live,
+          tracks: {
+            ...live.tracks,
+            [control.trackId]: {
+              ...live.tracks[control.trackId],
+              playback: {
+                ...live.tracks[control.trackId].playback,
+                [control.prop]: payload.value,
               },
             },
           },

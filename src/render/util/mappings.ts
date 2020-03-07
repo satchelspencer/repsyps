@@ -30,6 +30,14 @@ const global: NamedMappings = {
       return input
     },
   },
+  filter: {
+    toStandard(input) {
+      return input
+    },
+    fromStandard(input) {
+      return input
+    },
+  },
 }
 
 export default global

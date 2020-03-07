@@ -106,6 +106,7 @@ void addSource(const Napi::CallbackInfo &info){
   
     newSource->length = len;
     newSource->channels.push_back(arrn);
+    newSource->filterBuffers.push_back(new float[state.windowSize]);
   }
 
   state.sources[sourceId] = newSource;
@@ -133,6 +134,7 @@ mixTrackPlayback * initMixTrackPlayback(){
   playback->alpha = 1.;
   playback->playing = false;
   playback->muted = false;
+  playback->filter = 0.5;
   playback->aperiodic = false;
   playback->nextAtChunk = false;
   return playback;
@@ -186,11 +188,43 @@ void setMixTrackPlayback(mixTrackPlayback * playback, Napi::Value value){
       playback->playing = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "muted"){
       playback->muted = value.As<Napi::Boolean>().Value();
+    }else if(propNameStr == "filter"){
+      playback->filter = value.As<Napi::Number>().FloatValue();
     }else if(propNameStr == "aperiodic"){
       playback->aperiodic = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "nextAtChunk"){
       playback->nextAtChunk = value.As<Napi::Boolean>().Value();
     }
+  }
+}
+
+void setMixTrackFilter(mixTrack * mixTrack, float filter){
+  if(filter == 0.5){
+    mixTrack->hasFilter = false;
+  }else{
+    float low_des = filter > 0.5 ? 0.0 : 1.0;
+    float high_des = 1 - low_des;
+    float cutoff_mag = abs(filter - 0.5);
+    if(filter < 0.5) cutoff_mag = 0.5 - cutoff_mag;
+
+    unsigned int n  =  121;      
+    float h[n];
+    unsigned int num_bands = 2;
+    float ft = estimate_req_filter_df(60, n);
+    float d = cutoff_mag - 0.5f * ft;
+    if(d < 0) d = 0;
+    float u =  cutoff_mag + 0.5f * ft;
+    if(u > 0.5) u = 0.5;
+    float bands[4] = { 0.0f, d, u, 0.5f };
+    float des[2] = { low_des, high_des };
+    float weights[2] = { 1.0f, 1.0f };
+    liquid_firdespm_wtype wtype[2] = {LIQUID_FIRDESPM_FLATWEIGHT, LIQUID_FIRDESPM_FLATWEIGHT};
+    firdespm_run(n,num_bands,bands,des,weights,wtype,LIQUID_FIRDESPM_BANDPASS,h);
+    firfilt_rrrf q = firfilt_rrrf_create(h,n);
+    firfilt_rrrf oldFilter = mixTrack->filter;
+    mixTrack->filter = q;
+    mixTrack->hasFilter = true;
+    if(oldFilter != NULL) firfilt_rrrf_destroy(oldFilter);
   }
 }
 
@@ -205,18 +239,25 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->playback = initMixTrackPlayback();
     newMixTrack->nextPlayback = NULL;
     newMixTrack->hasNext = false;
+    newMixTrack->hasFilter = false;
     newMixTrack->sample = 0;
+    newMixTrack->filter = NULL;
     state.mixTracks[mixTrackId] = newMixTrack;
   }
 
   setMixTrackPlayback(state.mixTracks[mixTrackId]->playback, playback);
 
-  if(nextPlayback.IsNull()){
-    state.mixTracks[mixTrackId]->hasNext = false;
-  }else {
-    state.mixTracks[mixTrackId]->nextPlayback = initMixTrackPlayback();
-    setMixTrackPlayback(state.mixTracks[mixTrackId]->nextPlayback, nextPlayback);
-    state.mixTracks[mixTrackId]->hasNext = true;
+  if(playback.As<Napi::Object>().Has("filter")) 
+    setMixTrackFilter(state.mixTracks[mixTrackId], state.mixTracks[mixTrackId]->playback->filter);
+
+  if(!nextPlayback.IsUndefined()){
+    if(nextPlayback.IsNull()){
+      state.mixTracks[mixTrackId]->hasNext = false;
+    }else {
+      state.mixTracks[mixTrackId]->nextPlayback = initMixTrackPlayback();
+      setMixTrackPlayback(state.mixTracks[mixTrackId]->nextPlayback, nextPlayback);
+      state.mixTracks[mixTrackId]->hasNext = true;
+    }
   }
 }
 
@@ -240,6 +281,7 @@ Napi::Object getPlaybackTiming(Napi::Env env, mixTrackPlayback * playback){
   mixTrackPlayback.Set("aperiodic", playback->aperiodic);
   mixTrackPlayback.Set("muted", playback->muted);
   mixTrackPlayback.Set("alpha", playback->alpha);
+  mixTrackPlayback.Set("filter", playback->filter);
 
   Napi::Array chunks = Napi::Array::New(env);
   for(unsigned int i=0;i<playback->chunks.size();i++)

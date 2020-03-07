@@ -3,14 +3,13 @@
 repsyps depends on native libraries that must be installed manually for development:
 
  - [portaudio 2.0](http://portaudio.com/docs/v19-doxydocs/index.html) for realtime audio output
- - [kfr 4.0.0](https://www.kfrlib.com/) for filtering and other dsp
+ - [liquid-dsp 1.3.2](https://github.com/jgaeddert/liquid-dsp) for filtering and other dsp
  - [libtensorflow 1.15.0](https://www.tensorflow.org/install/lang_c) for running A.I. source separation
 
 ### OSX Installation
  - prerequisites:
    - Xcode, [homebrew](https://brew.sh/) all of that
-   - cmake `brew install cmake`
-   - ninja `brew install ninja`
+   - autoconf `brew install autoconf automake`
    - nodejs 10+ [see installer](https://nodejs.org/en/download/)
    - yarn `npm install -g yarn`
  - clone repsyps to a reasonable place `git clone https://github.com/satchelspencer/repsyps && cd repsyps`
@@ -32,17 +31,12 @@ repsyps depends on native libraries that must be installed manually for developm
  - open portaudio `cd portaudio`
  - configure and compile `./configure --disable-mac-universal && make`
  - `cd ../` back to our libs folder
- - download the kfr source
-  
-    ~~~
-    wget https://github.com/kfrlib/kfr/archive/master.zip \
-    && unzip master.zip \
-    && rm master.zip && mv kfr-master kfr
-    ~~~
- - `mkdir kfr/build && cd kfr/build`
- - `cmake -GNinja -DENABLE_CAPI_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ ..`
- - `ninja kfr_capi`
- - `cd ../../` back to our libs folder
+ - clone the liquid-dsp source `git clone git://github.com/jgaeddert/liquid-dsp.git`
+ - `cd liquid-dsp`
+ - `./bootstrap.sh`
+ - `./configure`
+ - `make`
+ - `cd ../` back to our libs folder
  
     ~~~
     mkdir libtensorflow && cd libtensorflow && \
@@ -56,9 +50,7 @@ repsyps depends on native libraries that must be installed manually for developm
 ### Linux (Debian) Installation
 
 - prerequisites:
-   - [cmake](https://cmake.org/install/)
-   - clang > 6.0 `sudo apt-get install clang-6.0`
-   - [ninja](https://github.com/ninja-build/ninja/wiki/Pre-built-Ninja-packages)
+   - autoconf `sudo apt-get install automake autoconf`
    - nodejs 10+ [see installer](https://nodejs.org/en/download/)
    - yarn `npm install -g yarn`
  - clone repsyps to a reasonable place `git clone https://github.com/satchelspencer/repsyps && cd repsyps`
@@ -80,17 +72,13 @@ repsyps depends on native libraries that must be installed manually for developm
  - open portaudio `cd portaudio`
  - configure and compile `./configure CFLAGS=-fPIC && make`
  - `cd ../` back to our libs folder
- - download the kfr source
-  
-    ~~~
-    wget https://github.com/kfrlib/kfr/archive/master.zip \
-    && unzip master.zip \
-    && rm master.zip && mv kfr-master kfr
-    ~~~
- - `mkdir kfr/build && cd kfr/build`
- - `cmake -GNinja -DENABLE_CAPI_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++-6.0 ..`
- - `ninja kfr_capi`
- - `cd ../../` back to our libs folder
+ - `cd ../` back to our libs folder
+ - clone the liquid-dsp source `git clone git://github.com/jgaeddert/liquid-dsp.git`
+ - `cd liquid-dsp`
+ - `./bootstrap.sh`
+ - `./configure`
+ - `make`
+ - `cd ../` back to our libs folder
  
     ~~~
     mkdir libtensorflow && cd libtensorflow && \

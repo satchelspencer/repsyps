@@ -1,5 +1,6 @@
 #include <napi.h>
 #include "portaudio.h"
+#include <liquid.h>
 #include <unordered_map> 
 #include <vector>
 
@@ -24,6 +25,7 @@ typedef struct{
   float alpha;
   bool playing;
   bool muted;
+  float filter;
   bool aperiodic;
   bool nextAtChunk;
   int chunkIndex;
@@ -34,10 +36,13 @@ typedef struct{
   mixTrackPlayback* nextPlayback;
   bool hasNext;
   double sample;
+  firfilt_rrrf filter;
+  bool hasFilter;
 } mixTrack;
 
 typedef struct{
   std::vector<float*>  channels;
+  std::vector<float*>  filterBuffers;
   int length;
 } source;
 
