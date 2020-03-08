@@ -260,7 +260,6 @@ export function usePlaybackBound(trackId: string) {
               trackId,
               playback: {
                 chunks,
-                alpha: 1,
                 aperiodic: false,
                 chunkIndex: -1,
               },

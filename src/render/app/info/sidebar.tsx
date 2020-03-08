@@ -11,6 +11,7 @@ import TrackVolume from './track-volume'
 import Separate from './separate'
 import Cues from './cues'
 import Filter from './filter'
+import Alpha from './alpha'
 
 const SidebarWrapper = ctyled.div.styles({
   column: true,
@@ -41,6 +42,7 @@ const Sidebar = () => {
             <TrackVolume trackId={trackId} />
             <BoundsControl trackId={trackId} />
             <Filter trackId={trackId} />
+            <Alpha trackId={trackId} />
             <Separate trackId={trackId} />
             <Cues trackId={trackId} />
           </TrackDetailsWrapper>

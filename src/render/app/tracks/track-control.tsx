@@ -159,7 +159,10 @@ function TrackControls(props: TrackControlsProps) {
               <Icon name="timer" styles={{ size: s => s * 1.2 }} />
               <span>
                 {hasBounds ? _.round(60 / (barLen / RATE), 0) + '/m' : '??'} @{' '}
-                {track.playback.aperiodic ? '100' : _.round((barLen / period) * 100, 0)}%
+                {track.playback.aperiodic
+                  ? '100'
+                  : _.round((barLen / period) * track.playback.alpha * 100, 0)}
+                %
               </span>
             </SpeedWrapper>
             <CuesWrapper>
