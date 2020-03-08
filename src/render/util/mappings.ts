@@ -1,4 +1,15 @@
+import BezierEasing from 'bezier-easing'
+
 import { RATE, EPSILON } from 'render/util/audio'
+
+function ease(x1, y1, x2, y2) {
+  return {
+    apply: BezierEasing(x1, y1, x2, y2),
+    reverse: BezierEasing(y1, x1, y2, x2),
+  }
+}
+
+const filterEase = ease(0.54, 1, 1, 0.06)
 
 export interface Mapping {
   toStandard(number): number
@@ -32,10 +43,12 @@ const global: NamedMappings = {
   },
   filter: {
     toStandard(input) {
-      return input
+      return filterEase.reverse(input)
     },
     fromStandard(input) {
-      return input
+      let val = filterEase.apply(input)
+      if (Math.abs(val - 0.5) < 0.0001) val = 0.5
+      return val
     },
   },
 }

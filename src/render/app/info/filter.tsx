@@ -3,6 +3,7 @@ import * as _ from 'lodash'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import mappings from 'render/util/mappings'
 
 import ControlAdder from 'render/components/control-adder'
 import Icon from 'render/components/icon'
@@ -15,6 +16,8 @@ export interface FilterProps {
   trackId: string
 }
 
+const center = mappings.filter.toStandard(0.5)
+
 const Filter = memo((props: FilterProps) => {
   const filter = useSelector(state => state.live.tracks[props.trackId].playback.filter),
     name = useSelector(state => state.sources[props.trackId].name),
@@ -24,7 +27,7 @@ const Filter = memo((props: FilterProps) => {
         dispatch(
           Actions.setTrackPlayback({
             trackId: props.trackId,
-            playback: { filter: value },
+            playback: { filter: mappings.filter.fromStandard(value) },
           })
         )
       },
@@ -40,7 +43,11 @@ const Filter = memo((props: FilterProps) => {
             <span>&nbsp;Filter</span>
           </HeaderContent>
           <SliderWrapper styles={{ size: s => s * 1.1 }}>
-            <Slider value={filter} onChange={setFilter} markers={[0.5]} />
+            <Slider
+              value={mappings.filter.toStandard(filter)}
+              onChange={setFilter}
+              markers={[center]}
+            />
           </SliderWrapper>
           <ControlAdder
             name={'Filter - ' + name}
