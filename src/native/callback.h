@@ -1,12 +1,28 @@
 #include "portaudio.h"
 #include <math.h>
+
 #include "state.h"
+#include "filter.h"
 
 double getSamplePosition(
   std::vector<int> * chunks,
   int chunkIndex,
   double phase
 );
+
+double getMixTrackPhase(
+  playback* playback,
+  mixTrackPlayback* mixTrackPlayback
+);
+
+void copyToOut(
+  ringbuffer * buffer, 
+  float * out, 
+  unsigned int & outputFrameIndex,
+  unsigned long framesPerBuffer 
+);
+
+void applyNextPlayback(mixTrack * mixTrack);
 
 int paCallbackMethod(
   const void *inputBuffer, 

@@ -35,6 +35,13 @@ void copyToOut(
   }
 }
 
+void applyNextPlayback(mixTrack * mixTrack){
+  mixTrack->playback = mixTrack->nextPlayback;
+  setMixTrackFilter(mixTrack, mixTrack->playback->filter);
+  mixTrack->nextPlayback = NULL;
+  mixTrack->hasNext = false;
+}
+
 int paCallbackMethod(
   const void *inputBuffer, 
   void *outputBuffer,
@@ -143,9 +150,7 @@ int paCallbackMethod(
           mixTrack->playback->chunkIndex = tempMixTrackChunkIndex;
           mixTrack->sample = tempMixTrackSample;
           if(didAdvancePlayback){
-            mixTrack->playback = mixTrack->nextPlayback;
-            mixTrack->nextPlayback = NULL;
-            mixTrack->hasNext = false;
+            applyNextPlayback(mixTrack);
             didAdvancePlayback = false;
           }
         }
@@ -178,7 +183,7 @@ int paCallbackMethod(
         mixTrackPhase += phaseStep*mixTrackPlayback->alpha; 
       }/* end compute window */
 
-      /* apply filters */
+      /* apply filters to full window */
       for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
         mixTrackSourceConfig = sourcePair.second;
         mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
@@ -222,11 +227,7 @@ int paCallbackMethod(
   if(startTime-floor(startTime) > state->playback->time-floor(state->playback->time)){
     for(auto mixTrackPair: state->mixTracks){
       mixTrack = mixTrackPair.second;
-      if(mixTrack->hasNext && !mixTrack->playback->playing){
-        mixTrack->playback = mixTrack->nextPlayback;
-        mixTrack->nextPlayback = NULL;
-        mixTrack->hasNext = false;
-      }
+      if(mixTrack->hasNext && !mixTrack->playback->playing) applyNextPlayback(mixTrack);
     }
   }
 
