@@ -114,7 +114,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
           <HeaderContent>
             <Icon name="timer" styles={{ size: s => s * 1.2 }} />
             <span>Time Divisions:</span>
-            <SidebarValue warn={!hasTimeBase} styles={{ size: s => s * 1 }}>
+            <SidebarValue warn={!hasTimeBase} styles={{ size: s => s * 0.95 }}>
               {hasTimeBase ? _.round(60 / (avgBar / RATE), 0) + '/m' : '??'}
             </SidebarValue>
           </HeaderContent>

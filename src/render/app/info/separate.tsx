@@ -33,7 +33,7 @@ const Separate = memo((props: SeparateProps) => {
       title={
         <>
           <HeaderContent>
-            <Icon name="cut" />
+            <Icon name="cut" styles={{ size: s => s * 0.9 }} />
             <span>&nbsp;Track Separation</span>
           </HeaderContent>
           <WideButton styles={{ flex: 1 }} onClick={handleSeparate}>

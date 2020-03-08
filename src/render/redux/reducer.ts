@@ -65,7 +65,8 @@ function mergeTrackSourcesParams(
 
 function applyCue(track: Types.Track, cueIndex: number): Types.Track {
   const cue = track.cues[cueIndex],
-    followingCue = track.cues[cueIndex + 1]
+    followingCue = track.cues[cueIndex + 1],
+    cuePlayback = _.pick(cue.playback, cue.used)
 
   if (!cue) return track
   else if (cue.startBehavior === 'immediate') {
@@ -76,11 +77,13 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
       nextCueIndex: hasFollowing ? cueIndex + 1 : -1,
       playback: {
         ...track.playback,
-        ...cue.playback,
-        sourceTracksParams: mergeTrackSourcesParams(
-          track.playback.sourceTracksParams,
-          cue.playback.sourceTracksParams
-        ),
+        ...cuePlayback,
+        sourceTracksParams: cue.used.includes('sourceTracksParams')
+          ? mergeTrackSourcesParams(
+              track.playback.sourceTracksParams,
+              cue.playback.sourceTracksParams
+            )
+          : track.playback.sourceTracksParams,
       },
       nextPlayback: hasFollowing ? followingCue.playback : null,
     }
@@ -92,7 +95,10 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
         ...track.playback,
         nextAtChunk: cue.startBehavior === 'on-chunk',
       },
-      nextPlayback: cue.playback,
+      nextPlayback: {
+        ...track.playback,
+        ...cuePlayback,
+      },
     }
   } else return track
 }
@@ -499,7 +505,12 @@ export default combineReducers({
               ),
               nextAtChunk: false, //wait till end to apply nextPlayback
             },
-            nextPlayback: hasFollowing ? followingCue.playback : null,
+            nextPlayback: hasFollowing
+              ? {
+                  ...track.playback,
+                  ..._.pick(followingCue.playback, followingCue.used),
+                }
+              : null,
           }
         } else if (didAdvanceChunk) {
           needsUpdate = true

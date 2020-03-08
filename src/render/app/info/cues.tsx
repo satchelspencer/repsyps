@@ -1,6 +1,6 @@
 import React, { memo, useCallback } from 'react'
 import * as _ from 'lodash'
-import ctyled, { inline } from 'ctyled'
+import ctyled, { inline, active } from 'ctyled'
 import { SortableContainer, SortableElement } from 'react-sortable-hoc'
 
 import * as Types from 'render/util/types'
@@ -28,6 +28,7 @@ const CueWrapper = ctyled.div
     flex: 1,
     borderColor: c => c.contrast(-0.1),
   }).extend`
+  padding-right:0px !important;
   background:${({ color }, { active, next }) =>
     active ? color.nudge(-0.2).bg : next ? color.nudge(-0.1).bg : color.bg};
 `
@@ -69,12 +70,31 @@ const CueNumber = ctyled.div.styles({
   font-weight:bold;
 `
 
-const CueBehavior = CueWrapper.styles({
-  flex: 'none',
-  width: 2,
-  align: 'center',
-  justify: 'center',
+const BehaviorWrapper = ctyled.div.styles({
+  lined: true,
+  border: 1,
+  rounded: 1,
+  borderColor: c => c.contrast(-0.1),
 })
+
+const CueBehavior = ctyled.div
+  .class(active)
+  .attrs<{ off?: boolean }>({ off: false })
+  .styles({
+    hover: true,
+    align: 'center',
+    padd: 1,
+    justify: 'center',
+    color: c => c.nudge(0.05),
+    height: 1.8,
+    bg: true,
+  }).extend`
+  ${(_, { off }) =>
+    off &&
+    `
+    opacity:0.5;
+  `}
+`
 
 export interface CuesProps {
   trackId: string
@@ -88,6 +108,37 @@ interface CueProps {
   trackId: string
   trackName: string
   children?: any
+}
+
+interface CueUsePickerProps extends CueProps {
+  prop: keyof Types.TrackPlayback
+  icon: string
+}
+
+const CueUsePicker = (props: CueUsePickerProps) => {
+  const isUsed = props.cue.used.includes(props.prop),
+    dispatch = useDispatch()
+  return (
+    <CueBehavior
+      onClick={() => {
+        dispatch(
+          Actions.addCue({
+            trackId: props.trackId,
+            cue: {
+              ...props.cue,
+              used: isUsed
+                ? _.without(props.cue.used, props.prop)
+                : [...props.cue.used, props.prop],
+            },
+            index: props.cueIndex,
+          })
+        )
+      }}
+      off={!isUsed}
+    >
+      <Icon name={props.icon} />
+    </CueBehavior>
+  )
 }
 
 const startBehaviors: Types.CueStartBehavior[] = ['on-chunk', 'on-end', 'immediate'],
@@ -130,47 +181,51 @@ const Cue = SortableElement((xprops: any) => {
           type="note"
         />
       </CueWrapper>
-      <CueBehavior
-        onClick={() => {
-          const nextBehavior =
-            startBehaviors[
-              (startBehaviors.indexOf(props.cue.startBehavior) + 1) %
-                startBehaviors.length
-            ]
-          dispatch(
-            Actions.addCue({
-              trackId: props.trackId,
-              cue: {
-                ...props.cue,
-                startBehavior: nextBehavior,
-              },
-              index: props.cueIndex,
-            })
-          )
-        }}
-      >
-        <Icon name={props.cue.startBehavior} />
-      </CueBehavior>
-      <CueBehavior
-        onClick={() => {
-          const nextBehavior =
-            endBehaviors[
-              (endBehaviors.indexOf(props.cue.endBehavior) + 1) % endBehaviors.length
-            ]
-          dispatch(
-            Actions.addCue({
-              trackId: props.trackId,
-              cue: {
-                ...props.cue,
-                endBehavior: nextBehavior,
-              },
-              index: props.cueIndex,
-            })
-          )
-        }}
-      >
-        <Icon name={props.cue.endBehavior} />
-      </CueBehavior>
+      <BehaviorWrapper>
+        <CueUsePicker {...props} icon="volume" prop="sourceTracksParams" />
+        <CueUsePicker {...props} icon="spectrum" prop="filter" />
+        <CueBehavior
+          onClick={() => {
+            const nextBehavior =
+              startBehaviors[
+                (startBehaviors.indexOf(props.cue.startBehavior) + 1) %
+                  startBehaviors.length
+              ]
+            dispatch(
+              Actions.addCue({
+                trackId: props.trackId,
+                cue: {
+                  ...props.cue,
+                  startBehavior: nextBehavior,
+                },
+                index: props.cueIndex,
+              })
+            )
+          }}
+        >
+          <Icon name={props.cue.startBehavior} />
+        </CueBehavior>
+        <CueBehavior
+          onClick={() => {
+            const nextBehavior =
+              endBehaviors[
+                (endBehaviors.indexOf(props.cue.endBehavior) + 1) % endBehaviors.length
+              ]
+            dispatch(
+              Actions.addCue({
+                trackId: props.trackId,
+                cue: {
+                  ...props.cue,
+                  endBehavior: nextBehavior,
+                },
+                index: props.cueIndex,
+              })
+            )
+          }}
+        >
+          <Icon name={props.cue.endBehavior} />
+        </CueBehavior>
+      </BehaviorWrapper>
       <Icon
         asButton
         name="close"
@@ -198,6 +253,7 @@ const Cues = memo((props: CuesProps) => {
               chunkIndex: -1,
               playing: true,
             },
+            used: ['sourceTracksParams', 'filter', 'chunks', 'playing', 'chunkIndex'],
             startBehavior: 'immediate',
             endBehavior: 'loop',
           },

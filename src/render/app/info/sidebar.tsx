@@ -40,8 +40,8 @@ const Sidebar = () => {
           <TrackDetailsWrapper>
             <Title name={source.name} icon="wave" />
             <TrackVolume trackId={trackId} />
-            <BoundsControl trackId={trackId} />
             <Filter trackId={trackId} />
+            <BoundsControl trackId={trackId} />
             <Alpha trackId={trackId} />
             <Separate trackId={trackId} />
             <Cues trackId={trackId} />

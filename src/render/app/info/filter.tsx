@@ -39,7 +39,7 @@ const Filter = memo((props: FilterProps) => {
       title={
         <>
           <HeaderContent>
-            <Icon name="spectrum" />
+            <Icon styles={{ size: s => s * 1.2 }} name="spectrum" />
             <span>&nbsp;Filter</span>
           </HeaderContent>
           <SliderWrapper styles={{ size: s => s * 1.1 }}>

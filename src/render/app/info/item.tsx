@@ -18,10 +18,11 @@ const SubItem = ctyled.div.styles({
   padd: 1,
   column: true,
   gutter: 1,
-}).extend`
+}).extendSheet`
   margin-top:0px !important;
   margin-left:${({ size }) => size * 0.7}px;
   padding-left:${({ size }) => size/2}px;
+  padding-right:0px !important;
   border-left:1px solid ${({ color }) => color.bq};
 `
 

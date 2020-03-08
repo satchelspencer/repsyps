@@ -66,6 +66,7 @@ export type CueEndBehavior = 'loop' | 'next'
 
 export interface Cue {
   playback: TrackPlayback
+  used: (keyof TrackPlayback)[]
   startBehavior: CueStartBehavior
   endBehavior: CueEndBehavior
 }
