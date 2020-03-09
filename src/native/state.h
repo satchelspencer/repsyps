@@ -17,10 +17,11 @@ typedef struct{
 
 typedef struct{
   float volume;
+  int offset;
 } mixTrackSourceConfig;
 
 typedef struct{
-  std::unordered_map<std::string, mixTrackSourceConfig*> sourceTracksParams;
+  std::unordered_map<std::string, mixTrackSourceConfig*> * sourceTracksParams;
   std::vector<int> chunks;
   float alpha;
   bool playing;

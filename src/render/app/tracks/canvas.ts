@@ -3,6 +3,7 @@ import { CtyledContext, Color } from 'ctyled'
 import * as _ from 'lodash'
 
 import * as Types from 'render/util/types'
+import { getBuffer } from 'render/util/buffers'
 import { BIN_SIZE } from 'render/util/impulse-detect'
 import getMinMaxes from 'render/util/min-maxes'
 import { DrawViewContext } from './track'
@@ -11,14 +12,24 @@ export default function useWaveformCanvas(
   view: DrawViewContext,
   track: Types.Track,
   source: Types.Source,
-  buffer: Float32Array,
   trackId: string,
   sample: number
 ) {
   const canvasRef = useRef(null),
     ctxt = useRef(null),
     ctyledContext = useContext(CtyledContext),
-    minMaxes = useMemo(() => getMinMaxes(buffer, trackId), [buffer]),
+    buffer = useMemo(() => getBuffer(track.visibleSourceTrack)[1], [
+      track.visibleSourceTrack,
+    ]),
+    minMaxes = useMemo(() => getMinMaxes(buffer, track.visibleSourceTrack), [buffer]),
+    editTrackMinMaxes = useMemo(() => {
+      if (!track.sourceTrackEditing) return null
+      else
+        return getMinMaxes(
+          getBuffer(track.sourceTrackEditing)[0],
+          track.sourceTrackEditing
+        )
+    }, [track.sourceTrackEditing]),
     effectivePos = track.playback.playing ? 0 /* position */ : 0,
     { scale, start, impulses, width, height, clickX, center, mouseDown } = view
 
@@ -48,9 +59,23 @@ export default function useWaveformCanvas(
 
     ctx.clearRect(0, 0, pwidth, pheight)
 
-    
-    drawWaveform(drawContext, minMaxes)
+    drawWaveform(
+      drawContext,
+      minMaxes,
+      track.playback.sourceTracksParams[track.visibleSourceTrack].offset
+    )
     drawImpulses(drawContext, impulses)
+
+    if (editTrackMinMaxes)
+      drawWaveform(
+        {
+          ...drawContext,
+          color: ctyledContext.theme.color.as(['rgba(255,0,0,0.3)', 'rgba(255,0,0,0.3)']),
+        },
+        editTrackMinMaxes,
+        track.playback.sourceTracksParams[track.sourceTrackEditing].offset
+      )
+
     drawPlayback(drawContext, track)
     drawBounds(drawContext, source.bounds, track.editing)
     drawDrag(drawContext)
@@ -62,6 +87,8 @@ export default function useWaveformCanvas(
     track.editing,
     track.selected,
     sample,
+    track.sourceTrackEditing,
+    track.visibleSourceTrack,
     source.bounds,
     ..._.values(view),
   ])
@@ -92,7 +119,8 @@ export function drawDrag(context: DrawingContext) {
 
 export function drawWaveform(
   context: DrawingContext,
-  minMaxes: [Float32Array, Float32Array, number][]
+  minMaxes: [Float32Array, Float32Array, number][],
+  offset: number
 ) {
   const { pwidth, pheight, scale, start, ctx } = context,
     halfHeight = pheight / 2
@@ -104,7 +132,7 @@ export function drawWaveform(
     minMax = minMaxes[minMaxIndex]
 
   for (let i = 0; i < pwidth; i++) {
-    let iStart = start + i * scale
+    let iStart = start - offset + i * scale
     const minMaxSample = Math.floor(iStart / minMaxSize)
     const maxp = minMax[1][minMaxSample] * 0.75,
       maxn = minMax[0][minMaxSample] * 0.75

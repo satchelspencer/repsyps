@@ -137,6 +137,7 @@ mixTrackPlayback * initMixTrackPlayback(){
   playback->filter = 0.5;
   playback->aperiodic = false;
   playback->nextAtChunk = false;
+  playback->sourceTracksParams = new std::unordered_map<std::string, mixTrackSourceConfig*>();
   return playback;
 }
 
@@ -152,27 +153,20 @@ void setMixTrackPlayback(mixTrackPlayback * playback, Napi::Value value){
     if(propNameStr == "sourceTracksParams"){
       Napi::Object sourceTracksParams = value.As<Napi::Object>();
       Napi::Array sourceIds = sourceTracksParams.GetPropertyNames();
+      auto newSourceTracksParams = new std::unordered_map<std::string, mixTrackSourceConfig*>();
+      auto oldSourceTracksParams = playback->sourceTracksParams;
 
-      /* addd new and update existing */
       for(uint32_t c=0;c<sourceIds.Length();c++){
         std::string sourceId = sourceIds.Get(c).As<Napi::String>().Utf8Value();
         Napi::Object source = sourceTracksParams.Get(sourceId).As<Napi::Object>();
-        if(
-          playback->sourceTracksParams.find(sourceId) == 
-          playback->sourceTracksParams.end()
-        ){ //source is new
-          mixTrackSourceConfig * newMixTrackSource = new mixTrackSourceConfig{};
-          newMixTrackSource->volume = source.Get("volume").As<Napi::Number>().FloatValue();
-          playback->sourceTracksParams[sourceId] = newMixTrackSource;
-        }else{
-          playback->sourceTracksParams[sourceId]->volume = 
-            source.Get("volume").As<Napi::Number>().FloatValue();
-        }
+        mixTrackSourceConfig * newMixTrackSource = new mixTrackSourceConfig{};
+        newMixTrackSource->volume = source.Get("volume").As<Napi::Number>().FloatValue();
+        newMixTrackSource->offset = source.Get("offset").As<Napi::Number>().Int32Value();
+        (*newSourceTracksParams)[sourceId] = newMixTrackSource;
       }
-      /* find removed */
-      for(auto sourcePair: playback->sourceTracksParams){
-        if(!sourceTracksParams.Has(sourcePair.first)) playback->sourceTracksParams.erase(sourcePair.first);
-      }
+      playback->sourceTracksParams = newSourceTracksParams;
+      oldSourceTracksParams->clear();
+      delete oldSourceTracksParams;
     }else if(propNameStr == "chunkIndex"){
       playback->chunkIndex = value.As<Napi::Number>().Int32Value();
     }else if(propNameStr == "chunks"){
@@ -259,9 +253,10 @@ Napi::Object getPlaybackTiming(Napi::Env env, mixTrackPlayback * playback){
   mixTrackPlayback.Set("chunks", chunks);
 
   Napi::Object sourceTracksParams = Napi::Object::New(env);
-  for(auto sourcePair: playback->sourceTracksParams){
+  for(auto sourcePair: *(playback->sourceTracksParams)){
     Napi::Object source = Napi::Object::New(env);
     source.Set("volume", sourcePair.second->volume);
+    source.Set("offset", sourcePair.second->offset);
     sourceTracksParams.Set(sourcePair.first, source);
   }
   mixTrackPlayback.Set("sourceTracksParams", sourceTracksParams);

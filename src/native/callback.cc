@@ -72,6 +72,7 @@ int paCallbackMethod(
   mixTrackPlayback* mixTrackPlayback;
 
   unsigned int sampledFrameIndex;
+  unsigned int sourceTrackSampledFrameIndex;
   double samplePosition;
   double samplePositionFrac;
   float sampleValue;
@@ -156,35 +157,40 @@ int paCallbackMethod(
         }
 
         /* add sample to filterbuffer */ 
-        for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
-          mixTrackSourceConfig = sourcePair.second;
-          mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
-          mixTrackLength = mixTrackSource->length;
-          channelCount = mixTrackSource->channels.size();
+        for(auto sourcePair: *(mixTrackPlayback->sourceTracksParams)){
+          if(state->sources.find(sourcePair.first) != state->sources.end()){
+            mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
+            mixTrackSourceConfig = sourcePair.second;
+            mixTrackLength = mixTrackSource->length;
+            channelCount = mixTrackSource->channels.size();
+            sourceTrackSampledFrameIndex = sampledFrameIndex - mixTrackSourceConfig->offset;
 
-          /* add the sample to the buffer */
-          for(channelIndex=0;channelIndex<channelCount;channelIndex++){
-            sampleValue = 0;
-            if(
-              sampledFrameIndex >= 0 &&
-              sampledFrameIndex < mixTrackLength-1 &&
-              mixTrackSourceConfig->volume > 0 && 
-              !mixTrackPlayback->muted
-            ){
-              sampleValue = mixTrackSource->channels[channelIndex][sampledFrameIndex];
-              sampleValueNext = mixTrackSource->channels[channelIndex][sampledFrameIndex+1];
-              sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
-              sampleValue *= state->playback->volume;
-              sampleValue *= mixTrackSourceConfig->volume;
-            }
-            mixTrackSource->filterBuffers[channelIndex][frameIndex] = sampleValue;
-          }   
+            /* add the sample to the buffer */
+            for(channelIndex=0;channelIndex<channelCount;channelIndex++){
+              sampleValue = 0;
+              if(
+                sourceTrackSampledFrameIndex >= 0 &&
+                sourceTrackSampledFrameIndex < mixTrackLength-1 &&
+                mixTrackSourceConfig->volume > 0 && 
+                !mixTrackPlayback->muted
+              ){
+                sampleValue = 
+                  mixTrackSource->channels[channelIndex][sourceTrackSampledFrameIndex];
+                sampleValueNext = 
+                  mixTrackSource->channels[channelIndex][sourceTrackSampledFrameIndex + 1];
+                sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
+                sampleValue *= state->playback->volume;
+                sampleValue *= mixTrackSourceConfig->volume;
+              }
+              mixTrackSource->filterBuffers[channelIndex][frameIndex] = sampleValue;
+            }   
+          }
         }
         mixTrackPhase += phaseStep*mixTrackPlayback->alpha; 
       }/* end compute window */
 
       /* apply filters to full window */
-      for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
+      for(auto sourcePair: *(mixTrackPlayback->sourceTracksParams)){
         mixTrackSourceConfig = sourcePair.second;
         mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
         channelCount = mixTrackSource->channels.size();
@@ -201,7 +207,7 @@ int paCallbackMethod(
 
       /* copy from filterbuffer to ringbuffer */
       for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
-        for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
+        for(auto sourcePair: *(mixTrackPlayback->sourceTracksParams)){
           mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
           channelCount = mixTrackSource->channels.size();
 

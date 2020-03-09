@@ -8,6 +8,7 @@ import * as Actions from './actions'
 import * as Selectors from './selectors'
 import { RATE } from 'render/util/audio'
 import isEqual from '../util/is-equal'
+import sourceTracks from '../app/info/source-tracks'
 
 const defaultPlayback: Types.Playback = {
     volume: 1,
@@ -40,7 +41,7 @@ const defaultPlayback: Types.Playback = {
     time: 0,
     tracks: {},
   },
-  defaultTrackSourceParams: Types.TrackSourceParams = { volume: 0 }
+  defaultTrackSourceParams: Types.TrackSourceParams = { volume: 0, offset: 0 }
 
 /* if a cue doesnt esist in the new sources, just set its volume in the old to 0. */
 function mergeTrackSourcesParams(
@@ -57,6 +58,7 @@ function mergeTrackSourcesParams(
         return {
           ...srcConfig,
           volume: 0,
+          offset: 0,
         }
       else return srcConfig
     }
@@ -197,6 +199,18 @@ export default combineReducers({
             ...sources[payload.sourceId].sourceTracks,
             [payload.sourceTrackId]: payload.sourceTrack,
           },
+        },
+      }
+    }),
+    handle(Actions.removeTrackSource, (sources, { payload }) => {
+      return {
+        ...sources,
+        [payload.sourceId]: {
+          ...sources[payload.sourceId],
+          sourceTracks: _.omit(
+            sources[payload.sourceId].sourceTracks,
+            payload.sourceTrackId
+          ),
         },
       }
     }),
@@ -376,6 +390,18 @@ export default combineReducers({
           }
       } else return live
     }),
+    handle(Actions.setVisibleSourceTrack, (live, { payload }) => {
+      return {
+        ...live,
+        tracks: {
+          ...live.tracks,
+          [payload.trackId]: {
+            ...live.tracks[payload.trackId],
+            visibleSourceTrack: payload.visibleSourceTrack,
+          },
+        },
+      }
+    }),
     handle(Actions.setTrackSourceParams, (live, { payload }) => {
       return {
         ...live,
@@ -412,6 +438,61 @@ export default combineReducers({
                 ...live.tracks[payload.sourceId].playback.sourceTracksParams,
                 [payload.sourceTrackId]: defaultTrackSourceParams,
               },
+            },
+          },
+        },
+      }
+    }),
+    handle(Actions.removeTrackSource, (live, { payload }) => {
+      const newSourceTracksParams = _.omit(
+          live.tracks[payload.sourceId].playback.sourceTracksParams,
+          payload.sourceTrackId
+        ),
+        currentVisible = live.tracks[payload.sourceId].visibleSourceTrack,
+        currentEditing = live.tracks[payload.sourceId].sourceTrackEditing,
+        newScenes = live.scenes.map(scene => {
+          if (scene.trackIds.includes(payload.sourceId)) {
+            return {
+              ...scene,
+              controls: _.omitBy(
+                scene.controls,
+                control =>
+                  'sourceTrackId' in control &&
+                  control.sourceTrackId === payload.sourceTrackId
+              ),
+            }
+          } else return scene
+        })
+      return {
+        ...live,
+        scenes: newScenes,
+        tracks: {
+          ...live.tracks,
+          [payload.sourceId]: {
+            ...live.tracks[payload.sourceId],
+            cues: live.tracks[payload.sourceId].cues.map(cue => {
+              if (cue.playback.sourceTracksParams[payload.sourceTrackId]) {
+                return {
+                  ...cue,
+                  playback: {
+                    ...cue.playback,
+                    sourceTracksParams: _.omit(
+                      cue.playback.sourceTracksParams,
+                      payload.sourceTrackId
+                    ),
+                  },
+                }
+              } else return cue
+            }),
+            sourceTrackEditing:
+              currentEditing === payload.sourceTrackId ? null : currentEditing,
+            visibleSourceTrack:
+              payload.sourceTrackId === currentVisible
+                ? _.keys(newSourceTracksParams)[0]
+                : currentVisible,
+            playback: {
+              ...live.tracks[payload.sourceId].playback,
+              sourceTracksParams: newSourceTracksParams,
             },
           },
         },
@@ -474,6 +555,18 @@ export default combineReducers({
           [payload.trackId]: {
             ...live.tracks[payload.trackId],
             editing: payload.edit,
+          },
+        },
+      }
+    }),
+    handle(Actions.editSourceTrack, (live, { payload }) => {
+      return {
+        ...live,
+        tracks: {
+          ...live.tracks,
+          [payload.trackId]: {
+            ...live.tracks[payload.trackId],
+            sourceTrackEditing: payload.sourceTrackEditing,
           },
         },
       }
@@ -585,6 +678,7 @@ export default combineReducers({
         tracks: {
           ...live.tracks,
           [payload.trackId]: {
+            visibleSourceTrack: payload.trackId,
             playback: {
               ...defaultTrackPlayback,
               sourceTracksParams: payload.sourceTracksParams,
@@ -592,6 +686,7 @@ export default combineReducers({
             nextPlayback: null,
             selected: false,
             editing: true,
+            sourceTrackEditing: null,
             cues: [],
             cueIndex: -1,
             nextCueIndex: -1,

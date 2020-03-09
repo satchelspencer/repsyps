@@ -42,30 +42,33 @@ export default function syncAudio(store: Store<Types.State>) {
 
       _.keys(track.playback.sourceTracksParams).forEach(sourceId => {
         const sourceIsNew = trackIsNew || !lastTrack.playback.sourceTracksParams[sourceId]
-        if (sourceIsNew) audio.addSource(sourceId, getBuffer(sourceId))
+        if (sourceIsNew) {
+          audio.addSource(sourceId, getBuffer(sourceId))
+        }
       })
-
-      if (!trackIsNew)
-        _.keys(lastTrack.playback.sourceTracksParams).forEach(sourceId => {
-          if (!track.playback.sourceTracksParams[sourceId]) audio.removeSource(sourceId)
-        })
 
       if (trackPlaybackHasChanged) {
         const change: Types.NativeTrackChange = {
           playback: diff(trackIsNew ? {} : lastTrack.playback, track.playback),
           nextPlayback: track.nextPlayback,
         }
+        //console.log('c', JSON.stringify(change, null, 2))
         audio.setMixTrack(trackId, change)
       }
+
+      if (!trackIsNew)
+        _.keys(lastTrack.playback.sourceTracksParams).forEach(sourceId => {
+          if (!track.playback.sourceTracksParams[sourceId]) audio.removeSource(sourceId)
+        })
     })
 
     if (lastState)
       lastTrackIds.forEach(trackId => {
         if (!trackIds.includes(trackId)) {
           audio.removeMixTrack(trackId)
-          _.keys(lastState.live.tracks[trackId].playback.sourceTracksParams).forEach(sourceId =>
-            audio.removeSource(sourceId)
-          )
+          _.keys(
+            lastState.live.tracks[trackId].playback.sourceTracksParams
+          ).forEach(sourceId => audio.removeSource(sourceId))
         }
       })
 

@@ -5,9 +5,8 @@ import ctyled from 'ctyled'
 import { useSelector } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
 
-import Title from './title'
 import BoundsControl from './bounds'
-import TrackVolume from './track-volume'
+import SourceTracks from './source-tracks'
 import Separate from './separate'
 import Cues from './cues'
 import Filter from './filter'
@@ -38,11 +37,10 @@ const Sidebar = () => {
       <SidebarWrapper>
         {!!track && (
           <TrackDetailsWrapper>
-            <Title name={source.name} icon="wave" />
-            <TrackVolume trackId={trackId} />
-            <Filter trackId={trackId} />
+            <SourceTracks trackId={trackId} />
             <BoundsControl trackId={trackId} />
             <Alpha trackId={trackId} />
+            <Filter trackId={trackId} />
             <Separate trackId={trackId} />
             <Cues trackId={trackId} />
           </TrackDetailsWrapper>

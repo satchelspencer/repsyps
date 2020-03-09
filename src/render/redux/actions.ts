@@ -25,15 +25,20 @@ export const setTrackSourceParams = createAction<{
 }>('SET_TRACK_SOURCE')
 
 export const createSource = createAction<{
-  sourceId: string,
+  sourceId: string
   source: Types.Source
 }>('CREATE_SOURCE')
 
 export const createTrackSource = createAction<{
-  sourceId: string,
-  sourceTrackId: string,
+  sourceId: string
+  sourceTrackId: string
   sourceTrack: Types.TrackSource
 }>('CREATE_TRACKSOURCE')
+
+export const removeTrackSource = createAction<{
+  sourceId: string
+  sourceTrackId: string
+}>('REMOVE_TRACKSOURCE')
 
 export const setTrackPlayback = createAction<{
   trackId: string
@@ -63,6 +68,16 @@ export const toggleTrack = createAction<string>('TOGGLE_TRACK_PLAYBACK')
 export const editTrack = createAction<{ trackId: string; edit: boolean }>(
   'SET_TRACK_EDIT'
 )
+
+export const editSourceTrack = createAction<{
+  trackId: string
+  sourceTrackEditing: string | null
+}>('SET_SOURCE_TRACK_EDIT')
+
+export const setVisibleSourceTrack = createAction<{
+  trackId: string
+  visibleSourceTrack: string
+}>('SET_VIS_SOURCE_TRACK')
 
 export const setTrackMuted = createAction<{ trackId: string; muted: boolean }>(
   'SET_TRACK_MUTE'

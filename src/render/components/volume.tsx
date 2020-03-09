@@ -15,6 +15,7 @@ const VolumeWrapper = ctyled.div.styles({
 
 export interface VolumeProps {
   volume: number
+  noIcon?: boolean
   onChange: (volume: number) => any
 }
 
@@ -26,21 +27,23 @@ export default function Volume(props: VolumeProps) {
 
   return (
     <VolumeWrapper>
-      <Icon
-        styles={{ size: s => s * 1.3 }}
-        asButton
-        name={props.volume ? 'volume' : 'volume_mute'}
-        onClick={() => {
-          if (props.volume) {
-            setLastVolume(props.volume)
-            setMuted(true)
-            props.onChange(0)
-          } else {
-            setMuted(false)
-            props.onChange(lastVolume)
-          }
-        }}
-      />
+      {!props.noIcon && (
+        <Icon
+          styles={{ size: s => s * 1.3 }}
+          asButton
+          name={props.volume ? 'volume' : 'volume_mute'}
+          onClick={() => {
+            if (props.volume) {
+              setLastVolume(props.volume)
+              setMuted(true)
+              props.onChange(0)
+            } else {
+              setMuted(false)
+              props.onChange(lastVolume)
+            }
+          }}
+        />
+      )}
       <SliderWrapper style={{ opacity: muted || !props.volume ? 0.5 : 1 }}>
         <Slider
           value={mappings.volume.toStandard(muted ? lastVolume : props.volume)}

@@ -42,7 +42,7 @@ const Filter = memo((props: FilterProps) => {
             <Icon styles={{ size: s => s * 1.2 }} name="spectrum" />
             <span>&nbsp;Filter</span>
           </HeaderContent>
-          <SliderWrapper styles={{ size: s => s * 1.1 }}>
+          <SliderWrapper styles={{ size: s => s * 1 }}>
             <Slider
               value={mappings.filter.toStandard(filter)}
               onChange={setFilter}

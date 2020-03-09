@@ -22,6 +22,7 @@ import {
   useResizePlayback,
   useSelectBound,
   usePlaybackBound,
+  useOffsetTrack,
 } from './mouse'
 import TrackControls from './track-control'
 
@@ -96,6 +97,8 @@ export interface ClickEventContext {
   selected: boolean
   height: number
   width: number
+  sourceTrackEditing: string | null
+  currentEditingOffset: number | null
 }
 
 const Track = memo(
@@ -139,6 +142,10 @@ const Track = memo(
     const clickCtxt: ClickEventContext = {
         clickX,
         editing: track.editing,
+        sourceTrackEditing: track.sourceTrackEditing,
+        currentEditingOffset:
+          track.sourceTrackEditing &&
+          track.playback.sourceTracksParams[track.sourceTrackEditing].offset,
         selected: track.selected,
         height,
         width,
@@ -146,20 +153,32 @@ const Track = memo(
       clickCtxtValues = _.values(clickCtxt)
 
     /* WAVEFORM DRAWING ON CANVAS */
-    const { canvasRef } = useWaveformCanvas(drawView, track, source, buffer, trackId, sample)
+    const { canvasRef } = useWaveformCanvas(
+      drawView,
+      track,
+      source,
+      trackId,
+      sample
+    )
 
     /* mouse event handlers */
     const selectPlaybackHandlers = useSelectPlayback(trackId),
       resizePlaybackHandlers = useResizePlayback(trackId),
       boundHandlers = useResizeBounds(trackId),
       selectBoundHandlers = useSelectBound(trackId),
-      playbackBoundHandlers = usePlaybackBound(trackId)
+      playbackBoundHandlers = usePlaybackBound(trackId),
+      offsetTrackHandlers = useOffsetTrack(trackId)
 
     const handleMouseDown = useCallback(
         e => {
+          if (e.shiftKey) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
           const pos = getRelativePos(e, left, top)
           resizePlaybackHandlers.mouseDown(clickCtxt, view, pos, track.playback.chunks)
           boundHandlers.mouseDown(clickCtxt, view, pos, source.bounds)
+          offsetTrackHandlers.mouseDown(clickCtxt, pos, e.shiftKey)
           setClickX(pos.x)
           setMouseDown(true)
           setShiftKey(e.shiftKey)
@@ -171,6 +190,7 @@ const Track = memo(
           const pos = getRelativePos(e, left, top)
           boundHandlers.mouseMove(clickCtxt, view, pos, source.bounds)
           resizePlaybackHandlers.mouseMove(clickCtxt, pos, view, track.playback.chunks)
+          offsetTrackHandlers.mouseMove(clickCtxt, pos, view)
           setCenter(pos.x)
         },
         [...clickCtxtValues, ...viewValues]
@@ -194,9 +214,10 @@ const Track = memo(
               source.bounds
             ),
             didResizeBound = boundHandlers.mouseUp(clickCtxt, pos, view),
-            didResizePlayback = resizePlaybackHandlers.mouseUp(clickCtxt, pos, view)
+            didResizePlayback = resizePlaybackHandlers.mouseUp(clickCtxt, pos, view),
+            didOffsetTrack = offsetTrackHandlers.mouseUp(clickCtxt, pos)
 
-          if (!didSelectBound && !didResizeBound && !didResizePlayback)
+          if (!didSelectBound && !didResizeBound && !didResizePlayback && !didOffsetTrack)
             selectPlaybackHandlers.mouseUp(clickCtxt, pos, view)
           setClickX(null)
           setMouseDown(false)

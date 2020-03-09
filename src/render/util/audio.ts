@@ -1,4 +1,5 @@
 import path from 'path'
+import _ from 'lodash'
 
 import * as Types from './types'
 import { isDev } from 'render/util/env'
@@ -17,12 +18,17 @@ interface AudioAPI {
   getDebug(): any
 }
 
-export default eval('require')(
-  path.resolve(
-    __dirname,
-    isDev ? '../../../build/Release/audio.node' : 'build/Release/audio.node'
-  )
-) as AudioAPI
+export default (_.mapValues(
+  eval('require')(
+    path.resolve(
+      __dirname,
+      isDev ? '../../../build/Release/audio.node' : 'build/Release/audio.node'
+    )
+  ),
+  (v, key) => {
+    return v
+  }
+) as unknown) as AudioAPI
 
 export const RATE = 44100
 

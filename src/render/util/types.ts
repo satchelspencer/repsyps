@@ -6,6 +6,7 @@ export interface Playback {
 
 export interface TrackSourceParams {
   volume: number
+  offset: number
 }
 
 export interface TrackSourcesParams {
@@ -87,6 +88,8 @@ export interface Track extends NativeTrack {
   cues: Cue[]
   cueIndex: number
   nextCueIndex: number
+  sourceTrackEditing: string | null
+  visibleSourceTrack: string
 }
 
 export interface Tracks {

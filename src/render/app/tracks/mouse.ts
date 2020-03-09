@@ -7,6 +7,7 @@ import { getTimeFromPosition, getBoundIndex, getNextBoundIndex } from './utils'
 import * as Types from 'render/util/types'
 
 import { ClickEventContext, ViewContext } from './track'
+import { start } from 'repl'
 
 export interface ClickPos {
   x: number
@@ -52,6 +53,47 @@ export function useResizeBounds(trackId: string) {
       },
     }),
     [trackId, boundIndex]
+  )
+}
+
+export function useOffsetTrack(trackId: string) {
+  const dispatch = useDispatch(),
+    [startX, setStartX] = useState(-1),
+    [startingOffset, setStartingOffset] = useState(0)
+
+  return useMemo(
+    () => ({
+      mouseDown(ctxt: ClickEventContext, pos: ClickPos, shiftKey: boolean) {
+        if (!ctxt.sourceTrackEditing || !shiftKey) return false
+        else {
+          setStartX(pos.x)
+          setStartingOffset(ctxt.currentEditingOffset)
+          return true
+        }
+      },
+      mouseMove(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
+        if (startX !== -1) {
+          const offset = (pos.x - startX) * 2 * view.scale
+          dispatch(
+            Actions.setTrackSourceParams({
+              trackId,
+              sourceTrackId: ctxt.sourceTrackEditing,
+              sourceTrackParams: {
+                offset: startingOffset + offset,
+              },
+            })
+          )
+          return true
+        }
+        return false
+      },
+      mouseUp(ctxt: ClickEventContext, pos: ClickPos) {
+        if (!ctxt.sourceTrackEditing || startX === -1) return false
+        if (startX !== -1) setStartX(-1)
+        return true
+      },
+    }),
+    [trackId, startX, startingOffset]
   )
 }
 

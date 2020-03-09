@@ -30,7 +30,7 @@ export default function(store: Store) {
     store.dispatch(
       Actions.addTrack({
         trackId: id,
-        sourceTracksParams: { [id]: { volume: 1 } },
+        sourceTracksParams: { [id]: { volume: 1, offset: 0 } },
       })
     )
   }

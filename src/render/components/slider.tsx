@@ -24,9 +24,10 @@ const SliderGuide = ctyled.div
     border: true,
     rounded: true,
     flex: 1,
-    height: (_, { column }) => (column ? 'auto' : 0.5),
-    width: (_, { column }) => (column ? 0.5 : 'auto'),
-  })
+  }).extend`
+    height:${({ size }, { column }) => (column ? 'auto' : Math.ceil(0.5 * size) + 'px')};
+    width:${({ size }, { column }) => (!column ? 'auto' : Math.ceil(0.5 * size) + 'px')};
+  `
 
 const HANDLE_MINOR = 0.5,
   HANDLE_MAJOR = 1.3
@@ -39,9 +40,11 @@ const Handle = ctyled.div
     border: true,
     flex: 1,
     color: c => c.invert().contrast(-0.2),
-    height: (_, { column }) => (column ? HANDLE_MINOR : HANDLE_MAJOR),
-    width: (_, { column }) => (column ? HANDLE_MAJOR : HANDLE_MINOR),
   }).extend`
+  height:${({ size }, { column }) =>
+    Math.ceil((column ? HANDLE_MINOR : HANDLE_MAJOR) * size) + 'px'};
+  width:${({ size }, { column }) =>
+    Math.ceil((column ? HANDLE_MAJOR : HANDLE_MINOR) * size) + 'px'};
   position:absolute;
   `
 
