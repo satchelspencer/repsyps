@@ -97,12 +97,13 @@ export default async function init(store: Store<Types.State>) {
     _.throttle(
       () => {
         const state = store.getState(),
-          controls = Selectors.getControls(state.live)
+          controls = Selectors.getControls(state.live),
+          values = Selectors.getCurrentValueControlsValues(state)
         /* make values reflect state */
         for (let controlId in controls) {
           const control = controls[controlId]
           if (control.type === 'value') {
-            const value = Selectors.getValueControlValue(state, control)
+            const value = values[controlId]
             if (value !== sentMidiValues[controlId]) {
               const binding = Selectors.getBindingByPosition(
                 state.bindings,

@@ -1,8 +1,9 @@
 import React, { memo, useCallback } from 'react'
 import * as _ from 'lodash'
 
-import { useDispatch, useSelector } from 'render/redux/react'
+import { useDispatch, useSelector, useStore } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import * as Types from 'render/util/types'
 
 import Icon from 'render/components/icon'
 import { HeaderContent, SelectableButton } from 'render/components/misc'
@@ -17,19 +18,35 @@ const Sync = memo((props: SyncProps) => {
   const { aperiodic, chunks, chunkIndex } = useSelector(
       state => state.live.tracks[props.trackId].playback
     ),
+    bounds = useSelector(state => state.sources[props.trackId].bounds),
     dispatch = useDispatch(),
-    canSync = !!chunks[chunkIndex + 1],
+    store = useStore(),
+    isLoop = !!chunks[chunkIndex + 1],
+    canSync = isLoop || bounds.length > 1,
     setAperiodic = useCallback(
-      (aperiodic: boolean) =>
+      (aperiodic: boolean) => {
+        const newPlayback: Partial<Types.TrackPlayback> = {
+          aperiodic,
+        }
+        if (!aperiodic && !isLoop && bounds.length) {
+          const sample = store.getState().timing.tracks[props.trackId],
+            nextBoundIndex = _.findIndex(bounds, b => {
+              return b >= sample
+            }),
+            boundIndex = nextBoundIndex - 1
+          newPlayback.chunks = [
+            bounds[boundIndex],
+            bounds[nextBoundIndex] - bounds[boundIndex],
+          ]
+        }
         dispatch(
           Actions.setTrackPlayback({
             trackId: props.trackId,
-            playback: {
-              aperiodic,
-            },
+            playback: newPlayback,
           })
-        ),
-      [props.trackId]
+        )
+      },
+      [props.trackId, isLoop]
     )
 
   return (

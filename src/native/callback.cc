@@ -67,7 +67,7 @@ int paCallbackMethod(
   int channelIndex;
   int chunkCount;
   int tempMixTrackChunkIndex;
-  int tempMixTrackSample;
+  double tempMixTrackSample;
   bool didAdvancePlayback;
   mixTrackPlayback* mixTrackPlayback;
 
@@ -157,7 +157,7 @@ int paCallbackMethod(
         }
 
         /* add sample to filterbuffer */ 
-        for(auto sourcePair: *(mixTrackPlayback->sourceTracksParams)){
+        for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
           if(state->sources.find(sourcePair.first) != state->sources.end()){
             mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
             mixTrackSourceConfig = sourcePair.second;
@@ -190,16 +190,18 @@ int paCallbackMethod(
       }/* end compute window */
 
       /* apply filters to full window */
-      for(auto sourcePair: *(mixTrackPlayback->sourceTracksParams)){
-        mixTrackSourceConfig = sourcePair.second;
-        mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
-        channelCount = mixTrackSource->channels.size();
+      for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
+        if(state->sources.find(sourcePair.first) != state->sources.end()){
+          mixTrackSourceConfig = sourcePair.second;
+          mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
+          channelCount = mixTrackSource->channels.size();
 
-        for(channelIndex=0;channelIndex<channelCount;channelIndex++){
-          for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
-            if(mixTrack->hasFilter){
-              firfilt_rrrf_push(mixTrack->filter, mixTrackSource->filterBuffers[channelIndex][frameIndex]);   
-              firfilt_rrrf_execute(mixTrack->filter, &mixTrackSource->filterBuffers[channelIndex][frameIndex]);
+          for(channelIndex=0;channelIndex<channelCount;channelIndex++){
+            for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
+              if(mixTrack->hasFilter){
+                firfilt_rrrf_push(mixTrack->filter, mixTrackSource->filterBuffers[channelIndex][frameIndex]);   
+                firfilt_rrrf_execute(mixTrack->filter, &mixTrackSource->filterBuffers[channelIndex][frameIndex]);
+              }
             }
           }
         }
@@ -207,13 +209,15 @@ int paCallbackMethod(
 
       /* copy from filterbuffer to ringbuffer */
       for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
-        for(auto sourcePair: *(mixTrackPlayback->sourceTracksParams)){
-          mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
-          channelCount = mixTrackSource->channels.size();
+        for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
+          if(state->sources.find(sourcePair.first) != state->sources.end()){
+            mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
+            channelCount = mixTrackSource->channels.size();
 
-          for(channelIndex=0;channelIndex<channelCount;channelIndex++){
-            state->buffer->channels[channelIndex][bufferHead] += 
-              mixTrackSource->filterBuffers[channelIndex][frameIndex] * state->window[frameIndex];
+            for(channelIndex=0;channelIndex<channelCount;channelIndex++){
+              state->buffer->channels[channelIndex][bufferHead] += 
+                mixTrackSource->filterBuffers[channelIndex][frameIndex] * state->window[frameIndex];
+            }
           }
         }
         bufferHead = (bufferHead+1)%state->buffer->size;

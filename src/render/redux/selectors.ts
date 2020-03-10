@@ -100,18 +100,6 @@ export const makeGetMatchingControl = () =>
     }
   )
 
-export function getValueControlValue(state: Types.State, control: Types.ValueControl) {
-  let value = null
-  if ('sourceTrackId' in control) {
-    const track = state.live.tracks[control.trackId]
-    value = track.playback.sourceTracksParams[control.sourceTrackId][control.prop]
-  } else if ('global' in control) {
-    value = state.playback[control.prop]
-  }
-  value = mappings[control.prop].toStandard(value)
-  return value
-}
-
 export const getCurrentValueControlsValues = createSelector(
   [getCurrentControls, state => state.live.tracks, state => state.playback],
   (controls, tracks, playback) => {

@@ -134,7 +134,7 @@ function TrackControls(props: TrackControlsProps) {
       track.playback.chunkIndex === -1
         ? track.playback.chunks[1]
         : track.playback.chunks[track.playback.chunkIndex * 2 + 1],
-    baseSpeed = barLen ? barLen / period : 1,
+    baseSpeed = barLen && !track.playback.aperiodic ? barLen / period : 1,
     activeCueIndex = track.cueIndex,
     playing = track.playback.playing,
     hasCues = !!track.cues.length,

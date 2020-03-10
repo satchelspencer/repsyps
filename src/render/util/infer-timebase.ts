@@ -14,14 +14,14 @@ export default function inferTimeBase(
     clength = chunks[1]
   for (
     let sample = cstart;
-    sample < len;
+    sample < len + clength;
     sample = snapSampleToImpulses(sample + clength, SNAP_SCALE, impulses)
   ) {
     bounds.push(sample)
   }
   for (
     let sample = snapSampleToImpulses(cstart - clength, SNAP_SCALE, impulses);
-    sample > 0;
+    sample > 0 - clength;
     sample = snapSampleToImpulses(sample - clength, SNAP_SCALE, impulses)
   ) {
     bounds.unshift(sample)
