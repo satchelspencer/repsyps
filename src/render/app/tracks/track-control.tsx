@@ -127,17 +127,14 @@ function TrackControls(props: TrackControlsProps) {
     track = useSelector(state => state.live.tracks[props.trackId]),
     period = useSelector(state => state.playback.period),
     isSolo = useSelector(state => getTrackIsSolo(state, props.trackId)),
-    sample = useSelector(state => state.timing.tracks[props.trackId]),
     source = useSelector(state => state.sources[props.trackId]),
     dispatch = useDispatch()
 
-  const hasBounds = track && source.bounds.length,
-    barLen = useMemo(() => {
-      const currentIndex = _.findIndex(source.bounds, bound => bound >= sample),
-        index = Math.max(currentIndex, 1),
-        inBound = source.bounds[index] && source.bounds[index - 1]
-      return inBound && source.bounds[index] - source.bounds[index - 1]
-    }, [source.bounds, sample]),
+  const barLen =
+      track.playback.chunkIndex === -1
+        ? track.playback.chunks[1]
+        : track.playback.chunks[track.playback.chunkIndex * 2 + 1],
+    baseSpeed = barLen ? barLen / period : 1,
     activeCueIndex = track.cueIndex,
     playing = track.playback.playing,
     hasCues = !!track.cues.length,
@@ -158,11 +155,8 @@ function TrackControls(props: TrackControlsProps) {
             <SpeedWrapper>
               <Icon name="timer" styles={{ size: s => s * 1.2 }} />
               <span>
-                {hasBounds ? _.round(60 / (barLen / RATE), 0) + '/m' : '??'} @{' '}
-                {track.playback.aperiodic
-                  ? '100'
-                  : _.round((barLen / period) * track.playback.alpha * 100, 0)}
-                %
+                {barLen > 0 ? _.round(60 / (barLen / RATE), 0) + '/m' : '??'} @{' '}
+                {_.round(baseSpeed * track.playback.alpha * 100, 0)}%
               </span>
             </SpeedWrapper>
             <CuesWrapper>

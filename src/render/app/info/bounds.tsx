@@ -155,9 +155,28 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       open={editing}
       onSetOpen={open => {
         dispatch(Actions.editTrack({ trackId: props.trackId, edit: open }))
-        if (!open)
+
+        if (!open) {
           dispatch(
             Actions.editSourceTrack({ trackId: props.trackId, sourceTrackEditing: null })
+          )
+          if (bounds && bounds.length)
+            dispatch(
+              Actions.setTrackPlayback({
+                trackId: props.trackId,
+                playback: {
+                  aperiodic: false,
+                },
+              })
+            )
+        } else
+          dispatch(
+            Actions.setTrackPlayback({
+              trackId: props.trackId,
+              playback: {
+                aperiodic: true,
+              },
+            })
           )
       }}
       title={

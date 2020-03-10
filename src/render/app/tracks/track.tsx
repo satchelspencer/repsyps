@@ -93,6 +93,7 @@ export interface BoundViewContext extends ViewContext {
 
 export interface ClickEventContext {
   clickX: number
+  aperiodic: boolean
   editing: boolean
   selected: boolean
   height: number
@@ -141,6 +142,10 @@ const Track = memo(
     /* click event contexts */
     const clickCtxt: ClickEventContext = {
         clickX,
+        aperiodic:
+          !track.playback.chunks[track.playback.chunkIndex + 1] ||
+          track.playback.aperiodic ||
+          !source.bounds.length,
         editing: track.editing,
         sourceTrackEditing: track.sourceTrackEditing,
         currentEditingOffset:
@@ -153,13 +158,7 @@ const Track = memo(
       clickCtxtValues = _.values(clickCtxt)
 
     /* WAVEFORM DRAWING ON CANVAS */
-    const { canvasRef } = useWaveformCanvas(
-      drawView,
-      track,
-      source,
-      trackId,
-      sample
-    )
+    const { canvasRef } = useWaveformCanvas(drawView, track, source, trackId, sample)
 
     /* mouse event handlers */
     const selectPlaybackHandlers = useSelectPlayback(trackId),
@@ -193,7 +192,7 @@ const Track = memo(
           offsetTrackHandlers.mouseMove(clickCtxt, pos, view)
           setCenter(pos.x)
         },
-        [...clickCtxtValues, ...viewValues]
+        [...clickCtxtValues, ...viewValues, track.playback.chunks]
       ),
       handleMouseUp = useCallback(
         e => {

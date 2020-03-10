@@ -233,7 +233,10 @@ int paCallbackMethod(
   if(startTime-floor(startTime) > state->playback->time-floor(state->playback->time)){
     for(auto mixTrackPair: state->mixTracks){
       mixTrack = mixTrackPair.second;
-      if(mixTrack->hasNext && !mixTrack->playback->playing) applyNextPlayback(mixTrack);
+      if(
+        mixTrack->hasNext && 
+        (!mixTrack->playback->playing || mixTrack->playback->aperiodic)
+      ) applyNextPlayback(mixTrack);
     }
   }
 

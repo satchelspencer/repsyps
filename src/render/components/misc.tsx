@@ -1,5 +1,5 @@
 import * as _ from 'lodash'
-import ctyled, {inline} from 'ctyled'
+import ctyled, { inline } from 'ctyled'
 
 import { palette } from 'render/components/theme'
 import Button from 'render/components/button'
@@ -22,11 +22,15 @@ export const Value = ctyled.div
     rounded: true,
   })
 
-
 export const WideButton = Button.styles({
   color: c => c.nudge(0.05),
   justify: 'center',
-  gutter: 1
+  gutter: 1,
+})
+
+export const SelectableButton = WideButton.attrs({ selected: false }).styles({
+  color: (c, { selected }) => (selected ? c.nudge(0.1).contrast(0.1) : c),
+  flex: 1,
 })
 
 export const SidebarValue = Value.class(inline).extend`

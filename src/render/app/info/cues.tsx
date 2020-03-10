@@ -253,14 +253,20 @@ const Cues = memo((props: CuesProps) => {
               chunkIndex: -1,
               playing: true,
             },
-            used: ['sourceTracksParams', 'filter', 'chunks', 'playing', 'chunkIndex'],
+            used: [
+              'sourceTracksParams',
+              'filter',
+              'chunks',
+              'playing',
+              'chunkIndex',
+              'aperiodic',
+            ],
             startBehavior: 'immediate',
             endBehavior: 'loop',
           },
         })
       )
     }, [props.trackId, playback, name]),
-    canAdd = playback.chunks[1],
     hasCues = !!cues.length,
     atStart = playback.playing && cueIndex === 0,
     atEnd = playback.playing && cueIndex === cues.length - 1,
@@ -278,7 +284,7 @@ const Cues = memo((props: CuesProps) => {
               <Icon name="cue" styles={{ size: s => s * 1.1 }} />
               <span>&nbsp;Playback Cues</span>
             </HeaderContent>
-            <FullButton disabled={!canAdd} onClick={handleAddCue}>
+            <FullButton onClick={handleAddCue}>
               <Icon name="add" />
               &nbsp; Add Cue
             </FullButton>

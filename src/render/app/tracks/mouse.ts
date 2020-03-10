@@ -109,7 +109,7 @@ export function useResizePlayback(trackId: string) {
         pos: ClickPos,
         chunks: Types.Chunks
       ) {
-        if (!ctxt.editing) return false
+        if (!ctxt.aperiodic) return false
         const sample = getTimeFromPosition(pos.x, false, view),
           nearChunkIndex = _.findIndex(chunks, (chunk, i) => {
             const csample = i % 2 === 0 ? chunk : chunk + chunks[i - 1]
@@ -124,7 +124,7 @@ export function useResizePlayback(trackId: string) {
         view: ViewContext,
         chunks: Types.Chunks
       ) {
-        if (!ctxt.editing) return false
+        if (!ctxt.aperiodic) return false
         if (chunkIndex !== -1) {
           const sample = getTimeFromPosition(pos.x, true, view),
             newChunks = [...chunks],
@@ -155,7 +155,7 @@ export function useResizePlayback(trackId: string) {
         return chunkIndex !== -1
       },
       mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
-        if (!ctxt.editing) return false
+        if (!ctxt.aperiodic) return false
         if (chunkIndex !== -1) setChunkIndex(-1)
         return chunkIndex !== -1
       },
@@ -171,7 +171,7 @@ export function useSelectPlayback(trackId: string) {
   return useMemo(
     () => ({
       mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
-        if (!ctxt.editing) return false
+        if (!ctxt.aperiodic) return false
         const dx = Math.abs(pos.x - ctxt.clickX),
           xPos = getTimeFromPosition(pos.x, true, view)
         if (dx < 3) {
@@ -222,7 +222,7 @@ export function useSelectBound(trackId: string) {
         view: ViewContext,
         bounds: number[]
       ) {
-        if (!ctxt.editing) return false
+        if (!ctxt.aperiodic) return false
         const closeBoundIndex = getBoundIndex(pos.x, view, bounds)
         if (Math.abs(ctxt.clickX - pos.x) < 3 && closeBoundIndex !== -1) {
           dispatch(
@@ -245,7 +245,7 @@ export function useSelectBound(trackId: string) {
         view: ViewContext,
         bounds: number[]
       ) {
-        if (!ctxt.editing) return false
+        if (!ctxt.aperiodic) return false
         const nextBoundIndex = getNextBoundIndex(pos.x, view, bounds),
           prevBoundIndex = nextBoundIndex - 1,
           start = bounds[prevBoundIndex],
@@ -283,7 +283,7 @@ export function usePlaybackBound(trackId: string) {
         bounds: number[],
         selected: boolean
       ) {
-        if (ctxt.editing || (!selected && ctxt.clickX === pos.x)) return false
+        if (ctxt.aperiodic || !bounds.length || (!selected && ctxt.clickX === pos.x)) return false
         const startBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
           endBoundIndex = getNextBoundIndex(pos.x, view, bounds)
 

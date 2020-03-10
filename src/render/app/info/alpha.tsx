@@ -5,14 +5,9 @@ import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 
 import Icon from 'render/components/icon'
-import { HeaderContent, WideButton } from 'render/components/misc'
+import { HeaderContent, WideButton, SelectableButton } from 'render/components/misc'
 
 import SidebarItem from './item'
-
-const SelectableButton = WideButton.attrs({ selected: false }).styles({
-  color: (c, { selected }) => (selected ? c.nudge(0.1) : c),
-  flex: 1,
-})
 
 export interface AlphaProps {
   trackId: string
@@ -56,7 +51,7 @@ const Alpha = memo((props: AlphaProps) => {
       title={
         <>
           <HeaderContent>
-            <Icon name="meter" />
+            <Icon name="meter" styles={{size: s => s*1.3}}/>
             <span>&nbsp;Speed</span>
           </HeaderContent>
           <Setter alpha={1 / 4} text="1/4x" currentAlpha={alpha} setAlpha={setAlpha} />
