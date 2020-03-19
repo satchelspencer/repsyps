@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react'
+import React, { memo, useMemo, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled, { inline, active } from 'ctyled'
 import { SortableContainer, SortableElement } from 'react-sortable-hoc'
@@ -6,13 +6,14 @@ import { SortableContainer, SortableElement } from 'react-sortable-hoc'
 import * as Types from 'render/util/types'
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import * as Selectors from 'render/redux/selectors'
 import { RATE } from 'render/util/audio'
 
 import Icon from 'render/components/icon'
 import { WideButton, HeaderContent } from 'render/components/misc'
 import ControlAdder from 'render/components/control-adder'
 
-import SidebarItem from './item'
+import SidebarItem from 'render/components/item'
 
 const CueWrapper = ctyled.div
   .attrs<{ active?: boolean; next?: boolean }>({ active: false, next: false })
@@ -106,6 +107,7 @@ interface CueProps {
   active: boolean
   next: boolean
   trackId: string
+  trackIndex: number
   trackName: string
   children?: any
 }
@@ -154,16 +156,9 @@ const Cue = SortableElement((xprops: any) => {
         next={props.next}
         onClick={() =>
           dispatch(
-            Actions.applyControl({
-              control: {
-                name: '',
-                position: { x: 0, y: 0 },
-                trackId: props.trackId,
-                type: 'note',
-                cueIndex: props.cueIndex,
-              },
-              value: 127,
-              function: 'note-on',
+            Actions.setTrackCue({
+              trackId: props.trackId,
+              cueIndex: props.cueIndex,
             })
           )
         }
@@ -176,9 +171,8 @@ const Cue = SortableElement((xprops: any) => {
           name={`Cue ${props.cueIndex + 1}: ${props.trackName}`}
           params={{
             cueIndex: props.cueIndex,
-            trackId: props.trackId,
+            trackIndex: props.trackIndex,
           }}
-          type="note"
         />
       </CueWrapper>
       <BehaviorWrapper>
@@ -241,6 +235,8 @@ const Cues = memo((props: CuesProps) => {
   const { playback, cues, cueIndex, nextCueIndex } = useSelector(
       state => state.live.tracks[props.trackId]
     ),
+    getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
+    trackIndex = useSelector(state => getTrackIndex(state, props.trackId)),
     { name } = useSelector(state => state.sources[props.trackId]),
     dispatch = useDispatch(),
     handleAddCue = useCallback(() => {
@@ -299,16 +295,9 @@ const Cues = memo((props: CuesProps) => {
             onClick={() => {
               if (!canPrev) return
               dispatch(
-                Actions.applyControl({
-                  control: {
-                    name: '',
-                    position: { x: 0, y: 0 },
-                    trackId: props.trackId,
-                    type: 'note',
-                    cueStep: -1,
-                  },
-                  value: 127,
-                  function: 'note-on',
+                Actions.stepTrackCue({
+                  trackId: props.trackId,
+                  cueStep: -1,
                 })
               )
             }}
@@ -320,26 +309,18 @@ const Cues = memo((props: CuesProps) => {
             <ControlAdder
               name={`Prev: ${name}`}
               params={{
-                trackId: props.trackId,
+                trackIndex,
                 cueStep: -1,
               }}
-              type="note"
             />
           </JumpButton>
           <JumpButton
             allowClick
             onClick={() => {
               dispatch(
-                Actions.applyControl({
-                  control: {
-                    name: '',
-                    position: { x: 0, y: 0 },
-                    trackId: props.trackId,
-                    type: 'note',
-                    cueStep: 1,
-                  },
-                  value: 127,
-                  function: 'note-on',
+                Actions.stepTrackCue({
+                  trackId: props.trackId,
+                  cueStep: 1,
                 })
               )
             }}
@@ -351,10 +332,9 @@ const Cues = memo((props: CuesProps) => {
             <ControlAdder
               name={`Next: ${name}`}
               params={{
-                trackId: props.trackId,
+                trackIndex,
                 cueStep: 1,
               }}
-              type="note"
             />
           </JumpButton>
         </CueH>
@@ -379,6 +359,7 @@ const Cues = memo((props: CuesProps) => {
               index={thisCueIndex}
               key={thisCueIndex}
               trackId={props.trackId}
+              trackIndex={trackIndex}
               trackName={name}
               cue={cue}
               cueIndex={thisCueIndex}

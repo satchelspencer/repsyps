@@ -83,7 +83,6 @@ export default function useWaveformCanvas(
     buffer,
     track.playback,
     effectivePos,
-    source.bounds,
     track.editing,
     track.selected,
     sample,

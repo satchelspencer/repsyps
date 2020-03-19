@@ -25,11 +25,7 @@ const VolumeControl = memo(() => {
         volume={volume}
         onChange={v => dispatch(Actions.updatePlayback({ volume: v }))}
       />
-      <ControlAdder
-        name="Global Volume"
-        params={{ prop: 'volume', global: true }}
-        type="value"
-      />
+      <ControlAdder name="Global Volume" params={{ globalProp: 'volume' }} />
     </VolumeWrapper>
   )
 })

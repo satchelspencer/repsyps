@@ -276,7 +276,8 @@ const Track = memo(
       !nextProps.visible || //if not visible never update
       (prevProps.track === nextProps.track &&
         prevProps.trackId === nextProps.trackId &&
-        prevProps.sample === nextProps.sample)
+        prevProps.sample === nextProps.sample &&
+        prevProps.source === nextProps.source)
     )
   }
 )
@@ -295,7 +296,7 @@ export default function TrackContainer(props: TrackContainerProps) {
     visible = !wrapperRef.current || (start < vend && end > vstart),
     wayOffScreen =
       !visible && (start - vend > OFFSCREEN_THRESH || vstart - end > OFFSCREEN_THRESH),
-    { isSelecting, onSelect } = useSelectable(),
+    { isSelecting, onSelect } = useSelectable<string>('track'),
     handleClick = useCallback(() => {
       if (isSelecting) onSelect(props.trackId)
       else !track.selected && dispatch(Actions.selectTrackExclusive(props.trackId))

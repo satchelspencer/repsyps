@@ -31,29 +31,8 @@ export function getActiveTrackIds(state: Types.State): string[] {
   return lastOfPrev ? [lastOfPrev, ...currentScene.trackIds] : currentScene.trackIds
 }
 
-export function getLastOfPrevControls(
-  scenes: Types.Scene[],
-  sceneIndex: number
-): Types.Controls {
-  const prevScene = scenes[sceneIndex - 1],
-    lastOfPrev = prevScene && _.last(prevScene.trackIds)
-
-  return lastOfPrev
-    ? _.pickBy(
-        prevScene.controls,
-        control => 'trackId' in control && control.trackId === lastOfPrev
-      )
-    : {}
-}
-
 export function getControlsAtIndex(live: Types.Live, sceneIndex: number): Types.Controls {
-  const currentScene = live.scenes[sceneIndex],
-    lastControls = getLastOfPrevControls(live.scenes, sceneIndex)
-
-  return {
-    ...currentScene.controls,
-    ...lastControls,
-  }
+  return live.scenes[sceneIndex].controls
 }
 
 export function getControls(live: Types.Live): Types.Controls {
@@ -64,118 +43,213 @@ export const getScenes = (state: Types.State) => state.live.scenes
 
 export const getSceneIndex = (state: Types.State) => state.live.sceneIndex
 
-export const getOnlyCurrentControls = createSelector(
-  [getScenes, getSceneIndex],
-  (scenes, sceneIndex) => {
-    return scenes[sceneIndex].controls
-  }
-)
-
-export const getCurrentLastOfPrev = createSelector(
-  [getScenes, getSceneIndex],
-  (scenes, sceneIndex) => getLastOfPrevControls(scenes, sceneIndex)
-)
-
-export const getCurrentControls = createSelector(
-  [getOnlyCurrentControls, getCurrentLastOfPrev],
-  (current, last) => {
-    return {
-      ...current,
-      ...last,
-    }
-  }
-)
-
-export const makeGetMatchingControl = () =>
+export const makeGetTrackIndex = () =>
   createSelector(
-    [getCurrentControls, (_, partialControl: Partial<Types.Control>) => partialControl],
-    (controls, partialControl) => {
-      const controlId = _.findKey(controls, control =>
-        _.every(_.keys(partialControl), prop => control[prop] === partialControl[prop])
-      )
+    [getCurrentScene, getPrevScene, (_, trackId: string) => trackId],
+    (scene, prevScene, trackId) => {
+      const currentSceneIndex = scene.trackIds.indexOf(trackId)
+      return currentSceneIndex === -1
+        ? prevScene.trackIds.indexOf(trackId) - prevScene.trackIds.length
+        : currentSceneIndex
+    }
+  )
+
+export function defaultValue(value: number) {
+  return value === undefined ? 1 : value
+}
+
+export function pos2str(pos: Types.ControlPosition) {
+  return pos ? pos.x + '.' + pos.y : null
+}
+
+export function str2pos(str: string): Types.ControlPosition {
+  const split = str.split('.')
+  return {
+    x: parseInt(split[0]),
+    y: parseInt(split[1]),
+  }
+}
+
+export function getByPos<T>(grid: Types.Grid<T>, pos: Types.ControlPosition): T {
+  return grid[pos2str(pos)]
+}
+
+export const makeGetControlAtPos = () =>
+  createSelector(
+    [
+      getCurrentScene,
+      (state: Types.State) => state.live.controlValues,
+      (_, pos: Types.ControlPosition) => pos,
+    ],
+    (scene, values, pos): [Types.ControlGroup, number] => {
+      return [getByPos(scene.controls, pos), defaultValue(getByPos(values, pos))]
+    }
+  )
+
+export const makeGetBindingAtPos = () =>
+  createSelector(
+    [(state: Types.State) => state.live.bindings, (_, pos: Types.ControlPosition) => pos],
+    (bindings, pos) => {
+      return getByPos(bindings, pos)
+    }
+  )
+
+export const getTrackIdByIndex = (live: Types.Live, index: number) => {
+  if (index >= 0) return live.scenes[live.sceneIndex].trackIds[index]
+  else {
+    const prev = live.scenes[live.sceneIndex - 1]
+    return prev && prev.trackIds[prev.trackIds.length + index]
+  }
+}
+
+export const makeGetControlTrackId = () =>
+  createSelector(
+    [
+      (state: Types.State) => getCurrentScene(state).trackIds,
+      (_, control: Types.Control) => control,
+    ],
+    (trackIds, control) => {
+      if (control && 'trackIndex' in control) return trackIds[control.trackIndex]
+      else return undefined
+    }
+  )
+
+export const makeGetControlAbsValue = () => {
+  const getControlTrackId = makeGetControlTrackId()
+  return createSelector(
+    [
+      (state: Types.State, control: Types.Control) => {
+        const trackId = getControlTrackId(state, control)
+        return trackId && state.live.tracks[trackId].playback
+      },
+      (state: Types.State, control: Types.Control) => {
+        const trackId = getControlTrackId(state, control)
+        return trackId && state.sources[trackId].sourceTracks
+      },
+      (state: Types.State) => state.playback,
+      (_, control: Types.Control) => control,
+    ],
+    (trackPlayback, sourceTracks, playback, control) => {
+      let value = null,
+        prop = null
+      if (control && 'globalProp' in control) {
+        value = playback[control.globalProp]
+        prop = control.globalProp
+      } else if (!sourceTracks) return value
+      else if ('trackProp' in control) {
+        value = trackPlayback[control.trackProp]
+        prop = control.trackProp
+      } else if ('sourceTrackProp' in control) {
+        const trackSourceId = _.keys(sourceTracks)[control.sourceTrackIndex]
+        if (trackSourceId) {
+          value = trackPlayback.sourceTracksParams[trackSourceId][control.sourceTrackProp]
+          prop = control.sourceTrackProp
+        }
+      }
+      if (value !== null) value = mappings[prop].toStandard(value)
+      return value
+    }
+  )
+}
+
+function applyControlsToPlayback(
+  trackIndex: number,
+  playback: Types.TrackPlayback,
+  controls: Types.Controls,
+  values: Types.ControlValues,
+  initValues: Types.ControlValues
+) {
+  let outPlayback: Types.TrackPlayback = { ...playback },
+    needsUpdate = false
+  _.keys(controls).forEach(posStr => {
+    const controlGroup = controls[posStr],
+      initValue = defaultValue(initValues[posStr]),
+      defValue = defaultValue(values[posStr]),
+      value = initValue > 0.5 ? defValue : 1 - defValue
+
+    if (!controlGroup.absolute)
+      controlGroup.controls.forEach(control => {
+        const controlValue = control.invert ? 1 - value : value
+        if ('trackIndex' in control && control.trackIndex === trackIndex) {
+          needsUpdate = true
+          if ('trackProp' in control) {
+            outPlayback = {
+              ...outPlayback,
+              [control.trackProp]:
+                defaultValue(outPlayback[control.trackProp]) * controlValue,
+            }
+          } else if ('sourceTrackProp' in control) {
+            const sourceId = _.keys(playback.sourceTracksParams)[control.sourceTrackIndex]
+            if (sourceId) {
+              outPlayback = {
+                ...outPlayback,
+                sourceTracksParams: {
+                  ...outPlayback.sourceTracksParams,
+                  [sourceId]: {
+                    ...outPlayback.sourceTracksParams[sourceId],
+                    [control.sourceTrackProp]:
+                      defaultValue(
+                        outPlayback.sourceTracksParams[sourceId][control.sourceTrackProp]
+                      ) * controlValue,
+                  },
+                },
+              }
+            }
+          }
+        }
+      })
+  })
+  return needsUpdate ? outPlayback : playback
+}
+
+export const makeGetTrackPlayback = () => {
+  const getTrackIndex = makeGetTrackIndex()
+  return createSelector(
+    [
+      getTrackIndex,
+      (state: Types.State, trackId: string) => state.live.tracks[trackId].playback,
+      (state: Types.State, trackId: string) => state.live.tracks[trackId].nextPlayback,
+      (state: Types.State) => getControls(state.live),
+      (state: Types.State) => state.live.controlValues,
+      (state: Types.State) => state.live.initValues,
+    ],
+    (trackIndex, playback, nextPlayback, controls, values, initValues) => {
       return {
-        controlId,
-        control: controls[controlId],
+        playback: applyControlsToPlayback(
+          trackIndex,
+          playback,
+          controls,
+          values,
+          initValues
+        ),
+        nextPlayback:
+          nextPlayback &&
+          applyControlsToPlayback(trackIndex, nextPlayback, controls, values, initValues),
       }
     }
   )
+}
 
-export const getCurrentValueControlsValues = createSelector(
-  [getCurrentControls, state => state.live.tracks, state => state.playback],
-  (controls, tracks, playback) => {
-    return _.mapValues(controls, control => {
-      if ('prop' in control) {
-        let value = null
-        if ('trackId' in control && 'sourceTrackId' in control) {
-          const track = tracks[control.trackId]
-          value = track.playback.sourceTracksParams[control.sourceTrackId][control.prop]
-        } else if ('trackId' in control) {
-          const track = tracks[control.trackId]
-          value = track.playback[control.prop]
-        } else if ('global' in control) {
-          value = playback[control.prop]
-        }
-        value = mappings[control.prop].toStandard(value)
-        return value
-      } else return 0
-    })
+export const getCurrentTrackIds = createSelector(
+  [getCurrentScene, getPrevScene],
+  (prevScene, currentScene) => {
+    const lastOfPrev = prevScene && _.last(prevScene.trackIds)
+    return [lastOfPrev, ...currentScene.trackIds]
   }
 )
 
-export function getControlByPosition(
-  controls: Types.Controls,
-  position: Types.ControlPosition
-) {
-  return _.find(
-    controls,
-    control => control.position.x === position.x && control.position.y === position.y
-  )
-}
-
-export function getBindingByPosition(
-  bindings: Types.Bindings,
-  position: Types.ControlPosition
-) {
-  return _.find(
-    bindings,
-    binding => binding.position.x === position.x && binding.position.y === position.y
-  )
-}
-
-function getOpenPosition(controls: Types.Controls, type: Types.BindingType) {
-  const usedXes: { [x: number]: boolean } = {},
-    controlValues = _.values(controls),
-    maxX = controlValues.length
-      ? _.maxBy(controlValues, control => {
-          if (control.type !== type) return 0
-          else {
-            const x = control.position.x
-            usedXes[x] = true
-            return x
-          }
-        }).position.x
-      : 0,
-    freeX = _.range(maxX + 2).find(x => !usedXes[x])
-  return {
-    x: freeX,
-    y: type === 'value' ? 0 : 1,
+export const getContolsAbsValues = createSelector(
+  [
+    getCurrentScene,
+    getPrevScene,
+    (state: Types.State) => state.playback,
+    (state: Types.State) => state.live.tracks,
+  ],
+  (currentScene, prevScene, playback, tracks) => {
+    const lastOfPrev = prevScene && _.last(prevScene.trackIds),
+      trackIds = [lastOfPrev, ...currentScene.trackIds]
   }
-}
-
-export function getOpenPositionAtIndex(
-  live: Types.Live,
-  type: Types.BindingType,
-  sceneIndex: number
-) {
-  const controls = getControlsAtIndex(live, sceneIndex)
-  return getOpenPosition(controls, type)
-}
-
-export const makeGetOpenPosition = () =>
-  createSelector(
-    [getCurrentControls, (_, type: Types.BindingType) => type],
-    (controls, type) => getOpenPosition(controls, type)
-  )
+)
 
 export const makeGetTrackIsSolo = () =>
   createSelector(

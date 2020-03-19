@@ -1,22 +1,21 @@
 import { Store } from 'redux'
 import _ from 'lodash'
+import { batchActions } from 'redux-batched-actions'
 
 import * as Types from 'render/util/types'
-import mappings from 'render/util/mappings'
-
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 
 const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
-    128: 'note-off',
-    144: 'note-on',
+    128: 'note',
+    144: 'note',
     160: 'poly-aftertouch',
     176: 'control',
     192: 'program',
     207: 'channel-aftertouch',
     224: 'pitch-bend',
   },
-  instantFunctions: Types.MidiFunctionName[] = ['note-on', 'note-off'],
+  instantFunctions: Types.MidiFunctionName[] = ['note'],
   midiFnMask = 0xf0,
   getFunction = (byte: number) => midiFunctions[byte & midiFnMask],
   midiChannelMask = 0x0f,
@@ -31,22 +30,36 @@ export default async function init(store: Store<Types.State>) {
         controls = Selectors.getControls(state.live),
         [fnbyte, note, value] = data,
         fn = getFunction(fnbyte),
-        channel = getChannel(fnbyte)
+        channel = getChannel(fnbyte),
+        normValue = value / 127
 
-      for (let bindingId in state.bindings) {
-        const binding = state.bindings[bindingId]
+      for (let posStr in state.live.bindings) {
+        const binding = state.live.bindings[posStr],
+          position = Selectors.str2pos(posStr)
+
         if (binding.waiting) {
           store.dispatch(
-            Actions.addBinding({
-              bindingId: bindingId,
-              binding: {
-                ...binding,
-                note,
-                channel,
-                function: fn,
-                waiting: false,
-              },
-            })
+            batchActions([
+              Actions.setBinding({
+                position,
+                binding: {
+                  ...binding,
+                  type: instantFunctions.includes(fn) ? 'note' : 'value',
+                  note,
+                  channel,
+                  function: fn,
+                  waiting: false,
+                },
+              }),
+              Actions.setInitValue({
+                position,
+                value: 1,
+              }),
+              Actions.setControlGroupValue({
+                position,
+                value: normValue,
+              }),
+            ])
           )
           break
         } else if (
@@ -54,17 +67,12 @@ export default async function init(store: Store<Types.State>) {
           binding.channel === channel &&
           binding.function === fn
         ) {
-          const control = Selectors.getControlByPosition(controls, binding.position)
+          const control = controls[posStr],
+            lastValue = state.live.controlValues[posStr] || 0
+          sentMidiValues[posStr] = normValue
           if (control) {
-            let normedValue = value / 128
-            if ('prop' in control)
-              normedValue = mappings[control.prop].fromStandard(normedValue)
             store.dispatch(
-              Actions.applyControl({
-                control,
-                value: normedValue,
-                function: fn,
-              })
+              Actions.applyControlGroup(position, control, lastValue, normValue)
             )
           }
         }
@@ -77,9 +85,9 @@ export default async function init(store: Store<Types.State>) {
       console.log(output.name)
       outputs.push(output)
       output.send([255])
-      if (output.name === 'X-TOUCH MINI') {
-        for (let i = 1; i <= 8; i++) output.send([176, i, 2])
-      }
+      // if (output.name === 'X-TOUCH MINI') {
+      //   for (let i = 1; i <= 8; i++) output.send([176, i, 2])
+      // }
       // output.send([144, 12, 127])
       // output.send([144, 96, 3])
       //output.send([186, 1, 67])
@@ -93,37 +101,52 @@ export default async function init(store: Store<Types.State>) {
     }
   })
 
+  const absValueSelectors: {
+    [controlId: string]: (state: Types.State, control: Types.Control) => any
+  } = {}
+  let lastControlIds = []
+
   store.subscribe(
     _.throttle(
       () => {
         const state = store.getState(),
-          controls = Selectors.getControls(state.live),
-          values = Selectors.getCurrentValueControlsValues(state)
-        /* make values reflect state */
-        for (let controlId in controls) {
-          const control = controls[controlId]
-          if (control.type === 'value') {
-            const value = values[controlId]
-            if (value !== sentMidiValues[controlId]) {
-              const binding = Selectors.getBindingByPosition(
-                state.bindings,
-                control.position
+          currentControls = Selectors.getControls(state.live),
+          currentControlIds = _.keys(currentControls),
+          addedControlsIds = _.difference(currentControlIds, lastControlIds),
+          removedControlsIds = _.difference(lastControlIds, currentControlIds)
+
+        addedControlsIds.forEach(controlId => {
+          absValueSelectors[controlId] = Selectors.makeGetControlAbsValue()
+        })
+        removedControlsIds.forEach(controlId => {
+          delete absValueSelectors[controlId]
+        })
+
+        for (let controlId in absValueSelectors) {
+          const control = currentControls[controlId],
+            binding = state.live.bindings[controlId]
+          if (binding && binding.twoway && binding.note) {
+            const absValue =
+              control && control.absolute
+                ? absValueSelectors[controlId](state, control.controls[0])
+                : state.live.controlValues[controlId]
+
+            if (absValue !== null && absValue !== sentMidiValues[controlId]) {
+              outputs.forEach(output =>
+                output.send([
+                  176 + binding.channel,
+                  binding.note,
+                  Math.floor(absValue * 127),
+                ])
               )
-              sentMidiValues[controlId] = value
-              if (binding && binding.note)
-                outputs.forEach(output =>
-                  output.send([
-                    176 + binding.channel,
-                    binding.note,
-                    Math.floor(value * 127),
-                  ])
-                )
+              sentMidiValues[controlId] = absValue
             }
           }
         }
+        lastControlIds = currentControlIds
       },
       100,
-      { leading: false }
+      { leading: false, trailing: true }
     )
   )
 }

@@ -13,7 +13,7 @@ import { RATE } from 'render/util/audio'
 import Icon from 'render/components/icon'
 import { WideButton, SidebarValue, HeaderContent } from 'render/components/misc'
 import { useSelection } from 'render/components/selection'
-import SidebarItem from './item'
+import SidebarItem from 'render/components/item'
 import { palette } from 'src/render/components/theme'
 
 const ButtonGroup = ctyled.div.styles({
@@ -82,7 +82,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
     { bounds, sourceTracks } = useSelector(state => state.sources[props.trackId]),
     channels = getBuffer(props.trackId),
     dispatch = useDispatch(),
-    { isSelecting, getSelection } = useSelection(),
+    { isSelecting, getSelection } = useSelection<string>('track'),
     impulses = useMemo(() => getImpulses(channels[0], props.trackId), [
       channels,
       props.trackId,

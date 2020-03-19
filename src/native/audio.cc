@@ -254,27 +254,6 @@ Napi::Object getPlaybackTiming(Napi::Env env, mixTrackPlayback * playback){
   Napi::Object mixTrackPlayback = Napi::Object::New(env);
   mixTrackPlayback.Set("chunkIndex", playback->chunkIndex);
   mixTrackPlayback.Set("playing", playback->playing);
-  mixTrackPlayback.Set("nextAtChunk", playback->nextAtChunk);
-  mixTrackPlayback.Set("aperiodic", playback->aperiodic);
-  mixTrackPlayback.Set("muted", playback->muted);
-  mixTrackPlayback.Set("alpha", playback->alpha);
-  mixTrackPlayback.Set("filter", playback->filter);
-
-  Napi::Array chunks = Napi::Array::New(env);
-  for(unsigned int i=0;i<playback->chunks.size();i++)
-    chunks.Set(i, playback->chunks[i]);
-  mixTrackPlayback.Set("chunks", chunks);
-
-  Napi::Object sourceTracksParams = Napi::Object::New(env);
-  for(auto sourcePair: playback->sourceTracksParams){
-    Napi::Object source = Napi::Object::New(env);
-    if(!sourcePair.second->destroy){
-      source.Set("volume", sourcePair.second->volume);
-      source.Set("offset", sourcePair.second->offset);
-      sourceTracksParams.Set(sourcePair.first, source);
-    }
-  }
-  mixTrackPlayback.Set("sourceTracksParams", sourceTracksParams);
   return mixTrackPlayback;
 }
 

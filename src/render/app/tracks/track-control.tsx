@@ -164,16 +164,9 @@ function TrackControls(props: TrackControlsProps) {
                 disabled={!canPrev}
                 onClick={() =>
                   dispatch(
-                    Actions.applyControl({
-                      control: {
-                        name: '',
-                        position: { x: 0, y: 0 },
-                        trackId: props.trackId,
-                        type: 'note',
-                        cueStep: -1,
-                      },
-                      value: 127,
-                      function: 'note-on',
+                    Actions.stepTrackCue({
+                      trackId: props.trackId,
+                      cueStep: -1,
                     })
                   )
                 }
@@ -187,16 +180,9 @@ function TrackControls(props: TrackControlsProps) {
                 disabled={!hasCues}
                 onClick={() =>
                   dispatch(
-                    Actions.applyControl({
-                      control: {
-                        name: '',
-                        position: { x: 0, y: 0 },
-                        trackId: props.trackId,
-                        type: 'note',
-                        cueStep: 1,
-                      },
-                      value: 127,
-                      function: 'note-on',
+                    Actions.stepTrackCue({
+                      trackId: props.trackId,
+                      cueStep: 1,
                     })
                   )
                 }

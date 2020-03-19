@@ -13,7 +13,7 @@ const TracksWrapper = SortableContainer(ctyled.div.styles({
   column: true,
   lined: true,
   endLine: true,
-  height: '70%',
+  height: '65%',
   flex: 'none',
   scroll: true,
   color: c => c.nudge(0.025),

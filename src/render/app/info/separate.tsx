@@ -8,7 +8,7 @@ import separate from 'render/util/separate'
 import Icon from 'render/components/icon'
 import { WideButton, HeaderContent } from 'render/components/misc'
 
-import SidebarItem from './item'
+import SidebarItem from 'render/components/item'
 
 export interface SeparateProps {
   trackId: string

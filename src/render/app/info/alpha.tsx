@@ -5,9 +5,9 @@ import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 
 import Icon from 'render/components/icon'
-import { HeaderContent, WideButton, SelectableButton } from 'render/components/misc'
+import { HeaderContent, SelectableButton } from 'render/components/misc'
 
-import SidebarItem from './item'
+import SidebarItem from 'render/components/item'
 
 export interface AlphaProps {
   trackId: string

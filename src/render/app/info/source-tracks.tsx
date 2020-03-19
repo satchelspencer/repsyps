@@ -1,16 +1,17 @@
-import React, { memo, useRef, useEffect } from 'react'
+import React, { memo, useMemo, useRef, useEffect } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import * as Selectors from 'render/redux/selectors'
 import { addSource } from 'render/util/add-track'
 
 import ControlAdder from 'render/components/control-adder'
 import Volume from 'render/components/volume'
 import Icon from 'render/components/icon'
 import { WideButton } from 'render/components/misc'
-import SidebarItem from './item'
+import SidebarItem from 'render/components/item'
 
 const TracksWrapper = ctyled.div.styles({
   gutter: 1,
@@ -68,6 +69,8 @@ const SourceTracks = (props: TrackVolumeProps) => {
       state => state.live.tracks[props.trackId].visibleSourceTrack
     ),
     source = useSelector(state => state.sources[props.trackId]),
+    getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
+    trackIndex = useSelector(state => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch()
 
   const input = useRef(null)
@@ -85,7 +88,7 @@ const SourceTracks = (props: TrackVolumeProps) => {
 
   return (
     <TracksWrapper>
-      {sourceTrackIds.map(sourceTrackId => {
+      {sourceTrackIds.map((sourceTrackId, sourceTrackIndex) => {
         const sourceTrackParams = sourceTracksParams[sourceTrackId],
           { name } = source.sourceTracks[sourceTrackId]
         return (
@@ -144,11 +147,10 @@ const SourceTracks = (props: TrackVolumeProps) => {
                   <ControlAdder
                     name={source.sourceTracks[sourceTrackId].name}
                     params={{
-                      trackId: props.trackId,
-                      sourceTrackId,
-                      prop: 'volume',
+                      trackIndex,
+                      sourceTrackIndex,
+                      sourceTrackProp: 'volume',
                     }}
-                    type="value"
                   />
                 </TrackH>
               </TrackWrapper>

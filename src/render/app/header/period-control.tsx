@@ -38,11 +38,7 @@ const PeriodControl = memo(() => {
       <SliderWrapper>
         <Slider value={mappings.period.toStandard(period)} onChange={handleChange} />
       </SliderWrapper>
-      <ControlAdder
-        name="Playback Rate"
-        params={{ prop: 'period', global: true }}
-        type="value"
-      />
+      <ControlAdder name="Playback Rate" params={{ globalProp: 'period' }} />
       <Value>{_.round(60 / (period / RATE), 0) + '/m'}</Value>
       <PhaseDisplayContainer />
     </PeriodWrapper>

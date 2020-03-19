@@ -8,7 +8,7 @@ import * as Types from 'render/util/types'
 import Icon from 'render/components/icon'
 import { HeaderContent, SelectableButton } from 'render/components/misc'
 
-import SidebarItem from './item'
+import SidebarItem from 'render/components/item'
 
 export interface SyncProps {
   trackId: string

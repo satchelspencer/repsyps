@@ -14,8 +14,17 @@ import isEqual from 'render/util/is-equal'
 export const UPDATE_PERIOD = 50,
   isDev = process.env.NODE_ENV === 'development'
 
+type TrackPlaybackState = {
+  playback: Types.TrackPlayback
+  nextPlayback: Types.TrackPlayback
+}
+
 export default function syncAudio(store: Store<Types.State>) {
-  let lastState: Types.State = null
+  let lastState: Types.State = null,
+    playbackSelectors: {
+      [trackId: string]: (state: Types.State, trackId: string) => TrackPlaybackState
+    } = {},
+    lastTrackPlaybacks: { [trackId: string]: TrackPlaybackState } = {}
 
   const appPath = isDev ? './' : remote.app.getAppPath() + '/'
   audio.init(appPath)
@@ -32,16 +41,19 @@ export default function syncAudio(store: Store<Types.State>) {
     }
 
     trackIds.forEach(trackId => {
-      const track = currentState.live.tracks[trackId],
-        trackIsNew = !lastState || !lastTrackIds.includes(trackId),
-        lastTrack = lastState && (lastState.live.tracks[trackId] as Types.Track),
-        trackPlaybackHasChanged =
-          trackIsNew ||
-          !isEqual(lastTrack.playback, track.playback) ||
-          lastTrack.nextPlayback !== track.nextPlayback
+      const trackIsNew = !lastState || !lastTrackIds.includes(trackId)
 
-      _.keys(track.playback.sourceTracksParams).forEach(sourceId => {
-        const sourceIsNew = trackIsNew || !lastTrack.playback.sourceTracksParams[sourceId]
+      if (trackIsNew) playbackSelectors[trackId] = Selectors.makeGetTrackPlayback()
+      const prev = lastTrackPlaybacks[trackId],
+        current = playbackSelectors[trackId](currentState, trackId)
+
+      const trackPlaybackHasChanged =
+          trackIsNew ||
+          !isEqual(prev.playback, current.playback) ||
+          prev.nextPlayback !== current.nextPlayback
+
+      _.keys(current.playback.sourceTracksParams).forEach(sourceId => {
+        const sourceIsNew = trackIsNew || !prev.playback.sourceTracksParams[sourceId]
         if (sourceIsNew) {
           audio.addSource(sourceId, getBuffer(sourceId))
         }
@@ -49,17 +61,18 @@ export default function syncAudio(store: Store<Types.State>) {
 
       if (trackPlaybackHasChanged) {
         const change: Types.NativeTrackChange = {
-          playback: diff(trackIsNew ? {} : lastTrack.playback, track.playback),
-          nextPlayback: track.nextPlayback,
+          playback: diff(trackIsNew ? {} : prev.playback, current.playback),
+          nextPlayback: current.nextPlayback,
         }
         //console.log('c', JSON.stringify(change, null, 2))
         audio.setMixTrack(trackId, change)
       }
 
       if (!trackIsNew)
-        _.keys(lastTrack.playback.sourceTracksParams).forEach(sourceId => {
-          if (!track.playback.sourceTracksParams[sourceId]) audio.removeSource(sourceId)
+        _.keys(prev.playback.sourceTracksParams).forEach(sourceId => {
+          if (!current.playback.sourceTracksParams[sourceId]) audio.removeSource(sourceId)
         })
+      lastTrackPlaybacks[trackId] = current
     })
 
     if (lastState)

@@ -1,14 +1,17 @@
 import React, { useContext, createContext, useState, useMemo } from 'react'
+import _ from 'lodash'
 
 export interface SelectionContextState {
-  callback: (selected: string) => any
+  callbacks: {
+    [key: string]: (selected: any) => any
+  }
 }
 
-const defaultState = { isSelecting: false, callback: null }
+const defaultState = { callbacks: {} }
 
 export interface SelectionContext {
   state: SelectionContextState
-  setState: (state: Partial<SelectionContextState>) => any
+  setState: (state: Partial<SelectionContextState>) => void
 }
 
 const selectionContext = createContext<SelectionContext>({
@@ -32,28 +35,31 @@ export function SelectionContextProvider(props: any) {
   return <Provider value={context}>{props.children}</Provider>
 }
 
-export function useSelection() {
+export function useSelection<T>(key: string) {
   const ctx = useContext(selectionContext)
   return {
-    isSelecting: !!ctx.state.callback,
+    isSelecting: !!ctx.state.callbacks[key],
     getSelection: async () => {
-      return new Promise<string>(res => {
+      return new Promise<T>(res => {
         ctx.setState({
-          callback: res,
+          callbacks: {
+            ...ctx.state.callbacks,
+            [key]: res,
+          },
         })
       })
     },
   }
 }
 
-export function useSelectable() {
+export function useSelectable<T>(key: string) {
   const ctx = useContext(selectionContext)
   return {
-    isSelecting: !!ctx.state.callback,
-    onSelect: (selected: string) => {
-      if (ctx.state.callback) {
-        ctx.state.callback(selected)
-        ctx.setState({ callback: null })
+    isSelecting: !!ctx.state.callbacks[key],
+    onSelect: (selected: T) => {
+      if (ctx.state.callbacks[key]) {
+        ctx.state.callbacks[key](selected)
+        ctx.setState({ callbacks: _.omit(ctx.state.callbacks, key) })
       }
     },
   }

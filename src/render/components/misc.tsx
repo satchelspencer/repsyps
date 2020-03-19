@@ -33,9 +33,7 @@ export const SelectableButton = WideButton.attrs({ selected: false }).styles({
   flex: 1,
 })
 
-export const SidebarValue = Value.class(inline).extend`
-  margin-top: 1px;
-`
+export const SidebarValue = Value.class(inline).styles({ height: 1.8 })
 
 export const Horizontal = ctyled.div.styles({
   align: 'center',

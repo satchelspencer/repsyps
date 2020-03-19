@@ -101,58 +101,62 @@ export interface ControlPosition {
   y: number
 }
 
-export interface BaseControl {
-  type: BindingType
-  name: string
-  position: ControlPosition
-}
+export type SourceTrackValueProp = 'volume' | string
 
-export interface CueControl extends BaseControl {
-  type: 'note'
-  trackId: string
-  cueIndex: number
-}
-
-export interface CueStepControl extends BaseControl {
-  type: 'note'
-  trackId: string
-  cueStep: number
-}
-
-export type TrackValueProp = 'volume' | 'filter' | string //only vol for now
-
-export interface TrackValueControl extends BaseControl {
-  type: 'value'
-  trackId: string
-  sourceTrackId?: string
-  prop: TrackValueProp
-}
+export type TrackValueProp = 'filter' | string
 
 export type GlobalValueProp = 'rate' | 'volume' | string
 
-export interface GlobalValueControl extends BaseControl {
-  type: 'value'
-  global: true
-  prop: GlobalValueProp
+export interface ControlMapping {
+  invert: boolean
 }
 
-export type ValueControl = TrackValueControl | GlobalValueControl
-
-export type NoteControl = CueControl | CueStepControl
-
-export type Control = CueControl | CueStepControl | TrackValueControl | GlobalValueControl
-
-export interface Controls {
-  [controlId: string]: Control
+export interface CueControl extends ControlMapping {
+  trackIndex: number
+  cueIndex: number
 }
 
-export interface ControlValues {
-  [controlId: string]: number
+export interface CueStepControl extends ControlMapping {
+  trackIndex: number
+  cueStep: number
+}
+
+export interface SourceTrackValueControl extends ControlMapping {
+  trackIndex: number
+  sourceTrackIndex: number
+  sourceTrackProp: SourceTrackValueProp
+}
+
+export interface TrackValueControl extends ControlMapping {
+  trackIndex: number
+  trackProp: TrackValueProp
+}
+
+export interface GlobalValueControl extends ControlMapping {
+  globalProp: GlobalValueProp
+}
+
+export type Control =
+  | CueControl
+  | CueStepControl
+  | SourceTrackValueControl
+  | TrackValueControl
+  | GlobalValueControl
+
+export interface ControlGroup {
+  name?: string
+  absolute: boolean
+  position: ControlPosition
+  bindingType: BindingType
+  controls: Control[]
+}
+
+export interface Grid<T> {
+  [coord: string]: T
 }
 
 export type MidiFunctionName =
-  | 'note-off'
-  | 'note-on'
+  | 'note'
   | 'poly-aftertouch'
   | 'control'
   | 'program'
@@ -167,28 +171,32 @@ export type Binding = {
   note: number
   function: MidiFunctionName
   waiting?: boolean
-  position: ControlPosition
+  twoway: boolean
 }
 
-export interface Bindings {
-  [bindingId: string]: Binding
-}
+export type Controls = Grid<ControlGroup>
 
 export interface Scene {
   controls: Controls
   trackIds: string[]
 }
 
+export type ControlValues = Grid<number>
+
+export type Bindings = Grid<Binding>
+
 export interface Live {
   sceneIndex: number
   scenes: Scene[]
+  controlValues: ControlValues
+  initValues: ControlValues
   tracks: Tracks
+  bindings: Bindings
 }
 
 export interface State {
   playback: Playback
   live: Live
-  bindings: Bindings
   sources: Sources
   timing: Times
 }
