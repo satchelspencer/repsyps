@@ -23,6 +23,7 @@ function Pad(props: PadProps) {
     <PadWrapper
       active={value > 0.5}
       onMouseDown={e => {
+        e.stopPropagation()
         e.preventDefault()
         onChange(1)
       }}

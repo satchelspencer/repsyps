@@ -132,6 +132,11 @@ export const setControlGroupValue = createAction<{
   value: number
 }>('SET_CONTROL_GROUP_VALUE')
 
+export const moveControlGroup = createAction<{
+  src: Types.Position
+  dest: Types.Position
+}>('MOVE_CONTROL_GROUP')
+
 export const setInitValue = createAction<{
   position: Types.Position
   value: number

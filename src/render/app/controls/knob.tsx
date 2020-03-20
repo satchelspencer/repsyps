@@ -87,6 +87,7 @@ export default function Knob(props: KnobProps) {
   return (
     <KnobWrapper
       onMouseDown={e => {
+        e.stopPropagation()
         setDragging(true)
         setStartValue(value)
         setTempValue(value)

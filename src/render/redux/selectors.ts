@@ -222,6 +222,39 @@ export const makeGetTrackPlayback = () => {
   )
 }
 
+export const getGlobalPlayback = createSelector(
+  [
+    (state: Types.State) => state.playback,
+    (state: Types.State) => getControls(state.live),
+    (state: Types.State) => state.live.controlValues,
+    (state: Types.State) => state.live.initValues,
+  ],
+  (playback, controls, values, initValues) => {
+    let outPlayback = { ...playback },
+      needsUpdate = false
+    _.keys(controls).forEach(posStr => {
+      const controlGroup = controls[posStr],
+        initValue = defaultValue(initValues[posStr]),
+        defValue = defaultValue(values[posStr]),
+        value = initValue > 0.5 ? defValue : 1 - defValue
+
+      if (!controlGroup.absolute)
+        controlGroup.controls.forEach(control => {
+          const controlValue = control.invert ? 1 - value : value
+          if ('globalProp' in control) {
+            needsUpdate = true
+            outPlayback = {
+              ...outPlayback,
+              [control.globalProp]:
+                defaultValue(outPlayback[control.globalProp]) * controlValue,
+            }
+          }
+        })
+    })
+    return needsUpdate ? outPlayback : playback
+  }
+)
+
 export const makeGetTrackIsSolo = () =>
   createSelector(
     [(state: Types.State) => state.live.tracks, (_, trackId: string) => trackId],

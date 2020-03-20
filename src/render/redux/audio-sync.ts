@@ -24,7 +24,8 @@ export default function syncAudio(store: Store<Types.State>) {
     playbackSelectors: {
       [trackId: string]: (state: Types.State, trackId: string) => TrackPlaybackState
     } = {},
-    lastTrackPlaybacks: { [trackId: string]: TrackPlaybackState } = {}
+    lastTrackPlaybacks: { [trackId: string]: TrackPlaybackState } = {},
+    lastGlobalPlayback: Types.Playback = null
 
   const appPath = isDev ? './' : remote.app.getAppPath() + '/'
   audio.init(appPath)
@@ -32,12 +33,14 @@ export default function syncAudio(store: Store<Types.State>) {
   const handleUpdate = () => {
     const currentState = store.getState(),
       trackIds = Selectors.getActiveTrackIds(currentState),
-      lastTrackIds = lastState ? Selectors.getActiveTrackIds(lastState) : []
+      lastTrackIds = lastState ? Selectors.getActiveTrackIds(lastState) : [],
+      playback = Selectors.getGlobalPlayback(currentState)
 
-    if (!lastState || !isEqual(currentState.playback, lastState.playback)) {
-      const change = diff(!lastState ? {} : lastState.playback, currentState.playback)
+    if (!lastState || !isEqual(playback, lastGlobalPlayback)) {
+      const change = diff(!lastState ? {} : lastGlobalPlayback, playback)
       //console.log('update playback', change)
       audio.updatePlayback(change)
+      lastGlobalPlayback = playback
     }
 
     trackIds.forEach(trackId => {
@@ -48,9 +51,9 @@ export default function syncAudio(store: Store<Types.State>) {
         current = playbackSelectors[trackId](currentState, trackId)
 
       const trackPlaybackHasChanged =
-          trackIsNew ||
-          !isEqual(prev.playback, current.playback) ||
-          prev.nextPlayback !== current.nextPlayback
+        trackIsNew ||
+        !isEqual(prev.playback, current.playback) ||
+        prev.nextPlayback !== current.nextPlayback
 
       _.keys(current.playback.sourceTracksParams).forEach(sourceId => {
         const sourceIsNew = trackIsNew || !prev.playback.sourceTracksParams[sourceId]

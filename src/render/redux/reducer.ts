@@ -337,7 +337,29 @@ const reducer = combineReducers({
           ...live.controlValues,
           [Selectors.pos2str(payload.position)]: payload.value,
         },
-        // UPDATE TRACKS AS NEEDED HERE MAYBE????
+      }
+    }),
+    handle(Actions.moveControlGroup, (live, { payload }) => {
+      return {
+        ...live,
+        scenes: live.scenes.map((scene, sceneIndex) => {
+          if (sceneIndex !== live.sceneIndex) return scene
+          else {
+            const srcStr = Selectors.pos2str(payload.src),
+              destStr = Selectors.pos2str(payload.dest)
+            return {
+              ...scene,
+              controls: _.pickBy(
+                {
+                  ...scene.controls,
+                  [srcStr]: scene.controls[destStr],
+                  [destStr]: scene.controls[srcStr],
+                },
+                a => a
+              ),
+            }
+          }
+        }),
       }
     }),
     handle(Actions.setVisibleSourceTrack, (live, { payload }) => {

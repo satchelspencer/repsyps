@@ -11,24 +11,6 @@ import { shortNames, getControlName } from './utils'
 import Knob from './knob'
 import Pad from './pad'
 
-const GridCellWrapper = ctyled.div.attrs({ selected: false }).styles({
-  align: 'center',
-  justify: 'center',
-  column: true,
-  gutter: 0.5,
-}).extendSheet`
-  cursor:pointer;
-  border-bottom:1px dashed ${({ color }) => color.bq};
-  &:not(:last-child){
-    border-right:1px dashed ${({ color }) => color.bq};
-  }
-  ${(_, { selected }) => selected && `background:#ff00000d;`}
-  &:hover{
-    background:${({ color }, { selected }) =>
-      selected ? '#ff00000d' : color.nudge(0.05).bg};
-  }
-`
-
 const CellMidi = ctyled.div.class(inline).styles({
   padd: 1,
   color: c => c.contrast(-0.2),
@@ -54,9 +36,6 @@ const CellLabel = ctyled.div.styles({
 export interface GridCellProps {
   x: number
   y: number
-  selected: boolean
-  onSelect: (pos: Types.Position) => any
-  cellSize: number
 }
 
 const GridCell = memo((props: GridCellProps) => {
@@ -64,30 +43,26 @@ const GridCell = memo((props: GridCellProps) => {
     getControlAtPos = useMemo(() => Selectors.makeGetControlAtPos(), []),
     getControlAbsValue = useMemo(() => Selectors.makeGetControlAbsValue(), []),
     getBindingAtPos = useMemo(() => Selectors.makeGetBindingAtPos(), []),
-    [controlGroup, value] = useSelector(state => getControlAtPos(state, position)),
+    [control, value] = useSelector(state => getControlAtPos(state, position)),
     absValue = useSelector(state =>
-      getControlAbsValue(state, controlGroup && controlGroup.controls[0])
+      getControlAbsValue(state, control && control.controls[0])
     ),
     binding = useSelector(state => getBindingAtPos(state, position)),
     initValue = useSelector(state =>
       Selectors.defaultValue(Selectors.getByPos(state.live.initValues, position))
     ),
     dispatch = useDispatch(),
-    displayValue = (controlGroup && controlGroup.absolute ? absValue : value) || 0
+    displayValue = (control && control.absolute ? absValue : value) || 0
   return (
-    <GridCellWrapper
-      selected={props.selected}
-      onMouseDown={() => props.onSelect(position)}
-      style={{ height: props.cellSize, width: props.cellSize }}
-    >
+    <>
       {binding && binding.note && (
         <CellMidi>{binding.note + shortNames[binding.function]}</CellMidi>
       )}
-      {controlGroup && controlGroup.bindingType === 'value' && (
+      {control && control.bindingType === 'value' && (
         <>
           <Knob
             center={
-              controlGroup.absolute || (binding && binding.twoway)
+              control.absolute || (binding && binding.twoway)
                 ? 0
                 : initValue > 0.5
                 ? 0
@@ -95,28 +70,28 @@ const GridCell = memo((props: GridCellProps) => {
             }
             value={displayValue}
             onChange={value =>
-              dispatch(Actions.applyControlGroup(position, controlGroup, displayValue, value))
+              dispatch(Actions.applyControlGroup(position, control, displayValue, value))
             }
           />
           <CellLabel>
-            {controlGroup.name || controlGroup.controls.map(c => getControlName(c)).join(', ')}
+            {control.name || control.controls.map(c => getControlName(c)).join(', ')}
           </CellLabel>
         </>
       )}
-      {controlGroup && controlGroup.bindingType === 'note' && (
+      {control && control.bindingType === 'note' && (
         <>
           <Pad
             value={displayValue}
             onChange={value =>
-              dispatch(Actions.applyControlGroup(position, controlGroup, displayValue, value))
+              dispatch(Actions.applyControlGroup(position, control, displayValue, value))
             }
           />
           <CellLabel>
-            {controlGroup.name || controlGroup.controls.map(c => getControlName(c)).join(', ')}
+            {control.name || control.controls.map(c => getControlName(c)).join(', ')}
           </CellLabel>
         </>
       )}
-    </GridCellWrapper>
+    </>
   )
 })
 
