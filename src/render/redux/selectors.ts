@@ -31,17 +31,9 @@ export function getActiveTrackIds(state: Types.State): string[] {
   return lastOfPrev ? [lastOfPrev, ...currentScene.trackIds] : currentScene.trackIds
 }
 
-export function getControlsAtIndex(live: Types.Live, sceneIndex: number): Types.Controls {
-  return live.scenes[sceneIndex].controls
-}
-
 export function getControls(live: Types.Live): Types.Controls {
-  return getControlsAtIndex(live, live.sceneIndex)
+  return live.scenes[live.sceneIndex].controls
 }
-
-export const getScenes = (state: Types.State) => state.live.scenes
-
-export const getSceneIndex = (state: Types.State) => state.live.sceneIndex
 
 export const makeGetTrackIndex = () =>
   createSelector(
@@ -58,11 +50,11 @@ export function defaultValue(value: number) {
   return value === undefined ? 1 : value
 }
 
-export function pos2str(pos: Types.ControlPosition) {
+export function pos2str(pos: Types.Position) {
   return pos ? pos.x + '.' + pos.y : null
 }
 
-export function str2pos(str: string): Types.ControlPosition {
+export function str2pos(str: string): Types.Position {
   const split = str.split('.')
   return {
     x: parseInt(split[0]),
@@ -70,7 +62,7 @@ export function str2pos(str: string): Types.ControlPosition {
   }
 }
 
-export function getByPos<T>(grid: Types.Grid<T>, pos: Types.ControlPosition): T {
+export function getByPos<T>(grid: Types.Grid<T>, pos: Types.Position): T {
   return grid[pos2str(pos)]
 }
 
@@ -79,7 +71,7 @@ export const makeGetControlAtPos = () =>
     [
       getCurrentScene,
       (state: Types.State) => state.live.controlValues,
-      (_, pos: Types.ControlPosition) => pos,
+      (_, pos: Types.Position) => pos,
     ],
     (scene, values, pos): [Types.ControlGroup, number] => {
       return [getByPos(scene.controls, pos), defaultValue(getByPos(values, pos))]
@@ -88,7 +80,7 @@ export const makeGetControlAtPos = () =>
 
 export const makeGetBindingAtPos = () =>
   createSelector(
-    [(state: Types.State) => state.live.bindings, (_, pos: Types.ControlPosition) => pos],
+    [(state: Types.State) => state.live.bindings, (_, pos: Types.Position) => pos],
     (bindings, pos) => {
       return getByPos(bindings, pos)
     }
@@ -229,27 +221,6 @@ export const makeGetTrackPlayback = () => {
     }
   )
 }
-
-export const getCurrentTrackIds = createSelector(
-  [getCurrentScene, getPrevScene],
-  (prevScene, currentScene) => {
-    const lastOfPrev = prevScene && _.last(prevScene.trackIds)
-    return [lastOfPrev, ...currentScene.trackIds]
-  }
-)
-
-export const getContolsAbsValues = createSelector(
-  [
-    getCurrentScene,
-    getPrevScene,
-    (state: Types.State) => state.playback,
-    (state: Types.State) => state.live.tracks,
-  ],
-  (currentScene, prevScene, playback, tracks) => {
-    const lastOfPrev = prevScene && _.last(prevScene.trackIds),
-      trackIds = [lastOfPrev, ...currentScene.trackIds]
-  }
-)
 
 export const makeGetTrackIsSolo = () =>
   createSelector(

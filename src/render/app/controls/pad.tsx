@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
@@ -16,7 +16,7 @@ export interface PadProps {
   onChange: (newValue: number) => any
 }
 
-export default function Pad(props: PadProps) {
+function Pad(props: PadProps) {
   const { value, onChange } = props
 
   return (
@@ -32,3 +32,5 @@ export default function Pad(props: PadProps) {
     />
   )
 }
+
+export default memo(Pad)

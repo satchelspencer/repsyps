@@ -96,7 +96,7 @@ export interface Tracks {
   [trackId: string]: Track
 }
 
-export interface ControlPosition {
+export interface Position {
   x: number
   y: number
 }
@@ -146,7 +146,7 @@ export type Control =
 export interface ControlGroup {
   name?: string
   absolute: boolean
-  position: ControlPosition
+  position: Position
   bindingType: BindingType
   controls: Control[]
 }

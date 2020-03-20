@@ -123,32 +123,32 @@ export const setTrackCue = createAction<{
 }>('SET_TRACK_CUE')
 
 export const setControlGroup = createAction<{
-  position: Types.ControlPosition
+  position: Types.Position
   controlGroup: Partial<Types.ControlGroup>
 }>('SET_CONTROL_GROUP')
 
 export const setControlGroupValue = createAction<{
-  position: Types.ControlPosition
+  position: Types.Position
   value: number
 }>('SET_CONTROL_GROUP_VALUE')
 
 export const setInitValue = createAction<{
-  position: Types.ControlPosition
+  position: Types.Position
   value: number
 }>('SET_INIT_VALUE')
 
 export const zeroInitValues = createAction<{}>('ZERO_INIT_VALUES')
 
 export const deleteControlGroup = createAction<{
-  position: Types.ControlPosition
+  position: Types.Position
 }>('DELETE_CONTROL_GROUP')
 
 export const setBinding = createAction<{
-  position: Types.ControlPosition
+  position: Types.Position
   binding: Partial<Types.Binding>
 }>('SET_BINDING')
 
-export const removeBinding = createAction<Types.ControlPosition>('REMOVE_BINDING')
+export const removeBinding = createAction<Types.Position>('REMOVE_BINDING')
 
 export const setSceneIndex = createAction<number>('SET_SCENE_INDEX')
 
@@ -164,7 +164,7 @@ export const createScene = createAction<number>('CREATE_SCENE')
 export const deleteScene = createAction<number>('DELETE_SCENE')
 
 export function applyControlGroup(
-  position: Types.ControlPosition,
+  position: Types.Position,
   controlGroup: Types.ControlGroup,
   lastValue: number,
   value: number

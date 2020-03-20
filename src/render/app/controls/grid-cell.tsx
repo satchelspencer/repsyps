@@ -55,39 +55,39 @@ export interface GridCellProps {
   x: number
   y: number
   selected: boolean
-  onSelect: () => any
+  onSelect: (pos: Types.Position) => any
   cellSize: number
 }
 
 const GridCell = memo((props: GridCellProps) => {
-  const position: Types.ControlPosition = { x: props.x, y: props.y },
+  const position: Types.Position = { x: props.x, y: props.y },
     getControlAtPos = useMemo(() => Selectors.makeGetControlAtPos(), []),
     getControlAbsValue = useMemo(() => Selectors.makeGetControlAbsValue(), []),
     getBindingAtPos = useMemo(() => Selectors.makeGetBindingAtPos(), []),
-    [control, value] = useSelector(state => getControlAtPos(state, position)),
+    [controlGroup, value] = useSelector(state => getControlAtPos(state, position)),
     absValue = useSelector(state =>
-      getControlAbsValue(state, control && control.controls[0])
+      getControlAbsValue(state, controlGroup && controlGroup.controls[0])
     ),
     binding = useSelector(state => getBindingAtPos(state, position)),
     initValue = useSelector(state =>
       Selectors.defaultValue(Selectors.getByPos(state.live.initValues, position))
     ),
     dispatch = useDispatch(),
-    displayValue = (control && control.absolute ? absValue : value) || 0
+    displayValue = (controlGroup && controlGroup.absolute ? absValue : value) || 0
   return (
     <GridCellWrapper
       selected={props.selected}
-      onMouseDown={props.onSelect}
+      onMouseDown={() => props.onSelect(position)}
       style={{ height: props.cellSize, width: props.cellSize }}
     >
       {binding && binding.note && (
         <CellMidi>{binding.note + shortNames[binding.function]}</CellMidi>
       )}
-      {control && control.bindingType === 'value' && (
+      {controlGroup && controlGroup.bindingType === 'value' && (
         <>
           <Knob
             center={
-              control.absolute || (binding && binding.twoway)
+              controlGroup.absolute || (binding && binding.twoway)
                 ? 0
                 : initValue > 0.5
                 ? 0
@@ -95,24 +95,24 @@ const GridCell = memo((props: GridCellProps) => {
             }
             value={displayValue}
             onChange={value =>
-              dispatch(Actions.applyControlGroup(position, control, displayValue, value))
+              dispatch(Actions.applyControlGroup(position, controlGroup, displayValue, value))
             }
           />
           <CellLabel>
-            {control.name || control.controls.map(c => getControlName(c)).join(', ')}
+            {controlGroup.name || controlGroup.controls.map(c => getControlName(c)).join(', ')}
           </CellLabel>
         </>
       )}
-      {control && control.bindingType === 'note' && (
+      {controlGroup && controlGroup.bindingType === 'note' && (
         <>
           <Pad
             value={displayValue}
             onChange={value =>
-              dispatch(Actions.applyControlGroup(position, control, displayValue, value))
+              dispatch(Actions.applyControlGroup(position, controlGroup, displayValue, value))
             }
           />
           <CellLabel>
-            {control.name || control.controls.map(c => getControlName(c)).join(', ')}
+            {controlGroup.name || controlGroup.controls.map(c => getControlName(c)).join(', ')}
           </CellLabel>
         </>
       )}
