@@ -83,9 +83,10 @@ function App() {
     <Wrapper
       tabIndex={0}
       onKeyDown={e => {
+        const notInInput = document.activeElement.nodeName !== 'INPUT'
         if (e.key === 'o' && e.metaKey) input.current.click()
-        if (e.key === ' ') e.preventDefault()
-        if (e.key === ' ' && !e.shiftKey)
+        if (e.key === ' ' && notInInput) e.preventDefault()
+        if (e.key === ' ' && !e.shiftKey && notInInput)
           selectedTrackId &&
             dispatch(
               Actions.setTrackPlayback({
@@ -96,7 +97,7 @@ function App() {
                 },
               })
             )
-        if (e.key === ' ' && e.shiftKey)
+        if (e.key === ' ' && e.shiftKey && notInInput)
           dispatch(
             Actions.updatePlayback({
               playing: !playing,

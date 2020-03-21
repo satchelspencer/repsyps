@@ -185,6 +185,15 @@ export type ControlValues = Grid<number>
 
 export type Bindings = Grid<Binding>
 
+export interface ControlPreset {
+  name: string
+  controls: Controls
+}
+
+export interface ControlPresets {
+  [presetId: string]: ControlPreset
+}
+
 export interface Live {
   sceneIndex: number
   scenes: Scene[]
@@ -192,6 +201,8 @@ export interface Live {
   initValues: ControlValues
   tracks: Tracks
   bindings: Bindings
+  controlPresets: ControlPresets
+  defaultPresetId: string
 }
 
 export interface State {

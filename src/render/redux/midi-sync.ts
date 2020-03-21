@@ -81,8 +81,11 @@ export default async function init(store: Store<Types.State>) {
     throttledHandle = _.throttle(handleMessage, 100, { leading: false })
 
   nav.requestMIDIAccess().then(midiAccess => {
+    midiAccess.onstatechange = e => {
+      console.log('st', e.port.id, e.port.state)
+    }
+
     for (var output of midiAccess.outputs.values()) {
-      console.log(output.name)
       outputs.push(output)
       output.send([255])
       // if (output.name === 'X-TOUCH MINI') {

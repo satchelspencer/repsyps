@@ -46,6 +46,8 @@ const defaultPlayback: Types.Playback = {
     controlValues: {},
     initValues: {},
     bindings: defaultBindings,
+    controlPresets: {},
+    defaultPresetId: null,
   },
   defaultSources: Types.Sources = {},
   defaultTiming: Types.Times = {
@@ -589,7 +591,7 @@ const reducer = combineReducers({
     handle(Actions.deleteScene, (live, { payload: sceneIndex }) => {
       const newScenes = [...live.scenes],
         deletedScene = live.scenes[sceneIndex],
-        newSceneIndex = Math.min(live.sceneIndex, newScenes.length - 1)
+        newSceneIndex = Math.min(live.sceneIndex, newScenes.length - 2)
 
       newScenes.splice(sceneIndex, 1)
       return updateSceneIndex(
@@ -740,7 +742,11 @@ const reducer = combineReducers({
     handle(Actions.createScene, (live, { payload: sceneIndex }) => {
       const newScenes = [...live.scenes]
       if (!newScenes[sceneIndex] || !newScenes[sceneIndex].trackIds.length)
-        newScenes[sceneIndex] = defaultScene
+        newScenes[sceneIndex] = { ...defaultScene }
+      if (live.defaultPresetId)
+        newScenes[sceneIndex].controls = {
+          ...live.controlPresets[live.defaultPresetId].controls,
+        }
       else newScenes.splice(sceneIndex, 0, defaultScene)
       return updateSceneIndex(
         {
@@ -830,6 +836,50 @@ const reducer = combineReducers({
     }),
     handle(Actions.zeroInitValues, live => {
       return updateSceneIndex(live, live.sceneIndex)
+    }),
+    handle(Actions.addControlPreset, (live, { payload }) => {
+      return {
+        ...live,
+        controlPresets: {
+          ...live.controlPresets,
+          [payload.presetId]: {
+            name: payload.name,
+            controls: { ...live.scenes[live.sceneIndex].controls },
+          },
+        },
+      }
+    }),
+    handle(Actions.deleteControlPreset, (live, { payload: presetId }) => {
+      return {
+        ...live,
+        controlPresets: _.omit(live.controlPresets, presetId),
+        defaultPresetId: live.defaultPresetId === presetId ? null : live.defaultPresetId,
+      }
+    }),
+    handle(Actions.setDefaultControlPreset, (live, { payload: presetId }) => {
+      return {
+        ...live,
+        defaultPresetId: presetId,
+      }
+    }),
+    handle(Actions.applyControlPreset, (live, { payload: presetId }) => {
+      const preset = live.controlPresets[presetId]
+      if (!preset) return live
+      else
+        return {
+          ...live,
+          scenes: live.scenes.map((scene, sceneIndex) => {
+            if (sceneIndex === live.sceneIndex) {
+              return {
+                ...scene,
+                controls: {
+                  ...scene.controls,
+                  ...preset.controls, //MERGING CONTROLS?
+                },
+              }
+            } else return scene
+          }),
+        }
     }),
   ]),
   playback: createReducer(defaultPlayback, handle => [

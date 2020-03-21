@@ -64,9 +64,11 @@ export default function Knob(props: KnobProps) {
           value = startValue + (dist / 100) * (positive ? 1 : -1),
           clippedValue = Math.max(Math.min(value, 1), 0)
 
-        lastTempValue.current = clippedValue
-        setTempValue(clippedValue)
-        throttledOnChange(clippedValue)
+        if (dist > 2) {
+          lastTempValue.current = clippedValue
+          setTempValue(clippedValue)
+          throttledOnChange(clippedValue)
+        }
       },
       handleMouseUp = () => {
         props.onChange(lastTempValue.current)

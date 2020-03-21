@@ -148,6 +148,17 @@ export const deleteControlGroup = createAction<{
   position: Types.Position
 }>('DELETE_CONTROL_GROUP')
 
+export const addControlPreset = createAction<{
+  presetId: string
+  name: string
+}>('ADD_CONTROL_PRESET')
+
+export const deleteControlPreset = createAction<string>('DEL_CONTROL_PRESET')
+
+export const setDefaultControlPreset = createAction<string>('SET_DEFAULT_CONTROL_PRESET')
+
+export const applyControlPreset = createAction<string>('APPLY_CONTROL_PRESET')
+
 export const setBinding = createAction<{
   position: Types.Position
   binding: Partial<Types.Binding>
