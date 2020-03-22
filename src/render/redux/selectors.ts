@@ -272,3 +272,17 @@ export function getTrackIsSolo(state: Types.State, trackId: string) {
     else return track.playback.muted
   })
 }
+export const getBindings = createSelector(
+  [
+    (state: Types.State) => state.live.bindings,
+    (state: Types.State) => state.live.controlPresets,
+    (state: Types.State) => state.live.defaultPresetId,
+  ],
+  (bindings, controlPresets, defaultPresetId) => {
+    return {
+      bindings,
+      controlPresets,
+      defaultPresetId,
+    }
+  }
+)

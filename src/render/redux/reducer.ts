@@ -881,6 +881,12 @@ const reducer = combineReducers({
           }),
         }
     }),
+    handle(Actions.loadBindings, (live, { payload: bindingsFile }) => {
+      return {
+        ...live,
+        ...bindingsFile,
+      }
+    }),
   ]),
   playback: createReducer(defaultPlayback, handle => [
     handle(Actions.updatePlayback, (playback, { payload }) => {

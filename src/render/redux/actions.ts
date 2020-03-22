@@ -179,6 +179,8 @@ export const createScene = createAction<number>('CREATE_SCENE')
 
 export const deleteScene = createAction<number>('DELETE_SCENE')
 
+export const loadBindings = createAction<Types.BindingsFile>('LOAD_BINDINGS')
+
 export function applyControlGroup(
   position: Types.Position,
   controlGroup: Types.ControlGroup,

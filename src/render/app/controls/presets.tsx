@@ -170,8 +170,12 @@ function Presets() {
         {_.keys(presets).map(presetId => {
           const preset = presets[presetId]
           return (
-            <PresetItem key={presetId} selected={selected === presetId}>
-              <PresetItemName onClick={() => setSelected(presetId)}>
+            <PresetItem
+              onClick={() => setSelected(presetId)}
+              key={presetId}
+              selected={selected === presetId}
+            >
+              <PresetItemName>
                 <PresetItemNameInner>{preset.name}</PresetItemNameInner>
               </PresetItemName>
               <DotWrapper

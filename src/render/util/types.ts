@@ -205,6 +205,12 @@ export interface Live {
   defaultPresetId: string
 }
 
+export interface BindingsFile {
+  bindings: Bindings
+  controlPresets: ControlPresets
+  defaultPresetId: string
+}
+
 export interface State {
   playback: Playback
   live: Live
