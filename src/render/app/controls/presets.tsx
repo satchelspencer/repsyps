@@ -54,6 +54,7 @@ const PresetInput = ctyled.input.class(inline).styles({
 }).extend`
   outline-color: #f59797;
   outline-width: 2px;
+  font-color:${({ color }) => color.fg};
 `
 
 const PresetItemName = ctyled.div.styles({

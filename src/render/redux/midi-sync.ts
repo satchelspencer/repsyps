@@ -33,6 +33,8 @@ export default async function init(store: Store<Types.State>) {
         channel = getChannel(fnbyte),
         normValue = value / 127
 
+      if (!state.live.controlsEnabled) return
+
       for (let posStr in state.live.bindings) {
         const binding = state.live.bindings[posStr],
           position = Selectors.str2pos(posStr)

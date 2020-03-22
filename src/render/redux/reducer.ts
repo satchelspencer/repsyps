@@ -48,6 +48,7 @@ const defaultPlayback: Types.Playback = {
     bindings: defaultBindings,
     controlPresets: {},
     defaultPresetId: null,
+    controlsEnabled: true,
   },
   defaultSources: Types.Sources = {},
   defaultTiming: Types.Times = {
@@ -124,8 +125,12 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
   } else return track
 }
 
-function updateSceneIndex(live: Types.Live, sceneIndex: number): Types.Live {
-  if (sceneIndex === live.sceneIndex) return live
+function updateSceneIndex(
+  live: Types.Live,
+  sceneIndex: number,
+  forceReset?: boolean
+): Types.Live {
+  if (!forceReset && sceneIndex === live.sceneIndex) return live
   else
     return {
       ...live,
@@ -359,6 +364,20 @@ const reducer = combineReducers({
                 },
                 a => a
               ),
+            }
+          }
+        }),
+      }
+    }),
+    handle(Actions.clearControls, live => {
+      return {
+        ...live,
+        scenes: live.scenes.map((scene, sceneIndex) => {
+          if (sceneIndex !== live.sceneIndex) return scene
+          else {
+            return {
+              ...scene,
+              controls: {},
             }
           }
         }),
@@ -835,7 +854,7 @@ const reducer = combineReducers({
       }
     }),
     handle(Actions.zeroInitValues, live => {
-      return updateSceneIndex(live, live.sceneIndex)
+      return updateSceneIndex(live, live.sceneIndex, true)
     }),
     handle(Actions.addControlPreset, (live, { payload }) => {
       return {
@@ -885,6 +904,12 @@ const reducer = combineReducers({
       return {
         ...live,
         ...bindingsFile,
+      }
+    }),
+    handle(Actions.setControlsEnabled, (live, { payload: enabled }) => {
+      return {
+        ...live,
+        controlsEnabled: enabled,
       }
     }),
   ]),

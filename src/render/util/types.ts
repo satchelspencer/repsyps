@@ -203,6 +203,7 @@ export interface Live {
   bindings: Bindings
   controlPresets: ControlPresets
   defaultPresetId: string
+  controlsEnabled: boolean
 }
 
 export interface BindingsFile {

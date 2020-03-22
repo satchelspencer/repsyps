@@ -144,6 +144,8 @@ export const setInitValue = createAction<{
 
 export const zeroInitValues = createAction<{}>('ZERO_INIT_VALUES')
 
+export const clearControls = createAction<{}>('CLEAR_CONTROLS')
+
 export const deleteControlGroup = createAction<{
   position: Types.Position
 }>('DELETE_CONTROL_GROUP')
@@ -158,6 +160,8 @@ export const deleteControlPreset = createAction<string>('DEL_CONTROL_PRESET')
 export const setDefaultControlPreset = createAction<string>('SET_DEFAULT_CONTROL_PRESET')
 
 export const applyControlPreset = createAction<string>('APPLY_CONTROL_PRESET')
+
+export const setControlsEnabled = createAction<boolean>('SET_CONTROLS_ENABLED')
 
 export const setBinding = createAction<{
   position: Types.Position

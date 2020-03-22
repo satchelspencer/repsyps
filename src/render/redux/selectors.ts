@@ -149,8 +149,10 @@ function applyControlsToPlayback(
   playback: Types.TrackPlayback,
   controls: Types.Controls,
   values: Types.ControlValues,
-  initValues: Types.ControlValues
+  initValues: Types.ControlValues,
+  enabled: boolean
 ) {
+  if (!enabled) return playback
   let outPlayback: Types.TrackPlayback = { ...playback },
     needsUpdate = false
   _.keys(controls).forEach(posStr => {
@@ -204,19 +206,28 @@ export const makeGetTrackPlayback = () => {
       (state: Types.State) => getControls(state.live),
       (state: Types.State) => state.live.controlValues,
       (state: Types.State) => state.live.initValues,
+      (state: Types.State) => state.live.controlsEnabled,
     ],
-    (trackIndex, playback, nextPlayback, controls, values, initValues) => {
+    (trackIndex, playback, nextPlayback, controls, values, initValues, enabled) => {
       return {
         playback: applyControlsToPlayback(
           trackIndex,
           playback,
           controls,
           values,
-          initValues
+          initValues,
+          enabled
         ),
         nextPlayback:
           nextPlayback &&
-          applyControlsToPlayback(trackIndex, nextPlayback, controls, values, initValues),
+          applyControlsToPlayback(
+            trackIndex,
+            nextPlayback,
+            controls,
+            values,
+            initValues,
+            enabled
+          ),
       }
     }
   )
@@ -228,8 +239,10 @@ export const getGlobalPlayback = createSelector(
     (state: Types.State) => getControls(state.live),
     (state: Types.State) => state.live.controlValues,
     (state: Types.State) => state.live.initValues,
+    (state: Types.State) => state.live.controlsEnabled,
   ],
-  (playback, controls, values, initValues) => {
+  (playback, controls, values, initValues, enabled) => {
+    if (!enabled) return playback
     let outPlayback = { ...playback },
       needsUpdate = false
     _.keys(controls).forEach(posStr => {

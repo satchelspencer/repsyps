@@ -18,6 +18,7 @@ const SidebarWrapper = ctyled.div.styles({
   bg: true,
   color: c => c.nudge(-0.05),
   lined: true,
+  scroll: true,
 }).extendSheet`
   width:${({ size }) => size * 25}px;
 `

@@ -1,8 +1,8 @@
 import React, { memo, useState, useRef, useEffect, useContext, useCallback } from 'react'
 import * as _ from 'lodash'
-import { useDispatch } from 'react-redux'
 import ctyled, { CtyledContext } from 'ctyled'
 
+import { useDispatch, useSelector } from 'render/redux/react'
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 
@@ -17,15 +17,6 @@ const ControlsGridWrapper = ctyled.div.styles({
   bg: true,
 })
 
-const ControlsGridVert = ctyled.div.styles({
-  flex: 1,
-  color: c => c.nudge(0.05),
-  column: true,
-  lined: true,
-}).extendSheet`
-  overflow:hidden;
-  border-left:1px solid ${({ color }) => color.bq} !important;
-`
 const GridInner = ctyled.div.styles({
   column: true,
 }).extendSheet`
@@ -57,7 +48,7 @@ const GridCellWrapper = ctyled.div.attrs({ selected: false, exited: false }).sty
   }
 `
 
-const ControlsH = ctyled.div.styles({ flex: 1, width: '100%' })
+const ControlsH = ctyled.div.styles({ flex: 1, width: '100%', lined: true })
 
 const ControlsIH = ctyled.div.styles({
   flex: 1,
@@ -65,27 +56,25 @@ const ControlsIH = ctyled.div.styles({
 })
 
 function ControlsGrid() {
-  const [width, setWidth] = useState(0),
+  const size = useContext(CtyledContext).theme.size,
+    [width, setWidth] = useState(0),
     [height, setHeight] = useState(0),
     [selected, setSelected] = useState<Types.Position>(null),
+    [targetWidth, setTargetWidth] = useState(size * 8),
     grid = useRef(null),
     dispatch = useDispatch(),
+    enabled = useSelector(state => state.live.controlsEnabled),
     handleResize = useCallback(() => {
       setWidth(grid.current.offsetWidth)
       setHeight(grid.current.offsetHeight)
     }, [])
 
   useEffect(() => {
-    function handleResize() {
-      setWidth(grid.current.offsetWidth)
-      setHeight(grid.current.offsetHeight)
-    }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const targetWidth = useContext(CtyledContext).theme.size * 8,
-    count = Math.ceil(width / targetWidth),
+  const count = Math.ceil(width / targetWidth),
     cellSize = width / count,
     rowCount = Math.ceil(height / cellSize)
 
@@ -104,64 +93,67 @@ function ControlsGrid() {
   return (
     <ControlsH>
       <PositionDetail position={selected} />
-      <ControlsGridVert>
-        <ControlsIH>
-          <ControlsGridWrapper
-            onMouseDown={() => setMouseDown(true)}
-            onMouseUp={() => setMouseDown(false)}
-            onMouseMove={e => e.preventDefault()}
+
+      <ControlsIH>
+        <ControlsOptions onIncZoom={diff => setTargetWidth(width / (count + diff))} />
+        <ControlsGridWrapper
+          style={{ opacity: enabled ? 1 : 0.5, pointerEvents: enabled ? 'all' : 'none' }}
+          onMouseDown={e => {
+            e.preventDefault()
+            setMouseDown(true)
+          }}
+          onMouseUp={() => setMouseDown(false)}
+          onMouseMove={e => e.preventDefault()}
+        >
+          <GridInner
+            inRef={r => {
+              if (r) {
+                grid.current = r
+                if (!width) handleResize()
+              }
+            }}
           >
-            <GridInner
-              inRef={r => {
-                if (r) {
-                  grid.current = r
-                  if (!width) handleResize()
-                }
-              }}
-            >
-              {_.range(rowCount).map(y => {
-                return (
-                  <GridRow key={y}>
-                    {_.range(count).map(x => {
-                      const pos = { x, y },
-                        isSelected = isEqual(pos, selected)
-                      return (
-                        <GridCellWrapper
-                          key={x}
-                          selected={isSelected}
-                          exited={exited}
-                          onMouseDown={() => {
+            {_.range(rowCount).map(y => {
+              return (
+                <GridRow key={y}>
+                  {_.range(count).map(x => {
+                    const pos = { x, y },
+                      isSelected = isEqual(pos, selected)
+                    return (
+                      <GridCellWrapper
+                        key={x}
+                        selected={isSelected}
+                        exited={exited}
+                        onMouseDown={() => {
+                          setSelected(pos)
+                        }}
+                        onMouseLeave={e => {
+                          if (mouseDown && isSelected && e.shiftKey) setExited(true)
+                        }}
+                        onMouseUp={() => {
+                          if (exited) {
+                            dispatch(
+                              Actions.moveControlGroup({
+                                src: selected,
+                                dest: pos,
+                              })
+                            )
                             setSelected(pos)
-                          }}
-                          onMouseLeave={e => {
-                            if (mouseDown && isSelected && e.shiftKey) setExited(true)
-                          }}
-                          onMouseUp={() => {
-                            if (exited) {
-                              dispatch(
-                                Actions.moveControlGroup({
-                                  src: selected,
-                                  dest: pos,
-                                })
-                              )
-                              setSelected(pos)
-                            }
-                          }}
-                          style={{ height: cellSize, width: cellSize }}
-                        >
-                          <GridCell x={x} y={y} />
-                        </GridCellWrapper>
-                      )
-                    })}
-                  </GridRow>
-                )
-              })}
-            </GridInner>
-          </ControlsGridWrapper>
-          <Presets />
-        </ControlsIH>
-        <ControlsOptions />
-      </ControlsGridVert>
+                          }
+                        }}
+                        style={{ height: cellSize, width: cellSize }}
+                      >
+                        <GridCell x={x} y={y} />
+                      </GridCellWrapper>
+                    )
+                  })}
+                </GridRow>
+              )
+            })}
+          </GridInner>
+        </ControlsGridWrapper>
+        <Presets />
+      </ControlsIH>
     </ControlsH>
   )
 }

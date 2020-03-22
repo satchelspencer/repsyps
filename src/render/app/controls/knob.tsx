@@ -102,6 +102,7 @@ export default function Knob(props: KnobProps) {
           stroke={style.theme.color.nudge(0.2).bg}
           strokeWidth="8"
           d={getD(0, 1, radius)}
+          strokeLinecap="round"
         />
         <line
           fill="none"
@@ -122,6 +123,7 @@ export default function Knob(props: KnobProps) {
             Math.max(props.center, displayValue),
             radius
           )}
+          strokeLinecap="round"
         />
       </svg>
     </KnobWrapper>
