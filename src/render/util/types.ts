@@ -33,6 +33,7 @@ export type Chunks = number[] //[start0,end0,start1,end1]
 export interface TrackPlayback {
   alpha: number
   aperiodic: boolean
+  loop: boolean
   nextAtChunk: boolean
   volume: number
   muted: boolean
@@ -64,7 +65,7 @@ export type Bounds = number[]
 
 export type CueStartBehavior = 'immediate' | 'on-chunk' | 'on-end'
 
-export type CueEndBehavior = 'loop' | 'next'
+export type CueEndBehavior = 'loop' | 'next' | 'stop'
 
 export interface Cue {
   playback: TrackPlayback

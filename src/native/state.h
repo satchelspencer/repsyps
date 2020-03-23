@@ -27,6 +27,7 @@ typedef struct{
   float alpha;
   float volume;
   bool playing;
+  bool loop;
   bool muted;
   float filter;
   bool aperiodic;

@@ -144,7 +144,7 @@ const CueUsePicker = (props: CueUsePickerProps) => {
 }
 
 const startBehaviors: Types.CueStartBehavior[] = ['on-chunk', 'on-end', 'immediate'],
-  endBehaviors: Types.CueEndBehavior[] = ['loop', 'next']
+  endBehaviors: Types.CueEndBehavior[] = ['loop', 'next', 'stop']
 
 const Cue = SortableElement((xprops: any) => {
   const props = xprops as CueProps,
@@ -256,9 +256,10 @@ const Cues = memo((props: CuesProps) => {
               'chunkIndex',
               'aperiodic',
               'volume',
+              'alpha',
             ],
             startBehavior: 'immediate',
-            endBehavior: 'loop',
+            endBehavior: playback.loop ? 'loop' : 'stop',
           },
         })
       )
@@ -280,7 +281,7 @@ const Cues = memo((props: CuesProps) => {
               <Icon name="cue" styles={{ size: s => s * 1.1 }} />
               <span>&nbsp;Playback Cues</span>
             </HeaderContent>
-            <FullButton onClick={handleAddCue}>
+            <FullButton onClick={handleAddCue}> 
               <Icon name="add" />
               &nbsp; Add Cue
             </FullButton>

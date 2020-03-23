@@ -64,7 +64,7 @@ export default function syncAudio(store: Store<Types.State>) {
 
       if (trackPlaybackHasChanged) {
         const change: Types.NativeTrackChange = {
-          playback: diff(trackIsNew ? {} : prev.playback, current.playback),
+          playback: diff(trackIsNew ? {} : prev.playback, current.playback, ['playing']),
           nextPlayback: current.nextPlayback,
         }
         //console.log('c', JSON.stringify(change, null, 2))

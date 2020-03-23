@@ -124,6 +124,11 @@ int paCallbackMethod(
                 mixTrackPhase = getMixTrackPhase(state->playback, mixTrackPlayback);
                 chunkCount = mixTrackPlayback->chunks.size()/2;
               }
+              if(!didAdvancePlayback && tempMixTrackChunkIndex == 0 && !mixTrackPlayback->loop){
+                mixTrackPlayback->playing = false;
+                mixTrackPlayback->chunkIndex = -1;
+                break;
+              }
               samplePosition = getSamplePosition(mixTrackPlayback,tempMixTrackChunkIndex, 0);
             }
           }
@@ -137,6 +142,11 @@ int paCallbackMethod(
               mixTrackPlayback = mixTrack->nextPlayback;
               mixTrackPhase = getMixTrackPhase(state->playback, mixTrackPlayback);
               chunkCount = mixTrackPlayback->chunks.size()/2;
+            }
+            if(!didAdvancePlayback && tempMixTrackChunkIndex == 0 && !mixTrackPlayback->loop){
+              mixTrackPlayback->playing = false;
+              mixTrackPlayback->chunkIndex = -1;
+              break;
             }
             samplePosition = getSamplePosition(mixTrackPlayback, tempMixTrackChunkIndex, mixTrackPhase);
           }

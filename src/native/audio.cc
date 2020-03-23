@@ -11,7 +11,6 @@ Napi::Value init(const Napi::CallbackInfo &info){
   newPlayback->time = 0.;
   newPlayback->playing = false;
   newPlayback->period = 0;
-  newPlayback->volume = 1;
   state.playback = newPlayback;
 
   int windowSize = 2048;
@@ -134,6 +133,7 @@ mixTrackPlayback * initMixTrackPlayback(){
   playback->alpha = 1.;
   playback->volume = 1.;
   playback->playing = false;
+  playback->loop = true;
   playback->muted = false;
   playback->filter = 0.5;
   playback->aperiodic = false;
@@ -196,6 +196,8 @@ void setMixTrackPlayback(mixTrackPlayback * playback, Napi::Value value){
       playback->volume = value.As<Napi::Number>().FloatValue();
     }else if(propNameStr == "playing"){
       playback->playing = value.As<Napi::Boolean>().Value();
+    }else if(propNameStr == "loop"){
+      playback->loop = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "muted"){
       playback->muted = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "filter"){

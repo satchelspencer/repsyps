@@ -18,6 +18,7 @@ const defaultPlayback: Types.Playback = {
     chunks: [0, 0],
     alpha: 1,
     volume: 1,
+    loop: true,
     playing: false,
     aperiodic: true,
     filter: 0.5,
@@ -84,13 +85,23 @@ function mergeTrackSourcesParams(
   )
 }
 
-function applyCue(track: Types.Track, cueIndex: number): Types.Track {
-  const cue = track.cues[cueIndex],
-    followingCue = track.cues[cueIndex + 1],
-    cuePlayback = cue && _.pick(cue.playback, cue.used)
+function getCuePlayback(cue: Types.Cue): Types.TrackPlayback {
+  return (
+    cue && {
+      ...defaultPlayback,
+      ..._.pick(cue.playback, cue.used),
+      loop: cue.endBehavior !== 'stop',
+    }
+  )
+}
 
+function applyCue(track: Types.Track, cueIndex: number): Types.Track {
+  const cue = track.cues[cueIndex]
   if (!cue) return track
-  else if (cue.startBehavior === 'immediate') {
+  const followingCue = track.cues[cueIndex + 1],
+    cuePlayback = getCuePlayback(cue)
+
+  if (cue.startBehavior === 'immediate') {
     const hasFollowing = cue.endBehavior === 'next' && followingCue
     return {
       ...track,
@@ -106,7 +117,7 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
             )
           : track.playback.sourceTracksParams,
       },
-      nextPlayback: hasFollowing ? followingCue.playback : null,
+      nextPlayback: hasFollowing ? getCuePlayback(followingCue) : null,
     }
   } else if (cue.startBehavior === 'on-chunk' || cue.startBehavior === 'on-end') {
     return {
@@ -568,7 +579,8 @@ const reducer = combineReducers({
         const trackTiming = payload.timing.tracks[trackId]
         if (!trackTiming) return track
         const didAdvanceChunk =
-            track.playback.chunkIndex !== trackTiming.playback.chunkIndex,
+            track.playback.chunkIndex !== trackTiming.playback.chunkIndex ||
+            track.playback.playing !== track.playback.playing,
           didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback
 
         if (didAdvancePlayback && payload.commit && track.nextCueIndex !== -1) {
@@ -584,17 +596,19 @@ const reducer = combineReducers({
             nextPlayback: hasFollowing
               ? {
                   ...track.playback,
-                  ..._.pick(followingCue.playback, followingCue.used),
+                  ...getCuePlayback(followingCue),
                 }
               : null,
           }
         } else if (didAdvanceChunk) {
+          console.log(trackTiming.playback)
           needsUpdate = true
           return {
             ...track,
             playback: {
               ...track.playback,
               chunkIndex: trackTiming.playback.chunkIndex,
+              playing: trackTiming.playback.playing,
             },
           }
         } else return track
