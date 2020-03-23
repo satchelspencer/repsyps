@@ -41,10 +41,21 @@ export function useSelection<T>(key: string) {
     isSelecting: !!ctx.state.callbacks[key],
     getSelection: async () => {
       return new Promise<T>(res => {
+        function cancel(e: KeyboardEvent) {
+          if (e.key === 'Escape') {
+            ctx.setState({ callbacks: _.omit(ctx.state.callbacks, key) })
+            window.removeEventListener('keydown', cancel)
+            res(undefined)
+          }
+        }
+        window.addEventListener('keydown', cancel)
         ctx.setState({
           callbacks: {
             ...ctx.state.callbacks,
-            [key]: res,
+            [key]: value => {
+              window.removeEventListener('keydown', cancel)
+              res(value)
+            },
           },
         })
       })

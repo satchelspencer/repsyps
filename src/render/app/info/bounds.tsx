@@ -141,12 +141,13 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       if (!isSelecting) {
         console.log()
         const id = await getSelection()
-        dispatch(
-          Actions.copyTrackBounds({
-            src: id,
-            dest: props.trackId,
-          })
-        )
+        if (id)
+          dispatch(
+            Actions.copyTrackBounds({
+              src: id,
+              dest: props.trackId,
+            })
+          )
       }
     }, [isSelecting, getSelection, props.trackId])
 

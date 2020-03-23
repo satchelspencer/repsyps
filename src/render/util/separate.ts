@@ -5,11 +5,11 @@ import pathUtils from 'path'
 import fs from 'fs'
 import wav from 'node-wav'
 
-import * as Types from 'render/util/types'
 import audio, { RATE } from 'render/util/audio'
 import * as Actions from 'render/redux/actions'
 import { getBuffer, createBuffer } from 'render/util/buffers'
-import { addBufferFromAudio, context } from './add-track'
+import { addBufferFromAudio } from './add-track'
+import { getPath } from 'render/loading/app-paths'
 
 const userData = remote.app.getPath('userData')
 
@@ -18,7 +18,7 @@ export default async function separate(
   trackId: string,
   dispatch: Dispatch<any>
 ) {
-  const cacheDir = pathUtils.join(userData, 'separated'),
+  const cacheDir = getPath('cache'),
     cacheDirExists = !!(await fs.promises.stat(cacheDir).catch(e => false))
   if (!cacheDirExists) await fs.promises.mkdir(cacheDir)
 
@@ -52,7 +52,7 @@ export default async function separate(
       sourceTrackId: trackId + '_vocal',
       sourceTrackParams: {
         volume: 0,
-        offset: 0
+        offset: 0,
       },
     })
   )
@@ -70,7 +70,7 @@ export default async function separate(
       sourceTrackId: trackId + '_instru',
       sourceTrackParams: {
         volume: 0,
-        offset: 0
+        offset: 0,
       },
     })
   )

@@ -2,21 +2,11 @@ import React, { memo, useState, useRef, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled, { active, inline } from 'ctyled'
 
-import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
-import * as Types from 'render/util/types'
 import uid from 'render/util/uid'
 
 import { useSelector, useDispatch } from 'render/redux/react'
-import { useSelection } from 'render/components/selection'
-import {
-  WideButton,
-  SelectableButton,
-  HeaderContent,
-  SidebarValue,
-} from 'render/components/misc'
 import Icon from 'render/components/icon'
-import SidebarItem from 'render/components/item'
 
 const PresetsWrapper = ctyled.div.styles({
   width: 12,
@@ -124,16 +114,17 @@ function Presets() {
       )
       setSelected(id)
     }, []),
-    [selected, setSelected] = useState<string>(null)
+    [selected, setSelected] = useState<string>(null),
+    selectedDef = selected || _.keys(presets)[0] || null
 
   return (
     <PresetsWrapper>
       <PresetsHead>
         <Icon
-          disabled={!selected}
+          disabled={!selectedDef}
           asButton
           name="cheveron-left"
-          onClick={() => dispatch(Actions.applyControlPreset(selected))}
+          onClick={() => dispatch(Actions.applyControlPreset(selectedDef))}
         />
         <HeadGroup>
           <Icon
@@ -147,7 +138,7 @@ function Presets() {
           <Icon
             asButton
             name="remove"
-            onClick={() => dispatch(Actions.deleteControlPreset(selected))}
+            onClick={() => dispatch(Actions.deleteControlPreset(selectedDef))}
           />
         </HeadGroup>
       </PresetsHead>
@@ -174,7 +165,7 @@ function Presets() {
             <PresetItem
               onClick={() => setSelected(presetId)}
               key={presetId}
-              selected={selected === presetId}
+              selected={selectedDef === presetId}
             >
               <PresetItemName>
                 <PresetItemNameInner>{preset.name}</PresetItemNameInner>

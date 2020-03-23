@@ -4,15 +4,21 @@ import ctyled from 'ctyled'
 import * as Types from 'render/util/types'
 import { useSelectable } from 'render/components/selection'
 
-const ControlWrapper = ctyled.div.attrs({ enabled: false }).styles({
+export const ControlAdderWrapper = ctyled.div.attrs({ enabled: false }).styles({
   width: 1,
   height: 1,
-  border: true,
   color: c => c.nudge(0.1),
 }).extendSheet`
     border-radius:50%;
-    ${({ color }, { enabled }) =>
-      enabled ? `background:rgba(255,0,0,0.65) !important;` : `background:${color.bg};`}
+    border:2px solid  ${({ color }, { enabled }) =>
+      enabled ? `rgba(255,0,0,0.75)` : color.contrast(-0.15).bq};
+    ${(_, { enabled }) =>
+      enabled &&
+      `
+      &:hover{
+        background:rgba(255,0,0,0.5);
+      }
+    `}
   `
 
 export interface ControlProps {
@@ -23,7 +29,7 @@ export interface ControlProps {
 export default function ControlAdder(props: ControlProps) {
   const { isSelecting, onSelect } = useSelectable<Partial<Types.Control>>('control')
   return (
-    <ControlWrapper
+    <ControlAdderWrapper
       enabled={isSelecting}
       onClick={e => {
         if (isSelecting) {

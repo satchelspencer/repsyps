@@ -44,7 +44,7 @@ export default function Knob(props: KnobProps) {
     [startPos, setStartPos] = useState([0, 0]),
     [startValue, setStartValue] = useState(0),
     [tempValue, setTempValue] = useState(0),
-    lastTempValue = useRef(0),
+    lastTempValue = useRef<number>(null),
     displayValue = dragging ? tempValue : value,
     style = useContext(CtyledContext),
     radius = 45,
@@ -71,10 +71,11 @@ export default function Knob(props: KnobProps) {
         }
       },
       handleMouseUp = () => {
-        props.onChange(lastTempValue.current)
+        if (lastTempValue.current !== null) props.onChange(lastTempValue.current)
         window.removeEventListener('mousemove', handleDrag)
         window.removeEventListener('mouseup', handleMouseUp)
         setDragging(false)
+        lastTempValue.current === null
       }
     if (dragging) {
       window.addEventListener('mousemove', handleDrag)
