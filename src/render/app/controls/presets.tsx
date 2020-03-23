@@ -43,7 +43,7 @@ const PresetItem = ctyled.div
     padd: 1,
     gutter: 1,
     align: 'center',
-    color: (c, { selected }) => c.contrast(-0.1).nudge(selected ? 0.05 : 0),
+    color: (c, { selected }) => c.contrast(-0.1).nudge(selected ? -0.05 : 0),
   })
 
 const PresetInput = ctyled.input.class(inline).styles({

@@ -15,6 +15,7 @@ import isEqual from 'src/render/util/is-equal'
 const ControlsGridWrapper = ctyled.div.styles({
   flex: 1,
   bg: true,
+  color: c => c.nudge(0.05)
 })
 
 const GridInner = ctyled.div.styles({
@@ -95,7 +96,11 @@ function ControlsGrid() {
       <PositionDetail position={selected} />
 
       <ControlsIH>
-        <ControlsOptions onIncZoom={diff => setTargetWidth(width / (count + diff))} />
+        <ControlsOptions
+          onIncZoom={diff => {
+            setTargetWidth(width / (width / targetWidth + diff))
+          }}
+        />
         <ControlsGridWrapper
           style={{ opacity: enabled ? 1 : 0.5, pointerEvents: enabled ? 'all' : 'none' }}
           onMouseDown={e => {

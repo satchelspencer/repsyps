@@ -21,7 +21,7 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
   midiChannelMask = 0x0f,
   getChannel = (byte: number) => byte & midiChannelMask,
   nav: any = navigator, //any so as to allow web midi api
-  outputs: any[] = [], //web midi output (no type defs)
+  outputs: { [portId: string]: any } = {}, //web midi output (no type defs)
   sentMidiValues: { [controlId: string]: number } = {}
 
 export default async function init(store: Store<Types.State>) {
@@ -80,30 +80,38 @@ export default async function init(store: Store<Types.State>) {
         }
       }
     },
-    throttledHandle = _.throttle(handleMessage, 100, { leading: false })
-
-  nav.requestMIDIAccess().then(midiAccess => {
-    midiAccess.onstatechange = e => {
-      console.log('st', e.port.id, e.port.state)
-    }
-
-    for (var output of midiAccess.outputs.values()) {
-      outputs.push(output)
-      output.send([255])
-      // if (output.name === 'X-TOUCH MINI') {
-      //   for (let i = 1; i <= 8; i++) output.send([176, i, 2])
-      // }
-      // output.send([144, 12, 127])
-      // output.send([144, 96, 3])
-      //output.send([186, 1, 67])
-    }
-    for (var input of midiAccess.inputs.values()) {
-      input.onmidimessage = mes => {
+    throttledHandle = _.throttle(handleMessage, 100, { leading: false }),
+    addInput = port => {
+      console.log('connect', port.name)
+      port.onmidimessage = mes => {
         const fn = getFunction(mes.data[0])
         if (instantFunctions.includes(fn)) handleMessage(mes)
         else throttledHandle(mes)
       }
+    },
+    removeInput = port => {
+      console.log('disconnect', port.name)
+    },
+    addOutput = port => {
+      outputs[port.id] = port
+      port.send([255])
+    },
+    removeOutput = port => {
+      delete outputs[port.id]
     }
+
+  nav.requestMIDIAccess().then(midiAccess => {
+    midiAccess.onstatechange = e => {
+      if (e.port.type === 'input') {
+        if (e.port.state === 'connected') addInput(e.port)
+        else if (e.port.state === 'disconnected') removeInput(e.port)
+      } else if (e.port.type === 'output') {
+        if (e.port.state === 'connected') addOutput(e.port)
+        else if (e.port.state === 'disconnected') removeOutput(e.port)
+      }
+    }
+    for (let output of midiAccess.outputs.values()) addOutput(output)
+    for (let input of midiAccess.inputs.values()) addInput(input)
   })
 
   const absValueSelectors: {
@@ -137,13 +145,13 @@ export default async function init(store: Store<Types.State>) {
                 : state.live.controlValues[controlId]
 
             if (absValue !== null && absValue !== sentMidiValues[controlId]) {
-              outputs.forEach(output =>
-                output.send([
+              for (let outputId in outputs) {
+                outputs[outputId].send([
                   176 + binding.channel,
                   binding.note,
                   Math.floor(absValue * 127),
                 ])
-              )
+              }
               sentMidiValues[controlId] = absValue
             }
           }
