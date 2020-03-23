@@ -25,6 +25,7 @@ typedef struct{
   std::unordered_map<std::string, mixTrackSourceConfig*> sourceTracksParams;
   std::vector<int> chunks;
   float alpha;
+  float volume;
   bool playing;
   bool muted;
   float filter;

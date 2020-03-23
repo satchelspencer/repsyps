@@ -145,7 +145,6 @@ const SourceTracks = (props: TrackVolumeProps) => {
                     }
                   />
                   <ControlAdder
-                    name={source.sourceTracks[sourceTrackId].name}
                     params={{
                       trackIndex,
                       sourceTrackIndex,

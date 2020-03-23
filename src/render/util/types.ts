@@ -34,6 +34,7 @@ export interface TrackPlayback {
   alpha: number
   aperiodic: boolean
   nextAtChunk: boolean
+  volume: number
   muted: boolean
   filter: number
   sourceTracksParams: TrackSourcesParams

@@ -44,8 +44,9 @@ export function getDefaultBindingType(control: Types.Control): Types.BindingType
 
 export function getIcon(control: Types.Control): string {
   if ('globalProp' in control) return control.globalProp === 'volume' ? 'volume' : 'timer'
-  else if ('sourceTrackProp' in control) return 'volume'
-  else if ('trackProp' in control) return 'spectrum'
+  else if ('sourceTrackProp' in control) return 'wave'
+  else if ('trackProp' in control)
+    return control.trackProp === 'filter' ? 'spectrum' : 'volume'
   else if ('cueStep' in control) return control.cueStep > 0 ? 'next' : 'prev'
   else if ('cueIndex' in control) return 'cue'
   else return null

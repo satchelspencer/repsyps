@@ -216,7 +216,9 @@ int paCallbackMethod(
 
             for(channelIndex=0;channelIndex<channelCount;channelIndex++){
               state->buffer->channels[channelIndex][bufferHead] += 
-                mixTrackSource->filterBuffers[channelIndex][frameIndex] * state->window[frameIndex];
+                mixTrackSource->filterBuffers[channelIndex][frameIndex] *
+                state->window[frameIndex] * 
+                mixTrackPlayback->volume;
             }
           }
         }

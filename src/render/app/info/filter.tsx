@@ -53,7 +53,6 @@ const Filter = memo((props: FilterProps) => {
             />
           </SliderWrapper>
           <ControlAdder
-            name={'Filter - ' + name}
             params={{
               trackIndex,
               trackProp: 'filter',

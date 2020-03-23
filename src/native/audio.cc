@@ -132,6 +132,7 @@ mixTrackPlayback * initMixTrackPlayback(){
   mixTrackPlayback * playback = new mixTrackPlayback{};
   playback->chunkIndex = -1;
   playback->alpha = 1.;
+  playback->volume = 1.;
   playback->playing = false;
   playback->muted = false;
   playback->filter = 0.5;
@@ -191,6 +192,8 @@ void setMixTrackPlayback(mixTrackPlayback * playback, Napi::Value value){
       }
     }else if(propNameStr == "alpha"){
       playback->alpha = value.As<Napi::Number>().FloatValue();
+    }else if(propNameStr == "volume"){
+      playback->volume = value.As<Napi::Number>().FloatValue();
     }else if(propNameStr == "playing"){
       playback->playing = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "muted"){

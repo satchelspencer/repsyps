@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react'
 import _ from 'lodash'
 
+function clip(x: number) {
+  const v = 50
+  return Math.abs(x) > v ? (x > 0 ? v : -v) : x
+}
+
 export default function useZoom(container: React.MutableRefObject<any>, center: number) {
   const [scale, setScale] = useState(200),
     [start, setStart] = useState(-200 * 24 * 2),
@@ -12,12 +17,12 @@ export default function useZoom(container: React.MutableRefObject<any>, center: 
       if (ctrlKey || metaKey || (deltaX && !deltaY)) e.preventDefault()
       if (ctrlKey || metaKey) {
         const scaleMultiplier = scale / 100,
-          nextScale = Math.max(scale + deltaY * scaleMultiplier, 2),
+          nextScale = Math.max(scale + clip(deltaY) * scaleMultiplier, 2),
           dx = (nextScale - scale) * center
         setStart(start - dx)
         setScale(nextScale)
       } else {
-        setStart(start + deltaX * scale)
+        setStart(start + clip(deltaX) * scale)
       }
     }
   }, [scale, start])

@@ -8,8 +8,6 @@ import * as Types from 'render/util/types'
 import * as Actions from './actions'
 import * as Selectors from './selectors'
 import { RATE } from 'render/util/audio'
-import isEqual from '../util/is-equal'
-import sourceTracks from '../app/info/source-tracks'
 
 const defaultPlayback: Types.Playback = {
     volume: 1,
@@ -19,6 +17,7 @@ const defaultPlayback: Types.Playback = {
   defaultTrackPlayback: Types.TrackPlayback = {
     chunks: [0, 0],
     alpha: 1,
+    volume: 1,
     playing: false,
     aperiodic: true,
     filter: 0.5,
@@ -759,14 +758,15 @@ const reducer = combineReducers({
       )
     }),
     handle(Actions.createScene, (live, { payload: sceneIndex }) => {
-      const newScenes = [...live.scenes]
-      if (!newScenes[sceneIndex] || !newScenes[sceneIndex].trackIds.length)
-        newScenes[sceneIndex] = { ...defaultScene }
+      const newScenes = [...live.scenes],
+        newScene = { ...defaultScene }
+
       if (live.defaultPresetId)
-        newScenes[sceneIndex].controls = {
+        newScene.controls = {
           ...live.controlPresets[live.defaultPresetId].controls,
         }
-      else newScenes.splice(sceneIndex, 0, defaultScene)
+
+      newScenes.splice(sceneIndex, 0, newScene)
       return updateSceneIndex(
         {
           ...live,

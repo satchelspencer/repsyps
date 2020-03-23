@@ -22,7 +22,6 @@ export const ControlAdderWrapper = ctyled.div.attrs({ enabled: false }).styles({
   `
 
 export interface ControlProps {
-  name: string
   params: Partial<Types.Control>
 }
 

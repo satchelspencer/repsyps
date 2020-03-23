@@ -113,12 +113,12 @@ interface CueProps {
 }
 
 interface CueUsePickerProps extends CueProps {
-  prop: keyof Types.TrackPlayback
+  props: (keyof Types.TrackPlayback)[]
   icon: string
 }
 
 const CueUsePicker = (props: CueUsePickerProps) => {
-  const isUsed = props.cue.used.includes(props.prop),
+  const isUsed = _.every(props.props, prop => props.cue.used.includes(prop)),
     dispatch = useDispatch()
   return (
     <CueBehavior
@@ -129,8 +129,8 @@ const CueUsePicker = (props: CueUsePickerProps) => {
             cue: {
               ...props.cue,
               used: isUsed
-                ? _.without(props.cue.used, props.prop)
-                : [...props.cue.used, props.prop],
+                ? _.without(props.cue.used, ...props.props)
+                : [...props.cue.used, ...props.props],
             },
             index: props.cueIndex,
           })
@@ -168,7 +168,6 @@ const Cue = SortableElement((xprops: any) => {
           <span>at {_.round(props.cue.playback.chunks[0] / RATE, 2)}s</span>
         </CueTitle>
         <ControlAdder
-          name={`Cue ${props.cueIndex + 1}: ${props.trackName}`}
           params={{
             cueIndex: props.cueIndex,
             trackIndex: props.trackIndex,
@@ -176,8 +175,8 @@ const Cue = SortableElement((xprops: any) => {
         />
       </CueWrapper>
       <BehaviorWrapper>
-        <CueUsePicker {...props} icon="volume" prop="sourceTracksParams" />
-        <CueUsePicker {...props} icon="spectrum" prop="filter" />
+        <CueUsePicker {...props} icon="volume" props={['sourceTracksParams', 'volume']} />
+        <CueUsePicker {...props} icon="spectrum" props={['filter']} />
         <CueBehavior
           onClick={() => {
             const nextBehavior =
@@ -256,6 +255,7 @@ const Cues = memo((props: CuesProps) => {
               'playing',
               'chunkIndex',
               'aperiodic',
+              'volume',
             ],
             startBehavior: 'immediate',
             endBehavior: 'loop',
@@ -307,7 +307,6 @@ const Cues = memo((props: CuesProps) => {
               &nbsp;{atStart ? 'Stop' : 'Prev'}
             </JumpInner>
             <ControlAdder
-              name={`Prev: ${name}`}
               params={{
                 trackIndex,
                 cueStep: -1,
@@ -330,7 +329,6 @@ const Cues = memo((props: CuesProps) => {
               &nbsp;{canNext ? (atEnd ? 'End' : 'Next') : 'Start'}
             </JumpInner>
             <ControlAdder
-              name={`Next: ${name}`}
               params={{
                 trackIndex,
                 cueStep: 1,
