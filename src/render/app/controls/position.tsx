@@ -16,7 +16,6 @@ import {
 } from 'render/components/misc'
 import Icon from 'render/components/icon'
 import SidebarItem from 'render/components/item'
-import { ControlAdderWrapper } from 'render/components/control-adder'
 
 import { shortNames, getControlName, getDefaultBindingType, getIcon } from './utils'
 
@@ -337,10 +336,7 @@ function PositionDetail(props: ControlDetailProps) {
                   }}
                 >
                   {isSelecting ? (
-                    <>
-                      Select A Control "
-                      <ControlAdderWrapper styles={{ size: s => s * 0.8 }} enabled />"
-                    </>
+                    <>Select A Control...</>
                   ) : (
                     <>
                       <Icon name="add" />

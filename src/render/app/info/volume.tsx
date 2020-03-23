@@ -5,9 +5,9 @@ import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 import { useSelector, useDispatch } from 'render/redux/react'
 
-import ControlAdder from 'render/components/control-adder'
 import Volume from 'render/components/volume'
 import SidebarItem from 'render/components/item'
+import {ItemAdder} from 'render/components/misc'
 
 export interface TrackVolumeProps {
   trackId: string
@@ -22,7 +22,12 @@ function TrackVolume(props: TrackVolumeProps) {
   return (
     <SidebarItem
       title={
-        <>
+        <ItemAdder
+          params={{
+            trackIndex,
+            trackProp: 'volume',
+          }}
+        >
           <Volume
             volume={volume}
             onChange={v =>
@@ -36,13 +41,7 @@ function TrackVolume(props: TrackVolumeProps) {
               )
             }
           />
-          <ControlAdder
-            params={{
-              trackIndex,
-              trackProp: 'volume',
-            }}
-          />
-        </>
+        </ItemAdder>
       }
     />
   )

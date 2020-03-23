@@ -10,15 +10,17 @@ import Slider from 'render/components/slider'
 import Icon from 'render/components/icon'
 import { RATE } from 'render/util/audio'
 import { Value, SliderWrapper } from 'render/components/misc'
-import ControlAdder from 'render/components/control-adder'
+import { adder } from 'render/components/control-adder'
 import PhaseDisplay from './phase-display'
 
-const PeriodWrapper = ctyled.div.styles({
-  align: 'center',
-  gutter: 2,
-  padd: 2,
-  flex: 1,
-})
+const PeriodWrapper = adder(
+  ctyled.div.styles({
+    align: 'center',
+    gutter: 2,
+    padd: 2,
+    flex: 1,
+  })
+)
 
 const PhaseDisplayContainer = () => {
   const time = useSelector(state => state.timing.time)
@@ -33,12 +35,11 @@ const PeriodControl = memo(() => {
       []
     )
   return (
-    <PeriodWrapper>
+    <PeriodWrapper params={{ globalProp: 'period' }}>
       <Icon styles={{ size: s => s * 1.2 }} name="timer" />
       <SliderWrapper>
         <Slider value={mappings.period.toStandard(period)} onChange={handleChange} />
       </SliderWrapper>
-      <ControlAdder params={{ globalProp: 'period' }} />
       <Value>{_.round(60 / (period / RATE), 0) + '/m'}</Value>
       <PhaseDisplayContainer />
     </PeriodWrapper>

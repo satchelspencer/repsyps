@@ -7,7 +7,7 @@ import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import { addSource } from 'render/util/add-track'
 
-import ControlAdder from 'render/components/control-adder'
+import { adder } from 'render/components/control-adder'
 import Volume from 'render/components/volume'
 import Icon from 'render/components/icon'
 import { WideButton } from 'render/components/misc'
@@ -46,11 +46,13 @@ const TrackWrapper = ctyled.div.styles({
   borderColor: c => c.contrast(-0.1),
 })
 
-const TrackH = ctyled.div.styles({
-  gutter: 1,
-  width: '100%',
-  align: 'center',
-})
+const TrackH = adder(
+  ctyled.div.styles({
+    gutter: 1,
+    width: '100%',
+    align: 'center',
+  })
+)
 
 const TrackHead = ctyled.div.styles({
   gutter: 1,
@@ -131,7 +133,13 @@ const SourceTracks = (props: TrackVolumeProps) => {
                     />
                   )}
                 </TrackHead>
-                <TrackH>
+                <TrackH
+                  params={{
+                    trackIndex,
+                    sourceTrackIndex,
+                    sourceTrackProp: 'volume',
+                  }}
+                >
                   <Volume
                     volume={sourceTrackParams.volume}
                     onChange={v =>
@@ -143,13 +151,6 @@ const SourceTracks = (props: TrackVolumeProps) => {
                         })
                       )
                     }
-                  />
-                  <ControlAdder
-                    params={{
-                      trackIndex,
-                      sourceTrackIndex,
-                      sourceTrackProp: 'volume',
-                    }}
                   />
                 </TrackH>
               </TrackWrapper>

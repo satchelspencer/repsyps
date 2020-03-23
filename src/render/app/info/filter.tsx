@@ -6,9 +6,8 @@ import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import mappings from 'render/util/mappings'
 
-import ControlAdder from 'render/components/control-adder'
 import Icon from 'render/components/icon'
-import { HeaderContent, SliderWrapper } from 'render/components/misc'
+import { HeaderContent, SliderWrapper, ItemAdder } from 'render/components/misc'
 import Slider from 'render/components/slider'
 
 import SidebarItem from 'render/components/item'
@@ -40,7 +39,12 @@ const Filter = memo((props: FilterProps) => {
   return (
     <SidebarItem
       title={
-        <>
+        <ItemAdder
+          params={{
+            trackIndex,
+            trackProp: 'filter',
+          }}
+        >
           <HeaderContent>
             <Icon styles={{ size: s => s * 1.2 }} name="spectrum" />
             <span>&nbsp;Filter</span>
@@ -52,13 +56,7 @@ const Filter = memo((props: FilterProps) => {
               markers={[center]}
             />
           </SliderWrapper>
-          <ControlAdder
-            params={{
-              trackIndex,
-              trackProp: 'filter',
-            }}
-          />
-        </>
+        </ItemAdder>
       }
     />
   )

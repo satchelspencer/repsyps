@@ -11,11 +11,11 @@ import { RATE } from 'render/util/audio'
 
 import Icon from 'render/components/icon'
 import { WideButton, HeaderContent } from 'render/components/misc'
-import ControlAdder from 'render/components/control-adder'
+import { adder } from 'render/components/control-adder'
 
 import SidebarItem from 'render/components/item'
 
-const CueWrapper = ctyled.div
+const CueWrapper = adder(ctyled.div
   .attrs<{ active?: boolean; next?: boolean }>({ active: false, next: false })
   .class(inline)
   .styles({
@@ -32,7 +32,7 @@ const CueWrapper = ctyled.div
   padding-right:0px !important;
   background:${({ color }, { active, next }) =>
     active ? color.nudge(-0.2).bg : next ? color.nudge(-0.1).bg : color.bg};
-`
+`)
 
 const CuesListWrapper = ctyled.div.styles({
   column: true,
@@ -57,13 +57,11 @@ const FullButton = WideButton.styles({
   flex: 1,
 })
 
-const JumpButton = FullButton.styles({
-  justify: 'space-between',
-})
-
-const JumpInner = ctyled.div.styles({
-  align: 'center',
-})
+const JumpButton = adder(
+  FullButton.styles({
+    align: 'center',
+  })
+)
 
 const CueNumber = ctyled.div.styles({
   size: s => s * 1.2,
@@ -152,6 +150,10 @@ const Cue = SortableElement((xprops: any) => {
   return (
     <CueH>
       <CueWrapper
+        params={{
+          cueIndex: props.cueIndex,
+          trackIndex: props.trackIndex,
+        }}
         active={props.active}
         next={props.next}
         onClick={() =>
@@ -167,12 +169,6 @@ const Cue = SortableElement((xprops: any) => {
           <CueNumber>{props.cueIndex + 1}</CueNumber>
           <span>at {_.round(props.cue.playback.chunks[0] / RATE, 2)}s</span>
         </CueTitle>
-        <ControlAdder
-          params={{
-            cueIndex: props.cueIndex,
-            trackIndex: props.trackIndex,
-          }}
-        />
       </CueWrapper>
       <BehaviorWrapper>
         <CueUsePicker {...props} icon="volume" props={['sourceTracksParams', 'volume']} />
@@ -281,7 +277,7 @@ const Cues = memo((props: CuesProps) => {
               <Icon name="cue" styles={{ size: s => s * 1.1 }} />
               <span>&nbsp;Playback Cues</span>
             </HeaderContent>
-            <FullButton onClick={handleAddCue}> 
+            <FullButton onClick={handleAddCue}>
               <Icon name="add" />
               &nbsp; Add Cue
             </FullButton>
@@ -302,17 +298,13 @@ const Cues = memo((props: CuesProps) => {
                 })
               )
             }}
+            params={{
+              trackIndex,
+              cueStep: -1,
+            }}
           >
-            <JumpInner>
-              <Icon name="prev" />
-              &nbsp;{atStart ? 'Stop' : 'Prev'}
-            </JumpInner>
-            <ControlAdder
-              params={{
-                trackIndex,
-                cueStep: -1,
-              }}
-            />
+            <Icon name="prev" />
+            &nbsp;{atStart ? 'Stop' : 'Prev'}
           </JumpButton>
           <JumpButton
             allowClick
@@ -324,17 +316,13 @@ const Cues = memo((props: CuesProps) => {
                 })
               )
             }}
+            params={{
+              trackIndex,
+              cueStep: 1,
+            }}
           >
-            <JumpInner>
-              <Icon name="next" />
-              &nbsp;{canNext ? (atEnd ? 'End' : 'Next') : 'Start'}
-            </JumpInner>
-            <ControlAdder
-              params={{
-                trackIndex,
-                cueStep: 1,
-              }}
-            />
+            <Icon name="next" />
+            &nbsp;{canNext ? (atEnd ? 'End' : 'Next') : 'Start'}
           </JumpButton>
         </CueH>
         <CuesList

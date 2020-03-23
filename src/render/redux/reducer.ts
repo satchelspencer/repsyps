@@ -601,7 +601,6 @@ const reducer = combineReducers({
               : null,
           }
         } else if (didAdvanceChunk) {
-          console.log(trackTiming.playback)
           needsUpdate = true
           return {
             ...track,

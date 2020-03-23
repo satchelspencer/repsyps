@@ -3,10 +3,19 @@ import ctyled, { inline } from 'ctyled'
 
 import { palette } from 'render/components/theme'
 import Button from 'render/components/button'
+import { adder } from 'render/components/control-adder'
 
 export const SliderWrapper = ctyled.div.styles({
   flex: 1,
 })
+
+export const ItemAdder = adder(
+  ctyled.div.styles({
+    align: 'center',
+    flex: 1,
+    gutter: 1
+  })
+)
 
 export const Value = ctyled.div
   .attrs<{ warn?: boolean }>({ warn: false })
