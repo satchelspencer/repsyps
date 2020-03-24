@@ -311,6 +311,40 @@ Napi::Value separateSource(const Napi::CallbackInfo &info){
   return outArray;
 }
 
+void getWaveform(const Napi::CallbackInfo &info){
+  std::string sourceId = info[0].As<Napi::String>().Utf8Value();
+  int start = info[1].As<Napi::Number>().Int32Value();
+  float scale = info[2].As<Napi::Number>().FloatValue();
+  Napi::TypedArray buff = info[3].As<Napi::TypedArray>();
+  float* dest = reinterpret_cast<float*>(buff.ArrayBuffer().Data());
+  int width = buff.ByteLength() / sizeof(float) / 2; //min and max
+  float* source = state.sources[sourceId]->channels[0];
+  int sourceLen = state.sources[sourceId]->length;
+  int skip = (scale / 100) + 1;
+
+  int fstart;
+  int fend;
+  float min;
+  float max;
+  int sample;
+  float sampleVal = 0;
+  for(int i=0;i<width;i++){
+    fstart = i*scale + start;
+    fend = fstart + scale;
+    min = 0;
+    max = 0;
+    for(sample=fstart;sample<fend;sample+=skip){
+      if(sample > 0 && sample < sourceLen){
+        sampleVal = source[sample] * 0.75;
+        if(sampleVal > 0 && sampleVal > max) max = sampleVal;
+        if(sampleVal < 0 && sampleVal < min) min = sampleVal;
+      }
+    }
+    dest[i*2] = min;
+    dest[i*2 + 1] = max;
+  }
+}
+
 Napi::Value getDebug(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
   return Napi::Number::New(env, state.playback->out);
@@ -327,5 +361,6 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("removeMixTrack", Napi::Function::New(env, removeMixTrack));
   exports.Set("getTiming", Napi::Function::New(env, getTiming));
   exports.Set("separateSource", Napi::Function::New(env, separateSource));
+  exports.Set("getWaveform", Napi::Function::New(env, getWaveform));
   exports.Set("getDebug", Napi::Function::New(env, getDebug));
 }

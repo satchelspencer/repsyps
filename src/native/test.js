@@ -20,6 +20,12 @@ audio.addSource('mysource_main', A)
 audio.addSource('mysource_vocal', vocal)
 audio.addSource('mysource_instru', instru)
 
+const dest = new Float32Array(2000)
+audio.getWaveform('mysource_main', -2000, 200, dest)
+console.log(dest)
+
+process.exit()
+
 audio.setMixTrack('mytrack', {
   playback: {
     chunks: [0, ssize, ssize, ssize],
@@ -27,9 +33,11 @@ audio.setMixTrack('mytrack', {
     playing: true,
     muted: false,
     filter: 0.5,
+    volume: 1,
     sourceTracksParams: {
       mysource_vocal: {
         volume: 1,
+        offset: 0,
       },
     },
   },
@@ -39,12 +47,15 @@ audio.setMixTrack('mytrack', {
     playing: true,
     muted: false,
     filter: 0.1,
+    volume: 1,
     sourceTracksParams: {
       mysource_vocal: {
         volume: 0.5,
+        offset: 0,
       },
       mysource_instru: {
         volume: 0.5,
+        offset: 0,
       },
     },
   },
@@ -57,7 +68,6 @@ audio.updatePlayback({
 })
 
 audio.start()
-
 
 let i = 0
 setInterval(() => {

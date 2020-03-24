@@ -23,7 +23,7 @@ export default function(store: Store) {
         source: {
           name: id + 'name',
           bounds: [],
-          sourceTracks: { [id]: { name: 'Main', source: 'huh' } },
+          sourceTracks: { [id]: { name: 'Main', source: 'huh', loaded: true } },
         },
       })
     )

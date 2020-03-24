@@ -15,19 +15,15 @@ interface AudioAPI {
   removeMixTrack(trackId: string)
   getTiming(): Types.TimingState
   separateSource(source: Types.Channels): Types.Channels
+  getWaveform(sourceId: string, start: number, scale: number, dest: Float32Array)
   getDebug(): any
 }
 
-export default (_.mapValues(
-  eval('require')(
-    path.resolve(
-      __dirname,
-      isDev ? '../../../build/Release/audio.node' : 'build/Release/audio.node'
-    )
-  ),
-  (v, key) => {
-    return v
-  }
+export default (eval('require')(
+  path.resolve(
+    __dirname,
+    isDev ? '../../../build/Release/audio.node' : 'build/Release/audio.node'
+  )
 ) as unknown) as AudioAPI
 
 export const RATE = 44100

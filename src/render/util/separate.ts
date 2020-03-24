@@ -43,7 +43,11 @@ export default async function separate(
     Actions.createTrackSource({
       sourceId: trackId,
       sourceTrackId: trackId + '_vocal',
-      sourceTrack: { name: 'Vocal - ' + trackName, source: vocalCachePath },
+      sourceTrack: {
+        name: 'Vocal - ' + trackName,
+        source: vocalCachePath,
+        loaded: false,
+      },
     })
   )
   dispatch(
@@ -61,7 +65,11 @@ export default async function separate(
     Actions.createTrackSource({
       sourceId: trackId,
       sourceTrackId: trackId + '_instru',
-      sourceTrack: { name: 'Instru - ' + trackName, source: instruCachePath },
+      sourceTrack: {
+        name: 'Instru - ' + trackName,
+        source: instruCachePath,
+        loaded: false,
+      },
     })
   )
   dispatch(

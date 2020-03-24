@@ -18,5 +18,7 @@ Napi::Value removeMixTrack(const Napi::CallbackInfo &info);
 Napi::Value getTiming(const Napi::CallbackInfo &info);
 Napi::Value separateSource(const Napi::CallbackInfo &info);
 Napi::Value getDebug(const Napi::CallbackInfo &info);
+void getWaveform(const Napi::CallbackInfo &info);
+
 
 void InitAudio(Napi::Env env, Napi::Object exports);

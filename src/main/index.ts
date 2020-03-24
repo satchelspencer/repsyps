@@ -28,8 +28,8 @@ function createMainWindow() {
         ? path.join(__dirname, 'splash.html')
         : path.resolve(__dirname, '../../conf/build/splash.html'),
       splashScreenOpts: {
-        width: 500,
-        height: 500,
+        width: 300,
+        height: 300,
         transparent: true,
       },
     }),
