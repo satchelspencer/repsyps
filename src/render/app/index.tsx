@@ -58,7 +58,7 @@ function App() {
     handleDragover = useCallback(e => e.preventDefault(), []),
     handleDrop = useCallback(e => {
       e.preventDefault()
-      const file = e.dataTransfer.files[0]
+      const file = e.dataTransfer.files[0].path
       addTrack(file, dispatch)
     }, [])
 
@@ -67,7 +67,7 @@ function App() {
     input.current.type = 'file'
     input.current.onchange = e => {
       const { files } = input.current
-      addTrack(files[0], dispatch)
+      addTrack(files[0].path, dispatch)
       input.current.value = ''
     }
     window.addEventListener('dragover', handleDragover)

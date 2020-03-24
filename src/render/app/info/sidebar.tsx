@@ -4,6 +4,7 @@ import ctyled from 'ctyled'
 
 import { useSelector } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
+import { getBuffer } from 'render/util/buffers'
 
 import BoundsControl from './bounds'
 import SourceTracks from './source-tracks'
@@ -33,11 +34,17 @@ const TrackDetailsWrapper = ctyled.div.styles({
 const Sidebar = () => {
   const trackId = useSelector(Selectors.getSelectedTrackId),
     track = useSelector(Selectors.getSelectedTrack),
-    source = useSelector(state => state.sources[trackId])
+    source = useSelector(state => state.sources[trackId]),
+    isLoaded = !!getBuffer(trackId)
 
   return useMemo(
     () => (
-      <SidebarWrapper>
+      <SidebarWrapper
+        style={{
+          opacity: isLoaded ? 1 : 0.5,
+          pointerEvents: isLoaded ? 'all' : 'none',
+        }}
+      >
         {!!track && (
           <TrackDetailsWrapper>
             <SourceTracks trackId={trackId} />
@@ -52,7 +59,7 @@ const Sidebar = () => {
         )}
       </SidebarWrapper>
     ),
-    [trackId, source && source.name]
+    [trackId, source && source.name, isLoaded]
   )
 }
 

@@ -1,5 +1,7 @@
 import _ from 'lodash'
 import { Dispatch } from 'redux'
+import fs from 'fs'
+import * as pathUtils from 'path'
 
 import { createBuffer } from 'render/util/buffers'
 import * as Actions from 'render/redux/actions'
@@ -11,25 +13,27 @@ export async function addBufferFromAudio(id: string, rawData: ArrayBuffer) {
   createBuffer(id, [audioBuff.getChannelData(0), audioBuff.getChannelData(1)])
 }
 
-function getBufferFromFile(file: any) {
-  return new Promise<string>((res, rej) => {
-    const reader = new FileReader()
-    reader.onload = async (e: any) => {
-      const id = _.snakeCase(file.name.substr(0, 15)) + new Date().getTime()
-      await addBufferFromAudio(id, e.target.result)
-      res(id)
+function getId(path: string): string {
+  return _.snakeCase(pathUtils.basename(path).substr(0, 15)) + new Date().getTime()
+}
+
+export function getBufferFromPath(path: string, id: string, cb: () => void) {
+  fs.readFile(path, async (e, data) => {
+    if (!e) {
+      const audioBuff = await context.decodeAudioData(data.buffer)
+      createBuffer(id, [audioBuff.getChannelData(0), audioBuff.getChannelData(1)])
+      cb()
     }
-    reader.readAsArrayBuffer(file)
   })
 }
 
-export async function addSource(trackId: string, file: any, dispatch: Dispatch<any>) {
-  const id = await getBufferFromFile(file)
+export async function addSource(trackId: string, path: string, dispatch: Dispatch<any>) {
+  const id = getId(path) //await getBufferFromFile(file)
   dispatch(
     Actions.createTrackSource({
       sourceId: trackId,
       sourceTrackId: id,
-      sourceTrack: { name: file.name, source: file.path },
+      sourceTrack: { name: pathUtils.basename(path), source: path, loaded: false },
     })
   )
   dispatch(
@@ -44,15 +48,16 @@ export async function addSource(trackId: string, file: any, dispatch: Dispatch<a
   )
 }
 
-export default async function(file: any, dispatch: Dispatch<any>) {
-  const id = await getBufferFromFile(file)
+export default async function(path: string, dispatch: Dispatch<any>) {
+  const id = getId(path),
+    name = pathUtils.basename(path)
   dispatch(
     Actions.createSource({
       sourceId: id,
       source: {
-        name: file.name,
+        name,
         bounds: [],
-        sourceTracks: { [id]: { name: file.name, source: file.path } },
+        sourceTracks: { [id]: { name, source: path, loaded: false } },
       },
     })
   )

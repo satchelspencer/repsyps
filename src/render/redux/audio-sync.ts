@@ -9,6 +9,7 @@ import * as Selectors from './selectors'
 import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
 import { getBuffer } from 'render/util/buffers'
+import { getBufferFromPath } from 'render/util/add-track'
 import isEqual from 'render/util/is-equal'
 
 export const UPDATE_PERIOD = 50,
@@ -25,7 +26,8 @@ export default function syncAudio(store: Store<Types.State>) {
       [trackId: string]: (state: Types.State, trackId: string) => TrackPlaybackState
     } = {},
     lastTrackPlaybacks: { [trackId: string]: TrackPlaybackState } = {},
-    lastGlobalPlayback: Types.Playback = null
+    lastGlobalPlayback: Types.Playback = null,
+    loadingSources: { [sourceId: string]: boolean } = {}
 
   const appPath = isDev ? './' : remote.app.getAppPath() + '/'
   audio.init(appPath)
@@ -58,7 +60,26 @@ export default function syncAudio(store: Store<Types.State>) {
       _.keys(current.playback.sourceTracksParams).forEach(sourceId => {
         const sourceIsNew = trackIsNew || !prev.playback.sourceTracksParams[sourceId]
         if (sourceIsNew) {
-          audio.addSource(sourceId, getBuffer(sourceId))
+          const channels = getBuffer(sourceId)
+          if (channels) {
+            audio.addSource(sourceId, channels)
+          } else if (!loadingSources[sourceId]) {
+            loadingSources[sourceId] = true
+            getBufferFromPath(
+              currentState.sources[trackId].sourceTracks[sourceId].source,
+              sourceId,
+              () => {
+                audio.addSource(sourceId, getBuffer(sourceId))
+                store.dispatch(
+                  Actions.didLoadTrackSource({
+                    sourceId: trackId,
+                    sourceTrackId: sourceId,
+                    loaded: true,
+                  })
+                )
+              }
+            )
+          }
         }
       })
 

@@ -40,6 +40,12 @@ export const createTrackSource = createAction<{
   sourceTrack: Types.TrackSource
 }>('CREATE_TRACKSOURCE')
 
+export const didLoadTrackSource = createAction<{
+  sourceId: string
+  sourceTrackId: string
+  loaded: boolean
+}>('DID_LOAD_TRACKSOURCE')
+
 export const removeTrackSource = createAction<{
   sourceId: string
   sourceTrackId: string

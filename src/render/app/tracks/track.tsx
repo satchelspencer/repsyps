@@ -71,6 +71,7 @@ export interface TrackProps {
   visible: boolean
   noClick: boolean
   sample: number
+  loaded: boolean
 }
 
 export interface ViewContext {
@@ -107,13 +108,13 @@ const Track = memo(
     const dispatch = useDispatch()
 
     /* computed data */
-    const buffer = useMemo(() => getBuffer(trackId)[1], [trackId]),
-      impulses = useMemo(() => getImpulses(buffer, trackId), [buffer, trackId])
+    const channels = getBuffer(trackId),
+      buffer = channels && channels[1],
+      impulses = useMemo(() => buffer && getImpulses(buffer, trackId), [buffer, trackId])
 
     /* react state */
     const [center, setCenter] = useState(0),
       [clickX, setClickX] = useState(null),
-      [shiftKey, setShiftKey] = useState(false),
       [mouseDown, setMouseDown] = useState(false)
 
     const container = useRef(null)
@@ -158,7 +159,7 @@ const Track = memo(
       clickCtxtValues = _.values(clickCtxt)
 
     /* WAVEFORM DRAWING ON CANVAS */
-    const { canvasRef } = useWaveformCanvas(drawView, track, source, trackId, sample)
+    const { canvasRef } = useWaveformCanvas(drawView, track, source, sample)
 
     /* mouse event handlers */
     const selectPlaybackHandlers = useSelectPlayback(trackId),
@@ -180,7 +181,6 @@ const Track = memo(
           offsetTrackHandlers.mouseDown(clickCtxt, pos, e.shiftKey)
           setClickX(pos.x)
           setMouseDown(true)
-          setShiftKey(e.shiftKey)
         },
         [...clickCtxtValues, ...viewValues, track.playback.chunks, source.bounds]
       ),
@@ -220,7 +220,6 @@ const Track = memo(
             selectPlaybackHandlers.mouseUp(clickCtxt, pos, view)
           setClickX(null)
           setMouseDown(false)
-          setShiftKey(false)
         },
         [...clickCtxtValues, ...viewValues, source.bounds, track.selected]
       ),
@@ -277,7 +276,8 @@ const Track = memo(
       (prevProps.track === nextProps.track &&
         prevProps.trackId === nextProps.trackId &&
         prevProps.sample === nextProps.sample &&
-        prevProps.source === nextProps.source)
+        prevProps.source === nextProps.source &&
+        prevProps.loaded === nextProps.loaded)
     )
   }
 )
@@ -313,6 +313,7 @@ export default function TrackContainer(props: TrackContainerProps) {
         <>
           <TrackControls trackId={props.trackId} />
           <Track
+            loaded={!!getBuffer(props.trackId)}
             noClick={isSelecting}
             visible={visible}
             trackId={props.trackId}

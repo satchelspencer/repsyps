@@ -81,7 +81,7 @@ const SourceTracks = (props: TrackVolumeProps) => {
     input.current.type = 'file'
     input.current.onchange = e => {
       const { files } = input.current
-      addSource(props.trackId, files[0], dispatch)
+      addSource(props.trackId, files[0].path, dispatch)
       input.current.value = ''
     }
   }, [props.trackId])

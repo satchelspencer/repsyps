@@ -83,7 +83,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
     channels = getBuffer(props.trackId),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection<string>('track'),
-    impulses = useMemo(() => getImpulses(channels[0], props.trackId), [
+    impulses = useMemo(() => channels && getImpulses(channels[0], props.trackId), [
       channels,
       props.trackId,
     ]),
@@ -91,7 +91,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
     cstart = playback.chunks[0],
     clength = playback.chunks[1],
     inferLR = useCallback(() => {
-      if (!clength) return
+      if (!clength || !impulses) return
       dispatch(
         Actions.setSourceBounds({
           sourceId: props.trackId,
@@ -100,7 +100,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       )
     }, [playback.chunks, impulses]),
     inferLeft = useCallback(() => {
-      if (!clength) return
+      if (!clength || !impulses) return
       const endPoint = cstart + clength,
         inferredBounds = inferTimeBase(playback.chunks, impulses).filter(
           bound => bound <= endPoint
@@ -115,7 +115,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       )
     }, [playback.chunks, bounds, impulses]),
     inferRight = useCallback(() => {
-      if (!clength) return
+      if (!clength || !impulses) return
       const startPoint = cstart,
         inferredBounds = inferTimeBase(playback.chunks, impulses).filter(
           bound => bound >= startPoint

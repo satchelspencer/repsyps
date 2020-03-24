@@ -16,6 +16,7 @@ export interface TrackSourcesParams {
 export interface TrackSource {
   name: string
   source: string
+  loaded: boolean
 }
 
 export interface Source {

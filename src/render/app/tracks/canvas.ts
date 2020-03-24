@@ -12,23 +12,22 @@ export default function useWaveformCanvas(
   view: DrawViewContext,
   track: Types.Track,
   source: Types.Source,
-  trackId: string,
   sample: number
 ) {
   const canvasRef = useRef(null),
     ctxt = useRef(null),
     ctyledContext = useContext(CtyledContext),
-    buffer = useMemo(() => getBuffer(track.visibleSourceTrack)[1], [
-      track.visibleSourceTrack,
+    channels = getBuffer(track.visibleSourceTrack),
+    buffer = channels && channels[1],
+    minMaxes = useMemo(() => buffer && getMinMaxes(buffer, track.visibleSourceTrack), [
+      buffer,
     ]),
-    minMaxes = useMemo(() => getMinMaxes(buffer, track.visibleSourceTrack), [buffer]),
     editTrackMinMaxes = useMemo(() => {
       if (!track.sourceTrackEditing) return null
-      else
-        return getMinMaxes(
-          getBuffer(track.sourceTrackEditing)[0],
-          track.sourceTrackEditing
-        )
+      else {
+        const channels = getBuffer(track.sourceTrackEditing)
+        return channels && getMinMaxes(channels[0], track.sourceTrackEditing)
+      }
     }, [track.sourceTrackEditing]),
     effectivePos = track.playback.playing ? 0 /* position */ : 0,
     { scale, start, impulses, width, height, clickX, center, mouseDown } = view
@@ -59,12 +58,14 @@ export default function useWaveformCanvas(
 
     ctx.clearRect(0, 0, pwidth, pheight)
 
-    drawWaveform(
-      drawContext,
-      minMaxes,
-      track.playback.sourceTracksParams[track.visibleSourceTrack].offset
-    )
-    drawImpulses(drawContext, impulses)
+    if (minMaxes)
+      drawWaveform(
+        drawContext,
+        minMaxes,
+        track.playback.sourceTracksParams[track.visibleSourceTrack].offset
+      )
+
+    if (impulses) drawImpulses(drawContext, impulses)
 
     if (editTrackMinMaxes)
       drawWaveform(
@@ -106,14 +107,6 @@ export interface DrawingContext {
   clickX: number
   center: number
   mouseDown: boolean
-}
-
-export function drawDrag(context: DrawingContext) {
-  const { ctx, mouseDown, clickX, center, pheight } = context
-  if (mouseDown) {
-    ctx.fillStyle = 'rgba(255,0,0,0.1)'
-    ctx.fillRect(clickX, 0, center - clickX, pheight)
-  }
 }
 
 export function drawWaveform(
@@ -163,6 +156,14 @@ export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
   }
 }
 
+export function drawDrag(context: DrawingContext) {
+  const { ctx, mouseDown, clickX, center, pheight } = context
+  if (mouseDown) {
+    ctx.fillStyle = 'rgba(255,0,0,0.1)'
+    ctx.fillRect(clickX, 0, center - clickX, pheight)
+  }
+}
+
 export function drawPlayback(context: DrawingContext, track: Types.Track) {
   const { pheight, scale, start, ctx, sample } = context,
     playing = track.playback.playing
@@ -175,8 +176,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
     const cstart = track.playback.chunks[i],
       clength = track.playback.chunks[i + 1],
       startX = (cstart - start) / scale,
-      endX = (cstart + clength - start) / scale,
-      isCurrent = track.playback.chunkIndex === i / 2
+      endX = (cstart + clength - start) / scale
 
     if (!clength) {
       ctx.lineWidth = 5
@@ -226,22 +226,10 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
 
 export function drawBounds(context: DrawingContext, bounds: number[], editing: boolean) {
   const { pheight, scale, start, ctx, color } = context,
-    fheight = pheight / 10,
-    spacing = fheight / 4,
-    center = pheight / 2,
     highContrast = color.contrast(0.3)
 
   bounds.forEach((sample, i) => {
-    const next = bounds[i + 1],
-      px = (sample - start) / scale
-
-    // ctx.lineWidth = 7
-    // ctx.strokeStyle = highContrast.bg
-    // ctx.beginPath()
-    // ctx.lineTo(px, 0)
-    // ctx.lineTo(px, pheight)
-    // ctx.stroke()
-    // bar line
+    const px = (sample - start) / scale
     ctx.lineWidth = 1
     ctx.strokeStyle = highContrast.fg
     if (editing) ctx.setLineDash([10, 10])

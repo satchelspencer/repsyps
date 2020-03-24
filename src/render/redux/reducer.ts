@@ -202,6 +202,21 @@ const reducer = combineReducers({
         },
       }
     }),
+    handle(Actions.didLoadTrackSource, (sources, { payload }) => {
+      return {
+        ...sources,
+        [payload.sourceId]: {
+          ...sources[payload.sourceId],
+          sourceTracks: {
+            ...sources[payload.sourceId].sourceTracks,
+            [payload.sourceTrackId]: {
+              ...sources[payload.sourceId].sourceTracks[payload.sourceTrackId],
+              loaded: payload.loaded,
+            },
+          },
+        },
+      }
+    }),
     handle(Actions.removeTrackSource, (sources, { payload }) => {
       return {
         ...sources,
