@@ -1,8 +1,9 @@
-import { app, BrowserWindow, dialog } from 'electron'
+import { app, dialog } from 'electron'
 import * as path from 'path'
 import { format as formatUrl } from 'url'
 import contextMenu from 'electron-context-menu'
 import * as imp from 'electron-devtools-installer'
+import * as Splashscreen from '@trodi/electron-splashscreen'
 
 contextMenu({
   showInspectElement: true,
@@ -14,11 +15,23 @@ let mainWindow: any = null
 dialog.showErrorBox = (title, content) => console.log('err', title, content)
 
 function createMainWindow() {
-  const window = new BrowserWindow({
-      width: 1050,
-      height: 700,
-      titleBarStyle: 'hiddenInset',
-      webPreferences: { nodeIntegration: true },
+  const mainOpts: Electron.BrowserWindowConstructorOptions = {
+    width: 1050,
+    height: 700,
+    titleBarStyle: 'hiddenInset',
+    webPreferences: { nodeIntegration: true },
+  }
+
+  const window = Splashscreen.initSplashScreen({
+      windowOpts: mainOpts,
+      templateUrl: !isDevelopment
+        ? path.join(__dirname, 'splash.html')
+        : path.resolve(__dirname, '../../conf/build/splash.html'),
+      splashScreenOpts: {
+        width: 500,
+        height: 500,
+        transparent: true,
+      },
     }),
     windowUrl = isDevelopment
       ? `http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`

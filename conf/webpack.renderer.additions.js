@@ -1,4 +1,5 @@
 const path = require('path')
+const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = function(config) {
   config.module.rules[5].test = /\.(png|jpe?g|gif)(\?.*)?$/ //remove svg
@@ -23,6 +24,9 @@ module.exports = function(config) {
     src: path.resolve(__dirname, '../src/'),
     render: path.resolve(__dirname, '../src/render'),
   }
+  config.plugins = config.plugins.concat([
+    new CopyPlugin([{ from: './conf/build/splash.html', to: 'splash.html' }]),
+  ])
 
   return config
 }
