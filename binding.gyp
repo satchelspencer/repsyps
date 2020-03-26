@@ -29,7 +29,8 @@
           "xcode_settings": {
 		        "OTHER_CFLAGS": [
 		          "-std=c++17",
-		          "-stdlib=libc++"
+		          "-stdlib=libc++",
+              "-Wno-return-type-c-linkage"
 		        ],
 		        "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
 		        "MACOSX_DEPLOYMENT_TARGET": "10.12"

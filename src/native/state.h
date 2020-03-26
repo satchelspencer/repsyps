@@ -12,7 +12,6 @@ typedef struct{
   double time;
   bool playing;
   int period;
-  double out;
 } playback;
 
 typedef struct{

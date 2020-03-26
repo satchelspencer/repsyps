@@ -1,6 +1,10 @@
 #include <napi.h>
 #include <math.h>
+#include <iostream>
 #include "portaudio.h"
+#include <complex.h>
+#include <liquid.h>
+#include <list>
 
 #include "state.h"
 #include "filter.h"
@@ -17,8 +21,7 @@ void setMixTrack(const Napi::CallbackInfo &info);
 Napi::Value removeMixTrack(const Napi::CallbackInfo &info);
 Napi::Value getTiming(const Napi::CallbackInfo &info);
 Napi::Value separateSource(const Napi::CallbackInfo &info);
-Napi::Value getDebug(const Napi::CallbackInfo &info);
 void getWaveform(const Napi::CallbackInfo &info);
-
+Napi::Value getImpulses(const Napi::CallbackInfo &info);
 
 void InitAudio(Napi::Env env, Napi::Object exports);

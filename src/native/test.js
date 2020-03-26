@@ -20,9 +20,11 @@ audio.addSource('mysource_main', A)
 audio.addSource('mysource_vocal', vocal)
 audio.addSource('mysource_instru', instru)
 
-const dest = new Float32Array(2000)
-audio.getWaveform('mysource_main', -2000, 200, dest)
-console.log(dest)
+//const dest = new Float32Array(256)
+//audio.getWaveform('mysource_main', -2000, 200, dest)
+//console.log(dest)
+
+console.log(audio.getImpulses('mysource_main'))
 
 process.exit()
 

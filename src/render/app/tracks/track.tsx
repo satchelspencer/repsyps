@@ -78,7 +78,7 @@ export interface ViewContext {
   scale: number
   start: number
   center: number
-  impulses: Float32Array
+  impulses: number[]
   mouseDown: boolean
 }
 

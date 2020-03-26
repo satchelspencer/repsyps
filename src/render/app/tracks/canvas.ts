@@ -4,7 +4,7 @@ import * as _ from 'lodash'
 
 import * as Types from 'render/util/types'
 import { getBuffer } from 'render/util/buffers'
-import { BIN_SIZE } from 'render/util/impulse-detect'
+import { findNearest } from 'render/util/impulse-detect'
 import audio from 'render/util/audio'
 import { DrawViewContext } from './track'
 
@@ -137,25 +137,31 @@ function drawWaveform(context: DrawingContext, waveform: Float32Array, color?: s
   ctx.stroke()
 }
 
-export function drawImpulses(context: DrawingContext, impulses: Float32Array) {
+export function drawImpulses(context: DrawingContext, impulses: number[]) {
   const { pwidth, pheight, scale, start, ctx } = context,
-    end = scale * pwidth + start
+    end = scale * pwidth + start,
+    white = 300,
+    trans = 100
 
   ctx.lineWidth = 3
-  const r = 128 + Math.max((1 - scale / 512) * 128, 0)
-  ctx.strokeStyle = `rgba(${r},${r},${r},1)`
+  const r = 128 + Math.max((1 - scale / white) * 128, 0),
+    o = 1 - Math.min(Math.max((scale - white) / trans, 0), 1)
+  ctx.strokeStyle = `rgba(${r},${255 - r},${255 - r},${o})`
 
-  for (let i = Math.floor(start / BIN_SIZE); i < Math.floor(end / BIN_SIZE); i++) {
-    const value = impulses[i] * 0.75,
-      x = (i * BIN_SIZE - start) / scale
+  if (o !== 0)
+    for (
+      let startIndex = findNearest(impulses, Math.max(start, 0));
+      impulses[startIndex] < end;
+      startIndex++
+    ) {
+      const x = (impulses[startIndex] - start) / scale,
+        value = 0.1
 
-    if (value) {
       ctx.beginPath()
       ctx.lineTo(x, pheight * (0.5 - value / 2))
       ctx.lineTo(x, pheight * (0.5 + value / 2))
       ctx.stroke()
     }
-  }
 }
 
 export function drawDrag(context: DrawingContext) {

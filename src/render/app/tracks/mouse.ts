@@ -7,7 +7,6 @@ import { getTimeFromPosition, getBoundIndex, getNextBoundIndex } from './utils'
 import * as Types from 'render/util/types'
 
 import { ClickEventContext, ViewContext } from './track'
-import { start } from 'repl'
 
 export interface ClickPos {
   x: number

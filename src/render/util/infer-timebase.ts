@@ -1,4 +1,3 @@
-import { BIN_SIZE } from './impulse-detect'
 import snapSampleToImpulses from './snap-sample'
 import * as Types from './types'
 
@@ -6,9 +5,9 @@ const SNAP_SCALE = 400
 
 export default function inferTimeBase(
   chunks: Types.Chunks,
-  impulses: Float32Array
+  impulses: number[]
 ): number[] {
-  const len = impulses.length * BIN_SIZE,
+  const len = impulses[impulses.length - 1], //last impulse
     bounds = [],
     cstart = chunks[0],
     clength = chunks[1]

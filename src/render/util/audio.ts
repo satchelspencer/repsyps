@@ -16,7 +16,7 @@ interface AudioAPI {
   getTiming(): Types.TimingState
   separateSource(source: Types.Channels): Types.Channels
   getWaveform(sourceId: string, start: number, scale: number, dest: Float32Array)
-  getDebug(): any
+  getImpulses(sourceId: string): number[]
 }
 
 export default (eval('require')(

@@ -53,7 +53,6 @@
     "copy-webpack-plugin": "^5.1.1",
     "ctyled": "^0.0.19",
     "deox": "^3.2.1",
-    "dsp.js": "^1.0.1",
     "electron-context-menu": "^0.14.0",
     "electron-devtools-installer": "^2.2.4",
     "express": "^4.17.1",

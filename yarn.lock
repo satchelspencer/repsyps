@@ -3236,11 +3236,6 @@ dotenv@^8.0.0:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-8.0.0.tgz#ed310c165b4e8a97bb745b0a9d99c31bda566440"
   integrity sha512-30xVGqjLjiUOArT4+M5q9sYdvuR4riM6yK9wMcas9Vbp6zZa+ocC9dp6QoftuhTPhFAiLK/0C5Ni2nou/Bk8lg==
 
-dsp.js@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/dsp.js/-/dsp.js-1.0.1.tgz#02554a223ee514cd0e226cb6fb88d6d0b3e91308"
-  integrity sha1-AlVKIj7lFM0OImy2+4jW0LPpEwg=
-
 duplexer3@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/duplexer3/-/duplexer3-0.1.4.tgz#ee01dd1cac0ed3cbc7fdbea37dc0a8f1ce002ce2"

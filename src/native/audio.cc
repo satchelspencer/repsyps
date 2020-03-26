@@ -345,9 +345,91 @@ void getWaveform(const Napi::CallbackInfo &info){
   }
 }
 
-Napi::Value getDebug(const Napi::CallbackInfo &info){
+
+Napi::Value getImpulses(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
-  return Napi::Number::New(env, state.playback->out);
+  std::string sourceId = info[0].As<Napi::String>().Utf8Value();
+  Napi::Array beats = Napi::Array::New(env);
+  uint32_t beatIndex = 0;
+
+  float* source = state.sources[sourceId]->channels[0];
+  int sourceLen = state.sources[sourceId]->length;
+
+  unsigned int fftSize = 256;
+  unsigned int bandMin = (8000 / 44100.) * fftSize;
+  unsigned int bandMax = (20000 / 44100.) * fftSize;
+  unsigned int avgLength = 40;
+  unsigned int thresh = 4;
+  float epsilon = 0.000001;
+  liquid_float_complex * x = new liquid_float_complex[fftSize];
+  liquid_float_complex * y = new liquid_float_complex[fftSize];
+  fftplan pf = fft_create_plan(fftSize, x, y, LIQUID_FFT_FORWARD,  0);
+
+  unsigned int fftCount = (sourceLen / fftSize) - 1;
+  unsigned int startSample;
+  unsigned int fftSampleIndex;
+
+  float mean;
+  std::list<float> lastMeans = { 1. };
+  std::list<float> lastFracs = { 1. };
+  float meansAvg;
+  float fracsAvg;
+  float frac;
+  float fracfrac;
+  bool inBeat;
+  float beatMax;
+  unsigned int beatMaxIndex;
+
+  float sum;
+  unsigned int count;
+  unsigned int bandIndex;
+
+  for(unsigned int fftIndex=0;fftIndex<fftCount;fftIndex++){
+    startSample = fftIndex * fftSize;
+    for(fftSampleIndex=0;fftSampleIndex<fftSize;fftSampleIndex++)
+      x[fftSampleIndex] = source[startSample + fftSampleIndex];
+    fft_execute(pf);
+
+    sum = 0;
+    count = 0;
+    for(bandIndex = bandMin;bandIndex<bandMax;bandIndex++){
+      sum += std::norm(y[bandIndex]);
+      count++;
+    }
+    mean = sum / count;
+
+    meansAvg = epsilon;
+    for(float v : lastMeans) meansAvg += v;
+    meansAvg /= lastMeans.size();
+    frac = mean / meansAvg;
+    lastMeans.push_front(frac);
+    if(lastMeans.size() > avgLength) lastMeans.pop_back();
+
+    fracsAvg = epsilon;
+    for(float v : lastFracs) fracsAvg += v;
+    fracsAvg /= lastFracs.size();
+    fracfrac = frac / fracsAvg;
+    lastFracs.push_front(frac);
+    if(lastFracs.size() > avgLength) lastFracs.pop_back();
+
+    if(fracfrac > thresh && frac > 2){
+      if(!inBeat){
+        inBeat = true;
+        beatMax = 0;
+        beatMaxIndex = 0;
+      }
+      if(fracfrac > beatMax){
+        beatMax = fracfrac;
+        beatMaxIndex = fftIndex;
+      }
+    }else if(inBeat){
+      inBeat = false;
+      beats.Set(beatIndex, beatMaxIndex * fftSize);
+      beatIndex++;
+    }
+  }
+  fft_destroy_plan(pf);
+  return beats;
 }
 
 void InitAudio(Napi::Env env, Napi::Object exports){  
@@ -362,5 +444,5 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("getTiming", Napi::Function::New(env, getTiming));
   exports.Set("separateSource", Napi::Function::New(env, separateSource));
   exports.Set("getWaveform", Napi::Function::New(env, getWaveform));
-  exports.Set("getDebug", Napi::Function::New(env, getDebug));
+  exports.Set("getImpulses", Napi::Function::New(env, getImpulses));
 }
