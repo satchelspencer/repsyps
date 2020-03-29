@@ -17,6 +17,7 @@ export interface TrackSource {
   name: string
   source: string
   loaded: boolean
+  streamIndex: number
 }
 
 export interface Source {

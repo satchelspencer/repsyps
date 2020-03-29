@@ -8,6 +8,8 @@ extern "C"{
   #include <libswresample/swresample.h>
 }
 
+#include "state.h"
+
 typedef struct{
   int streamIndex;
   AVCodec* aCodec;

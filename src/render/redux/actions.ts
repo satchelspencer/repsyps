@@ -256,7 +256,7 @@ export function addTrackAndSource(path: string) {
         source: {
           name,
           bounds: [],
-          sourceTracks: { [id]: { name, source: path, loaded: false } },
+          sourceTracks: { [id]: { name, source: path, loaded: false, streamIndex: 0 } },
         },
       }),
       addTrack({

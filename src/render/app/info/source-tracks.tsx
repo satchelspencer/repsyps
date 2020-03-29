@@ -83,7 +83,6 @@ const SourceTracks = (props: TrackVolumeProps) => {
     input.current.onchange = e => {
       const { files } = input.current
       const id = getId(files[0].path)
-      //addSource(props.trackId, files[0].path, dispatch)
       dispatch(
         Actions.createTrackSource({
           sourceId: props.trackId,
@@ -92,6 +91,7 @@ const SourceTracks = (props: TrackVolumeProps) => {
             name: pathUtils.basename(files[0].path),
             source: files[0].path,
             loaded: false,
+            streamIndex: 0
           },
         })
       )

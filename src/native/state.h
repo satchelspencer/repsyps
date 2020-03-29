@@ -7,7 +7,7 @@
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H
 
-static bool DEBUG = false;
+static bool REPSYS_LOG = false;
 
 typedef struct{
   float volume;
@@ -48,7 +48,6 @@ typedef struct{
 
 typedef struct{
   std::vector<float*>  channels;
-  std::vector<float*>  filterBuffers;
   int length;
   bool removed;
   uint8_t ** data;

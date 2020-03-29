@@ -635,6 +635,7 @@ const reducer = combineReducers({
         : live
     }),
     handle(Actions.deleteScene, (live, { payload: sceneIndex }) => {
+      if (live.scenes.length == 1) return live
       const newScenes = [...live.scenes],
         deletedScene = live.scenes[sceneIndex],
         newSceneIndex = Math.min(live.sceneIndex, newScenes.length - 2)

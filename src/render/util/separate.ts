@@ -2,6 +2,7 @@ import { Dispatch } from 'redux'
 import * as _ from 'lodash'
 import pathUtils from 'path'
 import fs from 'fs'
+import { batchActions } from 'redux-batched-actions'
 
 import audio from 'render/util/audio'
 import * as Actions from 'render/redux/actions'
@@ -30,46 +31,46 @@ export default async function separate(
   }
 
   dispatch(
-    Actions.createTrackSource({
-      sourceId: trackId,
-      sourceTrackId: trackId + '_vocal',
-      sourceTrack: {
-        name: 'Vocal - ' + trackName,
-        source: vocalCachePath,
-        loaded: true,
-      },
-    })
-  )
-  dispatch(
-    Actions.setTrackSourceParams({
-      trackId: trackId,
-      sourceTrackId: trackId + '_vocal',
-      sourceTrackParams: {
-        volume: 0,
-        offset: 0, //cacheHit ? 1024 : 0,
-      },
-    })
-  )
-
-  dispatch(
-    Actions.createTrackSource({
-      sourceId: trackId,
-      sourceTrackId: trackId + '_instru',
-      sourceTrack: {
-        name: 'Instru - ' + trackName,
-        source: instruCachePath,
-        loaded: true,
-      },
-    })
-  )
-  dispatch(
-    Actions.setTrackSourceParams({
-      trackId: trackId,
-      sourceTrackId: trackId + '_instru',
-      sourceTrackParams: {
-        volume: 0,
-        offset: 0,
-      },
-    })
+    batchActions(
+      [
+        Actions.createTrackSource({
+          sourceId: trackId,
+          sourceTrackId: trackId + '_vocal',
+          sourceTrack: {
+            name: 'Vocal - ' + trackName,
+            source: vocalCachePath,
+            loaded: true,
+            streamIndex: 0,
+          },
+        }),
+        Actions.setTrackSourceParams({
+          trackId: trackId,
+          sourceTrackId: trackId + '_vocal',
+          sourceTrackParams: {
+            volume: 0,
+            offset: 0, //cacheHit ? 1024 : 0,
+          },
+        }),
+        Actions.createTrackSource({
+          sourceId: trackId,
+          sourceTrackId: trackId + '_instru',
+          sourceTrack: {
+            name: 'Instru - ' + trackName,
+            source: instruCachePath,
+            loaded: true,
+            streamIndex: 0,
+          },
+        }),
+        Actions.setTrackSourceParams({
+          trackId: trackId,
+          sourceTrackId: trackId + '_instru',
+          sourceTrackParams: {
+            volume: 0,
+            offset: 0,
+          },
+        }),
+      ],
+      'ADD_SEPARATED_TRACKS'
+    )
   )
 }

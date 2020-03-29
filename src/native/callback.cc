@@ -193,50 +193,23 @@ int paCallbackMethod(
                 sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
                 sampleValue *= state->playback->volume;
                 sampleValue *= mixTrackSourceConfig->volume;
+
+                sampleValue *= mixTrackPlayback->volume;
+                if(mixTrack->hasFilter){
+                  firfilt_rrrf_push(mixTrack->filter, sampleValue);   
+                  firfilt_rrrf_execute(mixTrack->filter, &sampleValue);
+                }
+                sampleValue *= state->window[frameIndex];                
               }
-              mixTrackSource->filterBuffers[channelIndex][frameIndex] = sampleValue;
+              state->buffer->channels[channelIndex][bufferHead] += sampleValue;
             }   
           }
         }
+        bufferHead = (bufferHead+1)%state->buffer->size;
         mixTrackPhase += phaseStep*mixTrackPlayback->alpha; 
       }/* end compute window */
-
-      /* apply filters to full window */
-      for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
-        if(state->sources.find(sourcePair.first) != state->sources.end() && state->sources[sourcePair.first] != NULL){
-          mixTrackSourceConfig = sourcePair.second;
-          mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
-          channelCount = mixTrackSource->channels.size();
-
-          for(channelIndex=0;channelIndex<channelCount;channelIndex++){
-            for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
-              if(mixTrack->hasFilter){
-                firfilt_rrrf_push(mixTrack->filter, mixTrackSource->filterBuffers[channelIndex][frameIndex]);   
-                firfilt_rrrf_execute(mixTrack->filter, &mixTrackSource->filterBuffers[channelIndex][frameIndex]);
-              }
-            }
-          }
-        }
-      }
-
-      /* copy from filterbuffer to ringbuffer */
-      for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
-        for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
-          if(state->sources.find(sourcePair.first) != state->sources.end() && state->sources[sourcePair.first] != NULL){
-            mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
-            channelCount = mixTrackSource->channels.size();
-
-            for(channelIndex=0;channelIndex<channelCount;channelIndex++){
-              state->buffer->channels[channelIndex][bufferHead] += 
-                mixTrackSource->filterBuffers[channelIndex][frameIndex] *
-                state->window[frameIndex] * 
-                mixTrackPlayback->volume;
-            }
-          }
-        }
-        bufferHead = (bufferHead+1)%state->buffer->size;
-      }
     }
+
     //head only moves forward by half the window size
     state->buffer->head = (state->buffer->head + (state->windowSize/2)) % state->buffer->size;
 
@@ -261,20 +234,23 @@ int paCallbackMethod(
   for(auto sourcesPair: state->sources){
     mixTrackSource = sourcesPair.second;
     if(mixTrackSource && mixTrackSource->removed){
-      if(DEBUG) std::cout << "free source" << std::endl;
+      if(REPSYS_LOG) std::cout << "free source" << std::endl;
       if(mixTrackSource->data != NULL){
         av_freep(&mixTrackSource->data[0]);
         av_freep(&mixTrackSource->data);
       }
       state->sources[sourcesPair.first] = NULL;
+      delete mixTrackSource;
     }
   }
 
   for(auto mixTrackPair: state->mixTracks){
     mixTrack = mixTrackPair.second;
     if(mixTrack && mixTrack->removed){
-      if(DEBUG) std::cout << "free track" << std::endl;
+      if(REPSYS_LOG) std::cout << "free track" << std::endl;
       state->mixTracks[mixTrackPair.first] = NULL;
+      if(mixTrack->filter != NULL) firfilt_rrrf_destroy(mixTrack->filter);
+      delete mixTrack;
     }
   }
 

@@ -5,6 +5,7 @@ extern "C"{
   #include <libavcodec/avcodec.h>
   #include <libavformat/avformat.h>
 }
+#include <liquid.h>
 
 #include "state.h"
 #include "filter.h"

@@ -22,7 +22,7 @@ void loadSrc(
     return;
   }
 
-  av_dump_format(pFormatCtx, 0, path.c_str(), 0);
+  if(REPSYS_LOG) av_dump_format(pFormatCtx, 0, path.c_str(), 0);
 
   std::vector<streamInfo *> streamInfos;
   for(unsigned int i=0; i<pFormatCtx->nb_streams; i++){
@@ -146,6 +146,7 @@ void loadSrc(
   }
   av_frame_free(&aFrame);
   av_packet_free(&pkt);
+  avformat_close_input(&pFormatCtx);
   
   /* output constants */
   int outRate = 44100;
@@ -158,7 +159,6 @@ void loadSrc(
   for(aStreamIndex=0;aStreamIndex<streamInfos.size();aStreamIndex++){
     ainfo = streamInfos[aStreamIndex];
     if(ainfo->failed) continue; //failed some point earlier
-    std::cout << "stream " << aStreamIndex << std::endl;
 
     uint8_t **resampledOutput = NULL;
     streamSamples = ainfo->outputSize / ainfo->dataSize;
@@ -223,13 +223,15 @@ void loadSrc(
       // for(int s=0;s<res->length;s++) channel[s] = resampled[s];
       res->channels.push_back((float*)resampledOutput[i]);
     }
+    std::cout << resampledSamples * sizeof(float) * outChannels << std::endl;
     res->data = resampledOutput;
     loadedSources.push_back(res);
   }  
 
   /* free all streamInfos */
   for(aStreamIndex=0;aStreamIndex<streamInfos.size();aStreamIndex++){
-    av_free(streamInfos[aStreamIndex]->aCodecContext);
+    avcodec_free_context(&streamInfos[aStreamIndex]->aCodecContext);
+    av_freep(&streamInfos[aStreamIndex]->streamOutput[0]);
     av_freep(&streamInfos[aStreamIndex]->streamOutput);
     delete streamInfos[aStreamIndex];
   }

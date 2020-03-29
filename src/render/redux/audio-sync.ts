@@ -45,21 +45,23 @@ export default function syncAudio(store: Store<Types.State>) {
     }
 
     trackIds.forEach(trackId => {
-      const trackIsNew = !lastState || !lastTrackIds.includes(trackId)
+      const trackIsNew = !lastState || !lastTrackIds.includes(trackId),
+        source = currentState.sources[trackId]
 
       if (trackIsNew) playbackSelectors[trackId] = Selectors.makeGetTrackPlayback()
       const prev = lastTrackPlaybacks[trackId],
         current = playbackSelectors[trackId](currentState, trackId)
 
       _.keys(current.playback.sourceTracksParams).forEach(async sourceId => {
-        const sourceIsNew =
-          trackIsNew || !currentState.sources[trackId].sourceTracks[sourceId].loaded
-        if (sourceIsNew && !loadingSources[sourceId]) {
-          const trackName = currentState.sources[trackId].name,
-            source = currentState.sources[trackId].sourceTracks[sourceId].source
+        const sourceTrack = source.sourceTracks[sourceId],
+          sourceIsNew = trackIsNew || !sourceTrack.loaded
+
+        if (sourceIsNew && !loadingSources[sourceId] && !sourceTrack.streamIndex) {
+          const trackName = source.name,
+            sourcePath = sourceTrack.source
 
           loadingSources[sourceId] = true
-          const loadedIds = await audio.loadSource(source, sourceId)
+          const loadedIds = await audio.loadSource(sourcePath, sourceId)
           const newTrackActions: Action<any>[] = [
             Actions.didLoadTrackSource({
               sourceId: trackId,
@@ -69,15 +71,16 @@ export default function syncAudio(store: Store<Types.State>) {
           ]
 
           loadedIds.forEach((sourceTrackId, index) => {
-            if (!currentState.sources[trackId].sourceTracks[sourceTrackId]) {
+            if (!source.sourceTracks[sourceTrackId]) {
               newTrackActions.push(
                 Actions.createTrackSource({
                   sourceId: trackId,
                   sourceTrackId,
                   sourceTrack: {
                     name: index + ':' + trackName,
-                    source,
+                    source: sourcePath,
                     loaded: true,
+                    streamIndex: index, //only first source is primary
                   },
                 })
               )
@@ -95,7 +98,7 @@ export default function syncAudio(store: Store<Types.State>) {
           })
           delete loadingSources[sourceId]
           store.dispatch(batchActions(newTrackActions, 'LOAD_TRACK'))
-          console.log('n', JSON.stringify(current, null, 2))
+          //console.log('n', JSON.stringify(current, null, 2))
           audio.setMixTrack(trackId, current)
         }
       })
@@ -104,14 +107,14 @@ export default function syncAudio(store: Store<Types.State>) {
           trackIsNew ||
           !isEqual(prev.playback, current.playback) ||
           prev.nextPlayback !== current.nextPlayback,
-        trackIsLoaded = currentState.sources[trackId].sourceTracks[trackId].loaded
+        trackIsLoaded = source.sourceTracks[trackId].loaded
 
       if (trackPlaybackHasChanged && trackIsLoaded) {
         const change: Types.NativeTrackChange = {
           playback: diff(trackIsNew ? {} : prev.playback, current.playback, ['playing']),
           nextPlayback: current.nextPlayback,
         }
-        console.log('c', JSON.stringify(change, null, 2))
+        //console.log('c', JSON.stringify(change, null, 2))
         audio.setMixTrack(trackId, change)
       }
 
@@ -126,17 +129,16 @@ export default function syncAudio(store: Store<Types.State>) {
       const unloadActions: Action<any>[] = []
       lastTrackIds.forEach(trackId => {
         if (!trackIds.includes(trackId)) {
-          audio.removeMixTrack(trackId)
-          _.keys(
-            lastState.live.tracks[trackId].playback.sourceTracksParams
-          ).forEach(sourceId => audio.removeSource(sourceId))
-          if (
-            currentState.live.tracks[trackId] &&
-            currentState.sources[trackId].sourceTracks[trackId].loaded
-          ) {
-            //track still exists just unload
-            _.keys(lastState.live.tracks[trackId].playback.sourceTracksParams).forEach(
-              sourceTrackId => {
+          //track should be unloaded
+          audio.removeMixTrack(trackId) //remove mixTrack
+
+          const source = currentState.sources[trackId],
+            track = currentState.live.tracks[trackId]
+
+          if (track)
+            _.keys(source.sourceTracks).forEach(sourceTrackId => {
+              if (source.sourceTracks[sourceTrackId].loaded) {
+                audio.removeSource(sourceTrackId)
                 unloadActions.push(
                   Actions.didLoadTrackSource({
                     sourceId: trackId,
@@ -145,8 +147,7 @@ export default function syncAudio(store: Store<Types.State>) {
                   })
                 )
               }
-            )
-          }
+            })
         }
       })
       if (unloadActions.length)

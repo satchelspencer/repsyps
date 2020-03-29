@@ -13,7 +13,7 @@ Napi::Value init(const Napi::CallbackInfo &info){
   newPlayback->period = 0;
   state.playback = newPlayback;
 
-  int windowSize = 2048;
+  int windowSize = 512;
   float* window = new float[windowSize];
   state.window = window;
   state.windowSize = windowSize;
@@ -38,7 +38,7 @@ Napi::Value init(const Napi::CallbackInfo &info){
 
 
 Napi::Value start(const Napi::CallbackInfo &info){
-  if(DEBUG) std::cout << "start" << std::endl;
+  if(REPSYS_LOG) std::cout << "start" << std::endl;
   Napi::Env env = info.Env();
 
   Pa_Initialize();
@@ -71,7 +71,7 @@ void stop(const Napi::CallbackInfo &info){
 }
 
 void updatePlayback(const Napi::CallbackInfo &info){
-  if(DEBUG) std::cout << "playback" << std::endl;
+  if(REPSYS_LOG) std::cout << "playback" << std::endl;
   Napi::Object update = info[0].As<Napi::Object>();
   Napi::Array props = update.GetPropertyNames();
 
@@ -92,31 +92,8 @@ void updatePlayback(const Napi::CallbackInfo &info){
   }
 }
 
-void addSource(const Napi::CallbackInfo &info){
-  if(DEBUG) std::cout << "add src" << std::endl;
-  std::string sourceId = info[0].As<Napi::String>().Utf8Value();
-  Napi::Array channels = info[1].As<Napi::Array>();
-  
-  source * newSource = new source{};
-
-  for(uint32_t i=0;i<channels.Length();i++){
-    Napi::TypedArray buff = channels.Get(i).As<Napi::TypedArray>();
-    float* arr = reinterpret_cast<float*>(buff.ArrayBuffer().Data());
-    int len = buff.ByteLength() / sizeof(float);
-    float* arrn = new float[len];
-    std::memcpy(arrn, arr, buff.ByteLength());
-  
-    newSource->length = len;
-    newSource->channels.push_back(arrn);
-    newSource->filterBuffers.push_back(new float[state.windowSize]);
-    newSource->removed = false;
-  }
-
-  state.sources[sourceId] = newSource;
-}
-
 Napi::Value removeSource(const Napi::CallbackInfo &info){
-  if(DEBUG) std::cout << "rm src" << std::endl;
+  if(REPSYS_LOG) std::cout << "rm src" << std::endl;
   Napi::Env env = info.Env();
   std::string sourceId = info[0].As<Napi::String>().Utf8Value();
   
@@ -142,7 +119,7 @@ mixTrackPlayback * initMixTrackPlayback(){
 }
 
 void setMixTrackPlayback(mixTrackPlayback * playback, Napi::Value value){
-  if(DEBUG) std::cout << "track playback" << std::endl;
+  if(REPSYS_LOG) std::cout << "track playback" << std::endl;
   Napi::Object update = value.As<Napi::Object>();
   Napi::Array props = update.GetPropertyNames();
 
@@ -216,7 +193,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
   Napi::Object update = info[1].As<Napi::Object>();
   Napi::Value playback = update.Get("playback");
   Napi::Value nextPlayback = update.Get("nextPlayback");
-  if(DEBUG) std::cout << "set track " << mixTrackId << std::endl;
+  if(REPSYS_LOG) std::cout << "set track " << mixTrackId << std::endl;
 
   if(state.mixTracks.find(mixTrackId) == state.mixTracks.end() || state.mixTracks[mixTrackId] == NULL){
     mixTrack * newMixTrack = new mixTrack{};
@@ -247,7 +224,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
 }
 
 Napi::Value removeMixTrack(const Napi::CallbackInfo &info){
-  if(DEBUG) std::cout << "rm track" << std::endl;
+  if(REPSYS_LOG) std::cout << "rm track" << std::endl;
   Napi::Env env = info.Env();
   std::string mixTrackId = info[0].As<Napi::String>().Utf8Value();
 
@@ -314,14 +291,13 @@ void separateSource(const Napi::CallbackInfo &info){
     newSource->data = NULL;
     for(unsigned int i=0;i<channelCount;i++){
       newSource->channels.push_back(outChannels[j*sepCount + i]);
-      newSource->filterBuffers.push_back(new float[state.windowSize]); //alloc a buffer
     }
     state.sources[sourceTrackId] = newSource;
   }
 }
 
 void getWaveform(const Napi::CallbackInfo &info){
-  if(DEBUG) std::cout << "waveform" << std::endl;
+  if(REPSYS_LOG) std::cout << "waveform" << std::endl;
   std::string sourceId = info[0].As<Napi::String>().Utf8Value();
   int start = info[1].As<Napi::Number>().Int32Value();
   float scale = info[2].As<Napi::Number>().FloatValue();
@@ -338,7 +314,7 @@ void getWaveform(const Napi::CallbackInfo &info){
 }
 
 Napi::Value getImpulses(const Napi::CallbackInfo &info){
-  if(DEBUG) std::cout << "impulses" << std::endl;
+  if(REPSYS_LOG) std::cout << "impulses" << std::endl;
   Napi::Env env = info.Env();
   std::string sourceId = info[0].As<Napi::String>().Utf8Value();
   Napi::Array result = Napi::Array::New(env);
@@ -385,7 +361,6 @@ class LoadWorker : public Napi::AsyncWorker {
         newSource->data = res->data;
         for(unsigned int i=0;i<res->channels.size();i++){
           newSource->channels.push_back(res->channels[i]);
-          newSource->filterBuffers.push_back(new float[state.windowSize]); //alloc a buffer
         }
         state.sources[res->sourceId] = newSource;
         loadedSources.Set(i, res->sourceId);
@@ -410,7 +385,7 @@ Napi::Value loadSource(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
   std::string path = info[0].As<Napi::String>().Utf8Value();
   std::string sourceId = info[1].As<Napi::String>().Utf8Value();
-  if(DEBUG) std::cout << "load " << sourceId << std::endl;
+  if(REPSYS_LOG) std::cout << "load " << sourceId << std::endl;
 
   LoadWorker* loadWorker = new LoadWorker(env, path, sourceId);
   auto promise = loadWorker->GetPromise();
@@ -419,7 +394,7 @@ Napi::Value loadSource(const Napi::CallbackInfo &info){
 }
 
 Napi::Value exportSource(const Napi::CallbackInfo &info){
-  if(DEBUG) std::cout << "export" << std::endl;
+  if(REPSYS_LOG) std::cout << "export" << std::endl;
   Napi::Env env = info.Env();
   std::string path = info[0].As<Napi::String>().Utf8Value();
   std::string sourceId = info[1].As<Napi::String>().Utf8Value();
@@ -434,7 +409,6 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("start", Napi::Function::New(env, start));
   exports.Set("stop", Napi::Function::New(env, stop));
   exports.Set("updatePlayback", Napi::Function::New(env, updatePlayback));
-  exports.Set("addSource", Napi::Function::New(env, addSource));
   exports.Set("removeSource", Napi::Function::New(env, removeSource));
   exports.Set("setMixTrack", Napi::Function::New(env, setMixTrack));
   exports.Set("removeMixTrack", Napi::Function::New(env, removeMixTrack));
