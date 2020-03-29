@@ -2,14 +2,15 @@
 #include <math.h>
 #include <iostream>
 #include "portaudio.h"
-#include <complex.h>
-#include <liquid.h>
-#include <list>
 
 #include "state.h"
 #include "filter.h"
 #include "callback.h"
 #include "separate.h"
+#include "load.h"
+#include "export.h"
+#include "impdet.h"
+#include "waveform.h"
 
 Napi::Value init(const Napi::CallbackInfo &info);
 Napi::Value start(const Napi::CallbackInfo &info);
@@ -20,8 +21,10 @@ Napi::Value removeSource(const Napi::CallbackInfo &info);
 void setMixTrack(const Napi::CallbackInfo &info);
 Napi::Value removeMixTrack(const Napi::CallbackInfo &info);
 Napi::Value getTiming(const Napi::CallbackInfo &info);
-Napi::Value separateSource(const Napi::CallbackInfo &info);
+void separateSource(const Napi::CallbackInfo &info);
 void getWaveform(const Napi::CallbackInfo &info);
 Napi::Value getImpulses(const Napi::CallbackInfo &info);
+Napi::Value loadSource(const Napi::CallbackInfo &info);
+Napi::Value exportSource(const Napi::CallbackInfo &info);
 
 void InitAudio(Napi::Env env, Napi::Object exports);

@@ -1,6 +1,11 @@
 #include "portaudio.h"
 #include <math.h>
 
+extern "C"{
+  #include <libavcodec/avcodec.h>
+  #include <libavformat/avformat.h>
+}
+
 #include "state.h"
 #include "filter.h"
 

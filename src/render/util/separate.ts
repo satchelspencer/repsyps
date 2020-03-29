@@ -1,17 +1,11 @@
 import { Dispatch } from 'redux'
 import * as _ from 'lodash'
-import { remote } from 'electron'
 import pathUtils from 'path'
 import fs from 'fs'
-import wav from 'node-wav'
 
-import audio, { RATE } from 'render/util/audio'
+import audio from 'render/util/audio'
 import * as Actions from 'render/redux/actions'
-import { getBuffer, createBuffer } from 'render/util/buffers'
-import { addBufferFromAudio } from './add-track'
 import { getPath } from 'render/loading/app-paths'
-
-const userData = remote.app.getPath('userData')
 
 export default async function separate(
   trackName: string,
@@ -22,21 +16,17 @@ export default async function separate(
     cacheDirExists = !!(await fs.promises.stat(cacheDir).catch(e => false))
   if (!cacheDirExists) await fs.promises.mkdir(cacheDir)
 
-  const vocalCachePath = pathUtils.join(cacheDir, trackName + '_vocal.wav'),
-    instruCachePath = pathUtils.join(cacheDir, trackName + '_instru.wav'),
+  const vocalCachePath = pathUtils.join(cacheDir, trackName + '_vocal.m4a'),
+    instruCachePath = pathUtils.join(cacheDir, trackName + '_instru.m4a'),
     cacheHit = !!(await fs.promises.stat(vocalCachePath).catch(e => false))
 
   if (cacheHit) {
-    const vocal = await fs.promises.readFile(vocalCachePath),
-      instru = await fs.promises.readFile(instruCachePath)
-    await addBufferFromAudio(trackId + '_vocal', vocal.buffer)
-    await addBufferFromAudio(trackId + '_instru', instru.buffer)
+    await audio.loadSource(vocalCachePath, trackId + '_vocal')
+    await audio.loadSource(instruCachePath, trackId + '_instru')
   } else {
-    const [vocal, instru] = _.chunk(audio.separateSource(getBuffer(trackId)), 2)
-    createBuffer(trackId + '_vocal', vocal)
-    createBuffer(trackId + '_instru', instru)
-    await fs.promises.writeFile(vocalCachePath, wav.encode(vocal, { sampleRate: RATE }))
-    await fs.promises.writeFile(instruCachePath, wav.encode(instru, { sampleRate: RATE }))
+    audio.separateSource(trackId)
+    audio.exportSource(vocalCachePath, trackId + '_vocal')
+    audio.exportSource(instruCachePath, trackId + '_instru')
   }
 
   dispatch(
@@ -46,7 +36,7 @@ export default async function separate(
       sourceTrack: {
         name: 'Vocal - ' + trackName,
         source: vocalCachePath,
-        loaded: false,
+        loaded: true,
       },
     })
   )
@@ -56,7 +46,7 @@ export default async function separate(
       sourceTrackId: trackId + '_vocal',
       sourceTrackParams: {
         volume: 0,
-        offset: 0,
+        offset: 0, //cacheHit ? 1024 : 0,
       },
     })
   )
@@ -68,7 +58,7 @@ export default async function separate(
       sourceTrack: {
         name: 'Instru - ' + trackName,
         source: instruCachePath,
-        loaded: false,
+        loaded: true,
       },
     })
   )

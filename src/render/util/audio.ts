@@ -14,9 +14,11 @@ interface AudioAPI {
   setMixTrack(trackId: string, track: Types.NativeTrackChange)
   removeMixTrack(trackId: string)
   getTiming(): Types.TimingState
-  separateSource(source: Types.Channels): Types.Channels
+  separateSource(sourceId: string)
   getWaveform(sourceId: string, start: number, scale: number, dest: Float32Array)
   getImpulses(sourceId: string): number[]
+  loadSource(path: string, sourceId: string): Promise<string[]>
+  exportSource(path: string, sourceId: string): boolean
 }
 
 export default (eval('require')(

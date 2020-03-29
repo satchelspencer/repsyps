@@ -299,3 +299,14 @@ export const getBindings = createSelector(
     }
   }
 )
+
+export const getTrackIsLoaded = (
+  state: Types.State,
+  trackId: string,
+  sourceTrackId?: string
+) => {
+  sourceTrackId = sourceTrackId || trackId
+  const source = state.sources[trackId],
+    sourceTrack = source && state.sources[trackId].sourceTracks[sourceTrackId]
+  return sourceTrack && sourceTrack.loaded
+}

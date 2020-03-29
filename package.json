@@ -19,7 +19,14 @@
       "!src/*",
       "!docs/*",
       "build/*/*",
-      "lib/**/*"
+      "lib/spleeter/**/*",
+      "lib/portaudio/lib/**/*",
+      "lib/liquid-dsp/libliquid*",
+      "lib/libtensorflow/lib/*",
+      "lib/ffmpeg-4.2.2/libavutil/libavutil*",
+      "lib/ffmpeg-4.2.2/libavcodec/libavcodec*",
+      "lib/ffmpeg-4.2.2/libavformat/libavformat*",
+      "lib/ffmpeg-4.2.2/libswresample/libswresample*"
     ],
     "directories": {
       "buildResources": "conf/build"

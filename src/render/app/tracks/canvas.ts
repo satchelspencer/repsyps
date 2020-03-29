@@ -3,7 +3,6 @@ import { CtyledContext, Color } from 'ctyled'
 import * as _ from 'lodash'
 
 import * as Types from 'render/util/types'
-import { getBuffer } from 'render/util/buffers'
 import { findNearest } from 'render/util/impulse-detect'
 import audio from 'render/util/audio'
 import { DrawViewContext } from './track'
@@ -17,13 +16,12 @@ export default function useWaveformCanvas(
   const canvasRef = useRef(null),
     ctxt = useRef(null),
     ctyledContext = useContext(CtyledContext),
-    channels = getBuffer(track.visibleSourceTrack),
-    buffer = channels && channels[1],
+    visibleLoaded = source.sourceTracks[track.visibleSourceTrack].loaded,
     effectivePos = track.playback.playing ? 0 /* position */ : 0,
     { scale, start, impulses, width, height, clickX, center, mouseDown } = view,
     pwidth = width * 2,
     isSTEditing = !!track.sourceTrackEditing,
-    editTrackBuffer = isSTEditing && !!getBuffer(track.sourceTrackEditing),
+    editTrackLoaded = isSTEditing && source.sourceTracks[track.sourceTrackEditing].loaded,
     editTrackOffset =
       isSTEditing && track.playback.sourceTracksParams[track.sourceTrackEditing].offset
 
@@ -40,12 +38,12 @@ export default function useWaveformCanvas(
 
   /* main waveform compute */
   useEffect(() => {
-    if (buffer && width) {
+    if (visibleLoaded && width) {
       return audio.getWaveform(track.visibleSourceTrack, start, scale, drawBuffers[0])
     }
-  }, [drawBuffers, track.visibleSourceTrack, start, scale, buffer])
+  }, [drawBuffers, track.visibleSourceTrack, start, scale, visibleLoaded])
   useEffect(() => {
-    if (editTrackBuffer && width) {
+    if (editTrackLoaded && width) {
       return audio.getWaveform(
         track.sourceTrackEditing,
         start - editTrackOffset,
@@ -59,7 +57,7 @@ export default function useWaveformCanvas(
     editTrackOffset,
     start,
     scale,
-    editTrackBuffer,
+    editTrackLoaded,
   ])
 
   useEffect(() => {
@@ -92,7 +90,7 @@ export default function useWaveformCanvas(
     drawBounds(drawContext, source.bounds, track.editing)
     drawDrag(drawContext)
   }, [
-    buffer,
+    visibleLoaded,
     track.playback,
     effectivePos,
     track.editing,

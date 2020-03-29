@@ -6,7 +6,6 @@ import ctyled from 'ctyled'
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
-import addTrack from 'render/util/add-track'
 
 import Tracks from './tracks/tracks'
 import Sidebar from './info/sidebar'
@@ -59,7 +58,7 @@ function App() {
     handleDrop = useCallback(e => {
       e.preventDefault()
       const file = e.dataTransfer.files[0].path
-      addTrack(file, dispatch)
+      dispatch(Actions.addTrackAndSource(file))
     }, [])
 
   useEffect(() => {
@@ -67,7 +66,7 @@ function App() {
     input.current.type = 'file'
     input.current.onchange = e => {
       const { files } = input.current
-      addTrack(files[0].path, dispatch)
+      dispatch(Actions.addTrackAndSource(files[0].path))
       input.current.value = ''
     }
     window.addEventListener('dragover', handleDragover)

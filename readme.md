@@ -44,6 +44,16 @@ repsyps depends on native libraries that must be installed manually for developm
     && tar xvzf libtensorflow-cpu-darwin-x86_64-1.15.0.tar.gz \
     && rm libtensorflow-cpu-darwin-x86_64-1.15.0.tar.gz
     ~~~
+ - `cd ../` back to libs
+
+   ~~~
+      wget http://ffmpeg.org/releases/ffmpeg-4.2.2.tar.xz
+      tar xvzf ffmpeg-4.2.2.tar.xz
+      rm ffmpeg-4.2.2.tar.xz
+   ~~~
+ - `cd ffmpeg-4.2.2`
+ - `./configure --disable-autodetect`
+ - `make`
  - `cd ../../` back to repsyps root folder
  - `yarn` install node dependencies and build native modules
 

@@ -4,8 +4,8 @@ import ctyled from 'ctyled'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import * as Selectors from 'render/redux/selectors'
 
-import { getBuffer } from 'render/util/buffers'
 import getImpulses from 'render/util/impulse-detect'
 import inferTimeBase from 'render/util/infer-timebase'
 import { RATE } from 'render/util/audio'
@@ -80,11 +80,11 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       state => state.live.tracks[props.trackId]
     ),
     { bounds, sourceTracks } = useSelector(state => state.sources[props.trackId]),
-    channels = getBuffer(props.trackId),
+    loaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId)),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection<string>('track'),
-    impulses = useMemo(() => channels && getImpulses(channels[0], props.trackId), [
-      channels,
+    impulses = useMemo(() => loaded && getImpulses(props.trackId), [
+      loaded,
       props.trackId,
     ]),
     hasTimeBase = !!bounds.length,

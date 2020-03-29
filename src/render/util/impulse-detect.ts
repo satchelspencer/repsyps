@@ -3,7 +3,7 @@ import _ from 'lodash'
 
 const cache: { [trackId: string]: number[] } = {}
 
-export default function(buffer: Float32Array, trackId?: string) {
+export default function(trackId?: string) {
   if (trackId && cache[trackId]) return cache[trackId]
   const beats = audio.getImpulses(trackId)
   cache[trackId] = beats

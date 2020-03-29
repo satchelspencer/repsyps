@@ -1,4 +1,5 @@
 #include "callback.h"
+#include <iostream>
 
 double getSamplePosition(
   mixTrackPlayback* playback,
@@ -93,6 +94,7 @@ int paCallbackMethod(
     /* compute a new window by summing each track' output */
     for(auto mixTrackPair: state->mixTracks){
       mixTrack = mixTrackPair.second;
+      if(!mixTrack) continue;
       bufferHead = state->buffer->head;
       
       mixTrackPlayback = mixTrack->playback;
@@ -165,7 +167,7 @@ int paCallbackMethod(
             didAdvancePlayback = false;
           }
         }
-
+        
         /* add sample to filterbuffer */ 
         for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
           if(state->sources.find(sourcePair.first) != state->sources.end()){
@@ -244,15 +246,35 @@ int paCallbackMethod(
   }
   
   state->playback->time += (double)framesPerBuffer/state->playback->period;
-
   /* phase wrapped drung this callback */
   if(startTime-floor(startTime) > state->playback->time-floor(state->playback->time)){
     for(auto mixTrackPair: state->mixTracks){
       mixTrack = mixTrackPair.second;
       if(
+        mixTrack && 
         mixTrack->hasNext && 
         (!mixTrack->playback->playing || mixTrack->playback->aperiodic)
       ) applyNextPlayback(mixTrack);
+    }
+  }
+
+  for(auto sourcesPair: state->sources){
+    mixTrackSource = sourcesPair.second;
+    if(mixTrackSource && mixTrackSource->removed){
+      if(DEBUG) std::cout << "free source" << std::endl;
+      if(mixTrackSource->data != NULL){
+        av_freep(&mixTrackSource->data[0]);
+        av_freep(&mixTrackSource->data);
+      }
+      state->sources[sourcesPair.first] = NULL;
+    }
+  }
+
+  for(auto mixTrackPair: state->mixTracks){
+    mixTrack = mixTrackPair.second;
+    if(mixTrack && mixTrack->removed){
+      if(DEBUG) std::cout << "free track" << std::endl;
+      state->mixTracks[mixTrackPair.first] = NULL;
     }
   }
 

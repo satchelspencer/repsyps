@@ -4,7 +4,6 @@ import ctyled from 'ctyled'
 
 import { useSelector } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
-import { getBuffer } from 'render/util/buffers'
 
 import BoundsControl from './bounds'
 import SourceTracks from './source-tracks'
@@ -35,7 +34,7 @@ const Sidebar = () => {
   const trackId = useSelector(Selectors.getSelectedTrackId),
     track = useSelector(Selectors.getSelectedTrack),
     source = useSelector(state => state.sources[trackId]),
-    isLoaded = !!getBuffer(trackId)
+    isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, trackId))
 
   return useMemo(
     () => (

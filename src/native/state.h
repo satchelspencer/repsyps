@@ -7,6 +7,8 @@
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H
 
+static bool DEBUG = false;
+
 typedef struct{
   float volume;
   double time;
@@ -41,12 +43,15 @@ typedef struct{
   double sample;
   firfilt_rrrf filter;
   bool hasFilter;
+  bool removed;
 } mixTrack;
 
 typedef struct{
   std::vector<float*>  channels;
   std::vector<float*>  filterBuffers;
   int length;
+  bool removed;
+  uint8_t ** data;
 } source;
 
 typedef struct{

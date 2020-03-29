@@ -1,11 +1,12 @@
 import React, { memo, useMemo, useRef, useEffect } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
+import pathUtils from 'path'
 
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
-import { addSource } from 'render/util/add-track'
+import { getId } from 'render/util/uid'
 
 import { adder } from 'render/components/control-adder'
 import Volume from 'render/components/volume'
@@ -81,7 +82,29 @@ const SourceTracks = (props: TrackVolumeProps) => {
     input.current.type = 'file'
     input.current.onchange = e => {
       const { files } = input.current
-      addSource(props.trackId, files[0].path, dispatch)
+      const id = getId(files[0].path)
+      //addSource(props.trackId, files[0].path, dispatch)
+      dispatch(
+        Actions.createTrackSource({
+          sourceId: props.trackId,
+          sourceTrackId: id,
+          sourceTrack: {
+            name: pathUtils.basename(files[0].path),
+            source: files[0].path,
+            loaded: false,
+          },
+        })
+      )
+      dispatch(
+        Actions.setTrackSourceParams({
+          trackId: props.trackId,
+          sourceTrackId: id,
+          sourceTrackParams: {
+            volume: 0,
+            offset: 0,
+          },
+        })
+      )
       input.current.value = ''
     }
   }, [props.trackId])

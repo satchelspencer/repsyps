@@ -1,7 +1,7 @@
 import snapSampleToImpulses from './snap-sample'
 import * as Types from './types'
 
-const SNAP_SCALE = 400
+const SNAP_SCALE = 200
 
 export default function inferTimeBase(
   chunks: Types.Chunks,

@@ -1,9 +1,11 @@
 import { Action } from 'redux'
 import { createActionCreator } from 'deox'
 import { batchActions } from 'redux-batched-actions'
+import pathUtils from 'path'
 
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
+import { getId } from 'render/util/uid'
 
 function createAction<Payload>(name) {
   return createActionCreator(name, res => (payload: Payload) => res(payload))
@@ -242,4 +244,27 @@ export function applyControlGroup(
       )
   })
   return batchActions(actions, 'APPLY_CONTROL')
+}
+
+export function addTrackAndSource(path: string) {
+  const id = getId(path),
+    name = pathUtils.basename(path)
+  return batchActions(
+    [
+      createSource({
+        sourceId: id,
+        source: {
+          name,
+          bounds: [],
+          sourceTracks: { [id]: { name, source: path, loaded: false } },
+        },
+      }),
+      addTrack({
+        trackId: id,
+        sourceTracksParams: { [id]: { volume: 1, offset: 0 } },
+      }),
+      selectTrackExclusive(id),
+    ],
+    'ADD_TRACK_AND_SOURCE'
+  )
 }

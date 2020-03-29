@@ -5,9 +5,9 @@ import { SortableElement } from 'react-sortable-hoc'
 
 import * as Types from 'render/util/types'
 import { useSelector, useDispatch } from 'render/redux/react'
+import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 
-import { getBuffer } from 'render/util/buffers'
 import getImpulses from 'render/util/impulse-detect'
 
 import { getContainerPosition, getRelativePos } from './utils'
@@ -104,13 +104,11 @@ export interface ClickEventContext {
 }
 
 const Track = memo(
-  function({ trackId, track, noClick, sample, source }: TrackProps) {
+  function({ trackId, track, noClick, sample, source, loaded }: TrackProps) {
     const dispatch = useDispatch()
 
     /* computed data */
-    const channels = getBuffer(trackId),
-      buffer = channels && channels[1],
-      impulses = useMemo(() => buffer && getImpulses(buffer, trackId), [buffer, trackId])
+    const impulses = useMemo(() => loaded && getImpulses(trackId), [loaded, trackId])
 
     /* react state */
     const [center, setCenter] = useState(0),
@@ -300,7 +298,8 @@ export default function TrackContainer(props: TrackContainerProps) {
     handleClick = useCallback(() => {
       if (isSelecting) onSelect(props.trackId)
       else !track.selected && dispatch(Actions.selectTrackExclusive(props.trackId))
-    }, [props.trackId, isSelecting, onSelect])
+    }, [props.trackId, isSelecting, onSelect]),
+    isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId))
 
   return (
     <TrackWrapper
@@ -313,7 +312,7 @@ export default function TrackContainer(props: TrackContainerProps) {
         <>
           <TrackControls trackId={props.trackId} />
           <Track
-            loaded={!!getBuffer(props.trackId)}
+            loaded={isLoaded}
             noClick={isSelecting}
             visible={visible}
             trackId={props.trackId}

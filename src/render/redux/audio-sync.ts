@@ -1,6 +1,7 @@
-import { Store } from 'redux'
+import { Store, Action } from 'redux'
 import _ from 'lodash'
 import { remote } from 'electron'
+import { batchActions } from 'redux-batched-actions'
 
 import * as Types from 'render/util/types'
 import audio from 'render/util/audio'
@@ -8,8 +9,6 @@ import * as Actions from './actions'
 import * as Selectors from './selectors'
 import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
-import { getBuffer } from 'render/util/buffers'
-import { getBufferFromPath } from 'render/util/add-track'
 import isEqual from 'render/util/is-equal'
 
 export const UPDATE_PERIOD = 50,
@@ -52,38 +51,61 @@ export default function syncAudio(store: Store<Types.State>) {
       const prev = lastTrackPlaybacks[trackId],
         current = playbackSelectors[trackId](currentState, trackId)
 
-      const trackPlaybackHasChanged =
-        trackIsNew ||
-        !isEqual(prev.playback, current.playback) ||
-        prev.nextPlayback !== current.nextPlayback
+      _.keys(current.playback.sourceTracksParams).forEach(async sourceId => {
+        const sourceIsNew =
+          trackIsNew || !currentState.sources[trackId].sourceTracks[sourceId].loaded
+        if (sourceIsNew && !loadingSources[sourceId]) {
+          const trackName = currentState.sources[trackId].name,
+            source = currentState.sources[trackId].sourceTracks[sourceId].source
 
-      _.keys(current.playback.sourceTracksParams).forEach(sourceId => {
-        const sourceIsNew = trackIsNew || !prev.playback.sourceTracksParams[sourceId]
-        if (sourceIsNew) {
-          const channels = getBuffer(sourceId)
-          if (channels) {
-            audio.addSource(sourceId, channels)
-          } else if (!loadingSources[sourceId]) {
-            loadingSources[sourceId] = true
-            getBufferFromPath(
-              currentState.sources[trackId].sourceTracks[sourceId].source,
-              sourceId,
-              () => {
-                audio.addSource(sourceId, getBuffer(sourceId))
-                store.dispatch(
-                  Actions.didLoadTrackSource({
-                    sourceId: trackId,
-                    sourceTrackId: sourceId,
+          loadingSources[sourceId] = true
+          const loadedIds = await audio.loadSource(source, sourceId)
+          const newTrackActions: Action<any>[] = [
+            Actions.didLoadTrackSource({
+              sourceId: trackId,
+              sourceTrackId: sourceId,
+              loaded: true,
+            }),
+          ]
+
+          loadedIds.forEach((sourceTrackId, index) => {
+            if (!currentState.sources[trackId].sourceTracks[sourceTrackId]) {
+              newTrackActions.push(
+                Actions.createTrackSource({
+                  sourceId: trackId,
+                  sourceTrackId,
+                  sourceTrack: {
+                    name: index + ':' + trackName,
+                    source,
                     loaded: true,
-                  })
-                )
-              }
-            )
-          }
+                  },
+                })
+              )
+              newTrackActions.push(
+                Actions.setTrackSourceParams({
+                  trackId: trackId,
+                  sourceTrackId,
+                  sourceTrackParams: {
+                    volume: 0,
+                    offset: 0,
+                  },
+                })
+              )
+            }
+          })
+          delete loadingSources[sourceId]
+          store.dispatch(batchActions(newTrackActions, 'LOAD_TRACK'))
+          audio.setMixTrack(trackId, current)
         }
       })
 
-      if (trackPlaybackHasChanged) {
+      const trackPlaybackHasChanged =
+          trackIsNew ||
+          !isEqual(prev.playback, current.playback) ||
+          prev.nextPlayback !== current.nextPlayback,
+        trackIsLoaded = currentState.sources[trackId].sourceTracks[trackId].loaded
+
+      if (trackPlaybackHasChanged && trackIsLoaded) {
         const change: Types.NativeTrackChange = {
           playback: diff(trackIsNew ? {} : prev.playback, current.playback, ['playing']),
           nextPlayback: current.nextPlayback,
@@ -99,15 +121,36 @@ export default function syncAudio(store: Store<Types.State>) {
       lastTrackPlaybacks[trackId] = current
     })
 
-    if (lastState)
+    if (lastState) {
+      const unloadActions: Action<any>[] = []
       lastTrackIds.forEach(trackId => {
         if (!trackIds.includes(trackId)) {
           audio.removeMixTrack(trackId)
           _.keys(
             lastState.live.tracks[trackId].playback.sourceTracksParams
           ).forEach(sourceId => audio.removeSource(sourceId))
+          if (
+            currentState.live.tracks[trackId] &&
+            currentState.sources[trackId].sourceTracks[trackId].loaded
+          ) {
+            //track still exists just unload
+            _.keys(lastState.live.tracks[trackId].playback.sourceTracksParams).forEach(
+              sourceTrackId => {
+                unloadActions.push(
+                  Actions.didLoadTrackSource({
+                    sourceId: trackId,
+                    sourceTrackId,
+                    loaded: false,
+                  })
+                )
+              }
+            )
+          }
         }
       })
+      if (unloadActions.length)
+        store.dispatch(batchActions(unloadActions, 'UNLOAD_TRACKS'))
+    }
 
     lastState = currentState
   }
