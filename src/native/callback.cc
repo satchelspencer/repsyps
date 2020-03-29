@@ -167,10 +167,10 @@ int paCallbackMethod(
             didAdvancePlayback = false;
           }
         }
-        
+                
         /* add sample to filterbuffer */ 
         for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
-          if(state->sources.find(sourcePair.first) != state->sources.end()){
+          if(state->sources.find(sourcePair.first) != state->sources.end() && state->sources[sourcePair.first] != NULL){
             mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
             mixTrackSourceConfig = sourcePair.second;
             mixTrackLength = mixTrackSource->length;
@@ -203,7 +203,7 @@ int paCallbackMethod(
 
       /* apply filters to full window */
       for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
-        if(state->sources.find(sourcePair.first) != state->sources.end()){
+        if(state->sources.find(sourcePair.first) != state->sources.end() && state->sources[sourcePair.first] != NULL){
           mixTrackSourceConfig = sourcePair.second;
           mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
           channelCount = mixTrackSource->channels.size();
@@ -222,7 +222,7 @@ int paCallbackMethod(
       /* copy from filterbuffer to ringbuffer */
       for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
         for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
-          if(state->sources.find(sourcePair.first) != state->sources.end()){
+          if(state->sources.find(sourcePair.first) != state->sources.end() && state->sources[sourcePair.first] != NULL){
             mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
             channelCount = mixTrackSource->channels.size();
 

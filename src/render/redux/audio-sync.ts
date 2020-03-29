@@ -95,6 +95,7 @@ export default function syncAudio(store: Store<Types.State>) {
           })
           delete loadingSources[sourceId]
           store.dispatch(batchActions(newTrackActions, 'LOAD_TRACK'))
+          console.log('n', JSON.stringify(current, null, 2))
           audio.setMixTrack(trackId, current)
         }
       })
@@ -110,7 +111,7 @@ export default function syncAudio(store: Store<Types.State>) {
           playback: diff(trackIsNew ? {} : prev.playback, current.playback, ['playing']),
           nextPlayback: current.nextPlayback,
         }
-        //console.log('c', JSON.stringify(change, null, 2))
+        console.log('c', JSON.stringify(change, null, 2))
         audio.setMixTrack(trackId, change)
       }
 
