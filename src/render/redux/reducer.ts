@@ -27,6 +27,17 @@ const defaultPlayback: Types.Playback = {
     muted: false,
     sourceTracksParams: {},
   },
+  defaultTrack: Types.Track = {
+    visibleSourceTrack: null,
+    playback: defaultTrackPlayback,
+    nextPlayback: null,
+    selected: false,
+    editing: true,
+    sourceTrackEditing: null,
+    cues: [],
+    cueIndex: -1,
+    nextCueIndex: -1,
+  },
   defaultBindings: Types.Bindings = {},
   defaultBinding: Types.Binding = {
     type: 'value',
@@ -180,6 +191,7 @@ function updateSceneIndex(
 
 const reducer = combineReducers({
   timing: createReducer(defaultTiming, handle => [
+    handle(Actions.reset, () => defaultTiming),
     handle(Actions.updateTime, (timing, { payload }) => {
       return {
         time: payload.timing.time,
@@ -203,6 +215,10 @@ const reducer = combineReducers({
     }),
   ]),
   sources: createReducer(defaultSources, handle => [
+    handle(Actions.reset, () => defaultSources),
+    handle(Actions.loadPersisted, (_, { payload }) => {
+      return payload.state.sources
+    }),
     handle(Actions.createSource, (sources, { payload }) => {
       return {
         ...sources,
@@ -273,6 +289,24 @@ const reducer = combineReducers({
     }),
   ]),
   live: createReducer(defaultLive, handle => [
+    handle(Actions.reset, () => defaultLive),
+    handle(Actions.loadPersisted, (live, { payload }) => {
+      const pLive = payload.state.live
+      return {
+        ...live,
+        ...pLive,
+        tracks: _.mapValues(pLive.tracks, ptrack => {
+          return {
+            ...defaultTrack,
+            ...ptrack,
+            playback: {
+              ...defaultTrackPlayback,
+              ...ptrack.playback,
+            },
+          }
+        }),
+      }
+    }),
     handle(Actions.setTrackMuted, (live, { payload }) => {
       return {
         ...live,
@@ -962,6 +996,10 @@ const reducer = combineReducers({
     }),
   ]),
   playback: createReducer(defaultPlayback, handle => [
+    handle(Actions.reset, () => defaultPlayback),
+    handle(Actions.loadPersisted, (_, { payload }) => {
+      return payload.state.playback
+    }),
     handle(Actions.updatePlayback, (playback, { payload }) => {
       return {
         ...playback,

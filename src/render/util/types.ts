@@ -1,3 +1,5 @@
+import tracks from '../app/tracks/tracks'
+
 export interface Playback {
   volume: number
   playing: boolean
@@ -32,7 +34,7 @@ export interface Sources {
 
 export type Chunks = number[] //[start0,end0,start1,end1]
 
-export interface TrackPlayback {
+export interface PersitentTrackPlayback {
   alpha: number
   aperiodic: boolean
   loop: boolean
@@ -41,6 +43,9 @@ export interface TrackPlayback {
   muted: boolean
   filter: number
   sourceTracksParams: TrackSourcesParams
+}
+
+export interface TrackPlayback extends PersitentTrackPlayback {
   /* timing info */
   chunkIndex: number
   chunks: Chunks
@@ -94,6 +99,17 @@ export interface Track extends NativeTrack {
   nextCueIndex: number
   sourceTrackEditing: string | null
   visibleSourceTrack: string
+}
+
+export interface PersistentTrack {
+  visibleSourceTrack: string
+  playback: PersitentTrackPlayback
+  cues: Cue[]
+  editing: boolean
+}
+
+export interface PersistentTracks {
+  [trackId: string]: PersistentTrack
 }
 
 export interface Tracks {
@@ -198,6 +214,14 @@ export interface ControlPresets {
   [presetId: string]: ControlPreset
 }
 
+export interface PersistentLive {
+  scenes: Scene[]
+  bindings: Bindings
+  controlPresets: ControlPresets
+  defaultPresetId: string
+  tracks: PersistentTracks
+}
+
 export interface Live {
   sceneIndex: number
   scenes: Scene[]
@@ -221,4 +245,10 @@ export interface State {
   live: Live
   sources: Sources
   timing: Times
+}
+
+export interface PersistentState {
+  playback: Playback
+  live: PersistentLive
+  sources: Sources
 }

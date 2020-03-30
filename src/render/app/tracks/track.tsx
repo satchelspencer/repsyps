@@ -141,10 +141,7 @@ const Track = memo(
     /* click event contexts */
     const clickCtxt: ClickEventContext = {
         clickX,
-        aperiodic:
-          !track.playback.chunks[track.playback.chunkIndex + 1] ||
-          track.playback.aperiodic ||
-          !source.bounds.length,
+        aperiodic: track.playback.aperiodic || !source.bounds.length,
         editing: track.editing,
         sourceTrackEditing: track.sourceTrackEditing,
         currentEditingOffset:

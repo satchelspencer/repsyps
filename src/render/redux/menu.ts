@@ -2,6 +2,7 @@ import electron from 'electron'
 import { Store } from 'redux'
 
 import * as Types from 'render/util/types'
+import * as Actions from './actions'
 import { getPath } from 'render/loading/app-paths'
 import { loadBindings, saveBindings } from 'render/loading/bindings'
 
@@ -14,17 +15,22 @@ export default function init(store: Store<Types.State>) {
     {
       label: 'File',
       submenu: [
-        isMac ? { role: 'close' } : { role: 'quit' },
+        {
+          label: 'New',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => {
+            store.dispatch(Actions.reset({}))
+          },
+        },
         { type: 'separator' },
         {
           label: 'Save Bindings',
           click: () => {
-            const path =
-              dialog.showSaveDialog({
-                title: 'Save Contol Bindings',
-                defaultPath: getPath('bindings/untitled'),
-              }) + '.rbind'
-            if (path) saveBindings(path, store)
+            const path = dialog.showSaveDialog({
+              title: 'Save Contol Bindings',
+              defaultPath: getPath('bindings/untitled'),
+            })
+            if (path) saveBindings(path + '.rbind', store)
           },
         },
         {
@@ -37,6 +43,8 @@ export default function init(store: Store<Types.State>) {
             if (path && path[0]) loadBindings(path[0], store)
           },
         },
+        { type: 'separator' },
+        isMac ? { role: 'close' } : { role: 'quit' },
       ],
     },
     {

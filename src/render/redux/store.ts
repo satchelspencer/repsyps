@@ -6,6 +6,7 @@ import * as Actions from './actions'
 import syncAudio from './audio-sync'
 import syncMidi from './midi-sync'
 import initMenu from './menu'
+import initPersist from './persist'
 
 const store = createStore(
   reducer,
@@ -19,5 +20,6 @@ const store = createStore(
 syncAudio(store)
 syncMidi(store)
 initMenu(store)
+initPersist(store)
 
 export default store

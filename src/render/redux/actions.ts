@@ -11,6 +11,12 @@ function createAction<Payload>(name) {
   return createActionCreator(name, res => (payload: Payload) => res(payload))
 }
 
+export const reset = createAction<{}>('RESET_STATE')
+
+export const loadPersisted = createAction<{ state: Types.PersistentState }>(
+  'LOAD_PERSISTED'
+)
+
 export const updateTime = createAction<{
   timing: Types.TimingState
   commit: boolean

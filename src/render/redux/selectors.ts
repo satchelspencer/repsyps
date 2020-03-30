@@ -1,8 +1,11 @@
 import _ from 'lodash'
-import { createSelector } from 'reselect'
+import { createSelector, defaultMemoize, createSelectorCreator } from 'reselect'
 
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
+import isEqual, { objShallowEqual } from 'render/util/is-equal'
+
+const createShallowSelector = createSelectorCreator(defaultMemoize, objShallowEqual)
 
 export const getSelectedTrackId = (state: Types.State) =>
   Object.keys(state.live.tracks).filter(tid => state.live.tracks[tid].selected)[0]
@@ -315,3 +318,94 @@ export const getTrackIsLoaded = (
     sourceTrack = source && state.sources[trackId].sourceTracks[sourceTrackId]
   return sourceTrack && sourceTrack.loaded
 }
+
+export const makeGetPersistentTrackPlayback = () =>
+  createSelector(
+    [(track: Types.Track) => track.playback],
+    (playback): Types.PersitentTrackPlayback => {
+      return _.omit(playback, ['chunkIndex', 'chunks', 'playing'])
+    }
+  )
+
+export const makeGetPersistentTrack = () => {
+  const getPlayback = makeGetPersistentTrackPlayback()
+  return createShallowSelector(
+    [
+      getPlayback,
+      (track: Types.Track) => track.cues,
+      (track: Types.Track) => track.visibleSourceTrack,
+      (track: Types.Track) => track.editing,
+    ],
+    (playback, cues, visibleSourceTrack, editing): Types.PersistentTrack => {
+      return {
+        visibleSourceTrack,
+        cues,
+        playback,
+        editing
+      }
+    }
+  )
+}
+
+const pTrackSelectors: {
+  [trackId: string]: (track: Types.Track) => Types.PersistentTrack
+} = {}
+
+export const getPersistentLiveTracks = createSelector(
+  [(live: Types.Live) => live.tracks],
+  (tracks): Types.PersistentTracks => {
+    return _.mapValues(tracks, (track, trackId) => {
+      if (!pTrackSelectors[trackId]) pTrackSelectors[trackId] = makeGetPersistentTrack()
+      return pTrackSelectors[trackId](track)
+    })
+  }
+)
+
+export const getPersistentLive = createShallowSelector(
+  [
+    (live: Types.Live) => live.scenes,
+    (live: Types.Live) => live.bindings,
+    (live: Types.Live) => live.controlPresets,
+    (live: Types.Live) => live.defaultPresetId,
+    getPersistentLiveTracks,
+  ],
+  (scenes, bindings, controlPresets, defaultPresetId, tracks): Types.PersistentLive => {
+    return {
+      tracks,
+      scenes,
+      bindings,
+      controlPresets,
+      defaultPresetId,
+    }
+  }
+)
+
+export const getPersistentSources = createSelector(
+  [(state: Types.State) => state.sources],
+  (sources): Types.Sources => {
+    return _.mapValues(sources, source => {
+      return {
+        ...source,
+        sourceTracks: _.mapValues(source.sourceTracks, t => ({
+          ...t,
+          loaded: false,
+        })),
+      }
+    })
+  }
+)
+
+export const getPersistentState = createShallowSelector(
+  [
+    getPersistentSources,
+    (state: Types.State) => getPersistentLive(state.live),
+    (state: Types.State) => state.playback,
+  ],
+  (sources, live, playback): Types.PersistentState => {
+    return {
+      sources,
+      playback,
+      live,
+    }
+  }
+)

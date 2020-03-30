@@ -9,5 +9,5 @@ export default function snapSampleToImpulses(
     impulseTime = impulses[impulseIndex],
     sampleRange = scale * 20,
     diff = Math.abs(impulseTime - raw)
-  return diff < sampleRange ? impulseTime : raw
+  return Math.round(diff < sampleRange ? impulseTime : raw)
 }

@@ -38,9 +38,8 @@ export default function useWaveformCanvas(
 
   /* main waveform compute */
   useEffect(() => {
-    if (visibleLoaded && width) {
-      return audio.getWaveform(track.visibleSourceTrack, start, scale, drawBuffers[0])
-    }
+    if (visibleLoaded && width)
+      audio.getWaveform(track.visibleSourceTrack, start, scale, drawBuffers[0])
   }, [drawBuffers, track.visibleSourceTrack, start, scale, visibleLoaded])
   useEffect(() => {
     if (editTrackLoaded && width) {
