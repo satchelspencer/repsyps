@@ -23,12 +23,17 @@ export const getPrevScene = (state: Types.State) =>
 export const getNextScene = (state: Types.State) =>
   state.live.scenes[state.live.sceneIndex + 1]
 
-export function getActiveTrackIds(state: Types.State): string[] {
-  const currentScene = state.live.scenes[state.live.sceneIndex],
-    prevScene = state.live.scenes[state.live.sceneIndex - 1],
+export function getActiveTrackIdsFromLive(live: Types.Live, sceneIndex?: number) {
+  if (sceneIndex === undefined) sceneIndex = live.sceneIndex
+  const currentScene = live.scenes[sceneIndex],
+    prevScene = live.scenes[sceneIndex - 1],
     lastOfPrev = prevScene && _.last(prevScene.trackIds)
 
   return lastOfPrev ? [lastOfPrev, ...currentScene.trackIds] : currentScene.trackIds
+}
+
+export function getActiveTrackIds(state: Types.State, sceneIndex?: number): string[] {
+  return getActiveTrackIdsFromLive(state.live, sceneIndex)
 }
 
 export function getControls(live: Types.Live): Types.Controls {

@@ -141,9 +141,27 @@ function updateSceneIndex(
   forceReset?: boolean
 ): Types.Live {
   if (!forceReset && sceneIndex === live.sceneIndex) return live
-  else
+  else {
+    const prevActive = Selectors.getActiveTrackIdsFromLive(live, live.sceneIndex),
+      nextActive = Selectors.getActiveTrackIdsFromLive(live, sceneIndex),
+      noLongerActive = _.difference(prevActive, nextActive)
+
     return {
       ...live,
+      tracks: _.mapValues(live.tracks, (track, trackId) => {
+        if (!noLongerActive.includes(trackId)) return track
+        else
+          return {
+            ...track,
+            playback: {
+              ...track.playback,
+              playing: false,
+            },
+            nextPlayback: null,
+            nextCueIndex: -1,
+            cueIndex: -1,
+          }
+      }),
       initValues: _.mapValues(live.controlValues, (value, pos) => {
         const binding = live.bindings[pos]
         if (binding && !binding.twoway) return value
@@ -157,6 +175,7 @@ function updateSceneIndex(
       }),
       sceneIndex,
     }
+  }
 }
 
 const reducer = combineReducers({

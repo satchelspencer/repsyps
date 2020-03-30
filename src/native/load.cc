@@ -223,7 +223,6 @@ void loadSrc(
       // for(int s=0;s<res->length;s++) channel[s] = resampled[s];
       res->channels.push_back((float*)resampledOutput[i]);
     }
-    std::cout << resampledSamples * sizeof(float) * outChannels << std::endl;
     res->data = resampledOutput;
     loadedSources.push_back(res);
   }  
