@@ -62,13 +62,6 @@ function App() {
     }, [])
 
   useEffect(() => {
-    input.current = document.createElement('input')
-    input.current.type = 'file'
-    input.current.onchange = e => {
-      const { files } = input.current
-      dispatch(Actions.addTrackAndSource(files[0].path))
-      input.current.value = ''
-    }
     window.addEventListener('dragover', handleDragover)
     window.addEventListener('drop', handleDrop)
 
@@ -83,7 +76,6 @@ function App() {
       tabIndex={0}
       onKeyDown={e => {
         const notInInput = document.activeElement.nodeName !== 'INPUT'
-        if (e.key === 'o' && e.metaKey) input.current.click()
         if (e.key === ' ' && notInInput) e.preventDefault()
         if (e.key === ' ' && !e.shiftKey && notInInput)
           selectedTrackId &&

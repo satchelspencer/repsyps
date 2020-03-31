@@ -113,7 +113,7 @@ const Sidebar = () => {
         )}
       </SidebarWrapper>
     ),
-    [trackId, source && source.name, isLoaded]
+    [trackId, source, isLoaded]
   )
 }
 

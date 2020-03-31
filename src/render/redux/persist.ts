@@ -1,23 +1,24 @@
 import { Store } from 'redux'
 import _ from 'lodash'
-import { diff } from 'jsondiffpatch'
 
 import * as Types from 'render/util/types'
 import * as Selectors from 'render/redux/selectors'
-import * as Actions from 'render/redux/actions'
 
 import { loadLocalStorage, saveLocalStorage } from 'render/loading/project'
 
 export default function syncAudio(store: Store<Types.State>) {
-  let lastPersistent: Types.PersistentState = null
+  let lastPersistent: Types.PersistentState = null,
+    lastLocalPersistent: Types.LocalPersistentState = null
 
   const throttleSave = _.throttle(() => saveLocalStorage(store), 1000, { leading: false })
 
   const handleUpdate = () => {
-    const persistent = Selectors.getPersistentState(store.getState())
-    if (persistent !== lastPersistent) {
-      //console.log(diff(lastPersistent, persistent))
+    const state = store.getState(),
+      persistent = Selectors.getPersistentState(state),
+      lpersistent = Selectors.getLocalPersistentState(state)
+    if (persistent !== lastPersistent || lpersistent !== lastLocalPersistent) {
       lastPersistent = persistent
+      lastLocalPersistent = lpersistent
       throttleSave()
     }
   }

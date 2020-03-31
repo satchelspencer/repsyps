@@ -2,6 +2,7 @@ import { Store, Action } from 'redux'
 import _ from 'lodash'
 import { remote } from 'electron'
 import { batchActions } from 'redux-batched-actions'
+import pathUtils from 'path'
 
 import * as Types from 'render/util/types'
 import audio from 'render/util/audio'
@@ -35,7 +36,8 @@ export default function syncAudio(store: Store<Types.State>) {
     const currentState = store.getState(),
       trackIds = Selectors.getActiveTrackIds(currentState),
       lastTrackIds = lastState ? Selectors.getActiveTrackIds(lastState) : [],
-      playback = Selectors.getGlobalPlayback(currentState)
+      playback = Selectors.getGlobalPlayback(currentState),
+      currentPath = currentState.save.path || ''
 
     if (!lastState || !isEqual(playback, lastGlobalPlayback)) {
       const change = diff(!lastState ? {} : lastGlobalPlayback, playback)
@@ -63,10 +65,12 @@ export default function syncAudio(store: Store<Types.State>) {
           !sourceTrack.streamIndex
         ) {
           const trackName = source.name,
-            sourcePath = sourceTrack.source
+            sourcePath = sourceTrack.source,
+            absSorucePath = pathUtils.resolve(currentPath, sourcePath)
+         // console.log(currentPath, sourcePath, absSorucePath)
 
           loadingSources[sourceId] = true
-          const loadedIds = await audio.loadSource(sourcePath, sourceId)
+          const loadedIds = await audio.loadSource(absSorucePath, sourceId)
 
           if (loadedIds.length) {
             const newTrackActions: Action<any>[] = []

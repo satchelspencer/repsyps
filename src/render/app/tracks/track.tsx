@@ -25,13 +25,17 @@ import {
   useOffsetTrack,
 } from './mouse'
 import TrackControls from './track-control'
+import { palette } from 'src/render/components/theme'
 
-const TrackWrapper = SortableElement(ctyled.div.attrs({ selected: false }).styles({
-  flex: 'none',
-  lined: true,
-  color: (c, { selected }) => (selected ? c.contrast(0.2) : c.contrast(0.1)),
-  borderColor: c => c.contrast(-0.2),
-}).extendSheet`
+const TrackWrapper = SortableElement(ctyled.div
+  .attrs({ selected: false, warn: false })
+  .styles({
+    flex: 'none',
+    lined: true,
+    color: (c, { selected, warn }) =>
+      warn ? c.as(palette.primary_red).contrast(0.2) : selected ? c.contrast(0.2) : c.contrast(0.1),
+    borderColor: c => c.contrast(-0.2),
+  }).extendSheet`
   height:${({ size }) => Math.ceil(size * 8) + 4}px;
 `)
 
@@ -241,7 +245,8 @@ const Track = memo(
           onMouseUp={handleMouseUp}
           onDoubleClick={handleDoubleClick}
           style={{
-            pointerEvents: noClick ? 'none' : 'all',
+            pointerEvents: noClick || !loaded ? 'none' : 'all',
+            opacity: loaded ? 1 : 0.5,
           }}
         >
           <TrackCanvas
@@ -296,7 +301,8 @@ export default function TrackContainer(props: TrackContainerProps) {
       if (isSelecting) onSelect(props.trackId)
       else !track.selected && dispatch(Actions.selectTrackExclusive(props.trackId))
     }, [props.trackId, isSelecting, onSelect]),
-    isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId))
+    isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId)),
+    hasMissingSource = _.some(_.values(source.sourceTracks), track => track.missing)
 
   return (
     <TrackWrapper
@@ -304,6 +310,7 @@ export default function TrackContainer(props: TrackContainerProps) {
       inRef={wrapperRef}
       onClick={handleClick}
       selected={track.selected}
+      warn={hasMissingSource}
     >
       {!wayOffScreen && (
         <>

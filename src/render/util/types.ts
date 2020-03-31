@@ -241,15 +241,25 @@ export interface BindingsFile {
   defaultPresetId: string
 }
 
-export interface State {
-  playback: Playback
-  live: Live
-  sources: Sources
-  timing: Times
+export interface SaveStatus {
+  saved: boolean
+  path: string
 }
 
 export interface PersistentState {
   playback: Playback
   live: PersistentLive
   sources: Sources
+}
+
+export interface LocalPersistentState {
+  save: SaveStatus
+}
+
+export interface State {
+  playback: Playback
+  live: Live
+  sources: Sources
+  timing: Times
+  save: SaveStatus
 }

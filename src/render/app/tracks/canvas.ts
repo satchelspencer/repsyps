@@ -79,9 +79,9 @@ export default function useWaveformCanvas(
 
     ctx.clearRect(0, 0, pwidth, pheight)
 
-    drawWaveform(drawContext, drawBuffers[0])
+    drawWaveform(drawContext, drawBuffers[0], visibleLoaded)
     if (track.sourceTrackEditing)
-      drawWaveform(drawContext, drawBuffers[1], 'rgba(255,0,0,0.7)')
+      drawWaveform(drawContext, drawBuffers[1], editTrackLoaded, 'rgba(255,0,0,0.7)')
 
     if (impulses) drawImpulses(drawContext, impulses)
 
@@ -117,19 +117,31 @@ export interface DrawingContext {
   mouseDown: boolean
 }
 
-function drawWaveform(context: DrawingContext, waveform: Float32Array, color?: string) {
-  const { pheight, ctx } = context,
+function drawWaveform(
+  context: DrawingContext,
+  waveform: Float32Array,
+  loaded: boolean,
+  color?: string
+) {
+  const { pheight, pwidth, ctx } = context,
     halfHeight = pheight / 2
   ctx.lineWidth = 1
   ctx.strokeStyle = color || context.color.contrast(-0.1).fg
   ctx.beginPath()
-  let maxp = 0,
-    maxn = 0
-  for (let i = 0; i < waveform.length / 2; i++) {
-    maxp = waveform[i * 2]
-    maxn = waveform[i * 2 + 1]
-    if (maxp) ctx.lineTo(i, maxp * halfHeight + halfHeight)
-    if (maxn) ctx.lineTo(i, maxn * halfHeight + halfHeight)
+  if (loaded) {
+    
+    let maxp = 0,
+      maxn = 0
+    for (let i = 0; i < waveform.length / 2; i++) {
+      maxp = waveform[i * 2]
+      maxn = waveform[i * 2 + 1]
+      if (maxp) ctx.lineTo(i, maxp * halfHeight + halfHeight)
+      if (maxn) ctx.lineTo(i, maxn * halfHeight + halfHeight)
+    }
+    
+  }else{
+    ctx.lineTo(0, halfHeight)
+    ctx.lineTo(pwidth, halfHeight)
   }
   ctx.stroke()
 }

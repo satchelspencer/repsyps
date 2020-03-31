@@ -17,6 +17,10 @@ export const loadPersisted = createAction<{ state: Types.PersistentState }>(
   'LOAD_PERSISTED'
 )
 
+export const loadLocalPersisted = createAction<Types.LocalPersistentState>(
+  'LOAD_LOCAL_PERSISTED'
+)
+
 export const updateTime = createAction<{
   timing: Types.TimingState
   commit: boolean
@@ -283,3 +287,5 @@ export function addTrackAndSource(path: string) {
     'ADD_TRACK_AND_SOURCE'
   )
 }
+
+export const setSaveStatus = createAction<Types.SaveStatus>('SET_SAVESTATUS')

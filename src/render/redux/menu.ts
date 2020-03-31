@@ -11,6 +11,13 @@ const { Menu, dialog } = electron.remote,
   isMac = process.platform === 'darwin'
 
 export default function init(store: Store<Types.State>) {
+  function saveAs() {
+    const path = dialog.showSaveDialog({
+      title: 'Save Project',
+      defaultPath: getPath('projects/untitled'),
+    })
+    if (path) saveProject(path + '.rproj', store)
+  }
   const template = [
     ...(isMac ? [{ role: 'appMenu' }] : []),
     {
@@ -38,11 +45,28 @@ export default function init(store: Store<Types.State>) {
           label: 'Save',
           accelerator: 'CmdOrCtrl+S',
           click: () => {
-            const path = dialog.showSaveDialog({
-              title: 'Save Project',
-              defaultPath: getPath('projects/untitled'),
+            const savedPath = store.getState().save.path
+            if (savedPath) saveProject(savedPath, store)
+            else saveAs()
+          },
+        },
+        {
+          label: 'Save As',
+          accelerator: 'CmdOrCtrl+Shift+S',
+          click: saveAs,
+        },
+        { type: 'separator' },
+        {
+          label: 'Import',
+          accelerator: 'CmdOrCtrl+I',
+          click: () => {
+            const paths = dialog.showOpenDialog({
+              properties: ['openFile'],
             })
-            if (path) saveProject(path + '.rproj', store)
+            if (paths)
+              paths.forEach(path => {
+                store.dispatch(Actions.addTrackAndSource(path))
+              })
           },
         },
         { type: 'separator' },

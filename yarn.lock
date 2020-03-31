@@ -7422,6 +7422,11 @@ reduce-function-call@^1.0.1:
   dependencies:
     balanced-match "^0.4.2"
 
+reduce-reducers@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/reduce-reducers/-/reduce-reducers-1.0.4.tgz#fb77e751a9eb0201760ac5a605ca8c9c2d0537f8"
+  integrity sha512-Mb2WZ2bJF597exiqX7owBzrqJ74DHLK3yOQjCyPAaNifRncE8OD0wFIuoMhXxTnHK07+8zZ2SJEKy/qtiyR7vw==
+
 redux-batched-actions@^0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/redux-batched-actions/-/redux-batched-actions-0.4.1.tgz#a8de8cef50a1db4f009d5222820c836515597e22"

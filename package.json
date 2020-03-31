@@ -73,6 +73,7 @@
     "react-redux": "^7.2.0",
     "react-sortable-hoc": "^1.11.0",
     "react-svg-loader": "^3.0.3",
+    "reduce-reducers": "^1.0.4",
     "redux": "^4.0.5",
     "redux-batched-actions": "^0.4.1",
     "redux-devtools-extension": "^2.13.8",

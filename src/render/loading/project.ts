@@ -11,7 +11,13 @@ import * as env from 'render/util/env'
 const migration: Migration<any, any> = null
 
 export function loadLocalStorage(store: Store<Types.State>) {
-  const raw = localStorage.getItem('repsyps')
+  const raw = localStorage.getItem('repsyps'),
+    lraw = localStorage.getItem('repsyps:local')
+  try {
+    const lstate = JSON.parse(lraw) as Versioned<Types.LocalPersistentState>
+    if (lstate.version === env.version)
+      store.dispatch(Actions.loadLocalPersisted(lstate.state))
+  } catch (e) {}
   try {
     const state = JSON.parse(raw),
       migrated = apply(state, migration) as Versioned<Types.PersistentState>
@@ -21,8 +27,12 @@ export function loadLocalStorage(store: Store<Types.State>) {
 }
 
 export function saveLocalStorage(store: Store<Types.State>) {
-  const persisted = Selectors.getPersistentState(store.getState())
+  const state = store.getState(),
+    persisted = Selectors.getPersistentState(state),
+    lpersisted = Selectors.getLocalPersistentState(state)
+
   localStorage.setItem('repsyps', JSON.stringify(version(persisted)))
+  localStorage.setItem('repsyps:local', JSON.stringify(version(lpersisted)))
 }
 
 export function loadProject(path: string, store: Store<Types.State>) {
@@ -32,6 +42,7 @@ export function loadProject(path: string, store: Store<Types.State>) {
       migrated = apply(state, migration) as Versioned<Types.PersistentState>
     if (migrated.version === env.version) {
       store.dispatch(Actions.reset({}))
+      store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
       store.dispatch(Actions.loadPersisted({ state: migrated.state }))
     }
   } catch (e) {
@@ -42,4 +53,5 @@ export function loadProject(path: string, store: Store<Types.State>) {
 export function saveProject(path: string, store: Store<Types.State>) {
   const bindings = Selectors.getPersistentState(store.getState())
   fs.writeFileSync(path, JSON.stringify(version(bindings)))
+  store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
 }

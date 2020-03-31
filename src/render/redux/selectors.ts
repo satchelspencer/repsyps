@@ -414,3 +414,12 @@ export const getPersistentState = createShallowSelector(
     }
   }
 )
+
+export const getLocalPersistentState = createSelector(
+  [(state: Types.State) => state.save],
+  (save): Types.LocalPersistentState => {
+    return {
+      save,
+    }
+  }
+)

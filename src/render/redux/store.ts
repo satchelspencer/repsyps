@@ -1,7 +1,7 @@
 import { createStore } from 'redux'
 import { devToolsEnhancer } from 'redux-devtools-extension'
 
-import reducer from './reducer'
+import reducer, { defaultState } from './reducer'
 import * as Actions from './actions'
 import syncAudio from './audio-sync'
 import syncMidi from './midi-sync'
@@ -10,7 +10,7 @@ import initPersist from './persist'
 
 const store = createStore(
   reducer,
-  {},
+  defaultState,
   devToolsEnhancer({
     actionCreators: Actions,
     actionsBlacklist: ['UPDATE_TIMES'],

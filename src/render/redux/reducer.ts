@@ -3,13 +3,15 @@ import { createReducer } from 'deox'
 import { enableBatching } from 'redux-batched-actions'
 import * as _ from 'lodash'
 import arrayMove from 'array-move'
+import reduceReducers from 'reduce-reducers'
+import pathUtils from 'path'
 
 import * as Types from 'render/util/types'
 import * as Actions from './actions'
 import * as Selectors from './selectors'
 import { RATE } from 'render/util/audio'
 
-const defaultPlayback: Types.Playback = {
+export const defaultPlayback: Types.Playback = {
     volume: 1,
     playing: true,
     period: 2.7 * RATE,
@@ -72,6 +74,17 @@ const defaultPlayback: Types.Playback = {
     position: { x: 0, y: 0 },
     bindingType: 'value',
     controls: [],
+  },
+  defaultSave: Types.SaveStatus = {
+    saved: false,
+    path: null,
+  },
+  defaultState: Types.State = {
+    save: defaultSave,
+    timing: defaultTiming,
+    playback: defaultPlayback,
+    live: defaultLive,
+    sources: defaultSources,
   }
 
 /* if a cue doesnt esist in the new sources, just set its volume in the old to 0. */
@@ -213,24 +226,6 @@ const reducer = combineReducers({
     handle(Actions.loadPersisted, (_, { payload }) => {
       return payload.state.sources
     }),
-    handle(Actions.createSource, (sources, { payload }) => {
-      return {
-        ...sources,
-        [payload.sourceId]: payload.source,
-      }
-    }),
-    handle(Actions.createTrackSource, (sources, { payload }) => {
-      return {
-        ...sources,
-        [payload.sourceId]: {
-          ...sources[payload.sourceId],
-          sourceTracks: {
-            ...sources[payload.sourceId].sourceTracks,
-            [payload.sourceTrackId]: payload.sourceTrack,
-          },
-        },
-      }
-    }),
     handle(Actions.didLoadTrackSource, (sources, { payload }) => {
       return {
         ...sources,
@@ -245,23 +240,6 @@ const reducer = combineReducers({
                 payload.missing === undefined
                   ? sources[payload.sourceId].sourceTracks[payload.sourceTrackId].missing
                   : payload.missing,
-            },
-          },
-        },
-      }
-    }),
-    handle(Actions.relinkTrackSource, (sources, { payload }) => {
-      return {
-        ...sources,
-        [payload.sourceId]: {
-          ...sources[payload.sourceId],
-          sourceTracks: {
-            ...sources[payload.sourceId].sourceTracks,
-            [payload.sourceTrackId]: {
-              ...sources[payload.sourceId].sourceTracks[payload.sourceTrackId],
-              source: payload.newSource,
-              loaded: false,
-              missing: false,
             },
           },
         },
@@ -306,11 +284,13 @@ const reducer = combineReducers({
   live: createReducer(defaultLive, handle => [
     handle(Actions.reset, () => defaultLive),
     handle(Actions.loadPersisted, (live, { payload }) => {
-      const pLive = payload.state.live
+      const pLive = payload.state.live,
+        firstScene = payload.state.live.scenes[0],
+        firstTrackId = firstScene && firstScene.trackIds[0]
       return {
         ...live,
         ...pLive,
-        tracks: _.mapValues(pLive.tracks, ptrack => {
+        tracks: _.mapValues(pLive.tracks, (ptrack, trackId) => {
           return {
             ...defaultTrack,
             ...ptrack,
@@ -318,6 +298,7 @@ const reducer = combineReducers({
               ...defaultTrackPlayback,
               ...ptrack.playback,
             },
+            selected: trackId === firstTrackId,
           }
         }),
       }
@@ -1020,6 +1001,106 @@ const reducer = combineReducers({
       }
     }),
   ]),
+  save: createReducer(defaultSave, handle => [
+    handle(Actions.reset, () => defaultSave),
+    handle(Actions.setSaveStatus, (_, { payload: saveStatus }) => saveStatus),
+    handle(
+      Actions.loadLocalPersisted,
+      (_, { payload: localPersisted }) => localPersisted.save
+    ),
+  ]),
 })
 
-export default enableBatching(reducer)
+function makeSourceTracksRelative(source: Types.Source, path: string): Types.Source {
+  return {
+    ...source,
+    sourceTracks: _.mapValues(source.sourceTracks, sourceTrack => {
+      if (pathUtils.isAbsolute(sourceTrack.source) && path)
+        return {
+          ...sourceTrack,
+          source: pathUtils.relative(path, sourceTrack.source),
+        }
+      else return sourceTrack
+    }),
+  }
+}
+
+/* called FIRST */
+const globalReducer = createReducer(defaultState, handle => [
+  handle(Actions.setSaveStatus, (state, { payload: saveStatus }) => {
+    const lastPath = state.save.path,
+      nextPath = saveStatus.path
+    if (lastPath === nextPath) return state
+    else {
+      return {
+        ...state,
+        sources: _.mapValues(state.sources, source => {
+          return {
+            ...source,
+            sourceTracks: _.mapValues(source.sourceTracks, sourceTrack => {
+              const absSource = pathUtils.isAbsolute(sourceTrack.source)
+                ? sourceTrack.source
+                : pathUtils.resolve(lastPath, sourceTrack.source)
+              return {
+                ...sourceTrack,
+                source: nextPath ? pathUtils.relative(nextPath, absSource) : absSource,
+              }
+            }),
+          }
+        }),
+      }
+    }
+  }),
+  handle(Actions.createSource, (state, { payload }) => {
+    return {
+      ...state,
+      sources: {
+        ...state.sources,
+        [payload.sourceId]: makeSourceTracksRelative(payload.source, state.save.path),
+      },
+    }
+  }),
+  handle(Actions.createTrackSource, (state, { payload }) => {
+    return {
+      ...state,
+      sources: {
+        ...state.sources,
+        [payload.sourceId]: makeSourceTracksRelative(
+          {
+            ...state.sources[payload.sourceId],
+            sourceTracks: {
+              ...state.sources[payload.sourceId].sourceTracks,
+              [payload.sourceTrackId]: payload.sourceTrack,
+            },
+          },
+          state.save.path
+        ),
+      },
+    }
+  }),
+  handle(Actions.relinkTrackSource, (state, { payload }) => {
+    return {
+      ...state,
+      sources: {
+        ...state.sources,
+        [payload.sourceId]: makeSourceTracksRelative(
+          {
+            ...state.sources[payload.sourceId],
+            sourceTracks: {
+              ...state.sources[payload.sourceId].sourceTracks,
+              [payload.sourceTrackId]: {
+                ...state.sources[payload.sourceId].sourceTracks[payload.sourceTrackId],
+                source: payload.newSource,
+                loaded: false,
+                missing: false,
+              },
+            },
+          },
+          state.save.path
+        ),
+      },
+    }
+  }),
+])
+
+export default enableBatching(reduceReducers(globalReducer, reducer))
