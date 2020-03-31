@@ -56,50 +56,68 @@ export default function syncAudio(store: Store<Types.State>) {
         const sourceTrack = source.sourceTracks[sourceId],
           sourceIsNew = trackIsNew || !sourceTrack.loaded
 
-        if (sourceIsNew && !loadingSources[sourceId] && !sourceTrack.streamIndex) {
+        if (
+          sourceIsNew &&
+          !loadingSources[sourceId] &&
+          !sourceTrack.missing &&
+          !sourceTrack.streamIndex
+        ) {
           const trackName = source.name,
             sourcePath = sourceTrack.source
 
           loadingSources[sourceId] = true
           const loadedIds = await audio.loadSource(sourcePath, sourceId)
-          const newTrackActions: Action<any>[] = [
-            Actions.didLoadTrackSource({
-              sourceId: trackId,
-              sourceTrackId: sourceId,
-              loaded: true,
-            }),
-          ]
 
-          loadedIds.forEach((sourceTrackId, index) => {
-            if (!source.sourceTracks[sourceTrackId]) {
+          if (loadedIds.length) {
+            const newTrackActions: Action<any>[] = []
+            loadedIds.forEach((sourceTrackId, index) => {
               newTrackActions.push(
-                Actions.createTrackSource({
+                Actions.didLoadTrackSource({
                   sourceId: trackId,
-                  sourceTrackId,
-                  sourceTrack: {
-                    name: index + ':' + trackName,
-                    source: sourcePath,
-                    loaded: true,
-                    streamIndex: index, //only first source is primary
-                  },
+                  sourceTrackId: sourceId,
+                  loaded: true,
+                  missing: false,
                 })
               )
-              newTrackActions.push(
-                Actions.setTrackSourceParams({
-                  trackId: trackId,
-                  sourceTrackId,
-                  sourceTrackParams: {
-                    volume: 0,
-                    offset: 0,
-                  },
-                })
-              )
-            }
-          })
+              if (!source.sourceTracks[sourceTrackId]) {
+                newTrackActions.push(
+                  Actions.createTrackSource({
+                    sourceId: trackId,
+                    sourceTrackId,
+                    sourceTrack: {
+                      name: index + ':' + trackName,
+                      source: sourcePath,
+                      loaded: true,
+                      missing: false,
+                      streamIndex: index, //only first source is primary
+                    },
+                  })
+                )
+                newTrackActions.push(
+                  Actions.setTrackSourceParams({
+                    trackId: trackId,
+                    sourceTrackId,
+                    sourceTrackParams: {
+                      volume: 0,
+                      offset: 0,
+                    },
+                  })
+                )
+              }
+            })
+            store.dispatch(batchActions(newTrackActions, 'LOAD_TRACK'))
+            audio.setMixTrack(trackId, current)
+          } else {
+            store.dispatch(
+              Actions.didLoadTrackSource({
+                sourceId: trackId,
+                sourceTrackId: sourceId,
+                loaded: false,
+                missing: true,
+              })
+            )
+          }
           delete loadingSources[sourceId]
-          store.dispatch(batchActions(newTrackActions, 'LOAD_TRACK'))
-          //console.log('n', JSON.stringify(current, null, 2))
-          audio.setMixTrack(trackId, current)
         }
       })
 

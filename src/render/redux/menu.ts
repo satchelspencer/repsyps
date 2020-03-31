@@ -5,6 +5,7 @@ import * as Types from 'render/util/types'
 import * as Actions from './actions'
 import { getPath } from 'render/loading/app-paths'
 import { loadBindings, saveBindings } from 'render/loading/bindings'
+import { loadProject, saveProject } from 'render/loading/project'
 
 const { Menu, dialog } = electron.remote,
   isMac = process.platform === 'darwin'
@@ -22,17 +23,29 @@ export default function init(store: Store<Types.State>) {
             store.dispatch(Actions.reset({}))
           },
         },
-        { type: 'separator' },
         {
-          label: 'Save Bindings',
+          label: 'Open',
+          accelerator: 'CmdOrCtrl+O',
           click: () => {
-            const path = dialog.showSaveDialog({
-              title: 'Save Contol Bindings',
-              defaultPath: getPath('bindings/untitled'),
+            const path = dialog.showOpenDialog({
+              defaultPath: getPath('projects'),
+              filters: [{ name: 'repsyps project', extensions: ['rproj'] }],
             })
-            if (path) saveBindings(path + '.rbind', store)
+            if (path && path[0]) loadProject(path[0], store)
           },
         },
+        {
+          label: 'Save',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => {
+            const path = dialog.showSaveDialog({
+              title: 'Save Project',
+              defaultPath: getPath('projects/untitled'),
+            })
+            if (path) saveProject(path + '.rproj', store)
+          },
+        },
+        { type: 'separator' },
         {
           label: 'Open Bindings',
           click: () => {
@@ -41,6 +54,16 @@ export default function init(store: Store<Types.State>) {
               filters: [{ name: 'repsyps binding', extensions: ['rbind'] }],
             })
             if (path && path[0]) loadBindings(path[0], store)
+          },
+        },
+        {
+          label: 'Save Bindings',
+          click: () => {
+            const path = dialog.showSaveDialog({
+              title: 'Save Contol Bindings',
+              defaultPath: getPath('bindings/untitled'),
+            })
+            if (path) saveBindings(path + '.rbind', store)
           },
         },
         { type: 'separator' },

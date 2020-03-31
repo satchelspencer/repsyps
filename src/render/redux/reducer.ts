@@ -96,21 +96,27 @@ function mergeTrackSourcesParams(
   )
 }
 
-function getCuePlayback(cue: Types.Cue): Types.TrackPlayback {
-  return (
-    cue && {
-      ...defaultPlayback,
-      ..._.pick(cue.playback, cue.used),
-      loop: cue.endBehavior !== 'stop',
-    }
-  )
+function getCuePlayback(
+  cue: Types.Cue,
+  playback: Types.TrackPlayback
+): Types.TrackPlayback {
+  return {
+    ...playback,
+    ..._.pick(cue.playback, cue.used),
+    loop: cue.endBehavior !== 'stop',
+    sourceTracksParams: cue.used.includes('sourceTracksParams')
+      ? mergeTrackSourcesParams(
+          playback.sourceTracksParams,
+          cue.playback.sourceTracksParams
+        )
+      : playback.sourceTracksParams,
+  }
 }
 
 function applyCue(track: Types.Track, cueIndex: number): Types.Track {
   const cue = track.cues[cueIndex]
   if (!cue) return track
-  const followingCue = track.cues[cueIndex + 1],
-    cuePlayback = getCuePlayback(cue)
+  const followingCue = track.cues[cueIndex + 1]
 
   if (cue.startBehavior === 'immediate') {
     const hasFollowing = cue.endBehavior === 'next' && followingCue
@@ -118,17 +124,8 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
       ...track,
       cueIndex: cueIndex,
       nextCueIndex: hasFollowing ? cueIndex + 1 : -1,
-      playback: {
-        ...track.playback,
-        ...cuePlayback,
-        sourceTracksParams: cue.used.includes('sourceTracksParams')
-          ? mergeTrackSourcesParams(
-              track.playback.sourceTracksParams,
-              cue.playback.sourceTracksParams
-            )
-          : track.playback.sourceTracksParams,
-      },
-      nextPlayback: hasFollowing ? getCuePlayback(followingCue) : null,
+      playback: getCuePlayback(cue, track.playback),
+      nextPlayback: hasFollowing ? getCuePlayback(followingCue, track.playback) : null,
     }
   } else if (cue.startBehavior === 'on-chunk' || cue.startBehavior === 'on-end') {
     return {
@@ -138,10 +135,7 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
         ...track.playback,
         nextAtChunk: cue.startBehavior === 'on-chunk',
       },
-      nextPlayback: {
-        ...track.playback,
-        ...cuePlayback,
-      },
+      nextPlayback: getCuePlayback(cue, track.playback),
     }
   } else return track
 }
@@ -247,6 +241,27 @@ const reducer = combineReducers({
             [payload.sourceTrackId]: {
               ...sources[payload.sourceId].sourceTracks[payload.sourceTrackId],
               loaded: payload.loaded,
+              missing:
+                payload.missing === undefined
+                  ? sources[payload.sourceId].sourceTracks[payload.sourceTrackId].missing
+                  : payload.missing,
+            },
+          },
+        },
+      }
+    }),
+    handle(Actions.relinkTrackSource, (sources, { payload }) => {
+      return {
+        ...sources,
+        [payload.sourceId]: {
+          ...sources[payload.sourceId],
+          sourceTracks: {
+            ...sources[payload.sourceId].sourceTracks,
+            [payload.sourceTrackId]: {
+              ...sources[payload.sourceId].sourceTracks[payload.sourceTrackId],
+              source: payload.newSource,
+              loaded: false,
+              missing: false,
             },
           },
         },
@@ -569,7 +584,7 @@ const reducer = combineReducers({
       const trackId =
         payload.trackId || Selectors.getTrackIdByIndex(live, payload.trackIndex)
       if (!trackId) return live
-      else if (!!payload.playback.chunks)
+      else if (!!payload.playback.chunks || !payload.playback.playing)
         return {
           ...live,
           tracks: {
@@ -656,16 +671,14 @@ const reducer = combineReducers({
           const appliedCue = track.cues[track.nextCueIndex],
             followingCue = track.cues[track.nextCueIndex + 1],
             hasFollowing = appliedCue.endBehavior === 'next' && followingCue
+
           return {
             ...track,
             cueIndex: track.nextCueIndex,
             nextCueIndex: hasFollowing ? track.nextCueIndex + 1 : -1,
             playback: track.nextPlayback,
             nextPlayback: hasFollowing
-              ? {
-                  ...track.playback,
-                  ...getCuePlayback(followingCue),
-                }
+              ? getCuePlayback(followingCue, track.playback)
               : null,
           }
         } else if (didAdvanceChunk) {

@@ -22,8 +22,9 @@ async function init() {
   const src = './lib/test/bench.wav'
   const ssize = (5.41 * RATE) / 2
 
-  await audio.loadSource(mp3, 'mysource')
-  console.log('huh')
+  const ids = await audio.loadSource(stem, 'mysource')
+  console.log(ids)
+  process.exit()
   // console.log('exp', audio.exportSource('./lib/test/test_out.m4a', 'mysource'))
 
   // audio.loadSource('./lib/test/test_out.m4a', 'mysourceaac')

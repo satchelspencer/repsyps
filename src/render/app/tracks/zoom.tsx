@@ -7,7 +7,7 @@ function clip(x: number) {
 }
 
 export default function useZoom(container: React.MutableRefObject<any>, center: number) {
-  const [scale, setScale] = useState(200),
+  const [scale, setScale] = useState(400),
     [start, setStart] = useState(-200 * 24 * 2),
     handleWheel = useRef(null)
 

@@ -11,13 +11,7 @@ import { loadLocalStorage, saveLocalStorage } from 'render/loading/project'
 export default function syncAudio(store: Store<Types.State>) {
   let lastPersistent: Types.PersistentState = null
 
-  const throttleSave = _.throttle(
-    () => {
-      saveLocalStorage(lastPersistent)
-    },
-    3000,
-    { leading: false }
-  )
+  const throttleSave = _.throttle(() => saveLocalStorage(store), 1000, { leading: false })
 
   const handleUpdate = () => {
     const persistent = Selectors.getPersistentState(store.getState())
@@ -28,8 +22,7 @@ export default function syncAudio(store: Store<Types.State>) {
     }
   }
 
-  const stored = loadLocalStorage()
-  if (stored) store.dispatch(Actions.loadPersisted({ state: stored }))
+  loadLocalStorage(store)
 
   store.subscribe(handleUpdate)
   handleUpdate()

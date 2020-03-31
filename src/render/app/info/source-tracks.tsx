@@ -91,7 +91,8 @@ const SourceTracks = (props: TrackVolumeProps) => {
             name: pathUtils.basename(files[0].path),
             source: files[0].path,
             loaded: false,
-            streamIndex: 0
+            missing: false,
+            streamIndex: 0,
           },
         })
       )

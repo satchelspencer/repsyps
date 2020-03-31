@@ -32,7 +32,11 @@ export function getActiveTrackIdsFromLive(live: Types.Live, sceneIndex?: number)
     prevScene = live.scenes[sceneIndex - 1],
     lastOfPrev = prevScene && _.last(prevScene.trackIds)
 
-  return lastOfPrev ? [lastOfPrev, ...currentScene.trackIds] : currentScene.trackIds
+  return currentScene
+    ? lastOfPrev
+      ? [lastOfPrev, ...currentScene.trackIds]
+      : currentScene.trackIds
+    : []
 }
 
 export function getActiveTrackIds(state: Types.State, sceneIndex?: number): string[] {
@@ -341,7 +345,7 @@ export const makeGetPersistentTrack = () => {
         visibleSourceTrack,
         cues,
         playback,
-        editing
+        editing,
       }
     }
   )
@@ -389,6 +393,7 @@ export const getPersistentSources = createSelector(
         sourceTracks: _.mapValues(source.sourceTracks, t => ({
           ...t,
           loaded: false,
+          missing: false,
         })),
       }
     })

@@ -52,7 +52,14 @@ export const didLoadTrackSource = createAction<{
   sourceId: string
   sourceTrackId: string
   loaded: boolean
+  missing?: boolean
 }>('DID_LOAD_TRACKSOURCE')
+
+export const relinkTrackSource = createAction<{
+  sourceId: string
+  sourceTrackId: string
+  newSource: string
+}>('RELINK_TRACKSOURCE')
 
 export const removeTrackSource = createAction<{
   sourceId: string
@@ -262,7 +269,9 @@ export function addTrackAndSource(path: string) {
         source: {
           name,
           bounds: [],
-          sourceTracks: { [id]: { name, source: path, loaded: false, streamIndex: 0 } },
+          sourceTracks: {
+            [id]: { name, source: path, loaded: false, missing: false, streamIndex: 0 },
+          },
         },
       }),
       addTrack({
