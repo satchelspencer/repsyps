@@ -41,6 +41,7 @@ export default function isEqual(a, b) {
 
 export function objShallowEqual(a, b) {
   if (a === b) return true
+  else if(!a || !b) return false
   for (let key in a) {
     if (b[key] !== a[key]) {
       return false

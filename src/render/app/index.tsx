@@ -106,6 +106,13 @@ function App() {
               trackIds[(trackIds.indexOf(selectedTrackId) + tracklen + 1) % tracklen]
             )
           )
+        if (e.key === 'l' && selectedTrackId)
+          dispatch(
+            Actions.setTrackPlayLock({
+              trackId: selectedTrackId,
+              playlock: !selectedTrack.playLock,
+            })
+          )
       }}
     >
       <Header />

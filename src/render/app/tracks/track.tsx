@@ -81,8 +81,8 @@ export interface TrackProps {
   noClick: boolean
   sample: number
   loaded: boolean
-  playLocked: boolean
-  setPlayLocked: (lock: boolean) => any
+  playLock: boolean
+  setPlayLock: (lock: boolean) => any
   trackScroll: boolean
 }
 
@@ -123,8 +123,8 @@ const Track = memo(
     sample,
     source,
     loaded,
-    playLocked,
-    setPlayLocked,
+    playLock,
+    setPlayLock,
     trackScroll,
   }: TrackProps) {
     const dispatch = useDispatch()
@@ -147,18 +147,18 @@ const Track = memo(
       center,
       width,
       sample,
-      playLocked,
-      setPlayLocked,
+      playLock,
+      setPlayLock,
       trackScroll
     )
 
     /* automatically lock track */
     useEffect(() => {
-      if (!track.selected && track.playback.playing) setPlayLocked(true)
+      if (!track.selected && track.playback.playing) setPlayLock(true)
     }, [track.selected, track.playback.playing])
 
     useEffect(() => {
-      if (track.cueIndex != -1) setPlayLocked(true)
+      if (track.cueIndex != -1) setPlayLock(true)
     }, [track.cueIndex])
 
     /* drawing contexts */
@@ -198,7 +198,7 @@ const Track = memo(
       track,
       source,
       sample,
-      playLocked,
+      playLock,
       trackScroll
     )
 
@@ -222,7 +222,7 @@ const Track = memo(
           offsetTrackHandlers.mouseDown(clickCtxt, pos, e.shiftKey)
           setClickX(pos.x)
           setMouseDown(true)
-          setPlayLocked(false)
+          setPlayLock(false)
         },
         [...clickCtxtValues, ...viewValues, track.playback.chunks, source.bounds]
       ),
@@ -346,7 +346,6 @@ export default function TrackContainer(props: TrackContainerProps) {
     }, [props.trackId, isSelecting, onSelect]),
     isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId)),
     hasMissingSource = _.some(_.values(source.sourceTracks), track => track.missing),
-    [playLocked, setPlayLocked] = useState(false),
     trackScroll = useSelector(state => state.settings.trackScroll)
 
   return (
@@ -357,11 +356,14 @@ export default function TrackContainer(props: TrackContainerProps) {
       selected={track.selected}
       warn={hasMissingSource}
       tabIndex={-1}
-      onBlur={() => {
-        if (!track.editing) setPlayLocked(true)
-      }}
-      onKeyDown={e => {
-        if (e.key === 'l') setPlayLocked(!playLocked)
+      onMouseLeave={() => {
+        if (!track.editing && track.playback.playing && !track.playLock)
+          dispatch(
+            Actions.setTrackPlayLock({
+              trackId: props.trackId,
+              playlock: true,
+            })
+          )
       }}
     >
       {!wayOffScreen && (
@@ -375,8 +377,15 @@ export default function TrackContainer(props: TrackContainerProps) {
             track={track}
             source={source}
             sample={sample}
-            playLocked={playLocked}
-            setPlayLocked={setPlayLocked}
+            playLock={track.playLock}
+            setPlayLock={locked =>
+              dispatch(
+                Actions.setTrackPlayLock({
+                  trackId: props.trackId,
+                  playlock: locked,
+                })
+              )
+            }
             trackScroll={trackScroll}
           />
         </>

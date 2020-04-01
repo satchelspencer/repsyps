@@ -39,6 +39,7 @@ export const defaultPlayback: Types.Playback = {
     cues: [],
     cueIndex: -1,
     nextCueIndex: -1,
+    playLock: false,
   },
   defaultBindings: Types.Bindings = {},
   defaultBinding: Types.Binding = {
@@ -178,6 +179,7 @@ function updateSceneIndex(
             playback: {
               ...track.playback,
               playing: false,
+              muted: false
             },
             nextPlayback: null,
             nextCueIndex: -1,
@@ -602,6 +604,18 @@ const reducer = combineReducers({
           },
         }
     }),
+    handle(Actions.setTrackPlayLock, (live, { payload }) => {
+      return {
+        ...live,
+        tracks: {
+          ...live.tracks,
+          [payload.trackId]: {
+            ...live.tracks[payload.trackId],
+            playLock: payload.playlock,
+          },
+        },
+      }
+    }),
     handle(Actions.toggleTrack, (live, { payload }) => {
       return {
         ...live,
@@ -737,6 +751,7 @@ const reducer = combineReducers({
             cues: [],
             cueIndex: -1,
             nextCueIndex: -1,
+            playLock: false,
           },
         },
         scenes: newScenes,

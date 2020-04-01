@@ -100,6 +100,11 @@ export const editTrack = createAction<{ trackId: string; edit: boolean }>(
   'SET_TRACK_EDIT'
 )
 
+export const setTrackPlayLock = createAction<{
+  trackId: string
+  playlock: boolean
+}>('SET_TRACK_PLAYLOCK')
+
 export const editSourceTrack = createAction<{
   trackId: string
   sourceTrackEditing: string | null

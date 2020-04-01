@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import _ from 'lodash'
 
-import * as Types from 'render/util/types'
-
 function clip(x: number) {
   const v = 50
   return Math.abs(x) > v ? (x > 0 ? v : -v) : x
@@ -34,11 +32,11 @@ export default function useZoom(
         setScale(nextScale)
       } else {
         const xonly = deltaX > 4 && deltaY < 4
-        if (xonly) setPlayLocked(false)
+        if (xonly && playLocked) setPlayLocked(false)
         if (!playLocked || xonly) setStart(start + clip(deltaX) * scale)
       }
     }
-  }, [scale, start])
+  }, [scale, start, playLocked])
 
   useEffect(() => {
     container.current.addEventListener(

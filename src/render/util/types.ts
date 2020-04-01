@@ -42,12 +42,12 @@ export interface PersitentTrackPlayback {
   loop: boolean
   nextAtChunk: boolean
   volume: number
-  muted: boolean
   filter: number
   sourceTracksParams: TrackSourcesParams
 }
 
 export interface TrackPlayback extends PersitentTrackPlayback {
+  muted: boolean
   /* timing info */
   chunkIndex: number
   chunks: Chunks
@@ -101,6 +101,7 @@ export interface Track extends NativeTrack {
   nextCueIndex: number
   sourceTrackEditing: string | null
   visibleSourceTrack: string
+  playLock: boolean
 }
 
 export interface PersistentTrack {

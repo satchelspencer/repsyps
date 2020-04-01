@@ -3,7 +3,7 @@ import { createSelector, defaultMemoize, createSelectorCreator } from 'reselect'
 
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
-import isEqual, { objShallowEqual } from 'render/util/is-equal'
+import  { objShallowEqual } from 'render/util/is-equal'
 
 const createShallowSelector = createSelectorCreator(defaultMemoize, objShallowEqual)
 
@@ -327,7 +327,7 @@ export const makeGetPersistentTrackPlayback = () =>
   createSelector(
     [(track: Types.Track) => track.playback],
     (playback): Types.PersitentTrackPlayback => {
-      return _.omit(playback, ['chunkIndex', 'chunks', 'playing'])
+      return _.omit(playback, ['chunkIndex', 'chunks', 'playing', 'muted'])
     }
   )
 
