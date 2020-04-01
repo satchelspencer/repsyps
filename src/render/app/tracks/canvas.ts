@@ -11,7 +11,9 @@ export default function useWaveformCanvas(
   view: DrawViewContext,
   track: Types.Track,
   source: Types.Source,
-  sample: number
+  sample: number,
+  playLocked: boolean,
+  scroll: boolean
 ) {
   const canvasRef = useRef(null),
     ctxt = useRef(null),
@@ -31,22 +33,29 @@ export default function useWaveformCanvas(
     ctxt.current.imageSmoothingEnabled = false
   }, [])
 
-  const drawBuffers = useMemo(
-    () => [new Float32Array(pwidth * 2), new Float32Array(pwidth * 2)],
-    [width]
-  )
+  const bufferFrac = 1,
+    bufferRes = pwidth / bufferFrac,
+    drawBuffers = useMemo(
+      () => [new Float32Array(bufferRes * 2), new Float32Array(bufferRes * 2)],
+      [width]
+    )
 
   /* main waveform compute */
   useEffect(() => {
     if (visibleLoaded && width)
-      audio.getWaveform(track.visibleSourceTrack, start, scale, drawBuffers[0])
+      audio.getWaveform(
+        track.visibleSourceTrack,
+        start,
+        scale * bufferFrac,
+        drawBuffers[0]
+      )
   }, [drawBuffers, track.visibleSourceTrack, start, scale, visibleLoaded])
   useEffect(() => {
     if (editTrackLoaded && width) {
       return audio.getWaveform(
         track.sourceTrackEditing,
         start - editTrackOffset,
-        scale,
+        scale * bufferFrac,
         drawBuffers[1]
       )
     }
@@ -75,13 +84,21 @@ export default function useWaveformCanvas(
         mouseDown,
         sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
+        playLocked,
+        scroll,
       }
 
     ctx.clearRect(0, 0, pwidth, pheight)
 
-    drawWaveform(drawContext, drawBuffers[0], visibleLoaded)
+    drawWaveform(drawContext, drawBuffers[0], visibleLoaded, bufferFrac)
     if (track.sourceTrackEditing)
-      drawWaveform(drawContext, drawBuffers[1], editTrackLoaded, 'rgba(255,0,0,0.7)')
+      drawWaveform(
+        drawContext,
+        drawBuffers[1],
+        editTrackLoaded,
+        bufferFrac,
+        'rgba(255,0,0,0.7)'
+      )
 
     if (impulses) drawImpulses(drawContext, impulses)
 
@@ -98,6 +115,7 @@ export default function useWaveformCanvas(
     track.sourceTrackEditing,
     track.visibleSourceTrack,
     source.bounds,
+    playLocked,
     ..._.values(view),
   ])
 
@@ -115,12 +133,15 @@ export interface DrawingContext {
   clickX: number
   center: number
   mouseDown: boolean
+  playLocked: boolean
+  scroll: boolean
 }
 
 function drawWaveform(
   context: DrawingContext,
   waveform: Float32Array,
   loaded: boolean,
+  bufferFrac: number,
   color?: string
 ) {
   const { pheight, pwidth, ctx } = context,
@@ -129,17 +150,15 @@ function drawWaveform(
   ctx.strokeStyle = color || context.color.contrast(-0.1).fg
   ctx.beginPath()
   if (loaded) {
-    
     let maxp = 0,
       maxn = 0
     for (let i = 0; i < waveform.length / 2; i++) {
       maxp = waveform[i * 2]
       maxn = waveform[i * 2 + 1]
-      if (maxp) ctx.lineTo(i, maxp * halfHeight + halfHeight)
-      if (maxn) ctx.lineTo(i, maxn * halfHeight + halfHeight)
+      if (maxp) ctx.lineTo(i * bufferFrac, maxp * halfHeight + halfHeight)
+      if (maxn) ctx.lineTo(i * bufferFrac, maxn * halfHeight + halfHeight)
     }
-    
-  }else{
+  } else {
     ctx.lineTo(0, halfHeight)
     ctx.lineTo(pwidth, halfHeight)
   }
@@ -182,10 +201,10 @@ export function drawDrag(context: DrawingContext) {
 }
 
 export function drawPlayback(context: DrawingContext, track: Types.Track) {
-  const { pheight, scale, start, ctx, sample } = context,
+  const { pheight, scale, start, ctx, sample, playLocked, pwidth, scroll } = context,
     playing = track.playback.playing
 
-  let px = (sample - start) / scale
+  let px = playLocked && scroll ? pwidth / 2 : (sample - start) / scale
   ctx.fillStyle = context.color.fg + '33'
   ctx.fillRect(px - 10, 0, 20, pheight)
 

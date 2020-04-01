@@ -1,15 +1,26 @@
 import React, { useEffect, useState, useRef } from 'react'
 import _ from 'lodash'
 
+import * as Types from 'render/util/types'
+
 function clip(x: number) {
   const v = 50
   return Math.abs(x) > v ? (x > 0 ? v : -v) : x
 }
 
-export default function useZoom(container: React.MutableRefObject<any>, center: number) {
+export default function useZoom(
+  container: React.MutableRefObject<any>,
+  center: number,
+  width: number,
+  sample: number,
+  playLocked: boolean,
+  setPlayLocked: (locked: boolean) => any,
+  scroll: boolean
+) {
   const [scale, setScale] = useState(400),
     [start, setStart] = useState(-200 * 24 * 2),
-    handleWheel = useRef(null)
+    handleWheel = useRef(null),
+    pwidth = width * 2
 
   useEffect(() => {
     handleWheel.current = e => {
@@ -22,7 +33,9 @@ export default function useZoom(container: React.MutableRefObject<any>, center: 
         setStart(start - dx)
         setScale(nextScale)
       } else {
-        setStart(start + clip(deltaX) * scale)
+        const xonly = deltaX > 4 && deltaY < 4
+        if (xonly) setPlayLocked(false)
+        if (!playLocked || xonly) setStart(start + clip(deltaX) * scale)
       }
     }
   }, [scale, start])
@@ -36,6 +49,17 @@ export default function useZoom(container: React.MutableRefObject<any>, center: 
       { passive: false } //so we can prevent default
     )
   }, [container.current])
+
+  const end = start + pwidth * scale,
+    wStart = sample - (pwidth / 2) * scale,
+    rStart = Math.floor(wStart / scale) * scale,
+    offScreen = sample < start || sample > end
+  useEffect(() => {
+    if (playLocked) {
+      if (!scroll && offScreen) setStart(sample)
+      if (scroll) setStart(rStart)
+    }
+  }, [playLocked, rStart, offScreen])
 
   return { scale, start }
 }

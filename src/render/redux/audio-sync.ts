@@ -12,7 +12,7 @@ import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
 import isEqual from 'render/util/is-equal'
 
-export const UPDATE_PERIOD = 50,
+export const UPDATE_PERIOD = 40,
   isDev = process.env.NODE_ENV === 'development'
 
 type TrackPlaybackState = {

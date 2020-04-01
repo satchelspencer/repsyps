@@ -1,4 +1,4 @@
-import React, { memo, useRef, useMemo, useState, useCallback } from 'react'
+import React, { memo, useRef, useMemo, useState, useCallback, useEffect } from 'react'
 import ctyled from 'ctyled'
 import _ from 'lodash'
 import { SortableElement } from 'react-sortable-hoc'
@@ -33,10 +33,15 @@ const TrackWrapper = SortableElement(ctyled.div
     flex: 'none',
     lined: true,
     color: (c, { selected, warn }) =>
-      warn ? c.as(palette.primary_red).contrast(0.2) : selected ? c.contrast(0.2) : c.contrast(0.1),
+      warn
+        ? c.as(palette.primary_red).contrast(0.2)
+        : selected
+        ? c.contrast(0.2)
+        : c.contrast(0.1),
     borderColor: c => c.contrast(-0.2),
   }).extendSheet`
   height:${({ size }) => Math.ceil(size * 8) + 4}px;
+  outline:none;
 `)
 
 const TrackCanvasWrapper = ctyled.div.styles({
@@ -76,6 +81,9 @@ export interface TrackProps {
   noClick: boolean
   sample: number
   loaded: boolean
+  playLocked: boolean
+  setPlayLocked: (lock: boolean) => any
+  trackScroll: boolean
 }
 
 export interface ViewContext {
@@ -108,7 +116,17 @@ export interface ClickEventContext {
 }
 
 const Track = memo(
-  function({ trackId, track, noClick, sample, source, loaded }: TrackProps) {
+  function({
+    trackId,
+    track,
+    noClick,
+    sample,
+    source,
+    loaded,
+    playLocked,
+    setPlayLocked,
+    trackScroll,
+  }: TrackProps) {
     const dispatch = useDispatch()
 
     /* computed data */
@@ -124,7 +142,24 @@ const Track = memo(
     const { left, top, width, height } = getContainerPosition(container)
 
     /* ZOOM/PANNING CONTROL */
-    const { scale, start } = useZoom(container, center)
+    const { scale, start } = useZoom(
+      container,
+      center,
+      width,
+      sample,
+      playLocked,
+      setPlayLocked,
+      trackScroll
+    )
+
+    /* automatically lock track */
+    useEffect(() => {
+      if (!track.selected && track.playback.playing) setPlayLocked(true)
+    }, [track.selected, track.playback.playing])
+
+    useEffect(() => {
+      if (track.cueIndex != -1) setPlayLocked(true)
+    }, [track.cueIndex])
 
     /* drawing contexts */
     const view: ViewContext = {
@@ -158,7 +193,14 @@ const Track = memo(
       clickCtxtValues = _.values(clickCtxt)
 
     /* WAVEFORM DRAWING ON CANVAS */
-    const { canvasRef } = useWaveformCanvas(drawView, track, source, sample)
+    const { canvasRef } = useWaveformCanvas(
+      drawView,
+      track,
+      source,
+      sample,
+      playLocked,
+      trackScroll
+    )
 
     /* mouse event handlers */
     const selectPlaybackHandlers = useSelectPlayback(trackId),
@@ -180,6 +222,7 @@ const Track = memo(
           offsetTrackHandlers.mouseDown(clickCtxt, pos, e.shiftKey)
           setClickX(pos.x)
           setMouseDown(true)
+          setPlayLocked(false)
         },
         [...clickCtxtValues, ...viewValues, track.playback.chunks, source.bounds]
       ),
@@ -302,7 +345,9 @@ export default function TrackContainer(props: TrackContainerProps) {
       else !track.selected && dispatch(Actions.selectTrackExclusive(props.trackId))
     }, [props.trackId, isSelecting, onSelect]),
     isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId)),
-    hasMissingSource = _.some(_.values(source.sourceTracks), track => track.missing)
+    hasMissingSource = _.some(_.values(source.sourceTracks), track => track.missing),
+    [playLocked, setPlayLocked] = useState(false),
+    trackScroll = useSelector(state => state.settings.trackScroll)
 
   return (
     <TrackWrapper
@@ -311,6 +356,13 @@ export default function TrackContainer(props: TrackContainerProps) {
       onClick={handleClick}
       selected={track.selected}
       warn={hasMissingSource}
+      tabIndex={-1}
+      onBlur={() => {
+        if (!track.editing) setPlayLocked(true)
+      }}
+      onKeyDown={e => {
+        if (e.key === 'l') setPlayLocked(!playLocked)
+      }}
     >
       {!wayOffScreen && (
         <>
@@ -323,6 +375,9 @@ export default function TrackContainer(props: TrackContainerProps) {
             track={track}
             source={source}
             sample={sample}
+            playLocked={playLocked}
+            setPlayLocked={setPlayLocked}
+            trackScroll={trackScroll}
           />
         </>
       )}

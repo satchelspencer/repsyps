@@ -416,10 +416,20 @@ export const getPersistentState = createShallowSelector(
 )
 
 export const getLocalPersistentState = createSelector(
-  [(state: Types.State) => state.save],
-  (save): Types.LocalPersistentState => {
+  [(state: Types.State) => state.save, (state: Types.State) => state.settings],
+  (save, settings): Types.LocalPersistentState => {
     return {
       save,
+      settings,
+    }
+  }
+)
+
+export const getMenuState = createSelector(
+  [(state: Types.State) => state.settings.trackScroll],
+  trackScroll => {
+    return {
+      trackScroll,
     }
   }
 )

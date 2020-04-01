@@ -79,12 +79,16 @@ export const defaultPlayback: Types.Playback = {
     saved: false,
     path: null,
   },
+  defaultSettings: Types.Settings = {
+    trackScroll: true,
+  },
   defaultState: Types.State = {
     save: defaultSave,
     timing: defaultTiming,
     playback: defaultPlayback,
     live: defaultLive,
     sources: defaultSources,
+    settings: defaultSettings,
   }
 
 /* if a cue doesnt esist in the new sources, just set its volume in the old to 0. */
@@ -167,7 +171,7 @@ function updateSceneIndex(
     return {
       ...live,
       tracks: _.mapValues(live.tracks, (track, trackId) => {
-        if (!noLongerActive.includes(trackId)) return track
+        if (!forceReset && !noLongerActive.includes(trackId)) return track
         else
           return {
             ...track,
@@ -681,24 +685,6 @@ const reducer = combineReducers({
           }
         : live
     }),
-    handle(Actions.deleteScene, (live, { payload: sceneIndex }) => {
-      if (live.scenes.length == 1) return live
-      const newScenes = [...live.scenes],
-        deletedScene = live.scenes[sceneIndex],
-        newSceneIndex = Math.min(live.sceneIndex, newScenes.length - 2)
-
-      newScenes.splice(sceneIndex, 1)
-      return updateSceneIndex(
-        {
-          ...live,
-          tracks: _.omitBy(live.tracks, (track, trackId) =>
-            deletedScene.trackIds.includes(trackId)
-          ),
-          scenes: newScenes,
-        },
-        newSceneIndex
-      )
-    }),
     handle(Actions.selectTrackExclusive, (live, { payload: trackId }) => {
       const containingIndex = live.scenes.findIndex(scene =>
           scene.trackIds.includes(trackId)
@@ -812,26 +798,6 @@ const reducer = combineReducers({
           tracks: newTracks,
         }
       }
-    }),
-    handle(Actions.rmTrack, (live, { payload: trackId }) => {
-      const newScenes = live.scenes.map(scene => {
-          if (scene.trackIds.includes(trackId)) {
-            return {
-              ...scene,
-              trackIds: scene.trackIds.filter(id => id !== trackId),
-            }
-          } else return scene
-        }),
-        newSceneIndex = Math.min(newScenes.length - 1, live.sceneIndex)
-
-      return updateSceneIndex(
-        {
-          ...live,
-          scenes: newScenes,
-          tracks: _.omit(live.tracks, trackId),
-        },
-        newSceneIndex
-      )
     }),
     handle(Actions.createScene, (live, { payload: sceneIndex }) => {
       const newScenes = [...live.scenes],
@@ -1009,6 +975,19 @@ const reducer = combineReducers({
       (_, { payload: localPersisted }) => localPersisted.save
     ),
   ]),
+  settings: createReducer(defaultSettings, handle => [
+    handle(Actions.reset, () => defaultSettings),
+    handle(Actions.setSettings, (settings, { payload: newSettings }) => {
+      return {
+        ...settings,
+        ...newSettings,
+      }
+    }),
+    handle(
+      Actions.loadLocalPersisted,
+      (_, { payload: localPersisted }) => localPersisted.settings
+    ),
+  ]),
 })
 
 function makeSourceTracksRelative(source: Types.Source, path: string): Types.Source {
@@ -1099,6 +1078,54 @@ const globalReducer = createReducer(defaultState, handle => [
           state.save.path
         ),
       },
+    }
+  }),
+  handle(Actions.rmTrack, (state, { payload: trackId }) => {
+    const newScenes = state.live.scenes.map(scene => {
+        if (scene.trackIds.includes(trackId)) {
+          return {
+            ...scene,
+            trackIds: scene.trackIds.filter(id => id !== trackId),
+          }
+        } else return scene
+      }),
+      newSceneIndex = Math.min(newScenes.length - 1, state.live.sceneIndex)
+
+    return {
+      ...state,
+      sources: _.omit(state.sources, trackId),
+      live: updateSceneIndex(
+        {
+          ...state.live,
+          scenes: newScenes,
+          tracks: _.omit(state.live.tracks, trackId),
+        },
+        newSceneIndex
+      ),
+    }
+  }),
+  handle(Actions.deleteScene, (state, { payload: sceneIndex }) => {
+    if (state.live.scenes.length == 1) return state
+    const newScenes = [...state.live.scenes],
+      deletedScene = state.live.scenes[sceneIndex],
+      newSceneIndex = Math.min(state.live.sceneIndex, newScenes.length - 2)
+
+    newScenes.splice(sceneIndex, 1)
+    return {
+      ...state,
+      sources: _.omitBy(state.sources, (_, sourceId) =>
+        deletedScene.trackIds.includes(sourceId)
+      ),
+      live: updateSceneIndex(
+        {
+          ...state.live,
+          tracks: _.omitBy(state.live.tracks, (_, trackId) =>
+            deletedScene.trackIds.includes(trackId)
+          ),
+          scenes: newScenes,
+        },
+        newSceneIndex
+      ),
     }
   }),
 ])

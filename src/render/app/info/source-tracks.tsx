@@ -116,12 +116,16 @@ const SourceTracks = (props: TrackVolumeProps) => {
     <TracksWrapper>
       {sourceTrackIds.map((sourceTrackId, sourceTrackIndex) => {
         const sourceTrackParams = sourceTracksParams[sourceTrackId],
-          { name } = source.sourceTracks[sourceTrackId]
+          sourceTrack = source.sourceTracks[sourceTrackId]
         return (
           <SidebarItem
             key={sourceTrackId}
             title={
-              <TrackWrapper>
+              <TrackWrapper
+                style={{
+                  opacity: sourceTrack.loaded ? 1 : 0.5,
+                }}
+              >
                 <TrackHead>
                   <Icon name="wave" styles={{ size: s => s * 1.75 }} />
                   {sourceTrackIds.length > 1 && (
@@ -140,7 +144,7 @@ const SourceTracks = (props: TrackVolumeProps) => {
                     />
                   )}
                   <TrackName selected={false}>
-                    <TrackNameInner>{name}</TrackNameInner>
+                    <TrackNameInner>{sourceTrack.name}</TrackNameInner>
                   </TrackName>
                   {sourceTrackId !== props.trackId && (
                     <Icon

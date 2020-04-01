@@ -1,4 +1,5 @@
 #include "waveform.h"
+#include <iostream>
 
 void minMaxWaveform(
   float scale,
@@ -7,9 +8,9 @@ void minMaxWaveform(
   int sourceLen,
   float* dest, 
   int destLen
-){
+){  
   int width = destLen / 2; 
-  int skip = (scale / 100) + 1;
+  int skip = (scale / 512) + 1;
 
   int fstart;
   int fend;

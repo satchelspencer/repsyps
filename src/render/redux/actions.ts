@@ -289,3 +289,5 @@ export function addTrackAndSource(path: string) {
 }
 
 export const setSaveStatus = createAction<Types.SaveStatus>('SET_SAVESTATUS')
+
+export const setSettings = createAction<Partial<Types.Settings>>('SET_SETTINGS')

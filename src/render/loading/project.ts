@@ -51,7 +51,7 @@ export function loadProject(path: string, store: Store<Types.State>) {
 }
 
 export function saveProject(path: string, store: Store<Types.State>) {
+  store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
   const bindings = Selectors.getPersistentState(store.getState())
   fs.writeFileSync(path, JSON.stringify(version(bindings)))
-  store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
 }

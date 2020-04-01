@@ -1,4 +1,5 @@
 import tracks from '../app/tracks/tracks'
+import { settings } from 'cluster';
 
 export interface Playback {
   volume: number
@@ -246,6 +247,10 @@ export interface SaveStatus {
   path: string
 }
 
+export interface Settings {
+  trackScroll: boolean
+}
+
 export interface PersistentState {
   playback: Playback
   live: PersistentLive
@@ -254,6 +259,7 @@ export interface PersistentState {
 
 export interface LocalPersistentState {
   save: SaveStatus
+  settings: Settings
 }
 
 export interface State {
@@ -262,4 +268,5 @@ export interface State {
   sources: Sources
   timing: Times
   save: SaveStatus
+  settings: Settings
 }
