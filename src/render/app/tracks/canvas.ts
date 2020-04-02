@@ -168,7 +168,7 @@ function drawWaveform(
 export function drawImpulses(context: DrawingContext, impulses: number[]) {
   const { pwidth, pheight, scale, start, ctx } = context,
     end = scale * pwidth + start,
-    white = 300,
+    white = 500,
     trans = 100
 
   ctx.lineWidth = 3

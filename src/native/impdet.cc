@@ -1,79 +1,62 @@
 #include "impdet.h"
 
+static unsigned int IMPDET_WINSIZE = 512;
+static unsigned int IMPDET_AVGLEN = 80;
+static float IMPDET_CUTOFF = 3000 / 44100.;
+static unsigned int IMPDET_NTAPS = 121;
+
 std::vector<int> impulseDetect(float* source, int sourceLen){
-  std::vector<int> beats;
-  unsigned int fftSize = 256;
-  unsigned int bandMin = (6000 / 44100.) * fftSize;
-  unsigned int bandMax = (20000 / 44100.) * fftSize;
-  unsigned int avgLength = 40;
-  unsigned int thresh = 4;
-  float epsilon = 0.000001;
-  liquid_float_complex * x = new liquid_float_complex[fftSize];
-  liquid_float_complex * y = new liquid_float_complex[fftSize];
-  fftplan pf = fft_create_plan(fftSize, x, y, LIQUID_FFT_FORWARD,  0);
+  /* setup highpass filter */
+  float h[IMPDET_NTAPS];
+  float ft = estimate_req_filter_df(60, IMPDET_NTAPS);
+  float bands[4] = { 0.0f, IMPDET_CUTOFF, IMPDET_CUTOFF + ft, 0.5f };
+  float des[2] = { 0, 1 };
+  float weights[2] = { 1.0f, 1.0f };
+  liquid_firdespm_wtype wtype[2] = {LIQUID_FIRDESPM_FLATWEIGHT, LIQUID_FIRDESPM_FLATWEIGHT};
+  firdespm_run(IMPDET_NTAPS,2,bands,des,weights,wtype,LIQUID_FIRDESPM_BANDPASS,h);
+  firfilt_rrrf filter = firfilt_rrrf_create(h,IMPDET_NTAPS);
 
-  unsigned int fftCount = (sourceLen / fftSize) - 1;
-  unsigned int startSample;
-  unsigned int fftSampleIndex;
-
-  float mean;
+  std::vector<int> beats;  //output
+  unsigned int winCount = (sourceLen / IMPDET_WINSIZE) - 1;
   std::list<float> lastMeans = { 1. };
-  std::list<float> lastFracs = { 1. };
-  float meansAvg;
-  float fracsAvg;
-  float frac;
-  float fracfrac;
+
+  float sampleValue;
+  unsigned int startSample;
+  unsigned int winSampleIndex;
+  float energyAvg;
+  float energyVar;
+  float energy;
   bool inBeat;
-  float beatMax;
-  unsigned int beatMaxIndex;
 
-  float sum;
-  unsigned int count;
-  unsigned int bandIndex;
-
-  for(unsigned int fftIndex=0;fftIndex<fftCount;fftIndex++){
-    startSample = fftIndex * fftSize;
-    for(fftSampleIndex=0;fftSampleIndex<fftSize;fftSampleIndex++)
-      x[fftSampleIndex] = source[startSample + fftSampleIndex];
-    fft_execute(pf);
-
-    sum = 0;
-    count = 0;
-    for(bandIndex = bandMin;bandIndex<bandMax;bandIndex++){
-      sum += std::norm(y[bandIndex]);
-      count++;
+  for(unsigned int winIndex=0;winIndex<winCount;winIndex++){
+    startSample = winIndex * IMPDET_WINSIZE;
+    energy = 0;
+    for(winSampleIndex=0;winSampleIndex<IMPDET_WINSIZE;winSampleIndex++){
+      sampleValue = source[startSample + winSampleIndex];
+      firfilt_rrrf_push(filter, sampleValue);   
+      firfilt_rrrf_execute(filter, &sampleValue);
+      energy += sampleValue*sampleValue;
     }
-    mean = sum / count;
+    energy /= IMPDET_WINSIZE; 
+      
+    energyAvg = 0;
+    for(float v : lastMeans) energyAvg += v;
+    energyAvg /= lastMeans.size();
 
-    meansAvg = epsilon;
-    for(float v : lastMeans) meansAvg += v;
-    meansAvg /= lastMeans.size();
-    frac = mean / meansAvg;
-    lastMeans.push_front(frac);
-    if(lastMeans.size() > avgLength) lastMeans.pop_back();
+    energyVar = 0;
+    for(float v : lastMeans) energyVar += std::pow(v-energyAvg,2);
+    energyVar /= lastMeans.size();
 
-    fracsAvg = epsilon;
-    for(float v : lastFracs) fracsAvg += v;
-    fracsAvg /= lastFracs.size();
-    fracfrac = frac / fracsAvg;
-    lastFracs.push_front(frac);
-    if(lastFracs.size() > avgLength) lastFracs.pop_back();
+    lastMeans.push_front(energy);
+    if(lastMeans.size() > IMPDET_AVGLEN) lastMeans.pop_back();
 
-    if(fracfrac > thresh && frac > 2){
-      if(!inBeat){
+    if((energy/energyAvg) > ((-0.002*energyVar) + 1.7)){
+      if(!inBeat){ //trigger on rising edge past threshold
         inBeat = true;
-        beatMax = 0;
-        beatMaxIndex = 0;
+        beats.push_back(winIndex * IMPDET_WINSIZE);
       }
-      if(fracfrac > beatMax){
-        beatMax = fracfrac;
-        beatMaxIndex = fftIndex;
-      }
-    }else if(inBeat){
-      inBeat = false;
-      beats.push_back(beatMaxIndex * fftSize);
-    }
+    }else if(inBeat) inBeat = false;
   }
-  fft_destroy_plan(pf);
+  firfilt_rrrf_destroy(filter);
   return beats;
 }

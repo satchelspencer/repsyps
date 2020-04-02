@@ -15,7 +15,7 @@ export default function useZoom(
   setPlayLocked: (locked: boolean) => any,
   scroll: boolean
 ) {
-  const [scale, setScale] = useState(400),
+  const [scale, setScale] = useState(1200),
     [start, setStart] = useState(-200 * 24 * 2),
     handleWheel = useRef(null),
     pwidth = width * 2
@@ -29,9 +29,9 @@ export default function useZoom(
           nextScale = Math.max(scale + clip(deltaY) * scaleMultiplier, 2),
           dx = (nextScale - scale) * center
         setStart(start - dx)
-        setScale(nextScale)
+        setScale(nextScale < 800 ? nextScale : Math.floor(nextScale))
       } else {
-        const xonly = deltaX > 4 && deltaY < 4
+        const xonly = Math.abs(deltaX) > 4 && Math.abs(deltaY) < 4
         if (xonly && playLocked) setPlayLocked(false)
         if (!playLocked || xonly) setStart(start + clip(deltaX) * scale)
       }

@@ -5,7 +5,7 @@ const cache: { [trackId: string]: number[] } = {}
 
 export default function(trackId?: string) {
   if (trackId && cache[trackId]) return cache[trackId]
-  const beats = audio.getImpulses(trackId)
+  const beats = audio.getImpulses(trackId).slice(1)
   cache[trackId] = beats
   return beats
 }

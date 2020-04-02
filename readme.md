@@ -5,6 +5,7 @@ repsyps depends on native libraries that must be installed manually for developm
  - [portaudio 2.0](http://portaudio.com/docs/v19-doxydocs/index.html) for realtime audio output
  - [liquid-dsp 1.3.2](https://github.com/jgaeddert/liquid-dsp) for filtering and other dsp
  - [libtensorflow 1.15.0](https://www.tensorflow.org/install/lang_c) for running A.I. source separation
+ - [ffmpeg 4.2.2](http://ffmpeg.org/download.html) for decoding/encoding audio
 
 ### OSX Installation
  - prerequisites:
