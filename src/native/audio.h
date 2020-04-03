@@ -11,6 +11,7 @@
 #include "export.h"
 #include "impdet.h"
 #include "waveform.h"
+#include "recording.h"
 
 Napi::Value init(const Napi::CallbackInfo &info);
 Napi::Value start(const Napi::CallbackInfo &info);
@@ -25,5 +26,7 @@ void getWaveform(const Napi::CallbackInfo &info);
 Napi::Value getImpulses(const Napi::CallbackInfo &info);
 Napi::Value loadSource(const Napi::CallbackInfo &info);
 Napi::Value exportSource(const Napi::CallbackInfo &info);
+void startRecording(const Napi::CallbackInfo &info);
+Napi::Value stopRecording(const Napi::CallbackInfo &info);
 
 void InitAudio(Napi::Env env, Napi::Object exports);

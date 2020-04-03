@@ -23,13 +23,28 @@ void copyToOut(
   ringbuffer * buffer, 
   float * out, 
   unsigned int & outputFrameIndex,
-  unsigned long framesPerBuffer 
+  unsigned long framesPerBuffer,
+  recording* rec 
 ){
+  recordChunk* chunk = NULL;
+  if(rec != NULL && rec->started) chunk = rec->chunks[rec->chunkIndex];
+
   int bufferChannelCount = buffer->channels.size();
+  float sampleValue;
   while(buffer->head != buffer->tail && outputFrameIndex < framesPerBuffer){
     for(int channelIndex=0;channelIndex<bufferChannelCount;channelIndex++){
-      *out++ += buffer->channels[channelIndex][buffer->tail];
-      buffer->channels[channelIndex][buffer->tail] = 0; //reset it to 0
+      sampleValue = buffer->channels[channelIndex][buffer->tail];
+      *out++ += sampleValue;
+      if(chunk) chunk->channels[channelIndex][chunk->used] += sampleValue;
+      buffer->channels[channelIndex][buffer->tail] = 0; //reset buffer value to 0
+    }
+    if(chunk){
+      chunk->used++;
+      rec->length++;
+      if(chunk->used >= chunk->size){ //chunkFilled
+        rec->chunkIndex++;
+        chunk = rec->chunks[rec->chunkIndex];
+      } 
     }
     outputFrameIndex++;
     buffer->tail = (buffer->tail+1)%buffer->size;
@@ -56,6 +71,8 @@ int paCallbackMethod(
   unsigned long frameIndex;
   unsigned int outputFrameIndex = 0;
   double startTime = state->playback->time;
+  recording* rec = state->recording;
+  recordChunk* currentChunk;
 
   double mixTrackPhase;
   double phaseStep = 1/(double)state->playback->period;
@@ -64,12 +81,13 @@ int paCallbackMethod(
   mixTrack* mixTrack;
   mixTrackSourceConfig* mixTrackSourceConfig;
   unsigned int mixTrackLength;
-  int channelCount;
-  int channelIndex;
-  int chunkCount;
+  unsigned int channelCount;
+  unsigned int channelIndex;
+  unsigned int chunkCount;
   int tempMixTrackChunkIndex;
   double tempMixTrackSample;
   bool didAdvancePlayback;
+  bool didPassBound;
   mixTrackPlayback* mixTrackPlayback;
 
   unsigned int sampledFrameIndex;
@@ -87,7 +105,7 @@ int paCallbackMethod(
 
   /* empty the ringbuffer into the output, if available */
   out = (float*)outputBuffer;
-  copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer);
+  copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, state->recording);
 
   /* keep computing new windows until we fill the output buffer */
   while(outputFrameIndex < framesPerBuffer){
@@ -105,6 +123,7 @@ int paCallbackMethod(
       tempMixTrackChunkIndex = mixTrackPlayback->chunkIndex;
       tempMixTrackSample = mixTrack->sample;
       didAdvancePlayback = false;
+      didPassBound = false;
 
       /* add this computed track into the buffer */
       for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
@@ -119,6 +138,7 @@ int paCallbackMethod(
           samplePosition = tempMixTrackSample + mixTrackPlayback->alpha;
           if(mixTrackPlayback->chunks[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
             if(samplePosition > getSamplePosition(mixTrackPlayback, tempMixTrackChunkIndex, 1)){ /* check if we looped around */
+              didPassBound = true;
               tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount;
               if(mixTrack->hasNext && (tempMixTrackChunkIndex == 0 || mixTrackPlayback->nextAtChunk)){ //chunks looped and we have next
                 didAdvancePlayback = true;
@@ -137,6 +157,7 @@ int paCallbackMethod(
         }else{
           samplePosition = getSamplePosition(mixTrackPlayback,tempMixTrackChunkIndex, mixTrackPhase);
           if( samplePosition < tempMixTrackSample) {  /* check if we looped around */
+            didPassBound = true;
             tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount; //increment the chunk
             if(mixTrack->hasNext && (tempMixTrackChunkIndex == 0 || mixTrackPlayback->nextAtChunk)){ //chunks looped and we have next
               didAdvancePlayback = true;
@@ -165,6 +186,16 @@ int paCallbackMethod(
           if(didAdvancePlayback){
             applyNextPlayback(mixTrack);
             didAdvancePlayback = false;
+          }
+          if(
+            rec != NULL 
+            && (didPassBound || mixTrackPlayback->aperiodic)
+            && rec->fromSource 
+            && !rec->started
+            && rec->fromSourceId == mixTrackPair.first
+          ){
+            rec->started = true;
+            rec->fromSourceOffset = tempMixTrackSample;
           }
         }
                 
@@ -215,7 +246,7 @@ int paCallbackMethod(
 
     /* empty the ringbuffer into the output... again */
     out = (float*)outputBuffer;
-    copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer);
+    copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, state->recording);
   }
   
   state->playback->time += (double)framesPerBuffer/state->playback->period;
@@ -229,6 +260,12 @@ int paCallbackMethod(
         (!mixTrack->playback->playing || mixTrack->playback->aperiodic)
       ) applyNextPlayback(mixTrack);
     }
+    if(state->recording != NULL){
+      if(!state->recording->started && !rec->fromSource) state->recording->started = true;
+      currentChunk = state->recording->chunks[state->recording->chunkIndex];
+      currentChunk->bounds[currentChunk->boundsCount] = state->recording->length;
+      currentChunk->boundsCount++;
+    }
   }
 
   for(auto sourcesPair: state->sources){
@@ -238,6 +275,10 @@ int paCallbackMethod(
       if(mixTrackSource->data != NULL){
         av_freep(&mixTrackSource->data[0]);
         av_freep(&mixTrackSource->data);
+      }else{
+        for(channelIndex=0;channelIndex<mixTrackSource->channels.size();channelIndex++){
+          delete [] mixTrackSource->channels[channelIndex];
+        }
       }
       state->sources[sourcesPair.first] = NULL;
       delete mixTrackSource;

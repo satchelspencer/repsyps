@@ -87,7 +87,7 @@ const Sidebar = () => {
                     </span>
                     <SourceTrackName>
                       <SourceTrackNameInner>
-                        {pathUtils.basename(sourceTrack.source)}
+                        {sourceTrack.source && pathUtils.basename(sourceTrack.source)}
                       </SourceTrackNameInner>
                     </SourceTrackName>
                   </SourceTrackWarning>

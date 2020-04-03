@@ -56,7 +56,7 @@ export default function syncAudio(store: Store<Types.State>) {
 
       _.keys(current.playback.sourceTracksParams).forEach(async sourceId => {
         const sourceTrack = source.sourceTracks[sourceId],
-          sourceIsNew = trackIsNew || !sourceTrack.loaded
+          sourceIsNew = !sourceTrack.loaded
 
         if (
           sourceIsNew &&
@@ -66,13 +66,14 @@ export default function syncAudio(store: Store<Types.State>) {
         ) {
           const trackName = source.name,
             sourcePath = sourceTrack.source,
-            absSorucePath = pathUtils.resolve(currentPath, sourcePath)
-         // console.log(currentPath, sourcePath, absSorucePath)
+            absSorucePath = sourcePath && pathUtils.resolve(currentPath, sourcePath)
+          // console.log(currentPath, sourcePath, absSorucePath)
 
           loadingSources[sourceId] = true
-          const loadedIds = await audio.loadSource(absSorucePath, sourceId)
+          const loadedIds =
+            sourcePath && (await audio.loadSource(absSorucePath, sourceId))
 
-          if (loadedIds.length) {
+          if (loadedIds && loadedIds.length) {
             const newTrackActions: Action<any>[] = []
             loadedIds.forEach((sourceTrackId, index) => {
               newTrackActions.push(
@@ -136,7 +137,6 @@ export default function syncAudio(store: Store<Types.State>) {
           playback: diff(trackIsNew ? {} : prev.playback, current.playback, ['playing']),
           nextPlayback: current.nextPlayback,
         }
-        //console.log('c', JSON.stringify(change, null, 2))
         audio.setMixTrack(trackId, change)
       }
 

@@ -33,8 +33,7 @@ export default function useWaveformCanvas(
     ctxt.current.imageSmoothingEnabled = false
   }, [])
 
-  const bufferFrac = 1,
-    bufferRes = pwidth / bufferFrac,
+  const bufferRes = pwidth,
     drawBuffers = useMemo(
       () => [new Float32Array(bufferRes * 2), new Float32Array(bufferRes * 2)],
       [width]
@@ -43,19 +42,14 @@ export default function useWaveformCanvas(
   /* main waveform compute */
   useEffect(() => {
     if (visibleLoaded && width)
-      audio.getWaveform(
-        track.visibleSourceTrack,
-        start,
-        scale * bufferFrac,
-        drawBuffers[0]
-      )
+      audio.getWaveform(track.visibleSourceTrack, start, scale, drawBuffers[0])
   }, [drawBuffers, track.visibleSourceTrack, start, scale, visibleLoaded])
   useEffect(() => {
     if (editTrackLoaded && width) {
       return audio.getWaveform(
         track.sourceTrackEditing,
         start - editTrackOffset,
-        scale * bufferFrac,
+        scale,
         drawBuffers[1]
       )
     }
@@ -90,15 +84,9 @@ export default function useWaveformCanvas(
 
     ctx.clearRect(0, 0, pwidth, pheight)
 
-    drawWaveform(drawContext, drawBuffers[0], visibleLoaded, bufferFrac)
+    drawWaveform(drawContext, drawBuffers[0], visibleLoaded)
     if (track.sourceTrackEditing)
-      drawWaveform(
-        drawContext,
-        drawBuffers[1],
-        editTrackLoaded,
-        bufferFrac,
-        'rgba(255,0,0,0.7)'
-      )
+      drawWaveform(drawContext, drawBuffers[1], editTrackLoaded, 'rgba(255,0,0,0.7)')
 
     if (impulses) drawImpulses(drawContext, impulses)
 
@@ -141,13 +129,30 @@ function drawWaveform(
   context: DrawingContext,
   waveform: Float32Array,
   loaded: boolean,
-  bufferFrac: number,
   color?: string
 ) {
-  const { pheight, pwidth, ctx } = context,
-    halfHeight = pheight / 2
+  const { pheight, pwidth, ctx } = context
+  waveformLine(
+    pwidth,
+    pheight,
+    ctx,
+    waveform,
+    color || context.color.contrast(-0.1).fg,
+    loaded
+  )
+}
+
+export function waveformLine(
+  pwidth: number,
+  pheight: number,
+  ctx: CanvasRenderingContext2D,
+  waveform: Float32Array,
+  color: string,
+  loaded: boolean
+) {
+  const halfHeight = pheight / 2
   ctx.lineWidth = 1
-  ctx.strokeStyle = color || context.color.contrast(-0.1).fg
+  ctx.strokeStyle = color
   ctx.beginPath()
   if (loaded) {
     let maxp = 0,
@@ -155,8 +160,9 @@ function drawWaveform(
     for (let i = 0; i < waveform.length / 2; i++) {
       maxp = waveform[i * 2]
       maxn = waveform[i * 2 + 1]
-      if (maxp) ctx.lineTo(i * bufferFrac, maxp * halfHeight + halfHeight)
-      if (maxn) ctx.lineTo(i * bufferFrac, maxn * halfHeight + halfHeight)
+      if (maxp) ctx.lineTo(i, maxp * halfHeight + halfHeight)
+      if (maxn) ctx.lineTo(i, maxn * halfHeight + halfHeight)
+      if (!maxp && !maxn) ctx.lineTo(i, halfHeight)
     }
   } else {
     ctx.lineTo(0, halfHeight)

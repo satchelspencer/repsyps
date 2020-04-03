@@ -68,6 +68,7 @@ export const defaultPlayback: Types.Playback = {
   defaultTiming: Types.Times = {
     time: 0,
     tracks: {},
+    recTime: 0,
   },
   defaultTrackSourceParams: Types.TrackSourceParams = { volume: 0, offset: 0 },
   defaultControlGroup: Types.ControlGroup = {
@@ -83,6 +84,10 @@ export const defaultPlayback: Types.Playback = {
   defaultSettings: Types.Settings = {
     trackScroll: true,
   },
+  defaultRecording: Types.Recording = {
+    enabled: false,
+    fromTrack: null
+  },
   defaultState: Types.State = {
     save: defaultSave,
     timing: defaultTiming,
@@ -90,6 +95,7 @@ export const defaultPlayback: Types.Playback = {
     live: defaultLive,
     sources: defaultSources,
     settings: defaultSettings,
+    recording: defaultRecording,
   }
 
 /* if a cue doesnt esist in the new sources, just set its volume in the old to 0. */
@@ -179,7 +185,7 @@ function updateSceneIndex(
             playback: {
               ...track.playback,
               playing: false,
-              muted: false
+              muted: false,
             },
             nextPlayback: null,
             nextCueIndex: -1,
@@ -212,6 +218,7 @@ const reducer = combineReducers({
           ...timing.tracks,
           ..._.mapValues(payload.timing.tracks, t => t.sample),
         },
+        recTime: payload.timing.recTime,
       }
     }),
     handle(Actions.updatePlaybackTime, (timing, { payload: time }) => {
@@ -743,10 +750,11 @@ const reducer = combineReducers({
             playback: {
               ...defaultTrackPlayback,
               sourceTracksParams: payload.sourceTracksParams,
+              aperiodic: payload.editing === undefined ? true : payload.editing,
             },
             nextPlayback: null,
             selected: false,
-            editing: true,
+            editing: payload.editing === undefined ? true : payload.editing,
             sourceTrackEditing: null,
             cues: [],
             cueIndex: -1,
@@ -1003,13 +1011,22 @@ const reducer = combineReducers({
       (_, { payload: localPersisted }) => localPersisted.settings
     ),
   ]),
+  recording: createReducer(defaultRecording, handle => [
+    handle(Actions.reset, () => defaultRecording),
+    handle(Actions.setRecording, (recording, { payload: newRecording }) => {
+      return {
+        ...recording,
+        ...newRecording,
+      }
+    }),
+  ]),
 })
 
 function makeSourceTracksRelative(source: Types.Source, path: string): Types.Source {
   return {
     ...source,
     sourceTracks: _.mapValues(source.sourceTracks, sourceTrack => {
-      if (pathUtils.isAbsolute(sourceTrack.source) && path)
+      if (sourceTrack.source && pathUtils.isAbsolute(sourceTrack.source) && path)
         return {
           ...sourceTrack,
           source: pathUtils.relative(path, sourceTrack.source),
@@ -1032,9 +1049,11 @@ const globalReducer = createReducer(defaultState, handle => [
           return {
             ...source,
             sourceTracks: _.mapValues(source.sourceTracks, sourceTrack => {
-              const absSource = pathUtils.isAbsolute(sourceTrack.source)
-                ? sourceTrack.source
-                : pathUtils.resolve(lastPath, sourceTrack.source)
+              const absSource =
+                sourceTrack.source &&
+                (pathUtils.isAbsolute(sourceTrack.source)
+                  ? sourceTrack.source
+                  : pathUtils.resolve(lastPath, sourceTrack.source))
               return {
                 ...sourceTrack,
                 source: nextPath ? pathUtils.relative(nextPath, absSource) : absSource,

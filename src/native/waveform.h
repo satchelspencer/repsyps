@@ -4,5 +4,6 @@ void minMaxWaveform(
   float* source,
   int sourceLen,
   float* dest, 
-  int destLen
+  int destLen,
+  bool add
 );

@@ -1,5 +1,5 @@
 import tracks from '../app/tracks/tracks'
-import { settings } from 'cluster';
+import { settings } from 'cluster'
 
 export interface Playback {
   volume: number
@@ -61,11 +61,13 @@ export interface TrackTiming extends NativeTrackChange {
 export interface TimingState {
   time: number
   tracks: { [trackId: string]: TrackTiming }
+  recTime: number
 }
 
 export interface Times {
   time: number
   tracks: { [trackId: string]: number }
+  recTime: number
 }
 
 export type Channels = Float32Array[] //array of arrays... 1 per channel
@@ -252,6 +254,11 @@ export interface Settings {
   trackScroll: boolean
 }
 
+export interface Recording {
+  enabled: boolean
+  fromTrack: string
+}
+
 export interface PersistentState {
   playback: Playback
   live: PersistentLive
@@ -270,4 +277,5 @@ export interface State {
   timing: Times
   save: SaveStatus
   settings: Settings
+  recording: Recording
 }

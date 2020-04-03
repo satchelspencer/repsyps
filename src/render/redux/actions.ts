@@ -29,6 +29,7 @@ export const updateTime = createAction<{
 export const addTrack = createAction<{
   trackId: string
   sourceTracksParams: Types.TrackSourcesParams
+  editing?: boolean
 }>('ADD_TRACK')
 
 export const rmTrack = createAction<string>('REMOVE_TRACK')
@@ -296,3 +297,5 @@ export function addTrackAndSource(path: string) {
 export const setSaveStatus = createAction<Types.SaveStatus>('SET_SAVESTATUS')
 
 export const setSettings = createAction<Partial<Types.Settings>>('SET_SETTINGS')
+
+export const setRecording = createAction<Partial<Types.Recording>>('SET_RECORDING')

@@ -3,6 +3,7 @@ import _ from 'lodash'
 
 import * as Types from './types'
 import { isDev } from 'render/util/env'
+import record from '../app/tracks/record'
 
 interface AudioAPI {
   init(root: string): void
@@ -18,6 +19,8 @@ interface AudioAPI {
   getImpulses(sourceId: string): number[]
   loadSource(path: string, sourceId: string): Promise<string[]>
   exportSource(path: string, sourceId: string): boolean
+  startRecording(fromSourceId: string)
+  stopRecording(destSourceId: string): number[]
 }
 
 export default (eval('require')(

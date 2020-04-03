@@ -32,6 +32,8 @@ Napi::Value init(const Napi::CallbackInfo &info){
   }
   state.buffer = newBuffer;
 
+  state.recording = NULL;
+
   Napi::Env env = info.Env();
   return Napi::Number::New(env, 666);
 }
@@ -249,6 +251,18 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
   Napi::Object timings = Napi::Object::New(env);
   Napi::Object tracktimings = Napi::Object::New(env);
+
+  if(
+    state.recording != NULL 
+    && state.recording->chunkIndex == state.recording->chunks.size()-1
+  ){
+    recordChunk* currentChunk = state.recording->chunks[state.recording->chunkIndex];
+    if(currentChunk->used > currentChunk->size * REC_REALLOC_THRESH){ 
+      allocateChunk(state.recording);
+    }
+  }
+  timings.Set("recTime", state.recording ? state.recording->length : 0);
+
   for(auto mixTrackPair: state.mixTracks){
     if(mixTrackPair.second == NULL) continue;
     Napi::Object mixTrackState = Napi::Object::New(env);
@@ -297,19 +311,36 @@ void separateSource(const Napi::CallbackInfo &info){
 }
 
 void getWaveform(const Napi::CallbackInfo &info){
-  if(REPSYS_LOG) std::cout << "waveform" << std::endl;
+  //if(REPSYS_LOG) std::cout << "waveform" << std::endl;
   std::string sourceId = info[0].As<Napi::String>().Utf8Value();
   int start = info[1].As<Napi::Number>().Int32Value();
   float scale = info[2].As<Napi::Number>().FloatValue();
   Napi::TypedArray buff = info[3].As<Napi::TypedArray>();
 
-  if(state.sources.find(sourceId) != state.sources.end() && state.sources[sourceId] != NULL){
-    float* dest = reinterpret_cast<float*>(buff.ArrayBuffer().Data());
-    int destLen = buff.ByteLength() / sizeof(float); 
+  float* dest = reinterpret_cast<float*>(buff.ArrayBuffer().Data());
+  int destLen = buff.ByteLength() / sizeof(float); 
+  int windowLen = (destLen / 2) * scale;
+  int startOffset;
+
+  if(sourceId == "_recording" && state.recording != NULL){
+    recordChunk* currentChunk = state.recording->chunks[state.recording->chunkIndex];
+    float* source = currentChunk->channels[0];
+    int sourceLen = currentChunk->used;
+    startOffset = REC_CHUNK_SAMPLES * state.recording->chunkIndex;
+    minMaxWaveform(scale, start - startOffset, source, sourceLen, dest, destLen, false);
+    int prevLength = windowLen - sourceLen; //samples width of window
+    if(
+      state.recording->chunkIndex > 0 
+      && prevLength > 0
+    ){
+      recordChunk* prevChunk = state.recording->chunks[state.recording->chunkIndex - 1];
+      startOffset = REC_CHUNK_SAMPLES * (state.recording->chunkIndex - 1);
+      minMaxWaveform(scale, start - startOffset,  prevChunk->channels[0], prevChunk->used, dest, destLen, true);
+    }
+  }else if(state.sources.find(sourceId) != state.sources.end() && state.sources[sourceId] != NULL){
     float* source = state.sources[sourceId]->channels[0];
     int sourceLen = state.sources[sourceId]->length;
-
-    minMaxWaveform(scale, start, source, sourceLen, dest, destLen);
+    minMaxWaveform(scale, start, source, sourceLen, dest, destLen, false);
   }
 }
 
@@ -404,6 +435,93 @@ Napi::Value exportSource(const Napi::CallbackInfo &info){
   return Napi::Boolean::New(env, result);
 }
 
+void startRecording(const Napi::CallbackInfo &info){
+  if(state.recording == NULL){
+    if(REPSYS_LOG) std::cout << "start recording" << std::endl;
+    recording* newRecording = new recording{};
+
+    newRecording->fromSource = info[0].ToBoolean().Value();
+    if( newRecording->fromSource){
+      newRecording->fromSourceId = info[0].As<Napi::String>().Utf8Value();
+      newRecording->fromSourceOffset = state.mixTracks[newRecording->fromSourceId]->sample;
+    }else{
+      newRecording->fromSourceOffset = 0;
+    }
+    newRecording->started = false;
+    newRecording->chunkIndex = 0;
+    newRecording->length = 0;
+    allocateChunk(newRecording);
+    state.recording = newRecording;
+  }
+}
+
+Napi::Value stopRecording(const Napi::CallbackInfo &info){
+  Napi::Env env = info.Env();
+  std::string sourceId = info[0].As<Napi::String>().Utf8Value();
+  Napi::Array bounds = Napi::Array::New(env);
+
+  if(state.recording != NULL){
+    recording* rec = state.recording;
+     state.recording = NULL;
+    //std::cout << "stoprec" << std::endl;
+    //std::cout << (rec->length / 44100) << std::endl;
+    //std::cout << rec->chunks.size() << std::endl;
+
+    unsigned int offset = rec->fromSourceOffset;
+    int recLength = offset + rec->length;
+    source * fromSource = NULL;
+    if(rec->fromSource) fromSource = state.sources[rec->fromSourceId];
+    
+
+    source * newSource = new source{};
+    newSource->length = recLength;
+    newSource->removed = false;
+    newSource->data = NULL;
+    unsigned int chunkIndex;
+    unsigned int sampleIndex;
+    int chunkSampleIndex;
+    recordChunk* chunk;
+    float sampleValue;
+    for(unsigned int channelIndex=0;channelIndex<2;channelIndex++){
+      //std::cout << "CI " << channelIndex << std::endl;
+      //std::cout << "offst " << offset << "  " << fromSource <<  std::endl;
+      float* channel = new float[recLength];
+      if(rec->fromSource){
+        for(sampleIndex=0;sampleIndex<offset;sampleIndex++){
+          channel[sampleIndex] = fromSource->channels[channelIndex][sampleIndex];
+        }
+      }
+      sampleIndex = offset;
+      for(chunkIndex=0;chunkIndex<rec->chunks.size();chunkIndex++){
+        chunk = rec->chunks[chunkIndex];
+        //std::cout << "chunk " << chunkIndex << " " << chunk->used << " " << chunk->size << std::endl;
+        for(chunkSampleIndex=0;chunkSampleIndex<chunk->used;chunkSampleIndex++){
+          sampleValue = chunk->channels[channelIndex][chunkSampleIndex];
+          if(sampleValue > 1) sampleValue = 1;
+          if(sampleValue < -1) sampleValue = -1;
+          channel[sampleIndex] = sampleValue;
+          sampleIndex++;
+        }
+        delete [] chunk->channels[channelIndex];
+      }
+      newSource->channels.push_back(channel);
+    }
+    //std::cout << "huh" << std::endl;
+    state.sources[sourceId] = newSource;
+    int boundIndex = 0;
+    int chunkBoundIndex;
+    for(chunkIndex=0;chunkIndex<rec->chunks.size();chunkIndex++){
+      chunk = rec->chunks[chunkIndex];
+      //std::cout << chunkIndex << " " << chunk->boundsCount << std::endl;
+      for(chunkBoundIndex=0;chunkBoundIndex<chunk->boundsCount;chunkBoundIndex++){
+        bounds.Set(boundIndex, chunk->bounds[chunkBoundIndex] + offset);
+        boundIndex++;
+      }
+    }
+  }
+  return bounds;
+}
+
 void InitAudio(Napi::Env env, Napi::Object exports){  
   exports.Set("init", Napi::Function::New(env, init));
   exports.Set("start", Napi::Function::New(env, start));
@@ -418,4 +536,6 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("getImpulses", Napi::Function::New(env, getImpulses));
   exports.Set("loadSource", Napi::Function::New(env, loadSource));
   exports.Set("exportSource", Napi::Function::New(env, exportSource));
+  exports.Set("startRecording", Napi::Function::New(env, startRecording));
+  exports.Set("stopRecording", Napi::Function::New(env, stopRecording));
 }

@@ -71,6 +71,25 @@ export default function init(store: Store<Types.State>) {
             },
             { type: 'separator' },
             {
+              label: 'New Recording',
+              accelerator: 'CmdOrCtrl+Shift+R',
+              click: () => {
+                store.dispatch(Actions.setRecording({ enabled: true, fromTrack: null }))
+              },
+            },
+            {
+              label: 'New Recording From Track',
+              click: () => {
+                store.dispatch(
+                  Actions.setRecording({
+                    enabled: true,
+                    fromTrack: Selectors.getSelectedTrackId(store.getState()),
+                  })
+                )
+              },
+            },
+            { type: 'separator' },
+            {
               label: 'Open Bindings',
               click: () => {
                 const path = dialog.showOpenDialog({

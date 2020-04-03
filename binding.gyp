@@ -11,7 +11,8 @@
         "src/native/load.cc",
         "src/native/export.cc",
         "src/native/impdet.cc",
-        "src/native/waveform.cc"
+        "src/native/waveform.cc",
+        "src/native/recording.cc"
       ],
       "include_dirs": [
         "src/native",

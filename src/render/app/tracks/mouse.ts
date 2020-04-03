@@ -282,10 +282,13 @@ export function usePlaybackBound(trackId: string) {
         bounds: number[],
         selected: boolean
       ) {
-        if (ctxt.aperiodic || !bounds.length || (!selected && ctxt.clickX === pos.x)) return false
-        const startBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
+        if (ctxt.aperiodic || !bounds.length || (!selected && ctxt.clickX === pos.x))
+          return false
+        let startBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
           endBoundIndex = getNextBoundIndex(pos.x, view, bounds)
 
+        if (startBoundIndex < 1) startBoundIndex = 1
+        if (endBoundIndex === -1) endBoundIndex = bounds.length - 1
         if (startBoundIndex && endBoundIndex) {
           const chunkCount = Math.abs(endBoundIndex - startBoundIndex) + 1,
             initIndex = Math.min(startBoundIndex, endBoundIndex),

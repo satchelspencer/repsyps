@@ -3,6 +3,7 @@
 #include <liquid.h>
 #include <unordered_map> 
 #include <vector>
+#include <iostream>
 
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H
@@ -61,12 +62,31 @@ typedef struct{
 } ringbuffer;
 
 typedef struct{
+  std::vector<float*>  channels;
+  int size;
+  int used;
+  int* bounds;
+  int boundsCount;
+} recordChunk;
+
+typedef struct{
+  bool started;
+  bool fromSource;
+  std::string fromSourceId;
+  unsigned int fromSourceOffset;
+  std::vector<recordChunk*> chunks;
+  unsigned int chunkIndex;
+  int length;
+} recording;
+
+typedef struct{
   ringbuffer *buffer;
   float *window;
   unsigned int windowSize;
   playback *playback;
   std::unordered_map<std::string, mixTrack*> mixTracks;
   std::unordered_map<std::string, source*> sources;
+  recording* recording;
 } streamState;
 
 #endif
