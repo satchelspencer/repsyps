@@ -187,6 +187,7 @@ int paCallbackMethod(
             applyNextPlayback(mixTrack);
             didAdvancePlayback = false;
           }
+          /* start a synced trak from source on the boundary */
           if(
             rec != NULL 
             && (didPassBound || mixTrackPlayback->aperiodic)

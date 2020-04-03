@@ -3,7 +3,6 @@ import _ from 'lodash'
 
 import * as Types from './types'
 import { isDev } from 'render/util/env'
-import record from '../app/tracks/record'
 
 interface AudioAPI {
   init(root: string): void

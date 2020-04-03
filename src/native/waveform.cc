@@ -8,7 +8,8 @@ void minMaxWaveform(
   int sourceLen,
   float* dest, 
   int destLen,
-  bool add
+  bool add,
+  float vscale
 ){  
   int width = destLen / 2; 
   int skip = (scale / 512) + 1;
@@ -26,7 +27,7 @@ void minMaxWaveform(
     max = 0;
     for(sample=fstart;sample<fend;sample+=skip){
       if(sample > 0 && sample < sourceLen){
-        sampleVal = source[sample] * 0.75;
+        sampleVal = source[sample] * vscale;
         if(sampleVal > 0 && sampleVal > max) max = sampleVal;
         if(sampleVal < 0 && sampleVal < min) min = sampleVal;
       }

@@ -318,29 +318,28 @@ void getWaveform(const Napi::CallbackInfo &info){
   Napi::TypedArray buff = info[3].As<Napi::TypedArray>();
 
   float* dest = reinterpret_cast<float*>(buff.ArrayBuffer().Data());
-  int destLen = buff.ByteLength() / sizeof(float); 
-  int windowLen = (destLen / 2) * scale;
+  int destLen = buff.ByteLength() / sizeof(float); //length of buffer (2x samples)
+  int samplesWidth = (destLen / 2) * scale; 
   int startOffset;
 
-  if(sourceId == "_recording" && state.recording != NULL){
-    recordChunk* currentChunk = state.recording->chunks[state.recording->chunkIndex];
-    float* source = currentChunk->channels[0];
-    int sourceLen = currentChunk->used;
+  if(sourceId == "_recording" && state.recording != NULL){ //recording monitor
+    recordChunk* chunk = state.recording->chunks[state.recording->chunkIndex];
+    float* source = chunk->channels[0];
+    int sourceLen = chunk->used;
     startOffset = REC_CHUNK_SAMPLES * state.recording->chunkIndex;
-    minMaxWaveform(scale, start - startOffset, source, sourceLen, dest, destLen, false);
-    int prevLength = windowLen - sourceLen; //samples width of window
-    if(
-      state.recording->chunkIndex > 0 
-      && prevLength > 0
-    ){
-      recordChunk* prevChunk = state.recording->chunks[state.recording->chunkIndex - 1];
-      startOffset = REC_CHUNK_SAMPLES * (state.recording->chunkIndex - 1);
-      minMaxWaveform(scale, start - startOffset,  prevChunk->channels[0], prevChunk->used, dest, destLen, true);
+    minMaxWaveform(scale, start - startOffset, source, sourceLen, dest, destLen, false, 1);
+    
+    /* draw previous chunk if needed */
+    int prevLength = samplesWidth - sourceLen; //length of prev chunk visible
+    if(state.recording->chunkIndex > 0 && prevLength > 0){
+      chunk = state.recording->chunks[state.recording->chunkIndex - 1];
+      startOffset -= REC_CHUNK_SAMPLES; //once chunk back
+      minMaxWaveform(scale, start-startOffset,  chunk->channels[0], chunk->used, dest, destLen, true, 1);
     }
   }else if(state.sources.find(sourceId) != state.sources.end() && state.sources[sourceId] != NULL){
     float* source = state.sources[sourceId]->channels[0];
     int sourceLen = state.sources[sourceId]->length;
-    minMaxWaveform(scale, start, source, sourceLen, dest, destLen, false);
+    minMaxWaveform(scale, start, source, sourceLen, dest, destLen, false, 0.75);
   }
 }
 
@@ -437,17 +436,16 @@ Napi::Value exportSource(const Napi::CallbackInfo &info){
 
 void startRecording(const Napi::CallbackInfo &info){
   if(state.recording == NULL){
-    if(REPSYS_LOG) std::cout << "start recording" << std::endl;
     recording* newRecording = new recording{};
-
     newRecording->fromSource = info[0].ToBoolean().Value();
-    if( newRecording->fromSource){
+     if(REPSYS_LOG) std::cout << "rec fsource: " << newRecording->fromSource << std::endl;
+    
+    if(newRecording->fromSource){
       newRecording->fromSourceId = info[0].As<Napi::String>().Utf8Value();
       newRecording->fromSourceOffset = state.mixTracks[newRecording->fromSourceId]->sample;
-    }else{
-      newRecording->fromSourceOffset = 0;
-    }
-    newRecording->started = false;
+    }else newRecording->fromSourceOffset = 0;
+
+    newRecording->started = !newRecording->fromSource;
     newRecording->chunkIndex = 0;
     newRecording->length = 0;
     allocateChunk(newRecording);
@@ -461,40 +459,39 @@ Napi::Value stopRecording(const Napi::CallbackInfo &info){
   Napi::Array bounds = Napi::Array::New(env);
 
   if(state.recording != NULL){
-    recording* rec = state.recording;
-     state.recording = NULL;
-    //std::cout << "stoprec" << std::endl;
-    //std::cout << (rec->length / 44100) << std::endl;
-    //std::cout << rec->chunks.size() << std::endl;
+    if(REPSYS_LOG) std::cout << "stop rec" << std::endl;
+    recording* rec = state.recording; // save reference to recording
+     state.recording = NULL; // immediately set to null so the callback won't record to it anymore
 
     unsigned int offset = rec->fromSourceOffset;
-    int recLength = offset + rec->length;
+    int recLength = offset + rec->length; //offset includes appended track
     source * fromSource = NULL;
     if(rec->fromSource) fromSource = state.sources[rec->fromSourceId];
     
-
+    /* create new source to put recording into */
     source * newSource = new source{};
     newSource->length = recLength;
     newSource->removed = false;
     newSource->data = NULL;
+
     unsigned int chunkIndex;
     unsigned int sampleIndex;
     int chunkSampleIndex;
     recordChunk* chunk;
     float sampleValue;
+
+    /* copy from the individual chunks into contiguous channels */
     for(unsigned int channelIndex=0;channelIndex<2;channelIndex++){
-      //std::cout << "CI " << channelIndex << std::endl;
-      //std::cout << "offst " << offset << "  " << fromSource <<  std::endl;
       float* channel = new float[recLength];
-      if(rec->fromSource){
-        for(sampleIndex=0;sampleIndex<offset;sampleIndex++){
+
+      if(rec->fromSource){ //copy from starting source
+        for(sampleIndex=0;sampleIndex<offset;sampleIndex++)
           channel[sampleIndex] = fromSource->channels[channelIndex][sampleIndex];
-        }
       }
+
       sampleIndex = offset;
       for(chunkIndex=0;chunkIndex<rec->chunks.size();chunkIndex++){
         chunk = rec->chunks[chunkIndex];
-        //std::cout << "chunk " << chunkIndex << " " << chunk->used << " " << chunk->size << std::endl;
         for(chunkSampleIndex=0;chunkSampleIndex<chunk->used;chunkSampleIndex++){
           sampleValue = chunk->channels[channelIndex][chunkSampleIndex];
           if(sampleValue > 1) sampleValue = 1;
@@ -506,18 +503,20 @@ Napi::Value stopRecording(const Napi::CallbackInfo &info){
       }
       newSource->channels.push_back(channel);
     }
-    //std::cout << "huh" << std::endl;
     state.sources[sourceId] = newSource;
+    
+    /* copy bounds */
     int boundIndex = 0;
     int chunkBoundIndex;
     for(chunkIndex=0;chunkIndex<rec->chunks.size();chunkIndex++){
       chunk = rec->chunks[chunkIndex];
-      //std::cout << chunkIndex << " " << chunk->boundsCount << std::endl;
       for(chunkBoundIndex=0;chunkBoundIndex<chunk->boundsCount;chunkBoundIndex++){
         bounds.Set(boundIndex, chunk->bounds[chunkBoundIndex] + offset);
         boundIndex++;
       }
+      delete chunk;
     }
+    delete rec;
   }
   return bounds;
 }

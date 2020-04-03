@@ -1,6 +1,3 @@
-import tracks from '../app/tracks/tracks'
-import { settings } from 'cluster'
-
 export interface Playback {
   volume: number
   playing: boolean

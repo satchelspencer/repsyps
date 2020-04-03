@@ -8,9 +8,7 @@ void allocateChunk(recording* recording){
   }
   newChunk->size = REC_CHUNK_SAMPLES;
   newChunk->used = 0;
-
   newChunk->bounds = new int[REC_CHUNK_BOUNDS];
   newChunk->boundsCount = 0;
-
   recording->chunks.push_back(newChunk);
 }

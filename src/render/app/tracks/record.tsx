@@ -1,9 +1,10 @@
 import electron from 'electron'
-import React, { useRef, useMemo, useState, useEffect, memo } from 'react'
+import React, { useRef, useMemo, useState, useEffect, memo, useCallback } from 'react'
 import * as _ from 'lodash'
-import ctyled, { active } from 'ctyled'
+import ctyled from 'ctyled'
 import pad from 'pad'
 import pathUtils from 'path'
+import { batchActions } from 'redux-batched-actions'
 
 import { useSelector, useDispatch, useStore } from 'render/redux/react'
 import { getPath } from 'render/loading/app-paths'
@@ -12,13 +13,10 @@ import audio, { RATE } from 'render/util/audio'
 import uid from 'render/util/uid'
 import { waveformLine } from 'render/app/tracks/canvas'
 import * as Actions from 'render/redux/actions'
-import * as Selectors from 'render/redux/selectors'
 
 import Icon from 'render/components/icon'
-import Button from 'render/components/button'
-import { palette } from 'src/render/components/theme'
 
-const { Menu, dialog, BrowserWindow } = electron.remote
+const { dialog } = electron.remote
 
 const RecordingWrapper = ctyled.div.attrs({ visible: false }).styles({
   height: 3,
@@ -62,17 +60,26 @@ const RecCanvas = ctyled.canvas.extend`
   height:100%;
 `
 
-const UPDATE_THRESH = 44100 / 5
+const UPDATE_THRESH = 44100 / 20
 
 function Recording() {
   const recLength = useSelector(
-      state => Math.floor(state.timing.recTime * UPDATE_THRESH) / UPDATE_THRESH
+      state => state.timing.recTime,
+      (a, b) => Math.abs(a - b) < UPDATE_THRESH
+    ),
+    time = useSelector(
+      state => state.timing.time,
+      (a, b) => Math.abs(a - b) < 0.01
     ),
     { enabled, fromTrack } = useSelector(state => state.recording),
-    selectedTrackId = useSelector(Selectors.getSelectedTrackId),
+    period = useSelector(state => state.playback.period),
     dispatch = useDispatch(),
     store = useStore(),
-    lenSeconds = recLength / RATE,
+    [started, setStarted] = useState(false),
+    preRecord = fromTrack && started && !recLength,
+    lenSeconds = preRecord
+      ? ((1 - (time - Math.floor(time))) * period) / RATE
+      : recLength / RATE,
     lenMinutes = lenSeconds / 60
 
   const container = useRef(null),
@@ -108,84 +115,100 @@ function Recording() {
     if (pos.width) audio.getWaveform('_recording', start, scale, drawBuffer)
 
     ctxt.current.clearRect(0, 0, pwidth, pheight)
-    if (recLength) waveformLine(pwidth, pheight, ctxt.current, drawBuffer, 'red', true)
+    if (recLength) waveformLine(pwidth, pheight, ctxt.current, drawBuffer, 'rgba(255,0,0,0.7)', true)
   }, [drawBuffer, recLength, pos.width])
+
+  const handleClick = useCallback(async () => {
+      if (recLength) {
+        const state = store.getState(),
+          fromSource = fromTrack ? state.sources[fromTrack] : null,
+          fromSourceBounds = fromSource ? fromSource.bounds : [],
+          isLoaded = fromSource && fromSource.sourceTracks[fromTrack].loaded
+
+        if (fromSource && !isLoaded) {
+          const absPath = pathUtils.resolve(
+            state.save.path || '',
+            fromSource.sourceTracks[fromTrack].source
+          )
+          await audio.loadSource(absPath, fromTrack)
+        }
+
+        dispatch(
+          Actions.setRecording({
+            enabled: false,
+          })
+        )
+        const sourceId = uid(),
+          bounds = audio.stopRecording(sourceId),
+          firstBound = bounds[0],
+          prefixBounds = firstBound
+            ? fromSourceBounds.filter(b => firstBound - b > 44100)
+            : [],
+          path = dialog.showSaveDialog({
+            title: 'Save Recording',
+            defaultPath: getPath('recordings/untitled'),
+          })
+        if (path) {
+          const outPath = path + '.m4a',
+            srcName = pathUtils.basename(path)
+          audio.exportSource(outPath, sourceId)
+          dispatch(
+            batchActions(
+              [
+                Actions.createSource({
+                  sourceId,
+                  source: {
+                    name: srcName,
+                    bounds: [...prefixBounds, ...bounds],
+                    sourceTracks: {
+                      [sourceId]: {
+                        name: srcName,
+                        source: outPath,
+                        loaded: true,
+                        missing: false,
+                        streamIndex: 0,
+                      },
+                    },
+                  },
+                }),
+                Actions.addTrack({
+                  trackId: sourceId,
+                  sourceTracksParams: {
+                    [sourceId]: {
+                      volume: 1,
+                      offset: 0,
+                    },
+                  },
+                  editing: false,
+                }),
+              ],
+              'ADD_RECORDED_SOURCE'
+            )
+          )
+        } else {
+          audio.removeSource(sourceId)
+        }
+        setStarted(false)
+      } else {
+        setStarted(true)
+        audio.startRecording(fromTrack)
+      }
+    }, [!recLength, fromTrack]),
+    handleCancel = useCallback(() => {
+      dispatch(Actions.setRecording({ enabled: false }))
+      if (started) {
+        audio.stopRecording('nope')
+        audio.removeSource('nope')
+        setStarted(false)
+      }
+    }, [started])
 
   return (
     <RecordingWrapper visible={enabled}>
       <RecordingControls>
         <Icon
-          onClick={async () => {
-            if (recLength) {
-              const state = store.getState(),
-                fromSource = fromTrack ? state.sources[fromTrack] : null,
-                fromSourceBounds = fromSource ? fromSource.bounds : [],
-                isLoaded = fromSource && fromSource.sourceTracks[fromTrack].loaded
-
-              if (fromSource && !isLoaded) {
-                const absPath = pathUtils.resolve(
-                  state.save.path || '',
-                  fromSource.sourceTracks[fromTrack].source
-                )
-                await audio.loadSource(absPath, fromTrack)
-              }
-
-              dispatch(
-                Actions.setRecording({
-                  enabled: false,
-                })
-              )
-              const sourceId = uid(),
-                bounds = audio.stopRecording(sourceId),
-                firstBound = bounds[0],
-                prefixBounds = firstBound
-                  ? fromSourceBounds.filter(b => firstBound - b > 44100)
-                  : [],
-                path = dialog.showSaveDialog({
-                  title: 'Save Recording',
-                  defaultPath: getPath('recordings/untitled'),
-                })
-              if (path) {
-                const outPath = path + '.m4a',
-                  srcName = pathUtils.basename(path)
-                audio.exportSource(outPath, sourceId)
-                dispatch(
-                  Actions.createSource({
-                    sourceId,
-                    source: {
-                      name: srcName,
-                      bounds: [...prefixBounds, ...bounds],
-                      sourceTracks: {
-                        [sourceId]: {
-                          name: srcName,
-                          source: outPath,
-                          loaded: true,
-                          missing: false,
-                          streamIndex: 0,
-                        },
-                      },
-                    },
-                  })
-                )
-                dispatch(
-                  Actions.addTrack({
-                    trackId: sourceId,
-                    sourceTracksParams: {
-                      [sourceId]: {
-                        volume: 1,
-                        offset: 0,
-                      },
-                    },
-                    editing: false,
-                  })
-                )
-              } else {
-                audio.removeSource(sourceId)
-              }
-            } else {
-              audio.startRecording(fromTrack)
-            }
-          }}
+          onClick={handleClick}
+          asButton
           name="record"
           styles={{
             color: c => c.as(['rgba(255,0,0,0.6)', 'rgba(255,0,0,0.6)']),
@@ -193,6 +216,7 @@ function Recording() {
           }}
         />
         <TimeCode>
+          {preRecord ? '-' : '+'}
           {pad(2, Math.floor(lenMinutes) + '', '0')}:
           {pad(2, Math.floor(lenSeconds % 60) + '', '0')}.
           {pad(2, ((lenSeconds % 1) + '').substr(2, 2), '0')}
@@ -204,12 +228,7 @@ function Recording() {
       <RecordingControls>
         <Icon
           asButton
-          disabled={recLength > 0}
-          onClick={() => {
-            dispatch(Actions.setRecording({ enabled: false }))
-            // audio.stopRecording('nope')
-            // audio.removeSource('nope')
-          }}
+          onClick={handleCancel}
           name="close-thin"
           styles={{
             size: s => s * 1.4,
