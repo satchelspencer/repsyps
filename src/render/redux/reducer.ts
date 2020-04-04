@@ -86,7 +86,7 @@ export const defaultPlayback: Types.Playback = {
   },
   defaultRecording: Types.Recording = {
     enabled: false,
-    fromTrack: null
+    fromTrack: null,
   },
   defaultState: Types.State = {
     save: defaultSave,
@@ -173,7 +173,8 @@ function updateSceneIndex(
   else {
     const prevActive = Selectors.getActiveTrackIdsFromLive(live, live.sceneIndex),
       nextActive = Selectors.getActiveTrackIdsFromLive(live, sceneIndex),
-      noLongerActive = _.difference(prevActive, nextActive)
+      noLongerActive = _.difference(prevActive, nextActive),
+      controls = live.scenes[sceneIndex].controls
 
     return {
       ...live,
@@ -192,15 +193,20 @@ function updateSceneIndex(
             cueIndex: -1,
           }
       }),
-      initValues: _.mapValues(live.controlValues, (value, pos) => {
-        const binding = live.bindings[pos]
-        if (binding && !binding.twoway) return value
+      initValues: _.mapValues(controls, (control, pos) => {
+        const binding = live.bindings[pos],
+          value = live.controlValues[pos]
+        if (binding && !binding.twoway && value !== undefined) return value
         else return 1
       }),
-      controlValues: _.mapValues(live.controlValues, (value, pos) => {
+      controlValues: _.mapValues(controls, (control, pos) => {
         const binding = live.bindings[pos],
-          control = live.scenes[sceneIndex].controls[pos]
-        if (control && !control.absolute && (!binding || binding.twoway)) return 1
+          value = live.controlValues[pos]
+        if (
+          (control && !control.absolute && (!binding || binding.twoway)) ||
+          value === undefined
+        )
+          return 1
         else return value
       }),
       sceneIndex,
@@ -300,21 +306,29 @@ const reducer = combineReducers({
       const pLive = payload.state.live,
         firstScene = payload.state.live.scenes[0],
         firstTrackId = firstScene && firstScene.trackIds[0]
-      return {
-        ...live,
-        ...pLive,
-        tracks: _.mapValues(pLive.tracks, (ptrack, trackId) => {
-          return {
-            ...defaultTrack,
-            ...ptrack,
-            playback: {
-              ...defaultTrackPlayback,
-              ...ptrack.playback,
-            },
-            selected: trackId === firstTrackId,
-          }
-        }),
-      }
+      return updateSceneIndex(
+        {
+          ...live,
+          ...pLive,
+          bindings: {
+            ...live.bindings,
+            ...pLive.bindings,
+          },
+          tracks: _.mapValues(pLive.tracks, (ptrack, trackId) => {
+            return {
+              ...defaultTrack,
+              ...ptrack,
+              playback: {
+                ...defaultTrackPlayback,
+                ...ptrack.playback,
+              },
+              selected: trackId === firstTrackId,
+            }
+          }),
+        },
+        live.sceneIndex,
+        true
+      )
     }),
     handle(Actions.setTrackMuted, (live, { payload }) => {
       return {
@@ -393,6 +407,10 @@ const reducer = combineReducers({
       const posStr = Selectors.pos2str(payload.position)
       return {
         ...live,
+        controlValues: {
+          ...live.controlValues,
+          [posStr]: payload.controlGroup.absolute ? live.controlValues[posStr] : 1,
+        },
         scenes: live.scenes.map((scene, sceneIndex) => {
           if (sceneIndex !== live.sceneIndex) return scene
           else {

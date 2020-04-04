@@ -22,16 +22,17 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
   getChannel = (byte: number) => byte & midiChannelMask,
   nav: any = navigator, //any so as to allow web midi api
   outputs: { [portId: string]: any } = {}, //web midi output (no type defs)
-  sentMidiValues: { [controlId: string]: number } = {}
+  //sentMidiValues: { [controlId: string]: number } = {}
+  sentMidiValues: { [portName: string]: { [controlId: string]: number } } = {}
 
 export default async function init(store: Store<Types.State>) {
-  const handleMessage = ({ data }) => {
+  const handleMessage = ({ data }, portName) => {
       const state = store.getState(),
         controls = Selectors.getControls(state.live),
         [fnbyte, note, value] = data,
         fn = getFunction(fnbyte),
         channel = getChannel(fnbyte),
-        normValue = value / 127
+        normValue = instantFunctions.includes(fn) ? 1 - value / 127 : value / 127
 
       if (!state.live.controlsEnabled) return
 
@@ -71,7 +72,7 @@ export default async function init(store: Store<Types.State>) {
         ) {
           const control = controls[posStr],
             lastValue = state.live.controlValues[posStr] || 0
-          sentMidiValues[posStr] = normValue
+          sentMidiValues[portName][posStr] = normValue
           if (control) {
             store.dispatch(
               Actions.applyControlGroup(position, control, lastValue, normValue)
@@ -85,28 +86,32 @@ export default async function init(store: Store<Types.State>) {
       console.log('connect', port.name)
       port.onmidimessage = mes => {
         const fn = getFunction(mes.data[0])
-        if (instantFunctions.includes(fn)) handleMessage(mes)
-        else throttledHandle(mes)
+        if (instantFunctions.includes(fn)) handleMessage(mes, port.name)
+        else throttledHandle(mes, port.name)
       }
     },
     removeInput = port => {
       console.log('disconnect', port.name)
     },
     addOutput = port => {
-      outputs[port.id] = port
+      sentMidiValues[port.name] = sentMidiValues[port.name] || {}
+      outputs[port.name] = port
       port.send([255])
+      handleStoreUpdate()
     },
     removeOutput = port => {
-      delete outputs[port.id]
+      delete outputs[port.name]
+      delete sentMidiValues[port.name]
     }
 
   nav.requestMIDIAccess().then(midiAccess => {
     midiAccess.onstatechange = e => {
       if (e.port.type === 'input') {
-        if (e.port.state === 'connected') addInput(e.port)
+        if (e.port.state === 'connected' && e.port.connection === 'open') addInput(e.port)
         else if (e.port.state === 'disconnected') removeInput(e.port)
       } else if (e.port.type === 'output') {
-        if (e.port.state === 'connected') addOutput(e.port)
+        if (e.port.state === 'connected' && e.port.connection === 'open')
+          addOutput(e.port)
         else if (e.port.state === 'disconnected') removeOutput(e.port)
       }
     }
@@ -119,47 +124,49 @@ export default async function init(store: Store<Types.State>) {
   } = {}
   let lastControlIds = []
 
-  store.subscribe(
-    _.throttle(
-      () => {
-        const state = store.getState(),
-          currentControls = Selectors.getControls(state.live),
-          currentControlIds = _.keys(currentControls),
-          addedControlsIds = _.difference(currentControlIds, lastControlIds),
-          removedControlsIds = _.difference(lastControlIds, currentControlIds)
+  const handleStoreUpdate = _.throttle(
+    () => {
+      const state = store.getState(),
+        currentControls = Selectors.getControls(state.live),
+        currentControlIds = _.keys(currentControls),
+        addedControlsIds = _.difference(currentControlIds, lastControlIds),
+        removedControlsIds = _.difference(lastControlIds, currentControlIds)
 
-        addedControlsIds.forEach(controlId => {
-          absValueSelectors[controlId] = Selectors.makeGetControlAbsValue()
-        })
-        removedControlsIds.forEach(controlId => {
-          delete absValueSelectors[controlId]
-        })
+      addedControlsIds.forEach(controlId => {
+        absValueSelectors[controlId] = Selectors.makeGetControlAbsValue()
+      })
+      removedControlsIds.forEach(controlId => {
+        delete absValueSelectors[controlId]
+      })
 
-        for (let controlId in absValueSelectors) {
-          const control = currentControls[controlId],
-            binding = state.live.bindings[controlId]
-          if (binding && binding.twoway && binding.note) {
-            const absValue =
-              control && control.absolute
-                ? absValueSelectors[controlId](state, control.controls[0])
-                : state.live.controlValues[controlId]
+      for (let controlId in currentControls) {
+        const control = currentControls[controlId],
+          binding = state.live.bindings[controlId]
+        if (binding && binding.twoway && binding.note) {
+          const absValue =
+            control && control.absolute
+              ? absValueSelectors[controlId](state, control.controls[0])
+              : state.live.controlValues[controlId]
 
-            if (absValue !== null && absValue !== sentMidiValues[controlId]) {
-              for (let outputId in outputs) {
+          if (absValue !== null) {
+            for (let outputId in outputs) {
+              if (absValue !== sentMidiValues[outputId][controlId]) {
                 outputs[outputId].send([
                   176 + binding.channel,
                   binding.note,
                   Math.floor(absValue * 127),
                 ])
               }
-              sentMidiValues[controlId] = absValue
             }
+            sentMidiValues[controlId] = absValue
           }
         }
-        lastControlIds = currentControlIds
-      },
-      100,
-      { leading: false, trailing: true }
-    )
+      }
+      lastControlIds = currentControlIds
+    },
+    100,
+    { leading: false, trailing: true }
   )
+
+  store.subscribe(handleStoreUpdate)
 }

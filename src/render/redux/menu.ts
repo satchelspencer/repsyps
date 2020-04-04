@@ -115,25 +115,43 @@ export default function init(store: Store<Types.State>) {
         },
         {
           label: 'Edit',
+          submenu: [{ role: 'undo' }, { role: 'redo' }],
+        },
+        {
+          label: 'Scene',
           submenu: [
-            { role: 'undo' },
-            { role: 'redo' },
+            {
+              label: 'Reset Scene',
+              accelerator: 'CmdOrCtrl+R',
+              click: () => store.dispatch(Actions.zeroInitValues({})),
+            },
             { type: 'separator' },
-            { role: 'cut' },
-            { role: 'copy' },
-            { role: 'paste' },
-            ...(isMac
-              ? [
-                  { role: 'pasteAndMatchStyle' },
-                  { role: 'delete' },
-                  { role: 'selectAll' },
-                  { type: 'separator' },
-                  {
-                    label: 'Speech',
-                    submenu: [{ role: 'startspeaking' }, { role: 'stopspeaking' }],
-                  },
-                ]
-              : [{ role: 'delete' }, { type: 'separator' }, { role: 'selectAll' }]),
+            {
+              label: 'New Scene After',
+              //accelerator: 'CmdOrCtrl+N',
+              click: () => {
+                const sceneIndex = store.getState().live.sceneIndex
+                store.dispatch(Actions.selectTrackExclusive(null))
+                store.dispatch(Actions.createScene(sceneIndex + 1))
+              },
+            },
+            {
+              label: 'New Scene Before',
+              //accelerator: 'CmdOrCtrl+Shift+N',
+              click: () => {
+                const sceneIndex = store.getState().live.sceneIndex
+                store.dispatch(Actions.selectTrackExclusive(null))
+                store.dispatch(Actions.createScene(sceneIndex))
+              },
+            },
+            { type: 'separator' },
+            {
+              label: 'Delete Scene',
+              click: () => {
+                const sceneIndex = store.getState().live.sceneIndex
+                store.dispatch(Actions.deleteScene(sceneIndex))
+              },
+            },
           ],
         },
         {
@@ -154,7 +172,7 @@ export default function init(store: Store<Types.State>) {
               },
             },
             { type: 'separator' },
-            { role: 'reload' },
+            { role: 'reload', accelerator: 'Alt+R' },
             { role: 'toggledevtools' },
             { type: 'separator' },
             { role: 'resetzoom' },

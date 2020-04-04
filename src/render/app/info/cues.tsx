@@ -153,6 +153,7 @@ const Cue = SortableElement((xprops: any) => {
         params={{
           cueIndex: props.cueIndex,
           trackIndex: props.trackIndex,
+          invert: true
         }}
         active={props.active}
         next={props.next}
@@ -301,6 +302,7 @@ const Cues = memo((props: CuesProps) => {
             params={{
               trackIndex,
               cueStep: -1,
+              invert: true
             }}
           >
             <Icon name="prev" />
@@ -319,6 +321,7 @@ const Cues = memo((props: CuesProps) => {
             params={{
               trackIndex,
               cueStep: 1,
+              invert: true
             }}
           >
             <Icon name="next" />

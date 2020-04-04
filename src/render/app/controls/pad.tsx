@@ -21,14 +21,14 @@ function Pad(props: PadProps) {
 
   return (
     <PadWrapper
-      active={value > 0.5}
+      active={value < 0.5}
       onMouseDown={e => {
         e.stopPropagation()
         e.preventDefault()
-        onChange(1)
+        onChange(1 - value)
       }}
       onMouseUp={() => {
-        onChange(0)
+        onChange(1 - value)
       }}
     />
   )

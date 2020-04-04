@@ -327,6 +327,7 @@ function PositionDetail(props: ControlDetailProps) {
                       Actions.setControlGroup({
                         position: props.position,
                         controlGroup: {
+                          absolute: 'globalProp' in control,
                           bindingType: type,
                           position: props.position,
                           controls: [...currentControls, control],

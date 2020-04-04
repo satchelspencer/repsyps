@@ -224,6 +224,8 @@ export function applyControlGroup(
 ) {
   const actions: Action<any>[] = [setControlGroupValue({ position, value })]
   controlGroup.controls.forEach(control => {
+    const thisValue = control.invert ? 1 - value : value,
+      thisLastValue = control.invert ? 1 - lastValue : lastValue
     if (controlGroup.absolute && 'globalProp' in control)
       actions.push(
         updatePlayback({
@@ -251,14 +253,14 @@ export function applyControlGroup(
           },
         })
       )
-    else if ('cueStep' in control && value > 0.5 && lastValue < 0.5)
+    else if ('cueStep' in control && thisValue > 0.5 && thisLastValue < 0.5)
       actions.push(
         stepTrackCue({
           trackIndex: control.trackIndex,
           cueStep: control.cueStep,
         })
       )
-    else if ('cueIndex' in control && value > 0.5 && lastValue < 0.5)
+    else if ('cueIndex' in control && thisValue > 0.5 && thisLastValue < 0.5)
       actions.push(
         setTrackCue({
           trackIndex: control.trackIndex,
