@@ -1,28 +1,7 @@
-import { useEffect, useState } from 'react'
 import _ from 'lodash'
 
 import { ViewContext } from './track'
 import snapSampleToImpulses from 'render/util/snap-sample'
-
-export function getContainerPosition(container) {
-  const [pos, setPos] = useState({
-    left: 0,
-    top: 0,
-    width: 0,
-    height: 0,
-  })
-
-  useEffect(() => {
-    const { x: left, y: top } = container.current
-        ? container.current.getBoundingClientRect()
-        : { x: 0, y: 0 },
-      width = container.current ? container.current.offsetWidth : 0,
-      height = container.current ? container.current.offsetHeight : 0
-    setPos({ left, top, width, height })
-  }, [container.current && container.current.offsetWidth])
-
-  return pos
-}
 
 export function getRelativePos(e, left: number, top: number) {
   return { x: e.clientX - left, y: e.clientY - top }

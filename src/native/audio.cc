@@ -117,6 +117,7 @@ mixTrackPlayback * initMixTrackPlayback(){
   playback->filter = 0.5;
   playback->aperiodic = false;
   playback->nextAtChunk = false;
+  playback->unpause = false;
   return playback;
 }
 
@@ -186,6 +187,8 @@ void setMixTrackPlayback(mixTrackPlayback * playback, Napi::Value value){
       playback->aperiodic = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "nextAtChunk"){
       playback->nextAtChunk = value.As<Napi::Boolean>().Value();
+    }else if(propNameStr == "unpause"){
+      playback->unpause = value.As<Napi::Boolean>().Value();
     }
   }
 }

@@ -258,7 +258,8 @@ int paCallbackMethod(
       if(
         mixTrack && 
         mixTrack->hasNext && 
-        (!mixTrack->playback->playing || mixTrack->playback->aperiodic)
+        (!mixTrack->playback->playing || mixTrack->playback->aperiodic) && 
+        mixTrack->playback->unpause
       ) applyNextPlayback(mixTrack);
     }
     if(state->recording != NULL){

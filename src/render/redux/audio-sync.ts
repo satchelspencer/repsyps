@@ -183,6 +183,7 @@ export default function syncAudio(store: Store<Types.State>) {
 
   function update() {
     let start = new Date().getTime()
+    lastState = store.getState()
     if (lastState && lastState.playback.playing) {
       const currentTiming = audio.getTiming()
       /* override last state so this change won't be sent back to where it came from */

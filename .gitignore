@@ -7,3 +7,5 @@ yarn-error.log
 build/
 .vscode/
 lib/
+yalc.lock
+.yalc/

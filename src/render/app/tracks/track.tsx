@@ -10,9 +10,10 @@ import * as Actions from 'render/redux/actions'
 
 import getImpulses from 'render/util/impulse-detect'
 
-import { getContainerPosition, getRelativePos } from './utils'
+import { getRelativePos } from './utils'
 import { useSelectable } from 'render/components/selection'
 import Icon from 'render/components/icon'
+import useMeasure from 'render/components/measure'
 
 import useZoom from './zoom'
 import useWaveformCanvas from './canvas'
@@ -137,9 +138,8 @@ const Track = memo(
       [clickX, setClickX] = useState(null),
       [mouseDown, setMouseDown] = useState(false)
 
-    const container = useRef(null)
-
-    const { left, top, width, height } = getContainerPosition(container)
+    const container = useRef(null),
+      { left, top, width, height } = useMeasure(container)
 
     /* ZOOM/PANNING CONTROL */
     const { scale, start } = useZoom(
@@ -346,7 +346,8 @@ export default function TrackContainer(props: TrackContainerProps) {
     }, [props.trackId, isSelecting, onSelect]),
     isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId)),
     hasMissingSource = _.some(_.values(source.sourceTracks), track => track.missing),
-    trackScroll = useSelector(state => state.settings.trackScroll)
+    trackScroll = useSelector(state => state.settings.trackScroll),
+    inferredSample = sample || track.playback.chunks[0]
 
   return (
     <TrackWrapper
@@ -376,7 +377,7 @@ export default function TrackContainer(props: TrackContainerProps) {
             trackId={props.trackId}
             track={track}
             source={source}
-            sample={sample}
+            sample={inferredSample}
             playLock={track.playLock}
             setPlayLock={locked =>
               dispatch(

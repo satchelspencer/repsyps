@@ -153,7 +153,7 @@ const Cue = SortableElement((xprops: any) => {
         params={{
           cueIndex: props.cueIndex,
           trackIndex: props.trackIndex,
-          invert: true
+          invert: true,
         }}
         active={props.active}
         next={props.next}
@@ -265,7 +265,8 @@ const Cues = memo((props: CuesProps) => {
     atStart = playback.playing && cueIndex === 0,
     atEnd = playback.playing && cueIndex === cues.length - 1,
     canPrev = atStart || cueIndex > 0,
-    canNext = atEnd || (cueIndex !== -1 && cueIndex < cues.length - 1)
+    canNext = atEnd || (cueIndex !== -1 && cueIndex < cues.length - 1),
+    pausedOnCue = !playback.playing && cueIndex !== -1
 
   return (
     <>
@@ -302,7 +303,7 @@ const Cues = memo((props: CuesProps) => {
             params={{
               trackIndex,
               cueStep: -1,
-              invert: true
+              invert: true,
             }}
           >
             <Icon name="prev" />
@@ -321,11 +322,12 @@ const Cues = memo((props: CuesProps) => {
             params={{
               trackIndex,
               cueStep: 1,
-              invert: true
+              invert: true,
             }}
           >
             <Icon name="next" />
-            &nbsp;{canNext ? (atEnd ? 'End' : 'Next') : 'Start'}
+            &nbsp;
+            {pausedOnCue ? 'Play' : canNext ? (atEnd ? 'End' : 'Next') : 'Start'}
           </JumpButton>
         </CueH>
         <CuesList

@@ -45,6 +45,7 @@ export interface PersitentTrackPlayback {
 
 export interface TrackPlayback extends PersitentTrackPlayback {
   muted: boolean
+  unpause: boolean
   /* timing info */
   chunkIndex: number
   chunks: Chunks

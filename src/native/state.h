@@ -35,6 +35,7 @@ typedef struct{
   bool aperiodic;
   bool nextAtChunk;
   int chunkIndex;
+  bool unpause;
 } mixTrackPlayback;
 
 typedef struct{

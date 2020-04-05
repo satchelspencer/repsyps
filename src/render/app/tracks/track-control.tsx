@@ -143,7 +143,8 @@ function TrackControls(props: TrackControlsProps) {
     canPrev = atStart || activeCueIndex > 0,
     canNext =
       (hasCues && atEnd) ||
-      (activeCueIndex !== -1 && activeCueIndex < track.cues.length - 1)
+      (activeCueIndex !== -1 && activeCueIndex < track.cues.length - 1),
+    pausedOnCue = !track.playback.playing && activeCueIndex !== -1
 
   return (
     <TrackControlsWrapper>
@@ -188,7 +189,9 @@ function TrackControls(props: TrackControlsProps) {
                 }
               >
                 <Icon
-                  name={canNext ? (atEnd ? 'stop' : 'next') : 'play'}
+                  name={
+                    pausedOnCue ? 'play' : canNext ? (atEnd ? 'stop' : 'next') : 'play'
+                  }
                   styles={{ size: s => s * 1.2 }}
                 />
               </ControlsButton>

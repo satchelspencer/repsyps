@@ -58,7 +58,7 @@
     "bezier-easing": "^2.1.0",
     "bindings": "^1.5.0",
     "copy-webpack-plugin": "^5.1.1",
-    "ctyled": "^0.0.19",
+    "ctyled": "^0.0.20",
     "deox": "^3.2.1",
     "electron-context-menu": "^0.14.0",
     "electron-devtools-installer": "^2.2.4",

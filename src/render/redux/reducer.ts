@@ -28,6 +28,7 @@ export const defaultPlayback: Types.Playback = {
     nextAtChunk: false,
     muted: false,
     sourceTracksParams: {},
+    unpause: false,
   },
   defaultTrack: Types.Track = {
     visibleSourceTrack: null,
@@ -127,6 +128,7 @@ function getCuePlayback(
   return {
     ...playback,
     ..._.pick(cue.playback, cue.used),
+    unpause: false,
     loop: cue.endBehavior !== 'stop',
     sourceTracksParams: cue.used.includes('sourceTracksParams')
       ? mergeTrackSourcesParams(
@@ -158,6 +160,7 @@ function applyCue(track: Types.Track, cueIndex: number): Types.Track {
       playback: {
         ...track.playback,
         nextAtChunk: cue.startBehavior === 'on-chunk',
+        unpause: true,
       },
       nextPlayback: getCuePlayback(cue, track.playback),
     }
@@ -180,18 +183,26 @@ function updateSceneIndex(
       ...live,
       tracks: _.mapValues(live.tracks, (track, trackId) => {
         if (!forceReset && !noLongerActive.includes(trackId)) return track
-        else
+        else {
+          const firstCue = track.cues[0],
+            cuedTrack: Types.Track = firstCue
+              ? applyCue(track, 0)
+              : {
+                  ...track,
+                  nextPlayback: null,
+                  nextCueIndex: -1,
+                  cueIndex: -1,
+                }
           return {
-            ...track,
+            ...cuedTrack,
             playback: {
-              ...track.playback,
+              ...cuedTrack.playback,
               playing: false,
               muted: false,
+              unpause: false,
             },
-            nextPlayback: null,
-            nextCueIndex: -1,
-            cueIndex: -1,
           }
+        }
       }),
       initValues: _.mapValues(controls, (control, pos) => {
         const binding = live.bindings[pos],
@@ -239,6 +250,7 @@ const reducer = combineReducers({
         time: 0,
       }
     }),
+    handle(Actions.zeroInitValues, () => defaultTiming),
   ]),
   sources: createReducer(defaultSources, handle => [
     handle(Actions.reset, () => defaultSources),
@@ -606,6 +618,7 @@ const reducer = combineReducers({
               playback: {
                 ...live.tracks[trackId].playback,
                 ...payload.playback,
+                unpause: false,
                 nextAtChunk: false,
               },
               nextPlayback: null,
@@ -624,6 +637,7 @@ const reducer = combineReducers({
               playback: {
                 ...live.tracks[trackId].playback,
                 ...payload.playback,
+                unpause: false,
               },
             },
           },
@@ -870,7 +884,21 @@ const reducer = combineReducers({
         currentIndex = track.cueIndex,
         nextIndex = currentIndex + payload.cueStep
 
-      if (nextIndex >= 0 && nextIndex < track.cues.length) {
+      if (!track.playback.playing && track.cueIndex !== -1) {
+        return {
+          ...live,
+          tracks: {
+            ...live.tracks,
+            [trackId]: {
+              ...track,
+              playback: {
+                ...track.playback,
+                playing: true,
+              },
+            },
+          },
+        }
+      } else if (nextIndex >= 0 && nextIndex < track.cues.length) {
         return {
           ...live,
           tracks: {
@@ -1005,6 +1033,31 @@ const reducer = combineReducers({
       return {
         ...playback,
         ...payload,
+      }
+    }),
+    handle(Actions.zeroInitValues, playback => {
+      return {
+        ...playback,
+        playing: false,
+      }
+    }),
+    /* playing and pausing on playback */
+    handle(Actions.setTrackPlayback, playback => {
+      return {
+        ...playback,
+        playing: true,
+      }
+    }),
+    handle(Actions.setTrackCue, playback => {
+      return {
+        ...playback,
+        playing: true,
+      }
+    }),
+    handle(Actions.stepTrackCue, playback => {
+      return {
+        ...playback,
+        playing: true,
       }
     }),
   ]),
