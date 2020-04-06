@@ -112,7 +112,7 @@ int paCallbackMethod(
     /* compute a new window by summing each track' output */
     for(auto mixTrackPair: state->mixTracks){
       mixTrack = mixTrackPair.second;
-      if(!mixTrack) continue;
+      if(!mixTrack || mixTrack->removed) continue;
       bufferHead = state->buffer->head;
       
       mixTrackPlayback = mixTrack->playback;
@@ -202,7 +202,10 @@ int paCallbackMethod(
                 
         /* add sample to filterbuffer */ 
         for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
-          if(state->sources.find(sourcePair.first) != state->sources.end() && state->sources[sourcePair.first] != NULL){
+          if(
+            state->sources.find(sourcePair.first) != state->sources.end() 
+            && state->sources[sourcePair.first] != NULL
+          ){
             mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
             mixTrackSourceConfig = sourcePair.second;
             mixTrackLength = mixTrackSource->length;
@@ -257,6 +260,7 @@ int paCallbackMethod(
       mixTrack = mixTrackPair.second;
       if(
         mixTrack && 
+        !mixTrack->removed &&
         mixTrack->hasNext && 
         (!mixTrack->playback->playing || mixTrack->playback->aperiodic) && 
         mixTrack->playback->unpause
@@ -272,28 +276,17 @@ int paCallbackMethod(
 
   for(auto sourcesPair: state->sources){
     mixTrackSource = sourcesPair.second;
-    if(mixTrackSource && mixTrackSource->removed){
-      if(REPSYS_LOG) std::cout << "free source" << std::endl;
-      if(mixTrackSource->data != NULL){
-        av_freep(&mixTrackSource->data[0]);
-        av_freep(&mixTrackSource->data);
-      }else{
-        for(channelIndex=0;channelIndex<mixTrackSource->channels.size();channelIndex++){
-          delete [] mixTrackSource->channels[channelIndex];
-        }
-      }
-      state->sources[sourcesPair.first] = NULL;
-      delete mixTrackSource;
+    if(mixTrackSource && mixTrackSource->removed && !mixTrackSource->safe){
+      if(REPSYS_LOG) std::cout << "safe source " << sourcesPair.first << std::endl;
+      mixTrackSource->safe = true;
     }
   }
 
   for(auto mixTrackPair: state->mixTracks){
     mixTrack = mixTrackPair.second;
-    if(mixTrack && mixTrack->removed){
-      if(REPSYS_LOG) std::cout << "free track" << std::endl;
-      state->mixTracks[mixTrackPair.first] = NULL;
-      if(mixTrack->filter != NULL) firfilt_rrrf_destroy(mixTrack->filter);
-      delete mixTrack;
+    if(mixTrack && mixTrack->removed && !mixTrack->safe){
+      if(REPSYS_LOG) std::cout << "safe track" << mixTrackPair.first << std::endl;
+      mixTrack->safe = true;
     }
   }
 

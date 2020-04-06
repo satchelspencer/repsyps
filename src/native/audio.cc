@@ -209,6 +209,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->sample = 0;
     newMixTrack->filter = NULL;
     newMixTrack->removed = false;
+    newMixTrack->safe = false;
     state.mixTracks[mixTrackId] = newMixTrack;
   }
 
@@ -266,17 +267,45 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
   }
   timings.Set("recTime", state.recording ? state.recording->length : 0);
 
+  source* mixTrackSource;
+  unsigned int channelIndex;
+  for(auto sourcesPair: state.sources){
+    mixTrackSource = sourcesPair.second;
+    if(mixTrackSource && mixTrackSource->safe){
+      if(REPSYS_LOG) std::cout << "free source " << sourcesPair.first << std::endl;
+      if(mixTrackSource->data != NULL){
+        av_freep(&mixTrackSource->data[0]);
+        av_freep(&mixTrackSource->data);
+      }else{
+        for(channelIndex=0;channelIndex<mixTrackSource->channels.size();channelIndex++){
+          delete [] mixTrackSource->channels[channelIndex];
+        }
+      }
+      state.sources[sourcesPair.first] = NULL;
+      delete mixTrackSource;
+    }
+  }
+
+  mixTrack* mixTrack;
   for(auto mixTrackPair: state.mixTracks){
-    if(mixTrackPair.second == NULL) continue;
-    Napi::Object mixTrackState = Napi::Object::New(env);
-    mixTrackState.Set("sample", mixTrackPair.second->sample);
+    mixTrack = mixTrackPair.second;
+    if(mixTrack == NULL) continue;
+    if(mixTrack->safe){
+      if(REPSYS_LOG) std::cout << "free track " << mixTrackPair.first << std::endl;
+      state.mixTracks[mixTrackPair.first] = NULL;
+      if(mixTrack->filter != NULL) firfilt_rrrf_destroy(mixTrack->filter);
+      delete mixTrack;
+    }else{
+      Napi::Object mixTrackState = Napi::Object::New(env);
+      mixTrackState.Set("sample", mixTrack->sample);
 
-    mixTrackState.Set("playback", getPlaybackTiming(env, mixTrackPair.second->playback));
-    if(mixTrackPair.second->hasNext)
-      mixTrackState.Set("nextPlayback", getPlaybackTiming(env, mixTrackPair.second->nextPlayback));
-    else mixTrackState.Set("nextPlayback", env.Null());
+      mixTrackState.Set("playback", getPlaybackTiming(env, mixTrack->playback));
+      if(mixTrack->hasNext)
+        mixTrackState.Set("nextPlayback", getPlaybackTiming(env, mixTrack->nextPlayback));
+      else mixTrackState.Set("nextPlayback", env.Null());
 
-    tracktimings.Set(mixTrackPair.first, mixTrackState);
+      tracktimings.Set(mixTrackPair.first, mixTrackState);
+    }
   }
   timings.Set("tracks", tracktimings);
   timings.Set("time", state.playback->time);
@@ -305,6 +334,7 @@ void separateSource(const Napi::CallbackInfo &info){
     source * newSource = new source{};
     newSource->length = sourceLen;
     newSource->removed = false;
+    newSource->safe = false;
     newSource->data = NULL;
     for(unsigned int i=0;i<channelCount;i++){
       newSource->channels.push_back(outChannels[j*sepCount + i]);
@@ -391,6 +421,7 @@ class LoadWorker : public Napi::AsyncWorker {
         source * newSource = new source{};
         newSource->length = res->length;
         newSource->removed = false;
+        newSource->safe = false;
         newSource->data = res->data;
         for(unsigned int i=0;i<res->channels.size();i++){
           newSource->channels.push_back(res->channels[i]);
@@ -475,6 +506,7 @@ Napi::Value stopRecording(const Napi::CallbackInfo &info){
     source * newSource = new source{};
     newSource->length = recLength;
     newSource->removed = false;
+    newSource->safe = false;
     newSource->data = NULL;
 
     unsigned int chunkIndex;

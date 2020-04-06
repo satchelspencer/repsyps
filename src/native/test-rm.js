@@ -52,5 +52,5 @@ audio.updatePlayback({
 audio.start()
 
 setInterval(() => {
-  //console.log(audio.getTiming().tracks)
+  console.log(audio.getTiming().tracks)
 }, 100)

@@ -46,13 +46,15 @@ typedef struct{
   firfilt_rrrf filter;
   bool hasFilter;
   bool removed;
+  bool safe;
 } mixTrack;
 
 typedef struct{
   std::vector<float*>  channels;
   int length;
-  bool removed;
   uint8_t ** data;
+  bool removed;
+  bool safe;
 } source;
 
 typedef struct{
