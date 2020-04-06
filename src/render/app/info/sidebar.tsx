@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react'
+import React, { memo, useMemo, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled, { active } from 'ctyled'
 import pathUtils from 'path'
 
+import * as Types from 'render/util/types'
 import { useSelector, useStore } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
 import relink from 'render/util/relink'
@@ -28,13 +29,14 @@ const SidebarWrapper = ctyled.div.styles({
   width:${({ size }) => size * 25}px;
 `
 
-const TrackDetailsWrapper = ctyled.div.styles({
+const TrackDetailsWrapper = ctyled.div.attrs({ disabled: false }).styles({
   column: true,
   padd: true,
   gutter: 2,
+  disabled: (_, { disabled }) => disabled,
 })
 
-const SourceTrackWarning = ctyled.div.class(active).styles({
+const SourceTrackWarningWrapper = ctyled.div.class(active).styles({
   padd: 1,
   align: 'center',
   hover: true,
@@ -59,12 +61,40 @@ const SourceTrackNameInner = ctyled.div.extendSheet`
   display:block;
 `
 
+interface SourceTrackWarningProps {
+  sourceTrack: Types.TrackSource
+  sourceTrackId: string
+  trackId: string
+}
+
+const SourceTrackWarning = memo((props: SourceTrackWarningProps) => {
+  const store = useStore(),
+    handleClick = () => {
+      relink(props.trackId, props.sourceTrackId, store)
+    } //changes in all cases so no memo
+
+  return (
+    props.sourceTrack.missing && (
+      <SourceTrackWarningWrapper onClick={handleClick}>
+        <Icon name="relink" scale={1.3} />
+        <span>
+          <b>Missing:</b>
+        </span>
+        <SourceTrackName>
+          <SourceTrackNameInner>
+            {props.sourceTrack.source && pathUtils.basename(props.sourceTrack.source)}
+          </SourceTrackNameInner>
+        </SourceTrackName>
+      </SourceTrackWarningWrapper>
+    )
+  )
+})
+
 const Sidebar = () => {
   const trackId = useSelector(Selectors.getSelectedTrackId),
     track = useSelector(Selectors.getSelectedTrack),
     source = useSelector(state => state.sources[trackId]),
-    isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, trackId)),
-    store = useStore()
+    isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, trackId))
 
   return useMemo(
     () => (
@@ -72,34 +102,16 @@ const Sidebar = () => {
         {!!track && (
           <>
             {_.keys(source.sourceTracks).map(sourceTrackId => {
-              const sourceTrack = source.sourceTracks[sourceTrackId]
               return (
-                sourceTrack.missing && (
-                  <SourceTrackWarning
-                    key={sourceTrackId}
-                    onClick={() => {
-                      relink(trackId, sourceTrackId, store)
-                    }}
-                  >
-                    <Icon name="relink" styles={{ size: s => s * 1.3 }} />
-                    <span>
-                      <b>Missing:</b>
-                    </span>
-                    <SourceTrackName>
-                      <SourceTrackNameInner>
-                        {sourceTrack.source && pathUtils.basename(sourceTrack.source)}
-                      </SourceTrackNameInner>
-                    </SourceTrackName>
-                  </SourceTrackWarning>
-                )
+                <SourceTrackWarning
+                  sourceTrack={source.sourceTracks[sourceTrackId]}
+                  sourceTrackId={sourceTrackId}
+                  trackId={trackId}
+                  key={sourceTrackId}
+                />
               )
             })}
-            <TrackDetailsWrapper
-              style={{
-                opacity: isLoaded ? 1 : 0.5,
-                pointerEvents: isLoaded ? 'all' : 'none',
-              }}
-            >
+            <TrackDetailsWrapper disabled={!isLoaded}>
               <SourceTracks trackId={trackId} />
               <BoundsControl trackId={trackId} />
               <Sync trackId={trackId} />

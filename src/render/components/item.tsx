@@ -1,10 +1,10 @@
 import React from 'react'
 import * as _ from 'lodash'
-import ctyled from 'ctyled'
+import ctyled, { active } from 'ctyled'
 
 import Icon from 'render/components/icon'
 
-const TrackItem = ctyled.div.styles({
+const TrackItem = ctyled.div.class(active).styles({
   gutter: 1,
   column: true,
 })
@@ -21,7 +21,7 @@ const SubItem = ctyled.div.styles({
 }).extendSheet`
   margin-top:0px !important;
   margin-left:${({ size }) => size * 0.7}px;
-  padding-left:${({ size }) => size/2}px;
+  padding-left:${({ size }) => size / 2}px;
   padding-right:0px !important;
   border-left:1px solid ${({ color }) => color.bq};
 `
@@ -36,14 +36,11 @@ interface SidebarItemProps {
 
 export default function SidebarItem(props: SidebarItemProps) {
   return (
-    <TrackItem style={{ cursor: 'pointer' }}>
+    <TrackItem>
       <Horizontal onClick={() => props.onSetOpen && props.onSetOpen(!props.open)}>
         {props.title}
-        {props.children && props.caret &&  (
-          <Icon
-            name={props.open ? 'caret-down' : 'caret-right'}
-            styles={{ size: s => s * 1.8 }}
-          />
+        {props.children && props.caret && (
+          <Icon name={props.open ? 'caret-down' : 'caret-right'} scale={1.8} />
         )}
       </Horizontal>
       {props.open && props.children && <SubItem>{props.children}</SubItem>}

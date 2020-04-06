@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef, useEffect, useMemo } from 'react'
+import React, { memo, useCallback, useEffect, useMemo } from 'react'
 import { palette } from 'render/components/theme'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
@@ -53,7 +53,6 @@ function App() {
     trackIds = useMemo(() => _.flatMap(scenes, scene => scene.trackIds), [scenes]),
     dispatch = useDispatch(),
     tracklen = trackIds.length,
-    input = useRef(null),
     handleDragover = useCallback(e => e.preventDefault(), []),
     handleDrop = useCallback(e => {
       e.preventDefault()
@@ -71,50 +70,52 @@ function App() {
     }
   }, [])
 
-  return (
-    <Wrapper
-      tabIndex={0}
-      onKeyDown={e => {
-        const notInInput = document.activeElement.nodeName !== 'INPUT'
-        if (e.key === ' ' && notInInput) e.preventDefault()
-        if (e.key === ' ' && !e.shiftKey && notInInput)
-          selectedTrackId &&
-            dispatch(
-              Actions.setTrackPlayback({
-                trackId: selectedTrackId,
-                playback: {
-                  playing: !selectedTrack.playback.playing,
-                  chunkIndex: -1,
-                },
-              })
-            )
-        if (e.key === ' ' && e.shiftKey && notInInput)
+  const handleKeyDown = useCallback(
+    e => {
+      const notInInput = document.activeElement.nodeName !== 'INPUT'
+      if (e.key === ' ' && notInInput) e.preventDefault()
+      if (e.key === ' ' && !e.shiftKey && notInInput)
+        selectedTrackId &&
           dispatch(
-            Actions.updatePlayback({
-              playing: !playing,
-            })
-          )
-        if (e.key === 'ArrowUp')
-          dispatch(
-            Actions.selectTrackExclusive(
-              trackIds[(trackIds.indexOf(selectedTrackId) + tracklen - 1) % tracklen]
-            )
-          )
-        if (e.key === 'ArrowDown')
-          dispatch(
-            Actions.selectTrackExclusive(
-              trackIds[(trackIds.indexOf(selectedTrackId) + tracklen + 1) % tracklen]
-            )
-          )
-        if (e.key === 'l' && selectedTrackId)
-          dispatch(
-            Actions.setTrackPlayLock({
+            Actions.setTrackPlayback({
               trackId: selectedTrackId,
-              playlock: !selectedTrack.playLock,
+              playback: {
+                playing: !selectedTrack.playback.playing,
+                chunkIndex: -1,
+              },
             })
           )
-      }}
-    >
+      if (e.key === ' ' && e.shiftKey && notInInput)
+        dispatch(
+          Actions.updatePlayback({
+            playing: !playing,
+          })
+        )
+      if (e.key === 'ArrowUp')
+        dispatch(
+          Actions.selectTrackExclusive(
+            trackIds[(trackIds.indexOf(selectedTrackId) + tracklen - 1) % tracklen]
+          )
+        )
+      if (e.key === 'ArrowDown')
+        dispatch(
+          Actions.selectTrackExclusive(
+            trackIds[(trackIds.indexOf(selectedTrackId) + tracklen + 1) % tracklen]
+          )
+        )
+      if (e.key === 'l' && selectedTrackId)
+        dispatch(
+          Actions.setTrackPlayLock({
+            trackId: selectedTrackId,
+            playlock: !selectedTrack.playLock,
+          })
+        )
+    },
+    [selectedTrackId, selectedTrack, trackIds, playing]
+  )
+
+  return (
+    <Wrapper tabIndex={0} onKeyDown={handleKeyDown}>
       <Header />
       <Body>
         <Sidebar />

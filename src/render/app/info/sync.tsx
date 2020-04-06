@@ -58,7 +58,7 @@ const Sync = memo((props: SyncProps) => {
       title={
         <>
           <HeaderContent>
-            <Icon styles={{ size: s => s * 1.4 }} name="av-timer" />
+            <Icon scale={1.4} name="av-timer" />
             <span>&nbsp;Sync</span>
           </HeaderContent>
           <SelectableButton
@@ -74,7 +74,7 @@ const Sync = memo((props: SyncProps) => {
             &nbsp;off
           </SelectableButton>
           <SelectableButton
-            styles={{ flex: 'none' }}
+            compact
             disabled={!isLoop}
             onClick={() =>
               dispatch(
@@ -88,7 +88,7 @@ const Sync = memo((props: SyncProps) => {
             }
             selected={loop}
           >
-            <Icon styles={{ size: s => s * 1.1 }} name={loop ? 'loop' : 'stop'} />
+            <Icon scale={1.1} name={loop ? 'loop' : 'stop'} />
           </SelectableButton>
         </>
       }

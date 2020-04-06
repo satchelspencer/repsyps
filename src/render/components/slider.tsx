@@ -3,6 +3,7 @@ import ResizeObserver from 'resize-observer-polyfill'
 import * as _ from 'lodash'
 
 import ctyled from 'ctyled'
+import position from '../app/controls/position'
 
 const SliderWrapper = ctyled.div
   .attrs<{ column?: boolean }>({ column: false })
@@ -49,7 +50,7 @@ const Handle = ctyled.div
   `
 
 const Marker = ctyled.div
-  .attrs<{ column?: boolean }>({ column: false })
+  .attrs<{ column?: boolean; position: number }>({ column: false, position: 0 })
   .styles({
     bg: true,
     flex: 1,
@@ -57,7 +58,8 @@ const Marker = ctyled.div
     height: (_, { column }) => (column ? '1px' : HANDLE_MAJOR * 1.4),
     width: (_, { column }) => (column ? HANDLE_MAJOR * 1.4 : '1px'),
   }).extend`
-position:absolute;
+  position:absolute;
+  ${(_, { column, position }) => `${column ? 'bottom' : 'left'}:${position}px;`}
 `
 
 interface SliderProps {
@@ -150,9 +152,7 @@ function Slider(props: SliderProps) {
             <Marker
               key={i}
               column={props.column}
-              style={{
-                [props.column ? 'bottom' : 'left']: marker * size - handleOffset,
-              }}
+              position={marker * size - handleOffset}
             />
           )
         })}

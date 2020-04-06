@@ -38,6 +38,8 @@ export interface KnobProps {
   throttle?: number
 }
 
+const svgStyle = { width: '100%', height: '100%' }
+
 export default function Knob(props: KnobProps) {
   const { value, onChange } = props,
     [dragging, setDragging] = useState(false),
@@ -87,17 +89,20 @@ export default function Knob(props: KnobProps) {
     }
   }, [dragging])
 
+  const handleMouseDown = useCallback(
+    e => {
+      e.stopPropagation()
+      setDragging(true)
+      setStartValue(value)
+      setTempValue(value)
+      setStartPos([e.clientX, e.clientY])
+    },
+    [value]
+  )
+
   return (
-    <KnobWrapper
-      onMouseDown={e => {
-        e.stopPropagation()
-        setDragging(true)
-        setStartValue(value)
-        setTempValue(value)
-        setStartPos([e.clientX, e.clientY])
-      }}
-    >
-      <svg style={{ width: '100%', height: '100%' }} viewBox="0 -5 100 100">
+    <KnobWrapper onMouseDown={handleMouseDown}>
+      <svg style={svgStyle} viewBox="0 -5 100 100">
         <path
           fill={style.theme.color.bg}
           stroke={style.theme.color.nudge(0.2).bg}

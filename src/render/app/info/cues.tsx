@@ -117,25 +117,23 @@ interface CueUsePickerProps extends CueProps {
 
 const CueUsePicker = (props: CueUsePickerProps) => {
   const isUsed = _.every(props.props, prop => props.cue.used.includes(prop)),
-    dispatch = useDispatch()
+    dispatch = useDispatch(),
+    handleClick = useCallback(() => {
+      dispatch(
+        Actions.addCue({
+          trackId: props.trackId,
+          cue: {
+            ...props.cue,
+            used: isUsed
+              ? _.without(props.cue.used, ...props.props)
+              : [...props.cue.used, ...props.props],
+          },
+          index: props.cueIndex,
+        })
+      )
+    }, [props.trackId, props.cueIndex, props.cue, props.props])
   return (
-    <CueBehavior
-      onClick={() => {
-        dispatch(
-          Actions.addCue({
-            trackId: props.trackId,
-            cue: {
-              ...props.cue,
-              used: isUsed
-                ? _.without(props.cue.used, ...props.props)
-                : [...props.cue.used, ...props.props],
-            },
-            index: props.cueIndex,
-          })
-        )
-      }}
-      off={!isUsed}
-    >
+    <CueBehavior onClick={handleClick} off={!isUsed}>
       <Icon name={props.icon} />
     </CueBehavior>
   )
@@ -146,25 +144,65 @@ const startBehaviors: Types.CueStartBehavior[] = ['on-chunk', 'on-end', 'immedia
 
 const Cue = SortableElement((xprops: any) => {
   const props = xprops as CueProps,
-    dispatch = useDispatch()
+    dispatch = useDispatch(),
+    cueParams = useMemo(
+      () => ({ cueIndex: props.cueIndex, trackIndex: props.trackIndex, invert: true }),
+      [props.cueIndex, props.trackIndex]
+    ),
+    handleSetCue = useCallback(
+      () =>
+        dispatch(
+          Actions.setTrackCue({
+            trackId: props.trackId,
+            cueIndex: props.cueIndex,
+          })
+        ),
+      [props.trackId, props.cueIndex]
+    ),
+    setStartBehavior = useCallback(() => {
+      const nextBehavior =
+        startBehaviors[
+          (startBehaviors.indexOf(props.cue.startBehavior) + 1) % startBehaviors.length
+        ]
+      dispatch(
+        Actions.addCue({
+          trackId: props.trackId,
+          cue: {
+            ...props.cue,
+            startBehavior: nextBehavior,
+          },
+          index: props.cueIndex,
+        })
+      )
+    }, [props.cue, props.trackId, props.cueIndex]),
+    setEndBehavior = useCallback(() => {
+      const nextBehavior =
+        endBehaviors[
+          (endBehaviors.indexOf(props.cue.endBehavior) + 1) % endBehaviors.length
+        ]
+      dispatch(
+        Actions.addCue({
+          trackId: props.trackId,
+          cue: {
+            ...props.cue,
+            endBehavior: nextBehavior,
+          },
+          index: props.cueIndex,
+        })
+      )
+    }, [props.cue, props.trackId, props.cueIndex]),
+    removeCue = useCallback(
+      () =>
+        dispatch(Actions.deleteCue({ trackId: props.trackId, index: props.cueIndex })),
+      [props.trackId, props.cueIndex]
+    )
   return (
     <CueH>
       <CueWrapper
-        params={{
-          cueIndex: props.cueIndex,
-          trackIndex: props.trackIndex,
-          invert: true,
-        }}
+        params={cueParams}
         active={props.active}
         next={props.next}
-        onClick={() =>
-          dispatch(
-            Actions.setTrackCue({
-              trackId: props.trackId,
-              cueIndex: props.cueIndex,
-            })
-          )
-        }
+        onClick={handleSetCue}
       >
         <CueTitle>
           <CueNumber>{props.cueIndex + 1}</CueNumber>
@@ -174,55 +212,14 @@ const Cue = SortableElement((xprops: any) => {
       <BehaviorWrapper>
         <CueUsePicker {...props} icon="volume" props={['sourceTracksParams', 'volume']} />
         <CueUsePicker {...props} icon="spectrum" props={['filter']} />
-        <CueBehavior
-          onClick={() => {
-            const nextBehavior =
-              startBehaviors[
-                (startBehaviors.indexOf(props.cue.startBehavior) + 1) %
-                  startBehaviors.length
-              ]
-            dispatch(
-              Actions.addCue({
-                trackId: props.trackId,
-                cue: {
-                  ...props.cue,
-                  startBehavior: nextBehavior,
-                },
-                index: props.cueIndex,
-              })
-            )
-          }}
-        >
+        <CueBehavior onClick={setStartBehavior}>
           <Icon name={props.cue.startBehavior} />
         </CueBehavior>
-        <CueBehavior
-          onClick={() => {
-            const nextBehavior =
-              endBehaviors[
-                (endBehaviors.indexOf(props.cue.endBehavior) + 1) % endBehaviors.length
-              ]
-            dispatch(
-              Actions.addCue({
-                trackId: props.trackId,
-                cue: {
-                  ...props.cue,
-                  endBehavior: nextBehavior,
-                },
-                index: props.cueIndex,
-              })
-            )
-          }}
-        >
+        <CueBehavior onClick={setEndBehavior}>
           <Icon name={props.cue.endBehavior} />
         </CueBehavior>
       </BehaviorWrapper>
-      <Icon
-        asButton
-        name="close"
-        onClick={() =>
-          dispatch(Actions.deleteCue({ trackId: props.trackId, index: props.cueIndex }))
-        }
-      />
+      <Icon asButton name="close" onClick={removeCue} />
     </CueH>
   )
 })
@@ -268,15 +265,60 @@ const Cues = memo((props: CuesProps) => {
     canNext = atEnd || (cueIndex !== -1 && cueIndex < cues.length - 1),
     pausedOnCue = !playback.playing && cueIndex !== -1
 
+  const handleStepBack = useCallback(() => {
+      if (!canPrev) return
+      dispatch(
+        Actions.stepTrackCue({
+          trackId: props.trackId,
+          cueStep: -1,
+        })
+      )
+    }, [props.trackId, canPrev]),
+    stepBackParams = useMemo(
+      () => ({
+        trackIndex,
+        cueStep: -1,
+        invert: true,
+      }),
+      [trackIndex]
+    ),
+    handleStepForward = useCallback(() => {
+      dispatch(
+        Actions.stepTrackCue({
+          trackId: props.trackId,
+          cueStep: 1,
+        })
+      )
+    }, [props.trackId]),
+    stepForwardParams = useMemo(
+      () => ({
+        trackIndex,
+        cueStep: 1,
+        invert: true,
+      }),
+      [trackIndex]
+    ),
+    handleSortEnd = useCallback(
+      ({ oldIndex, newIndex }) => {
+        dispatch(
+          Actions.reorderCue({
+            trackId: props.trackId,
+            oldIndex,
+            newIndex,
+          })
+        )
+      },
+      [props.trackId]
+    )
+
   return (
     <>
       <SidebarItem
         open={hasCues}
-        onSetOpen={() => {}}
         title={
           <>
             <HeaderContent>
-              <Icon name="cue" styles={{ size: s => s * 1.1 }} />
+              <Icon name="cue" scale={1.1} />
               <span>&nbsp;Playback Cues</span>
             </HeaderContent>
             <FullButton onClick={handleAddCue}>
@@ -291,40 +333,13 @@ const Cues = memo((props: CuesProps) => {
           <JumpButton
             disabled={!canPrev}
             allowClick
-            onClick={() => {
-              if (!canPrev) return
-              dispatch(
-                Actions.stepTrackCue({
-                  trackId: props.trackId,
-                  cueStep: -1,
-                })
-              )
-            }}
-            params={{
-              trackIndex,
-              cueStep: -1,
-              invert: true,
-            }}
+            onClick={handleStepBack}
+            params={stepBackParams}
           >
             <Icon name="prev" />
             &nbsp;{atStart ? 'Stop' : 'Prev'}
           </JumpButton>
-          <JumpButton
-            allowClick
-            onClick={() => {
-              dispatch(
-                Actions.stepTrackCue({
-                  trackId: props.trackId,
-                  cueStep: 1,
-                })
-              )
-            }}
-            params={{
-              trackIndex,
-              cueStep: 1,
-              invert: true,
-            }}
-          >
+          <JumpButton allowClick onClick={handleStepForward} params={stepForwardParams}>
             <Icon name="next" />
             &nbsp;
             {pausedOnCue ? 'Play' : canNext ? (atEnd ? 'End' : 'Next') : 'Start'}
@@ -334,15 +349,7 @@ const Cues = memo((props: CuesProps) => {
           axis="y"
           lockAxis="y"
           lockToContainerEdges
-          onSortEnd={({ oldIndex, newIndex }) => {
-            dispatch(
-              Actions.reorderCue({
-                trackId: props.trackId,
-                oldIndex,
-                newIndex,
-              })
-            )
-          }}
+          onSortEnd={handleSortEnd}
           distance={5}
           transitionDuration={0}
         >

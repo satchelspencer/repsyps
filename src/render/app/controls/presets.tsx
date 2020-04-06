@@ -115,7 +115,28 @@ function Presets() {
       setSelected(id)
     }, []),
     [selected, setSelected] = useState<string>(null),
-    selectedDef = selected || _.keys(presets)[0] || null
+    selectedDef = selected || _.keys(presets)[0] || null,
+    addPreset = useCallback(() => {
+      setAdding(true)
+      setNewName('')
+    }, []),
+    removePreset = useCallback(() => dispatch(Actions.deleteControlPreset(selectedDef)), [
+      selectedDef,
+    ]),
+    applyPreset = useCallback(() => dispatch(Actions.applyControlPreset(selectedDef)), [
+      selectedDef,
+    ]),
+    handleBlur = useCallback(() => {
+      setAdding(false)
+      handleCreatePreset(newName)
+    }, [newName]),
+    handleKeyDown = useCallback(
+      e => {
+        if (e.key === 'Enter' || e.key === 'Tab') handleCreatePreset(newName)
+        if (e.key === 'Escape') setAdding(false)
+      },
+      [newName]
+    )
 
   return (
     <PresetsWrapper>
@@ -124,35 +145,18 @@ function Presets() {
           disabled={!selectedDef}
           asButton
           name="cheveron-left"
-          onClick={() => dispatch(Actions.applyControlPreset(selectedDef))}
+          onClick={applyPreset}
         />
         <HeadGroup>
-          <Icon
-            asButton
-            name="add"
-            onClick={() => {
-              setAdding(true)
-              setNewName('')
-            }}
-          />
-          <Icon
-            asButton
-            name="remove"
-            onClick={() => dispatch(Actions.deleteControlPreset(selectedDef))}
-          />
+          <Icon asButton name="add" onClick={addPreset} />
+          <Icon asButton name="remove" onClick={removePreset} />
         </HeadGroup>
       </PresetsHead>
       <PresetsBody>
         {adding && (
           <PresetInput
-            onBlur={() => {
-              setAdding(false)
-              handleCreatePreset(newName)
-            }}
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === 'Tab') handleCreatePreset(newName)
-              if (e.key === 'Escape') setAdding(false)
-            }}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
             inRef={r => r && r.focus()}
             value={newName}
             onChange={e => setNewName(e.target.value)}

@@ -12,7 +12,6 @@ import getImpulses from 'render/util/impulse-detect'
 
 import { getRelativePos } from './utils'
 import { useSelectable } from 'render/components/selection'
-import Icon from 'render/components/icon'
 import useMeasure from 'render/components/measure'
 
 import useZoom from './zoom'
@@ -45,27 +44,20 @@ const TrackWrapper = SortableElement(ctyled.div
   outline:none;
 `)
 
-const TrackCanvasWrapper = ctyled.div.styles({
+const TrackCanvasWrapper = ctyled.div.attrs({ dim: false, disabled: false }).styles({
   flex: 1,
   bg: true,
   color: c => c.contrast(-0.1),
-})
+}).extend`
+  ${(_, { dim }) => dim && `opacity:0.5;`}
+  ${(_, { disabled }) => disabled && `pointer-events:none;`}
+`
 
 const TrackCanvas = ctyled.canvas.attrs({ selected: false }).extend`
   position:absolute;
   width:100%;
   height:100%;
   transition:0.15s all;
-`
-
-const CornerWrapper = ctyled.div.styles({
-  padd: 0.5,
-  gutter: 1,
-  align: 'center',
-}).extend`
-  top:0;
-  right:15px;
-  position:absolute;
 `
 
 export interface TrackContainerProps {
@@ -128,8 +120,6 @@ const Track = memo(
     setPlayLock,
     trackScroll,
   }: TrackProps) {
-    const dispatch = useDispatch()
-
     /* computed data */
     const impulses = useMemo(() => loaded && getImpulses(trackId), [loaded, trackId])
 
@@ -273,12 +263,6 @@ const Track = memo(
         [...clickCtxtValues, ...viewValues, source.bounds]
       )
 
-    /* styles */
-    const delIconSty = useMemo(
-      () => ({ size: s => s * 1.1, color: c => c.contrast(0.3) }),
-      []
-    )
-
     return (
       <>
         <TrackCanvasWrapper
@@ -287,10 +271,8 @@ const Track = memo(
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onDoubleClick={handleDoubleClick}
-          style={{
-            pointerEvents: noClick || !loaded ? 'none' : 'all',
-            opacity: loaded ? 1 : 0.5,
-          }}
+          dim={!loaded}
+          disabled={noClick || !loaded}
         >
           <TrackCanvas
             selected={track.selected}
@@ -298,17 +280,6 @@ const Track = memo(
             width={width * 2}
             height={height * 2}
           />
-          <CornerWrapper>
-            <Icon
-              asButton
-              onClick={e => {
-                e.stopPropagation()
-                dispatch(Actions.rmTrack(trackId))
-              }}
-              styles={delIconSty}
-              name="close-thin"
-            />
-          </CornerWrapper>
         </TrackCanvasWrapper>
       </>
     )
@@ -347,7 +318,16 @@ export default function TrackContainer(props: TrackContainerProps) {
     isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId)),
     hasMissingSource = _.some(_.values(source.sourceTracks), track => track.missing),
     trackScroll = useSelector(state => state.settings.trackScroll),
-    inferredSample = sample || track.playback.chunks[0]
+    inferredSample = sample || track.playback.chunks[0],
+    handleMouseLeave = useCallback(() => {
+      if (!track.editing && track.playback.playing && !track.playLock)
+        dispatch(
+          Actions.setTrackPlayLock({
+            trackId: props.trackId,
+            playlock: true,
+          })
+        )
+    }, [track.editing, track.playback.playing, track.playLock, props.trackId])
 
   return (
     <TrackWrapper
@@ -357,15 +337,7 @@ export default function TrackContainer(props: TrackContainerProps) {
       selected={track.selected}
       warn={hasMissingSource}
       tabIndex={-1}
-      onMouseLeave={() => {
-        if (!track.editing && track.playback.playing && !track.playLock)
-          dispatch(
-            Actions.setTrackPlayLock({
-              trackId: props.trackId,
-              playlock: true,
-            })
-          )
-      }}
+      onMouseLeave={handleMouseLeave}
     >
       {!wayOffScreen && (
         <>

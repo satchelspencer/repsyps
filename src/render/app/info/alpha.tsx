@@ -51,7 +51,7 @@ const Alpha = memo((props: AlphaProps) => {
       title={
         <>
           <HeaderContent>
-            <Icon name="meter" styles={{size: s => s*1.3}}/>
+            <Icon name="meter" scale={1.3} />
             <span>&nbsp;Speed</span>
           </HeaderContent>
           <Setter alpha={1 / 4} text="1/4x" currentAlpha={alpha} setAlpha={setAlpha} />

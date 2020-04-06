@@ -1,12 +1,12 @@
-import React, { memo, useState, useRef, useEffect, useContext, useCallback } from 'react'
+import React, { memo, useCallback } from 'react'
 import * as _ from 'lodash'
-import ctyled, { inline } from 'ctyled'
+import ctyled from 'ctyled'
 
 import { useSelector, useDispatch } from 'render/redux/react'
-import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 
 import Icon from 'render/components/icon'
+import extend from 'render/util/extend'
 
 const ControlsOptionsWrapper = ctyled.div.styles({
   width: 1.5,
@@ -27,41 +27,46 @@ const OptionsGroup = ctyled.div.styles({
   align: 'center',
 })
 
+const DisableIcon = extend(
+  Icon,
+  ({ enabled }) => ({
+    styles: {
+      color: c => (enabled ? c : c.as(['#ff000080', '#ff000080'])),
+    },
+  }),
+  { enabled: false }
+)
+
 export interface OptionsProps {
   onIncZoom: (diff: number) => void
 }
 
 function ControlsOptions(props: OptionsProps) {
   const enabled = useSelector(state => state.live.controlsEnabled),
-    dispatch = useDispatch()
+    dispatch = useDispatch(),
+    handleDisable = useCallback(() => dispatch(Actions.setControlsEnabled(!enabled)), [
+      enabled,
+    ]),
+    handleReplay = useCallback(() => dispatch(Actions.zeroInitValues({})), []),
+    handleClear = useCallback(() => dispatch(Actions.clearControls({})), []),
+    handleZoomIn = useCallback(() => props.onIncZoom(-1), [props.onIncZoom]),
+    handleZoomOut = useCallback(() => props.onIncZoom(+1), [props.onIncZoom])
 
   return (
     <ControlsOptionsWrapper>
       <OptionsGroup>
-        <Icon asButton name="zoom-in" onClick={() => props.onIncZoom(-1)} />
-        <Icon asButton name="zoom-out" onClick={() => props.onIncZoom(+1)} />
-        <Icon
+        <Icon asButton name="zoom-in" onClick={handleZoomIn} />
+        <Icon asButton name="zoom-out" onClick={handleZoomOut} />
+        <DisableIcon
           asButton
-          styles={{
-            size: s => s * 0.8,
-            color: c => (enabled ? c : c.as(['#ff000080', '#ff000080'])),
-          }}
+          enabled={enabled}
           name={enabled ? 'volume' : 'volume_mute'}
-          onClick={() => dispatch(Actions.setControlsEnabled(!enabled))}
+          onClick={handleDisable}
+          scale={0.8}
         />
-        <Icon
-          asButton
-          styles={{ size: s => s * 1.1 }}
-          name="replay"
-          onClick={() => dispatch(Actions.zeroInitValues({}))}
-        />
+        <Icon scale={1.1} asButton name="replay" onClick={handleReplay} />
       </OptionsGroup>
-      <Icon
-        asButton
-        styles={{ size: s => s * 1 }}
-        name="close-thin"
-        onClick={() => dispatch(Actions.clearControls({}))}
-      />
+      <Icon scale={1.1} asButton name="close-thin" onClick={handleClear} />
     </ControlsOptionsWrapper>
   )
 }

@@ -7,16 +7,19 @@ import * as Selectors from 'render/redux/selectors'
 import mappings from 'render/util/mappings'
 
 import Icon from 'render/components/icon'
-import { HeaderContent, SliderWrapper, ItemAdder } from 'render/components/misc'
+import {
+  HeaderContent,
+  SliderWrapper,
+  ItemAdder,
+  Horizontal,
+} from 'render/components/misc'
 import Slider from 'render/components/slider'
-
-import SidebarItem from 'render/components/item'
 
 export interface FilterProps {
   trackId: string
 }
 
-const center = mappings.filter.toStandard(0.5)
+const center = [mappings.filter.toStandard(0.5)]
 
 const Filter = memo((props: FilterProps) => {
   const filter = useSelector(state => state.live.tracks[props.trackId].playback.filter),
@@ -34,31 +37,31 @@ const Filter = memo((props: FilterProps) => {
         )
       },
       [props.trackId, name]
+    ),
+    controlParams = useMemo(
+      () => ({
+        trackIndex,
+        trackProp: 'filter',
+      }),
+      [trackIndex]
     )
 
   return (
-    <SidebarItem
-      title={
-        <ItemAdder
-          params={{
-            trackIndex,
-            trackProp: 'filter',
-          }}
-        >
-          <HeaderContent>
-            <Icon styles={{ size: s => s * 1.2 }} name="spectrum" />
-            <span>&nbsp;Filter</span>
-          </HeaderContent>
-          <SliderWrapper styles={{ size: s => s * 1 }}>
-            <Slider
-              value={mappings.filter.toStandard(filter)}
-              onChange={setFilter}
-              markers={[center]}
-            />
-          </SliderWrapper>
-        </ItemAdder>
-      }
-    />
+    <Horizontal>
+      <ItemAdder params={controlParams}>
+        <HeaderContent>
+          <Icon scale={1.2} name="spectrum" />
+          <span>&nbsp;Filter</span>
+        </HeaderContent>
+        <SliderWrapper>
+          <Slider
+            value={mappings.filter.toStandard(filter)}
+            onChange={setFilter}
+            markers={center}
+          />
+        </SliderWrapper>
+      </ItemAdder>
+    </Horizontal>
   )
 })
 

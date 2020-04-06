@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'render/redux/react'
 import separate from 'render/util/separate'
 
 import Icon from 'render/components/icon'
-import { WideButton, HeaderContent } from 'render/components/misc'
+import { HeaderContent, FillButton } from 'render/components/misc'
 
 import SidebarItem from 'render/components/item'
 
@@ -26,12 +26,10 @@ const Separate = memo((props: SeparateProps) => {
       title={
         <>
           <HeaderContent>
-            <Icon name="cut" styles={{ size: s => s * 1.1 }} />
+            <Icon name="cut" scale={1.1} />
             <span>&nbsp;Track Separation</span>
           </HeaderContent>
-          <WideButton styles={{ flex: 1 }} onClick={handleSeparate}>
-            Separate
-          </WideButton>
+          <FillButton onClick={handleSeparate}>Separate</FillButton>
         </>
       }
     />

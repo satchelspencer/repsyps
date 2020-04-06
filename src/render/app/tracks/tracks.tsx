@@ -60,6 +60,29 @@ function getSceneIndex(items: any[], sceneCount: number, itemIndex: number): num
   return sceneIndex
 }
 
+interface SceneHeaderProps {
+  selected: boolean
+  index: number
+  item: number
+  onSelectScene: (sceneIndex: number) => any
+}
+
+const SceneHeader = memo((props: SceneHeaderProps) => {
+  const handleClick = useCallback(() => props.onSelectScene(props.item), [
+    props.item,
+    props.onSelectScene,
+  ])
+  return (
+    <SortableSceneDivider
+      selected={props.selected}
+      index={props.index}
+      onClick={handleClick}
+    >
+      {props.item + 1}
+    </SortableSceneDivider>
+  )
+})
+
 function Tracks() {
   const scenes = useSelector(state => state.live.scenes),
     currentSceneIndex = useSelector(state => state.live.sceneIndex),
@@ -95,10 +118,29 @@ function Tracks() {
   }, [])
 
   const scenesItems: (number | string)[] = scenes
-    .reduce((memo, scene, sceneIndex) => {
-      return [...memo, sceneIndex, ...scene.trackIds]
-    }, [])
-    .slice(1)
+      .reduce((memo, scene, sceneIndex) => {
+        return [...memo, sceneIndex, ...scene.trackIds]
+      }, [])
+      .slice(1),
+    handleSortEnd = useCallback(
+      ({ oldIndex, newIndex }) => {
+        const newItems = arrayMove(scenesItems, oldIndex, newIndex),
+          item = newItems[newIndex],
+          oldSceneIndex = getSceneIndex(scenesItems, scenes.length, oldIndex),
+          newSceneIndex = getSceneIndex(newItems, scenes.length, newIndex)
+
+        dispatch(
+          Actions.addTrackToScene({
+            trackId: item as string,
+            fromSceneIndex: oldSceneIndex,
+            toSceneIndex: newSceneIndex,
+            trackIndex: newIndex - newItems.indexOf(newSceneIndex) - 1,
+          })
+        )
+      },
+      [scenesItems, scenes.length]
+    ),
+    handleSelectFirst = useCallback(() => handleSelectScene(0), [handleSelectScene])
 
   return (
     <TrackWrapper>
@@ -107,32 +149,13 @@ function Tracks() {
         lockAxis="y"
         useDragHandle
         lockToContainerEdges
-        onSortEnd={({ oldIndex, newIndex }) => {
-          const newItems = arrayMove(scenesItems, oldIndex, newIndex),
-            item = newItems[newIndex],
-            oldSceneIndex = getSceneIndex(scenesItems, scenes.length, oldIndex),
-            newSceneIndex = getSceneIndex(newItems, scenes.length, newIndex)
-
-          dispatch(
-            Actions.addTrackToScene({
-              trackId: item as string,
-              fromSceneIndex: oldSceneIndex,
-              toSceneIndex: newSceneIndex,
-              trackIndex: newIndex - newItems.indexOf(newSceneIndex) - 1,
-            })
-          )
-
-          //console.log('ts', oldSceneIndex, newSceneIndex, newSceneOrder)
-        }}
+        onSortEnd={handleSortEnd}
         distance={5}
         transitionDuration={0}
         onScroll={handleScroll}
         inRef={wrapperRef}
       >
-        <SceneDivider
-          onClick={() => handleSelectScene(0)}
-          selected={currentSceneIndex === 0}
-        >
+        <SceneDivider onClick={handleSelectFirst} selected={currentSceneIndex === 0}>
           1
         </SceneDivider>
         {scenesItems.map((item, index) => {
@@ -140,18 +163,17 @@ function Tracks() {
             return <Track index={index} vBounds={vBounds} key={item} trackId={item} />
           else
             return (
-              <SortableSceneDivider
-                selected={currentSceneIndex === item}
-                index={index}
-                onClick={() => handleSelectScene(item)}
+              <SceneHeader
                 key={item}
-              >
-                {item + 1}
-              </SortableSceneDivider>
+                index={index}
+                item={item}
+                onSelectScene={handleSelectScene}
+                selected={currentSceneIndex === item}
+              />
             )
         })}
       </TracksList>
-      <Recording/>
+      <Recording />
     </TrackWrapper>
   )
 }

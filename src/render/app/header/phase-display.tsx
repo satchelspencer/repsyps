@@ -19,6 +19,8 @@ export interface PhaseDisplayProps {
   time: number
 }
 
+const svgStyle = { width: '100%', height: '100%' }
+
 const PhaseDisplay = memo((props: PhaseDisplayProps) => {
   const radius = 40,
     x = 50,
@@ -32,7 +34,7 @@ const PhaseDisplay = memo((props: PhaseDisplayProps) => {
 
   return (
     <PhaseDisplayWrapper>
-      <svg style={{ width: '100%', height: '100%' }} viewBox="0 0 100 100">
+      <svg style={svgStyle} viewBox="0 0 100 100">
         <path
           stroke={style.theme.color.nudge(0.2).bg}
           fill="none"

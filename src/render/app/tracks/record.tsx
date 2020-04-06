@@ -70,18 +70,11 @@ export interface RecordingProps {
   enabled: boolean
 }
 
-const RIcon = extend(Icon, {
+const RIcon = extend(Icon, () => ({
   styles: {
     color: c => c.as(['rgba(255,0,0,0.6)', 'rgba(255,0,0,0.6)']),
-    size: s => s * 1.4,
   },
-})
-
-const CancelIcon = extend(Icon, {
-  styles: {
-    size: s => s * 1.4,
-  },
-})
+}))
 
 const Recording = memo(
   (props: RecordingProps) => {
@@ -213,7 +206,7 @@ const Recording = memo(
     return (
       <RecordingWrapper visible={enabled}>
         <RecordingControls>
-          <RIcon onClick={handleClick} asButton name="record" />
+          <RIcon scale={1.4} onClick={handleClick} asButton name="record" />
           <TimeCode>
             {preRecord ? '-' : '+'}
             {pad(2, Math.floor(lenMinutes) + '', '0')}:
@@ -225,7 +218,7 @@ const Recording = memo(
           <RecCanvas inRef={canvasRef} width={pos.width * 2} height={pos.height * 2} />
         </WaveformWrapper>
         <RecordingControls>
-          <CancelIcon asButton onClick={handleCancel} name="close-thin" />
+          <Icon scale={1.4} asButton onClick={handleCancel} name="close-thin" />
         </RecordingControls>
       </RecordingWrapper>
     )

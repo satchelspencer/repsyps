@@ -155,6 +155,19 @@ export default function init(store: Store<Types.State>) {
           ],
         },
         {
+          label: 'Track',
+          submenu: [
+            {
+              label: 'Delete Track',
+              accelerator: 'CmdOrCtrl+Backspace',
+              click: () => {
+                const selectedTrackId = Selectors.getSelectedTrackId(store.getState())
+                store.dispatch(Actions.rmTrack(selectedTrackId))
+              },
+            },
+          ],
+        },
+        {
           label: 'View',
           submenu: [
             {

@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React, { memo, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
@@ -17,19 +17,22 @@ export interface PadProps {
 }
 
 function Pad(props: PadProps) {
-  const { value, onChange } = props
+  const { value, onChange } = props,
+    handleMouseDown = useCallback(
+      e => {
+        e.stopPropagation()
+        e.preventDefault()
+        onChange(1 - value)
+      },
+      [value]
+    ),
+    handleMouseUp = useCallback(() => onChange(1 - value), [value])
 
   return (
     <PadWrapper
       active={value < 0.5}
-      onMouseDown={e => {
-        e.stopPropagation()
-        e.preventDefault()
-        onChange(1 - value)
-      }}
-      onMouseUp={() => {
-        onChange(1 - value)
-      }}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
     />
   )
 }

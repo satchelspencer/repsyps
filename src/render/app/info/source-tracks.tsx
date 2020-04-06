@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useRef, useEffect } from 'react'
+import React, { memo, useMemo, useRef, useEffect, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 import pathUtils from 'path'
@@ -6,6 +6,7 @@ import pathUtils from 'path'
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
+import * as Types from 'render/util/types'
 import { getId } from 'render/util/uid'
 
 import { adder } from 'render/components/control-adder'
@@ -13,6 +14,7 @@ import Volume from 'render/components/volume'
 import Icon from 'render/components/icon'
 import { WideButton } from 'render/components/misc'
 import SidebarItem from 'render/components/item'
+import volume from './volume'
 
 const TracksWrapper = ctyled.div.styles({
   gutter: 1,
@@ -36,7 +38,7 @@ const TrackNameInner = ctyled.div.styles({}).extendSheet`
   font-weight:bold;
 `
 
-const TrackWrapper = ctyled.div.styles({
+const TrackWrapper = ctyled.div.attrs({ loaded: false }).styles({
   column: true,
   flex: 1,
   padd: 0.75,
@@ -45,7 +47,9 @@ const TrackWrapper = ctyled.div.styles({
   rounded: true,
   border: true,
   borderColor: c => c.contrast(-0.1),
-})
+}).extend`
+  opacity:${(_, { loaded }) => (loaded ? 1 : 0)};
+`
 
 const TrackH = adder(
   ctyled.div.styles({
@@ -63,6 +67,89 @@ const TrackHead = ctyled.div.styles({
 export interface TrackVolumeProps {
   trackId: string
 }
+
+interface SourceTrackProps {
+  trackId: string
+  sourceTrackId: string
+  sourceTrack: Types.TrackSource
+  trackIndex: number
+  sourceTrackIndex: number
+  params: Types.TrackSourceParams
+  many: boolean
+  visible: boolean
+}
+
+const SourceTrack = memo((props: SourceTrackProps) => {
+  const dispatch = useDispatch(),
+    setVisible = useCallback(
+      () =>
+        dispatch(
+          Actions.setVisibleSourceTrack({
+            trackId: props.trackId,
+            visibleSourceTrack: props.sourceTrackId,
+          })
+        ),
+      [props.trackId, props.sourceTrackId]
+    ),
+    removeTrackSource = useCallback(
+      () =>
+        dispatch(
+          Actions.removeTrackSource({
+            sourceId: props.trackId,
+            sourceTrackId: props.sourceTrackId,
+          })
+        ),
+      [props.trackId, props.sourceTrackId]
+    ),
+    volumeControlParams = useMemo(
+      () => ({
+        trackIndex: props.trackIndex,
+        sourceTrackIndex: props.sourceTrackIndex,
+        sourceTrackProp: 'volume',
+      }),
+      [props.trackIndex, props.sourceTrackIndex]
+    ),
+    handleVolumeChange = useCallback(
+      v =>
+        dispatch(
+          Actions.setTrackSourceParams({
+            trackId: props.trackId,
+            sourceTrackId: props.sourceTrackId,
+            sourceTrackParams: { volume: v },
+          })
+        ),
+      [props.trackId, props.sourceTrackId]
+    )
+  return (
+    <SidebarItem
+      key={props.sourceTrackId}
+      title={
+        <TrackWrapper loaded={props.sourceTrack.loaded}>
+          <TrackHead>
+            <Icon name="wave" scale={1.75} />
+            {props.many && (
+              <Icon
+                asButton
+                name={props.visible ? 'show' : 'hide'}
+                onClick={setVisible}
+                scale={1.2}
+              />
+            )}
+            <TrackName selected={false}>
+              <TrackNameInner>{props.sourceTrack.name}</TrackNameInner>
+            </TrackName>
+            {props.sourceTrackId !== props.trackId && (
+              <Icon onClick={removeTrackSource} asButton name="close-thin" />
+            )}
+          </TrackHead>
+          <TrackH params={volumeControlParams}>
+            <Volume volume={props.params.volume} onChange={handleVolumeChange} />
+          </TrackH>
+        </TrackWrapper>
+      }
+    />
+  )
+})
 
 const SourceTracks = (props: TrackVolumeProps) => {
   const sourceTracksParams = useSelector(
@@ -110,79 +197,23 @@ const SourceTracks = (props: TrackVolumeProps) => {
     }
   }, [props.trackId])
 
-  const sourceTrackIds = _.keys(source.sourceTracks)
+  const sourceTrackIds = _.keys(source.sourceTracks),
+    many = sourceTrackIds.length > 1
 
   return (
     <TracksWrapper>
       {sourceTrackIds.map((sourceTrackId, sourceTrackIndex) => {
-        const sourceTrackParams = sourceTracksParams[sourceTrackId],
-          sourceTrack = source.sourceTracks[sourceTrackId]
         return (
-          <SidebarItem
-            key={sourceTrackId}
-            title={
-              <TrackWrapper
-                style={{
-                  opacity: sourceTrack.loaded ? 1 : 0.5,
-                }}
-              >
-                <TrackHead>
-                  <Icon name="wave" styles={{ size: s => s * 1.75 }} />
-                  {sourceTrackIds.length > 1 && (
-                    <Icon
-                      asButton
-                      name={visibleSourceTrackId === sourceTrackId ? 'show' : 'hide'}
-                      onClick={() =>
-                        dispatch(
-                          Actions.setVisibleSourceTrack({
-                            trackId: props.trackId,
-                            visibleSourceTrack: sourceTrackId,
-                          })
-                        )
-                      }
-                      styles={{ size: s => s * 1.2 }}
-                    />
-                  )}
-                  <TrackName selected={false}>
-                    <TrackNameInner>{sourceTrack.name}</TrackNameInner>
-                  </TrackName>
-                  {sourceTrackId !== props.trackId && (
-                    <Icon
-                      onClick={() =>
-                        dispatch(
-                          Actions.removeTrackSource({
-                            sourceId: props.trackId,
-                            sourceTrackId: sourceTrackId,
-                          })
-                        )
-                      }
-                      asButton
-                      name="close-thin"
-                    />
-                  )}
-                </TrackHead>
-                <TrackH
-                  params={{
-                    trackIndex,
-                    sourceTrackIndex,
-                    sourceTrackProp: 'volume',
-                  }}
-                >
-                  <Volume
-                    volume={sourceTrackParams.volume}
-                    onChange={v =>
-                      dispatch(
-                        Actions.setTrackSourceParams({
-                          trackId: props.trackId,
-                          sourceTrackId,
-                          sourceTrackParams: { volume: v },
-                        })
-                      )
-                    }
-                  />
-                </TrackH>
-              </TrackWrapper>
-            }
+          <SourceTrack
+            key={sourceTrackIndex}
+            trackId={props.trackId}
+            sourceTrackId={sourceTrackId}
+            sourceTrack={source.sourceTracks[sourceTrackId]}
+            trackIndex={trackIndex}
+            sourceTrackIndex={sourceTrackIndex}
+            params={sourceTracksParams[sourceTrackId]}
+            many={many}
+            visible={visibleSourceTrackId === sourceTrackId}
           />
         )
       })}

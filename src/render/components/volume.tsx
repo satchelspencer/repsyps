@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
@@ -19,39 +19,44 @@ export interface VolumeProps {
   onChange: (volume: number) => any
 }
 
-const CENTER = 2 / 3
+const CENTER = [2 / 3]
 
 export default function Volume(props: VolumeProps) {
   const [muted, setMuted] = useState(false),
-    [lastVolume, setLastVolume] = useState(1)
+    [lastVolume, setLastVolume] = useState(1),
+    handleMute = useCallback(() => {
+      if (props.volume) {
+        setLastVolume(props.volume)
+        setMuted(true)
+        props.onChange(0)
+      } else {
+        setMuted(false)
+        props.onChange(lastVolume)
+      }
+    }, [props.volume, props.onChange]),
+    handleChange = useCallback(
+      v => {
+        setMuted(false)
+        props.onChange(mappings.volume.fromStandard(v))
+      },
+      [props.onChange]
+    )
 
   return (
     <VolumeWrapper>
       {!props.noIcon && (
         <Icon
-          styles={{ size: s => s * 1.3 }}
+          scale={1.3}
           asButton
           name={props.volume ? 'volume' : 'volume_mute'}
-          onClick={() => {
-            if (props.volume) {
-              setLastVolume(props.volume)
-              setMuted(true)
-              props.onChange(0)
-            } else {
-              setMuted(false)
-              props.onChange(lastVolume)
-            }
-          }}
+          onClick={handleMute}
         />
       )}
-      <SliderWrapper style={{ opacity: muted || !props.volume ? 0.5 : 1 }}>
+      <SliderWrapper>
         <Slider
           value={mappings.volume.toStandard(muted ? lastVolume : props.volume)}
-          onChange={v => {
-            setMuted(false)
-            props.onChange(mappings.volume.fromStandard(v))
-          }}
-          markers={[CENTER]}
+          onChange={handleChange}
+          markers={CENTER}
         />
       </SliderWrapper>
     </VolumeWrapper>

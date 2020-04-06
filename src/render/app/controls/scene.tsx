@@ -1,4 +1,4 @@
-import React, {memo} from 'react'
+import React, { memo, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled, { inline } from 'ctyled'
 
@@ -32,11 +32,12 @@ const SceneNumber = ctyled.div.class(inline).styles({
   borderColor: c => c.contrast(-0.3),
 })
 
-const Side = ctyled.div.styles({
+const Side = ctyled.div.attrs({ start: true }).styles({
   flex: 1,
   padd: 2,
   align: 'center',
   gutter: 2,
+  justify: (_, { start }) => (!start ? 'flex-start' : 'flex-end'),
 })
 
 function ScenesContainer() {
@@ -46,47 +47,31 @@ function ScenesContainer() {
     dispatch = useDispatch(),
     canBack = sceneIndex > 0
 
+  const deleteScene = useCallback(() => dispatch(Actions.deleteScene(sceneIndex)), [
+      sceneIndex,
+    ]),
+    createScene = useCallback(() => dispatch(Actions.createScene(sceneIndex + 1)), [
+      sceneIndex,
+    ]),
+    handleBack = useCallback(() => {
+      dispatch(Actions.setSceneIndex(sceneIndex - 1))
+      dispatch(Actions.selectTrackExclusive(prevScene.trackIds[0]))
+    }, [sceneIndex, prevScene]),
+    handleNext = useCallback(() => {
+      dispatch(Actions.setSceneIndex(sceneIndex + 1))
+      dispatch(Actions.selectTrackExclusive(nextScene && nextScene.trackIds[0]))
+    }, [sceneIndex, nextScene])
+
   return (
     <ScenesWrapper>
-      <Side styles={{ justify: 'flex-end' }}>
-        <Icon
-          asButton
-          styles={{ size: s => s * 1.7 }}
-          onClick={() => {
-            dispatch(Actions.deleteScene(sceneIndex))
-          }}
-          name="remove"
-        />
-        <Icon
-          asButton
-          style={{ opacity: canBack ? undefined : 0.1, pointerEvents: canBack ? 'all' : 'none' }}
-          styles={{ size: s => s * 2 }}
-          onClick={() => {
-            dispatch(Actions.setSceneIndex(sceneIndex - 1))
-            dispatch(Actions.selectTrackExclusive(prevScene.trackIds[0]))
-          }}
-          name="prev"
-        />
+      <Side start>
+        <Icon asButton scale={1.7} onClick={deleteScene} name="remove" />
+        <Icon asButton disabled={!canBack} scale={2} onClick={handleBack} name="prev" />
       </Side>
       <SceneNumber>{sceneIndex + 1}</SceneNumber>
-      <Side styles={{ justify: 'flex-start' }}>
-        <Icon
-          asButton
-          styles={{ size: s => s * 2 }}
-          onClick={() => {
-            dispatch(Actions.setSceneIndex(sceneIndex + 1))
-            dispatch(Actions.selectTrackExclusive(nextScene && nextScene.trackIds[0]))
-          }}
-          name="next"
-        />
-        <Icon
-          asButton
-          styles={{ size: s => s * 1.7 }}
-          onClick={() => {
-            dispatch(Actions.createScene(sceneIndex + 1))
-          }}
-          name="add"
-        />
+      <Side start={false}>
+        <Icon asButton disabled={!nextScene} scale={2} onClick={handleNext} name="next" />
+        <Icon asButton scale={1.7} onClick={createScene} name="add" />
       </Side>
     </ScenesWrapper>
   )

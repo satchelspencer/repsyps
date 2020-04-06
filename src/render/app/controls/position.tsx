@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React, { memo, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled, { active } from 'ctyled'
 
@@ -10,12 +10,13 @@ import { useSelector, useDispatch } from 'render/redux/react'
 import { useSelection } from 'render/components/selection'
 import {
   WideButton,
+  FillButton,
   SelectableButton,
   HeaderContent,
   SidebarValue,
+  Horizontal,
 } from 'render/components/misc'
 import Icon from 'render/components/icon'
-import SidebarItem from 'render/components/item'
 
 import { shortNames, getControlName, getDefaultBindingType, getIcon } from './utils'
 
@@ -46,24 +47,29 @@ const BodyInner = ctyled.div.styles({
   bottom:0;
 `
 
-const ControlBloc = ctyled.div.class(active).styles({
-  gutter: 1,
-  flex: 1,
-  bg: true,
-  color: c => c.nudge(0.05),
-  border: 1,
-  borderColor: c => c.contrast(-0.1),
-  padd: 1,
-  height: 1.75,
-  align: 'center',
-  rounded: true,
-  hover: 0.1,
-})
+const ControlBloc = ctyled.div
+  .class(active)
+  .attrs<{ compact?: boolean }>({ compact: false })
+  .styles({
+    gutter: 1,
+    flex: (_, { compact }) => (compact ? 'none' : 1),
+    bg: true,
+    color: c => c.nudge(0.05),
+    border: 1,
+    borderColor: c => c.contrast(-0.1),
+    padd: 1,
+    height: 1.75,
+    align: 'center',
+    rounded: true,
+    hover: 0.1,
+  })
 
-const ControlWrapper = ctyled.div.styles({
+const ControlWrapper = ctyled.div.attrs({ ignored: false }).styles({
   gutter: 1,
   align: 'center',
-})
+}).extend`
+  ${(_, { ignored }) => ignored && `opacity:0.5;`}
+`
 
 const ControlNameWrapper = ctyled.div.styles({ flex: 1, height: 1.3 })
 
@@ -100,9 +106,102 @@ function PositionDetail(props: ControlDetailProps) {
     ),
     dispatch = useDispatch()
 
-  const { getSelection, isSelecting } = useSelection<Types.Control>('control')
+  const { getSelection, isSelecting } = useSelection<Types.Control>('control'),
+    shouldStartWaiting = !selectedBinding || !selectedBinding.waiting
 
-  const shouldStartWaiting = !selectedBinding || !selectedBinding.waiting
+  const addMidiBinding = useCallback(() => {
+      dispatch(
+        Actions.setBinding({
+          position: props.position,
+          binding: {
+            type: 'value',
+            waiting: shouldStartWaiting,
+          },
+        })
+      )
+    }, [props.position, shouldStartWaiting]),
+    toggleTwoWay = useCallback(() => {
+      if (selectedBinding)
+        dispatch(
+          Actions.setBinding({
+            position: props.position,
+            binding: {
+              twoway: !selectedBinding.twoway,
+            },
+          })
+        )
+    }, [selectedBinding && selectedBinding.twoway, props.position]),
+    removeMidiBinding = useCallback(
+      () => dispatch(Actions.removeBinding(props.position)),
+      [props.position]
+    ),
+    setAbsolute = useCallback(
+      () =>
+        dispatch(
+          Actions.setControlGroup({
+            position: props.position,
+            controlGroup: {
+              absolute: true,
+            },
+          })
+        ),
+      [props.position]
+    ),
+    setRelative = useCallback(
+      () =>
+        dispatch(
+          Actions.setControlGroup({
+            position: props.position,
+            controlGroup: {
+              absolute: false,
+            },
+          })
+        ),
+      [props.position]
+    ),
+    setAsValue = useCallback(
+      () =>
+        dispatch(
+          Actions.setControlGroup({
+            position: props.position,
+            controlGroup: {
+              bindingType: 'value',
+            },
+          })
+        ),
+      [props.position]
+    ),
+    setAsNote = useCallback(
+      () =>
+        dispatch(
+          Actions.setControlGroup({
+            position: props.position,
+            controlGroup: {
+              bindingType: 'note',
+            },
+          })
+        ),
+      [props.position]
+    ),
+    handleAddControl = useCallback(async () => {
+      const control = await getSelection()
+      if (!control) return
+      const currentControls = selectedControlGroup ? selectedControlGroup.controls : [],
+        currentType = selectedControlGroup && selectedControlGroup.bindingType,
+        type = currentType || getDefaultBindingType(control)
+
+      dispatch(
+        Actions.setControlGroup({
+          position: props.position,
+          controlGroup: {
+            absolute: 'globalProp' in control,
+            bindingType: type,
+            position: props.position,
+            controls: [...currentControls, control],
+          },
+        })
+      )
+    }, [selectedControlGroup, props.position])
 
   return (
     <ControlInspector>
@@ -112,47 +211,21 @@ function PositionDetail(props: ControlDetailProps) {
             <HeaderContent>
               <Icon name="midi" />
             </HeaderContent>
-            <WideButton
-              styles={{ flex: 1 }}
-              onClick={() => {
-                dispatch(
-                  Actions.setBinding({
-                    position: props.position,
-                    binding: {
-                      type: 'value',
-                      waiting: shouldStartWaiting,
-                    },
-                  })
-                )
-              }}
-            >
+            <FillButton onClick={addMidiBinding}>
               {shouldStartWaiting ? (
                 <>
                   <Icon name="eyedropper" />
                   &nbsp;Set Midi
                 </>
               ) : (
-                <>Waiting...</>
+                'Waiting...'
               )}
-            </WideButton>
-            <ControlBloc
-              styles={{ flex: 'none' }}
-              style={{
-                opacity: selectedBinding && selectedBinding.twoway ? 1 : 0.5,
-              }}
-              onClick={() => {
-                if (selectedBinding)
-                  dispatch(
-                    Actions.setBinding({
-                      position: props.position,
-                      binding: {
-                        twoway: !selectedBinding.twoway,
-                      },
-                    })
-                  )
-              }}
-            >
-              <Icon styles={{ size: s => s * 1.1 }} name="twoway" />
+            </FillButton>
+            <ControlBloc compact onClick={toggleTwoWay}>
+              <Icon
+                scale={1.1}
+                name={selectedBinding && selectedBinding.twoway ? 'twoway' : 'oneway'}
+              />
             </ControlBloc>
             <SidebarValue>
               {selectedBinding && selectedBinding.note
@@ -160,8 +233,8 @@ function PositionDetail(props: ControlDetailProps) {
                 : '--'}
             </SidebarValue>
             <Icon
-              style={{ opacity: selectedBinding ? 1 : 0.3 }}
-              onClick={() => dispatch(Actions.removeBinding(props.position))}
+              disabled={!selectedBinding}
+              onClick={removeMidiBinding}
               asButton
               name="close"
             />
@@ -170,171 +243,57 @@ function PositionDetail(props: ControlDetailProps) {
             <BodyInner>
               {selectedControlGroup && (
                 <>
-                  <SidebarItem
-                    title={
-                      <>
-                        <ControlSelectableButton
-                          onClick={() =>
-                            dispatch(
-                              Actions.setControlGroup({
-                                position: props.position,
-                                controlGroup: {
-                                  absolute: true,
-                                },
-                              })
-                            )
-                          }
-                          selected={selectedControlGroup.absolute}
-                        >
-                          {selectedControlGroup.absolute && <Icon name="check" />}
-                          Absolute
-                        </ControlSelectableButton>
-                        <ControlSelectableButton
-                          onClick={() =>
-                            dispatch(
-                              Actions.setControlGroup({
-                                position: props.position,
-                                controlGroup: {
-                                  absolute: false,
-                                },
-                              })
-                            )
-                          }
-                          selected={!selectedControlGroup.absolute}
-                        >
-                          {!selectedControlGroup.absolute && <Icon name="check" />}
-                          Relative
-                        </ControlSelectableButton>
-                      </>
-                    }
-                  />
-                  <SidebarItem
-                    title={
-                      <>
-                        <HeaderContent>Control</HeaderContent>
-                        <ControlSelectableButton
-                          onClick={() =>
-                            dispatch(
-                              Actions.setControlGroup({
-                                position: props.position,
-                                controlGroup: {
-                                  bindingType: 'value',
-                                },
-                              })
-                            )
-                          }
-                          selected={selectedControlGroup.bindingType === 'value'}
-                        >
-                          <Icon name="knob" />
-                          &nbsp;Fader
-                        </ControlSelectableButton>
-                        <ControlSelectableButton
-                          onClick={() =>
-                            dispatch(
-                              Actions.setControlGroup({
-                                position: props.position,
-                                controlGroup: {
-                                  bindingType: 'note',
-                                },
-                              })
-                            )
-                          }
-                          selected={selectedControlGroup.bindingType === 'note'}
-                        >
-                          <Icon name="pad" />
-                          &nbsp;Pad
-                        </ControlSelectableButton>
-                      </>
-                    }
-                  />
+                  <Horizontal>
+                    <ControlSelectableButton
+                      onClick={setAbsolute}
+                      selected={selectedControlGroup.absolute}
+                    >
+                      {selectedControlGroup.absolute && <Icon name="check" />}
+                      Absolute
+                    </ControlSelectableButton>
+                    <ControlSelectableButton
+                      onClick={setRelative}
+                      selected={!selectedControlGroup.absolute}
+                    >
+                      {!selectedControlGroup.absolute && <Icon name="check" />}
+                      Relative
+                    </ControlSelectableButton>
+                  </Horizontal>
+                  <Horizontal>
+                    <HeaderContent>Control</HeaderContent>
+                    <ControlSelectableButton
+                      onClick={setAsValue}
+                      selected={selectedControlGroup.bindingType === 'value'}
+                    >
+                      <Icon name="knob" />
+                      &nbsp;Fader
+                    </ControlSelectableButton>
+                    <ControlSelectableButton
+                      onClick={setAsNote}
+                      selected={selectedControlGroup.bindingType === 'note'}
+                    >
+                      <Icon name="pad" />
+                      &nbsp;Pad
+                    </ControlSelectableButton>
+                  </Horizontal>
                 </>
               )}
               {selectedControlGroup &&
                 selectedControlGroup.controls.map((control, index) => {
-                  const icon = getIcon(control),
-                    isIgnored = index > 0 && selectedControlGroup.absolute
                   return (
-                    <ControlWrapper style={{ opacity: isIgnored ? 0.5 : 1 }} key={index}>
-                      <ControlBloc styles={{ bg: false }}>
-                        {icon && <Icon styles={{ size: s => s * 1.1 }} name={icon} />}
-                        <ControlNameWrapper>
-                          <ControlNameInner>{getControlName(control)}</ControlNameInner>
-                        </ControlNameWrapper>
-                      </ControlBloc>
-                      {!selectedControlGroup.absolute && (
-                        <ControlBloc
-                          styles={{ flex: '0' }}
-                          onClick={() => {
-                            const newControls = [...selectedControlGroup.controls]
-                            newControls[index] = {
-                              ...newControls[index],
-                              invert: !control.invert,
-                            }
-                            dispatch(
-                              Actions.setControlGroup({
-                                position: props.position,
-                                controlGroup: {
-                                  controls: newControls,
-                                },
-                              })
-                            )
-                          }}
-                        >
-                          <Icon
-                            styles={{ size: s => s * 1.1 }}
-                            name={control.invert ? 'down' : 'up'}
-                          />
-                        </ControlBloc>
-                      )}
-                      <Icon
-                        asButton
-                        name="close"
-                        onClick={() => {
-                          if (selectedControlGroup.controls.length > 1) {
-                            const newControls = [...selectedControlGroup.controls]
-                            newControls.splice(index, 1)
-                            dispatch(
-                              Actions.setControlGroup({
-                                position: props.position,
-                                controlGroup: {
-                                  controls: newControls,
-                                },
-                              })
-                            )
-                          } else
-                            dispatch(
-                              Actions.deleteControlGroup({ position: props.position })
-                            )
-                        }}
-                      />
-                    </ControlWrapper>
+                    <Control
+                      key={index}
+                      control={control}
+                      index={index}
+                      group={selectedControlGroup}
+                      position={props.position}
+                    />
                   )
                 })}
               {props.position && (
                 <WideButton
                   disabled={selectedControlGroup && selectedControlGroup.absolute}
-                  onClick={async () => {
-                    const control = await getSelection()
-                    if (!control) return
-                    const currentControls = selectedControlGroup
-                        ? selectedControlGroup.controls
-                        : [],
-                      currentType =
-                        selectedControlGroup && selectedControlGroup.bindingType,
-                      type = currentType || getDefaultBindingType(control)
-
-                    dispatch(
-                      Actions.setControlGroup({
-                        position: props.position,
-                        controlGroup: {
-                          absolute: 'globalProp' in control,
-                          bindingType: type,
-                          position: props.position,
-                          controls: [...currentControls, control],
-                        },
-                      })
-                    )
-                  }}
+                  onClick={handleAddControl}
                 >
                   {isSelecting ? (
                     <>Select A Control...</>
@@ -353,5 +312,64 @@ function PositionDetail(props: ControlDetailProps) {
     </ControlInspector>
   )
 }
+
+interface ControlProps {
+  control: Types.Control
+  index: number
+  group: Types.ControlGroup
+  position: Types.Position
+}
+
+const Control = memo((props: ControlProps) => {
+  const dispatch = useDispatch(),
+    icon = getIcon(props.control),
+    isIgnored = props.index > 0 && props.group.absolute,
+    toggleInvert = useCallback(() => {
+      const newControls = [...props.group.controls]
+      newControls[props.index] = {
+        ...newControls[props.index],
+        invert: !props.control.invert,
+      }
+      dispatch(
+        Actions.setControlGroup({
+          position: props.position,
+          controlGroup: {
+            controls: newControls,
+          },
+        })
+      )
+    }, [props.position, props.group.controls, props.index, props.control.invert]),
+    removeControl = useCallback(() => {
+      if (props.group.controls.length > 1) {
+        const newControls = [...props.group.controls]
+        newControls.splice(props.index, 1)
+        dispatch(
+          Actions.setControlGroup({
+            position: props.position,
+            controlGroup: {
+              controls: newControls,
+            },
+          })
+        )
+      } else dispatch(Actions.deleteControlGroup({ position: props.position }))
+    }, [props.group.controls, props.index, props.position])
+
+  return (
+    <ControlWrapper ignored={isIgnored}>
+      <ControlBloc>
+        {icon && <Icon scale={1.1} name={icon} />}
+        <ControlNameWrapper>
+          <ControlNameInner>{getControlName(props.control)}</ControlNameInner>
+        </ControlNameWrapper>
+      </ControlBloc>
+      {!props.group.absolute && (
+        <ControlBloc compact onClick={toggleInvert}>
+          <Icon scale={1.1} name={props.control.invert ? 'down' : 'up'} />
+        </ControlBloc>
+      )}
+      <Icon asButton name="close" onClick={removeControl} />
+    </ControlWrapper>
+  )
+})
 
 export default memo(PositionDetail)

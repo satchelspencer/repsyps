@@ -27,6 +27,8 @@ const PhaseDisplayContainer = () => {
   return <PhaseDisplay time={time} />
 }
 
+const periodParams = { globalProp: 'period' }
+
 const PeriodControl = memo(() => {
   const period = useSelector(state => state.playback.period),
     dispatch = useDispatch(),
@@ -35,8 +37,8 @@ const PeriodControl = memo(() => {
       []
     )
   return (
-    <PeriodWrapper params={{ globalProp: 'period' }}>
-      <Icon styles={{ size: s => s * 1.2 }} name="timer" />
+    <PeriodWrapper params={periodParams}>
+      <Icon scale={1.2} name="timer" />
       <SliderWrapper>
         <Slider value={mappings.period.toStandard(period)} onChange={handleChange} />
       </SliderWrapper>

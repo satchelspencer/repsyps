@@ -154,7 +154,7 @@ function TrackControls(props: TrackControlsProps) {
         <TrackControlsInner>
           <InnerV>
             <SpeedWrapper>
-              <Icon name="timer" styles={{ size: s => s * 1.2 }} />
+              <Icon name="timer" scale={1.2} />
               <span>
                 {barLen > 0 ? _.round(60 / (barLen / RATE), 0) + '/m' : '??'} @{' '}
                 {_.round(baseSpeed * track.playback.alpha * 100, 0)}%
@@ -172,7 +172,7 @@ function TrackControls(props: TrackControlsProps) {
                   )
                 }
               >
-                <Icon name="prev" styles={{ size: s => s * 1.2 }} />
+                <Icon name="prev" scale={1.2} />
               </ControlsButton>
               <CueLabel disabled={!hasCues}>
                 <b>{activeCueIndex === -1 ? 'n/a' : activeCueIndex + 1}</b>
@@ -192,7 +192,7 @@ function TrackControls(props: TrackControlsProps) {
                   name={
                     pausedOnCue ? 'play' : canNext ? (atEnd ? 'stop' : 'next') : 'play'
                   }
-                  styles={{ size: s => s * 1.2 }}
+                  scale={1.2}
                 />
               </ControlsButton>
             </CuesWrapper>

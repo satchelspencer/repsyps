@@ -13,7 +13,7 @@ export const ItemAdder = adder(
   ctyled.div.styles({
     align: 'center',
     flex: 1,
-    gutter: 1
+    gutter: 1,
   })
 )
 
@@ -37,9 +37,16 @@ export const WideButton = Button.styles({
   gutter: 1,
 })
 
-export const SelectableButton = WideButton.attrs({ selected: false }).styles({
-  color: (c, { selected }) => (selected ? c.nudge(0.1).contrast(0.1) : c),
+export const FillButton = WideButton.styles({
   flex: 1,
+})
+
+export const SelectableButton = WideButton.attrs<{
+  selected: boolean
+  compact?: boolean
+}>({ selected: false, compact: false }).styles({
+  color: (c, { selected }) => (selected ? c.nudge(0.1).contrast(0.1) : c),
+  flex: (_, { compact }) => (compact ? 'none' : 1),
 })
 
 export const SidebarValue = Value.class(inline).styles({ height: 1.8 })
@@ -47,9 +54,10 @@ export const SidebarValue = Value.class(inline).styles({ height: 1.8 })
 export const Horizontal = ctyled.div.styles({
   align: 'center',
   //justify: 'space-between',
-  gutter: 0.5,
+  gutter: 1,
 })
 
 export const HeaderContent = Horizontal.styles({
   size: s => s * 1.1,
+  gutter: 0.5,
 })

@@ -1,4 +1,4 @@
-import React, {  memo } from 'react'
+import React, { memo } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
@@ -26,25 +26,25 @@ const Playback = memo(() => {
   return (
     <ControlsWrapper>
       <Icon
-        styles={{ size: s => s * 2 }}
+        scale={2}
         asButton
         name="prev"
         onClick={() => dispatch(Actions.updatePlaybackTime(-1))}
       />
       <Icon
-        styles={{ size: s => s * 2 }}
+        scale={2}
         asButton
         name={playing ? 'pause' : 'play'}
         onClick={() => dispatch(Actions.updatePlayback({ playing: !playing }))}
       />
       <Icon
-        styles={{ size: s => s * 2 }}
+        scale={2}
         asButton
         name="next"
         onClick={() => dispatch(Actions.updatePlaybackTime(+1))}
       />
       <Icon
-        styles={{ size: s => s * 2 }}
+        scale={2}
         asButton
         name="replay"
         onClick={() => dispatch(Actions.resetPlaybackTime({}))}
