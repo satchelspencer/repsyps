@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react'
+import React, { memo, useCallback, useMemo, useState } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
@@ -11,7 +11,12 @@ import inferTimeBase from 'render/util/infer-timebase'
 import { RATE } from 'render/util/audio'
 
 import Icon from 'render/components/icon'
-import { SidebarValue, HeaderContent, FillButton } from 'render/components/misc'
+import {
+  SidebarValue,
+  HeaderContent,
+  FillButton,
+  WideButton,
+} from 'render/components/misc'
 import { useSelection } from 'render/components/selection'
 import SidebarItem from 'render/components/item'
 import { palette } from 'src/render/components/theme'
@@ -43,7 +48,7 @@ const TrackNameInner = ctyled.div.styles({}).extendSheet`
 
 const OffsetValue = SidebarValue.attrs({ active: false }).styles({
   width: 'auto',
-  size: s => s * 0.9,
+  size: (s) => s * 0.9,
   alignSelf: 'flex-start',
 }).extendSheet`
   outline:none;
@@ -53,9 +58,13 @@ const OffsetValue = SidebarValue.attrs({ active: false }).styles({
     active ? 'rgba(255,0,0,0.1) !important' : color.bg};
 `
 
-const PeriodValue = SidebarValue.styles({ size: s => s * 0.95 })
+const PeriodValue = SidebarValue.styles({ size: (s) => s * 0.95 })
 
-const ClearButton = FillButton.styles({ color: c => c.as(palette.red) })
+const ClearButton = FillButton.styles({ color: (c) => c.as(palette.red) })
+
+const SnapButton = WideButton.attrs({ enabled: false }).extend`
+  ${(_, { enabled }) => !enabled && `opacity:0.4;`}
+`
 
 const SourceTrack = ctyled.div.styles({
   gutter: 1,
@@ -77,12 +86,13 @@ export interface BoundsControlProps {
 
 const BoundsControl = memo((props: BoundsControlProps) => {
   const { playback, editing, sourceTrackEditing } = useSelector(
-      state => state.live.tracks[props.trackId]
+      (state) => state.live.tracks[props.trackId]
     ),
-    { bounds, sourceTracks } = useSelector(state => state.sources[props.trackId]),
-    loaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId)),
+    { bounds, sourceTracks } = useSelector((state) => state.sources[props.trackId]),
+    loaded = useSelector((state) => Selectors.getTrackIsLoaded(state, props.trackId)),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection<string>('track'),
+    [snap, setSnap] = useState(true),
     impulses = useMemo(() => loaded && getImpulses(props.trackId), [
       loaded,
       props.trackId,
@@ -95,17 +105,17 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       dispatch(
         Actions.setSourceBounds({
           sourceId: props.trackId,
-          bounds: inferTimeBase(playback.chunks, impulses),
+          bounds: inferTimeBase(playback.chunks, impulses, snap),
         })
       )
-    }, [playback.chunks, impulses]),
+    }, [playback.chunks, impulses, snap]),
     inferLeft = useCallback(() => {
       if (!clength || !impulses) return
       const endPoint = cstart + clength,
-        inferredBounds = inferTimeBase(playback.chunks, impulses).filter(
-          bound => bound <= endPoint
+        inferredBounds = inferTimeBase(playback.chunks, impulses, snap).filter(
+          (bound) => bound <= endPoint
         ),
-        existingBounds = bounds.filter(bound => bound > endPoint)
+        existingBounds = bounds.filter((bound) => bound > endPoint)
 
       dispatch(
         Actions.setSourceBounds({
@@ -113,14 +123,14 @@ const BoundsControl = memo((props: BoundsControlProps) => {
           bounds: _.sortBy([...inferredBounds, ...existingBounds]),
         })
       )
-    }, [playback.chunks, bounds, impulses]),
+    }, [playback.chunks, bounds, impulses, snap]),
     inferRight = useCallback(() => {
       if (!clength || !impulses) return
       const startPoint = cstart,
-        inferredBounds = inferTimeBase(playback.chunks, impulses).filter(
-          bound => bound >= startPoint
+        inferredBounds = inferTimeBase(playback.chunks, impulses, snap).filter(
+          (bound) => bound >= startPoint
         ),
-        existingBounds = bounds.filter(bound => bound < startPoint)
+        existingBounds = bounds.filter((bound) => bound < startPoint)
 
       dispatch(
         Actions.setSourceBounds({
@@ -128,7 +138,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
           bounds: _.sortBy([...inferredBounds, ...existingBounds]),
         })
       )
-    }, [playback.chunks, bounds, impulses]),
+    }, [playback.chunks, bounds, impulses, snap]),
     avgBar = useMemo(() => {
       let sum = 0
       bounds.forEach((bound, i) => {
@@ -151,7 +161,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       }
     }, [isSelecting, getSelection, props.trackId]),
     handleSetOpen = useCallback(
-      open => {
+      (open) => {
         dispatch(Actions.editTrack({ trackId: props.trackId, edit: open }))
 
         if (!open) {
@@ -188,7 +198,8 @@ const BoundsControl = memo((props: BoundsControlProps) => {
           })
         ),
       [props.trackId]
-    )
+    ),
+    handleToggleSnap = useCallback(() => setSnap(!snap), [snap])
 
   return (
     <SidebarItem
@@ -210,12 +221,15 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       <ButtonGroup>
         <FillButton onClick={handleSelect}>
           <Icon name="eyedropper" />
-          <span>{isSelecting ? 'select a track...' : 'select from track'}</span>
+          <span>{isSelecting ? 'select track...' : 'from track'}</span>
         </FillButton>
         <ClearButton onClick={handleClearBounds}>
           <Icon name="close-thin" />
           <span>clear divisions</span>
         </ClearButton>
+        <SnapButton enabled={snap} onClick={handleToggleSnap}>
+          <Icon name="magnet" scale={1.1} />
+        </SnapButton>
       </ButtonGroup>
       <ButtonGroup>
         <FillButton disabled={!clength} onClick={inferLeft}>
@@ -233,7 +247,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
         </FillButton>
       </ButtonGroup>
       <SourceTracks>
-        {Object.keys(playback.sourceTracksParams).map(sourceTrackId => {
+        {Object.keys(playback.sourceTracksParams).map((sourceTrackId) => {
           const sourceTrackParams = playback.sourceTracksParams[sourceTrackId]
           return (
             <SourceTrack key={sourceTrackId}>

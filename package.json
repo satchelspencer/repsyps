@@ -57,6 +57,7 @@
     "array-move": "^2.2.1",
     "bezier-easing": "^2.1.0",
     "bindings": "^1.5.0",
+    "clone": "^2.1.2",
     "copy-webpack-plugin": "^5.1.1",
     "ctyled": "^0.0.20",
     "deox": "^3.2.1",

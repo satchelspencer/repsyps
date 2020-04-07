@@ -8,14 +8,15 @@ import mappings from 'render/util/mappings'
 import { getId } from 'render/util/uid'
 
 function createAction<Payload>(name) {
-  return createActionCreator(name, res => (payload: Payload) => res(payload))
+  return createActionCreator(name, (res) => (payload: Payload) => res(payload))
 }
 
 export const reset = createAction<{}>('RESET_STATE')
 
-export const loadPersisted = createAction<{ state: Types.PersistentState }>(
-  'LOAD_PERSISTED'
-)
+export const loadPersisted = createAction<{
+  state: Types.PersistentState
+  reset?: boolean
+}>('LOAD_PERSISTED')
 
 export const loadLocalPersisted = createAction<Types.LocalPersistentState>(
   'LOAD_LOCAL_PERSISTED'
@@ -223,7 +224,7 @@ export function applyControlGroup(
   value: number
 ) {
   const actions: Action<any>[] = [setControlGroupValue({ position, value })]
-  controlGroup.controls.forEach(control => {
+  controlGroup.controls.forEach((control) => {
     const thisValue = control.invert ? 1 - value : value,
       thisLastValue = control.invert ? 1 - lastValue : lastValue
     if (controlGroup.absolute && 'globalProp' in control)

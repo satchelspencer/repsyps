@@ -13,6 +13,12 @@ export interface TrackSourcesParams {
   [sourceTrackId: string]: TrackSourceParams
 }
 
+export interface PersistentTrackSource {
+  name: string
+  source: string
+  streamIndex: number
+}
+
 export interface TrackSource {
   name: string
   source: string
@@ -21,10 +27,20 @@ export interface TrackSource {
   streamIndex: number
 }
 
+export interface PersistentSource {
+  name: string
+  bounds: Bounds
+  sourceTracks: { [sourceTrackId: string]: PersistentTrackSource }
+}
+
 export interface Source {
   name: string
   bounds: Bounds
   sourceTracks: { [sourceTrackId: string]: TrackSource }
+}
+
+export interface PersistentSources {
+  [sourceId: string]: PersistentSource
 }
 
 export interface Sources {
@@ -223,6 +239,7 @@ export interface PersistentLive {
   controlPresets: ControlPresets
   defaultPresetId: string
   tracks: PersistentTracks
+  sceneIndex: number
 }
 
 export interface Live {
@@ -260,7 +277,7 @@ export interface Recording {
 export interface PersistentState {
   playback: Playback
   live: PersistentLive
-  sources: Sources
+  sources: PersistentSources
 }
 
 export interface LocalPersistentState {

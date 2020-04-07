@@ -13,9 +13,9 @@ import Pad from './pad'
 
 const CellMidi = ctyled.div.class(inline).styles({
   padd: 1,
-  color: c => c.contrast(-0.2),
+  color: (c) => c.contrast(-0.2),
   bg: false,
-  size: s => s * 0.85,
+  size: (s) => s * 0.85,
 }).extendSheet`
   position:absolute;
   top:0;
@@ -23,7 +23,7 @@ const CellMidi = ctyled.div.class(inline).styles({
 `
 
 const CellLabel = ctyled.div.styles({
-  size: s => s * 0.6,
+  size: (s) => s * 0.6,
   width: '85%',
 }).extendSheet`
   text-align:center;
@@ -43,12 +43,12 @@ const GridCell = memo((props: GridCellProps) => {
     getControlAtPos = useMemo(() => Selectors.makeGetControlAtPos(), []),
     getControlAbsValue = useMemo(() => Selectors.makeGetControlAbsValue(), []),
     getBindingAtPos = useMemo(() => Selectors.makeGetBindingAtPos(), []),
-    [control, value] = useSelector(state => getControlAtPos(state, position)),
-    absValue = useSelector(state =>
+    [control, value] = useSelector((state) => getControlAtPos(state, position)),
+    absValue = useSelector((state) =>
       getControlAbsValue(state, control && control.controls[0])
     ),
-    binding = useSelector(state => getBindingAtPos(state, position)),
-    initValue = useSelector(state =>
+    binding = useSelector((state) => getBindingAtPos(state, position)),
+    initValue = useSelector((state) =>
       Selectors.defaultValue(Selectors.getByPos(state.live.initValues, position))
     ),
     dispatch = useDispatch(),
@@ -69,12 +69,12 @@ const GridCell = memo((props: GridCellProps) => {
                 : 1
             }
             value={displayValue}
-            onChange={value =>
+            onChange={(value) =>
               dispatch(Actions.applyControlGroup(position, control, displayValue, value))
             }
           />
           <CellLabel>
-            {control.name || control.controls.map(c => getControlName(c)).join(', ')}
+            {control.name || control.controls.map((c) => getControlName(c)).join(', ')}
           </CellLabel>
         </>
       )}
@@ -82,12 +82,12 @@ const GridCell = memo((props: GridCellProps) => {
         <>
           <Pad
             value={displayValue}
-            onChange={value =>
+            onChange={(value) =>
               dispatch(Actions.applyControlGroup(position, control, displayValue, value))
             }
           />
           <CellLabel>
-            {control.name || control.controls.map(c => getControlName(c)).join(', ')}
+            {control.name || control.controls.map((c) => getControlName(c)).join(', ')}
           </CellLabel>
         </>
       )}

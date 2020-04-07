@@ -22,7 +22,7 @@ export function loadLocalStorage(store: Store<Types.State>) {
     const state = JSON.parse(raw),
       migrated = apply(state, migration) as Versioned<Types.PersistentState>
     if (migrated.version === env.version)
-      store.dispatch(Actions.loadPersisted({ state: migrated.state }))
+      store.dispatch(Actions.loadPersisted({ state: migrated.state, reset: true }))
   } catch (e) {}
 }
 
@@ -43,7 +43,7 @@ export function loadProject(path: string, store: Store<Types.State>) {
     if (migrated.version === env.version) {
       store.dispatch(Actions.reset({}))
       store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
-      store.dispatch(Actions.loadPersisted({ state: migrated.state }))
+      store.dispatch(Actions.loadPersisted({ state: migrated.state, reset: true }))
     }
   } catch (e) {
     console.log('load err', e)

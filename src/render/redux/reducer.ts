@@ -226,14 +226,14 @@ function updateSceneIndex(
 }
 
 const reducer = combineReducers({
-  timing: createReducer(defaultTiming, handle => [
+  timing: createReducer(defaultTiming, (handle) => [
     handle(Actions.reset, () => defaultTiming),
     handle(Actions.updateTime, (timing, { payload }) => {
       return {
         time: payload.timing.time,
         tracks: {
           ...timing.tracks,
-          ..._.mapValues(payload.timing.tracks, t => t.sample),
+          ..._.mapValues(payload.timing.tracks, (t) => t.sample),
         },
         recTime: payload.timing.recTime,
       }
@@ -244,7 +244,7 @@ const reducer = combineReducers({
         time: timing.time + time,
       }
     }),
-    handle(Actions.resetPlaybackTime, timing => {
+    handle(Actions.resetPlaybackTime, (timing) => {
       return {
         ...timing,
         time: 0,
@@ -252,10 +252,33 @@ const reducer = combineReducers({
     }),
     handle(Actions.zeroInitValues, () => defaultTiming),
   ]),
-  sources: createReducer(defaultSources, handle => [
+  sources: createReducer(defaultSources, (handle) => [
     handle(Actions.reset, () => defaultSources),
-    handle(Actions.loadPersisted, (_, { payload }) => {
-      return payload.state.sources
+    handle(Actions.loadPersisted, (sources, { payload }) => {
+      return _.mapValues(payload.state.sources, (psource, sourceId) => {
+        const existingSource = sources[sourceId]
+        return {
+          ...psource,
+          sourceTracks: _.mapValues(
+            psource.sourceTracks,
+            (psourceTrack, sourceTrackId) => {
+              const existingSourceTrack =
+                existingSource && existingSource.sourceTracks[sourceTrackId]
+              return {
+                ...psourceTrack,
+                loaded:
+                  payload.reset || !existingSourceTrack
+                    ? false
+                    : existingSourceTrack.loaded,
+                missing:
+                  payload.reset || !existingSourceTrack
+                    ? false
+                    : existingSourceTrack.missing,
+              }
+            }
+          ),
+        }
+      })
     }),
     handle(Actions.didLoadTrackSource, (sources, { payload }) => {
       return {
@@ -312,7 +335,7 @@ const reducer = combineReducers({
       }
     }),
   ]),
-  live: createReducer(defaultLive, handle => [
+  live: createReducer(defaultLive, (handle) => [
     handle(Actions.reset, () => defaultLive),
     handle(Actions.loadPersisted, (live, { payload }) => {
       const pLive = payload.state.live,
@@ -327,19 +350,22 @@ const reducer = combineReducers({
             ...pLive.bindings,
           },
           tracks: _.mapValues(pLive.tracks, (ptrack, trackId) => {
+            const existingTrack = live.tracks[trackId],
+              shouldReset = payload.reset || !existingTrack,
+              base = shouldReset ? defaultTrack : existingTrack
             return {
-              ...defaultTrack,
+              ...base,
               ...ptrack,
               playback: {
-                ...defaultTrackPlayback,
+                ...base.playback,
                 ...ptrack.playback,
               },
-              selected: trackId === firstTrackId,
+              selected: shouldReset ? trackId === firstTrackId : existingTrack.selected,
             }
           }),
         },
-        live.sceneIndex,
-        true
+        pLive.sceneIndex || 0,
+        payload.reset
       )
     }),
     handle(Actions.setTrackMuted, (live, { payload }) => {
@@ -479,14 +505,14 @@ const reducer = combineReducers({
                   [srcStr]: scene.controls[destStr],
                   [destStr]: scene.controls[srcStr],
                 },
-                a => a
+                (a) => a
               ),
             }
           }
         }),
       }
     }),
-    handle(Actions.clearControls, live => {
+    handle(Actions.clearControls, (live) => {
       return {
         ...live,
         scenes: live.scenes.map((scene, sceneIndex) => {
@@ -576,7 +602,7 @@ const reducer = combineReducers({
           ...live.tracks,
           [payload.sourceId]: {
             ...live.tracks[payload.sourceId],
-            cues: live.tracks[payload.sourceId].cues.map(cue => {
+            cues: live.tracks[payload.sourceId].cues.map((cue) => {
               if (cue.playback.sourceTracksParams[payload.sourceTrackId]) {
                 return {
                   ...cue,
@@ -739,7 +765,7 @@ const reducer = combineReducers({
         : live
     }),
     handle(Actions.selectTrackExclusive, (live, { payload: trackId }) => {
-      const containingIndex = live.scenes.findIndex(scene =>
+      const containingIndex = live.scenes.findIndex((scene) =>
           scene.trackIds.includes(trackId)
         ),
         inScene = containingIndex !== -1,
@@ -843,7 +869,7 @@ const reducer = combineReducers({
         newScenes[payload.fromSceneIndex] = {
           ...newScenes[payload.fromSceneIndex],
           trackIds: newScenes[payload.fromSceneIndex].trackIds.filter(
-            id => id !== payload.trackId
+            (id) => id !== payload.trackId
           ),
         }
 
@@ -964,7 +990,7 @@ const reducer = combineReducers({
         },
       }
     }),
-    handle(Actions.zeroInitValues, live => {
+    handle(Actions.zeroInitValues, (live) => {
       return updateSceneIndex(live, live.sceneIndex, true)
     }),
     handle(Actions.addControlPreset, (live, { payload }) => {
@@ -1024,7 +1050,7 @@ const reducer = combineReducers({
       }
     }),
   ]),
-  playback: createReducer(defaultPlayback, handle => [
+  playback: createReducer(defaultPlayback, (handle) => [
     handle(Actions.reset, () => defaultPlayback),
     handle(Actions.loadPersisted, (_, { payload }) => {
       return payload.state.playback
@@ -1035,33 +1061,33 @@ const reducer = combineReducers({
         ...payload,
       }
     }),
-    handle(Actions.zeroInitValues, playback => {
+    handle(Actions.zeroInitValues, (playback) => {
       return {
         ...playback,
         playing: false,
       }
     }),
     /* playing and pausing on playback */
-    handle(Actions.setTrackPlayback, playback => {
+    handle(Actions.setTrackPlayback, (playback) => {
       return {
         ...playback,
         playing: true,
       }
     }),
-    handle(Actions.setTrackCue, playback => {
+    handle(Actions.setTrackCue, (playback) => {
       return {
         ...playback,
         playing: true,
       }
     }),
-    handle(Actions.stepTrackCue, playback => {
+    handle(Actions.stepTrackCue, (playback) => {
       return {
         ...playback,
         playing: true,
       }
     }),
   ]),
-  save: createReducer(defaultSave, handle => [
+  save: createReducer(defaultSave, (handle) => [
     handle(Actions.reset, () => defaultSave),
     handle(Actions.setSaveStatus, (_, { payload: saveStatus }) => saveStatus),
     handle(
@@ -1069,7 +1095,7 @@ const reducer = combineReducers({
       (_, { payload: localPersisted }) => localPersisted.save
     ),
   ]),
-  settings: createReducer(defaultSettings, handle => [
+  settings: createReducer(defaultSettings, (handle) => [
     handle(Actions.reset, () => defaultSettings),
     handle(Actions.setSettings, (settings, { payload: newSettings }) => {
       return {
@@ -1082,7 +1108,7 @@ const reducer = combineReducers({
       (_, { payload: localPersisted }) => localPersisted.settings
     ),
   ]),
-  recording: createReducer(defaultRecording, handle => [
+  recording: createReducer(defaultRecording, (handle) => [
     handle(Actions.reset, () => defaultRecording),
     handle(Actions.setRecording, (recording, { payload: newRecording }) => {
       return {
@@ -1096,7 +1122,7 @@ const reducer = combineReducers({
 function makeSourceTracksRelative(source: Types.Source, path: string): Types.Source {
   return {
     ...source,
-    sourceTracks: _.mapValues(source.sourceTracks, sourceTrack => {
+    sourceTracks: _.mapValues(source.sourceTracks, (sourceTrack) => {
       if (sourceTrack.source && pathUtils.isAbsolute(sourceTrack.source) && path)
         return {
           ...sourceTrack,
@@ -1108,7 +1134,7 @@ function makeSourceTracksRelative(source: Types.Source, path: string): Types.Sou
 }
 
 /* called FIRST */
-const globalReducer = createReducer(defaultState, handle => [
+const globalReducer = createReducer(defaultState, (handle) => [
   handle(Actions.setSaveStatus, (state, { payload: saveStatus }) => {
     const lastPath = state.save.path,
       nextPath = saveStatus.path
@@ -1116,10 +1142,10 @@ const globalReducer = createReducer(defaultState, handle => [
     else {
       return {
         ...state,
-        sources: _.mapValues(state.sources, source => {
+        sources: _.mapValues(state.sources, (source) => {
           return {
             ...source,
-            sourceTracks: _.mapValues(source.sourceTracks, sourceTrack => {
+            sourceTracks: _.mapValues(source.sourceTracks, (sourceTrack) => {
               const absSource =
                 sourceTrack.source &&
                 (pathUtils.isAbsolute(sourceTrack.source)
@@ -1186,11 +1212,11 @@ const globalReducer = createReducer(defaultState, handle => [
     }
   }),
   handle(Actions.rmTrack, (state, { payload: trackId }) => {
-    const newScenes = state.live.scenes.map(scene => {
+    const newScenes = state.live.scenes.map((scene) => {
         if (scene.trackIds.includes(trackId)) {
           return {
             ...scene,
-            trackIds: scene.trackIds.filter(id => id !== trackId),
+            trackIds: scene.trackIds.filter((id) => id !== trackId),
           }
         } else return scene
       }),

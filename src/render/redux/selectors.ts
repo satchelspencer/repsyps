@@ -3,15 +3,15 @@ import { createSelector, defaultMemoize, createSelectorCreator } from 'reselect'
 
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
-import  { objShallowEqual } from 'render/util/is-equal'
+import { objShallowEqual } from 'render/util/is-equal'
 
 const createShallowSelector = createSelectorCreator(defaultMemoize, objShallowEqual)
 
 export const getSelectedTrackId = (state: Types.State) =>
-  Object.keys(state.live.tracks).filter(tid => state.live.tracks[tid].selected)[0]
+  Object.keys(state.live.tracks).filter((tid) => state.live.tracks[tid].selected)[0]
 
 export const getSelectedTrack = createSelector(
-  [getSelectedTrackId, state => state.live.tracks],
+  [getSelectedTrackId, (state) => state.live.tracks],
   (trackId, tracks) => {
     return tracks[trackId]
   }
@@ -44,7 +44,7 @@ export function getActiveTrackIds(state: Types.State, sceneIndex?: number): stri
 }
 
 export function getControls(live: Types.Live): Types.Controls {
-  return live.scenes[live.sceneIndex].controls
+  return (live.scenes[live.sceneIndex] && live.scenes[live.sceneIndex].controls) || {}
 }
 
 export const makeGetTrackIndex = () =>
@@ -81,12 +81,12 @@ export function getByPos<T>(grid: Types.Grid<T>, pos: Types.Position): T {
 export const makeGetControlAtPos = () =>
   createSelector(
     [
-      getCurrentScene,
+      (state: Types.State) => getControls(state.live),
       (state: Types.State) => state.live.controlValues,
       (_, pos: Types.Position) => pos,
     ],
-    (scene, values, pos): [Types.ControlGroup, number] => {
-      return [getByPos(scene.controls, pos), defaultValue(getByPos(values, pos))]
+    (controls, values, pos): [Types.ControlGroup, number] => {
+      return [getByPos(controls, pos), defaultValue(getByPos(values, pos))]
     }
   )
 
@@ -167,14 +167,14 @@ function applyControlsToPlayback(
   if (!enabled) return playback
   let outPlayback: Types.TrackPlayback = { ...playback },
     needsUpdate = false
-  _.keys(controls).forEach(posStr => {
+  _.keys(controls).forEach((posStr) => {
     const controlGroup = controls[posStr],
       initValue = defaultValue(initValues[posStr]),
       defValue = defaultValue(values[posStr]),
       value = initValue > 0.5 ? defValue : 1 - defValue
 
     if (!controlGroup.absolute)
-      controlGroup.controls.forEach(control => {
+      controlGroup.controls.forEach((control) => {
         const controlValue = control.invert ? 1 - value : value
         if ('trackIndex' in control && control.trackIndex === trackIndex) {
           needsUpdate = true
@@ -257,14 +257,14 @@ export const getGlobalPlayback = createSelector(
     if (!enabled) return playback
     let outPlayback = { ...playback },
       needsUpdate = false
-    _.keys(controls).forEach(posStr => {
+    _.keys(controls).forEach((posStr) => {
       const controlGroup = controls[posStr],
         initValue = defaultValue(initValues[posStr]),
         defValue = defaultValue(values[posStr]),
         value = initValue > 0.5 ? defValue : 1 - defValue
 
       if (!controlGroup.absolute)
-        controlGroup.controls.forEach(control => {
+        controlGroup.controls.forEach((control) => {
           const controlValue = control.invert ? 1 - value : value
           if ('globalProp' in control) {
             needsUpdate = true
@@ -368,33 +368,40 @@ export const getPersistentLiveTracks = createSelector(
 export const getPersistentLive = createShallowSelector(
   [
     (live: Types.Live) => live.scenes,
+    (live: Types.Live) => live.sceneIndex,
     (live: Types.Live) => live.bindings,
     (live: Types.Live) => live.controlPresets,
     (live: Types.Live) => live.defaultPresetId,
     getPersistentLiveTracks,
   ],
-  (scenes, bindings, controlPresets, defaultPresetId, tracks): Types.PersistentLive => {
+  (
+    scenes,
+    sceneIndex,
+    bindings,
+    controlPresets,
+    defaultPresetId,
+    tracks
+  ): Types.PersistentLive => {
     return {
       tracks,
       scenes,
       bindings,
       controlPresets,
       defaultPresetId,
+      sceneIndex,
     }
   }
 )
 
 export const getPersistentSources = createSelector(
   [(state: Types.State) => state.sources],
-  (sources): Types.Sources => {
-    return _.mapValues(sources, source => {
+  (sources): Types.PersistentSources => {
+    return _.mapValues(sources, (source) => {
       return {
         ...source,
-        sourceTracks: _.mapValues(source.sourceTracks, t => ({
-          ...t,
-          loaded: false,
-          missing: false,
-        })),
+        sourceTracks: _.mapValues(source.sourceTracks, (t) =>
+          _.pick(t, ['name', 'source', 'streamIndex'])
+        ),
       }
     })
   }
@@ -409,7 +416,11 @@ export const getPersistentState = createShallowSelector(
   (sources, live, playback): Types.PersistentState => {
     return {
       sources,
-      playback,
+      playback: {
+        ...playback,
+        playing: true,
+        volume: 1,
+      },
       live,
     }
   }
@@ -427,7 +438,7 @@ export const getLocalPersistentState = createSelector(
 
 export const getMenuState = createSelector(
   [(state: Types.State) => state.settings.trackScroll],
-  trackScroll => {
+  (trackScroll) => {
     return {
       trackScroll,
     }

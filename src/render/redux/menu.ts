@@ -7,6 +7,7 @@ import * as Selectors from './selectors'
 import { getPath } from 'render/loading/app-paths'
 import { loadBindings, saveBindings } from 'render/loading/bindings'
 import { loadProject, saveProject } from 'render/loading/project'
+import { undo, redo } from './history'
 
 const { Menu, dialog, BrowserWindow } = electron.remote,
   isMac = process.platform === 'darwin'
@@ -64,7 +65,7 @@ export default function init(store: Store<Types.State>) {
                   properties: ['openFile'],
                 })
                 if (paths)
-                  paths.forEach(path => {
+                  paths.forEach((path) => {
                     store.dispatch(Actions.addTrackAndSource(path))
                   })
               },
@@ -115,7 +116,10 @@ export default function init(store: Store<Types.State>) {
         },
         {
           label: 'Edit',
-          submenu: [{ role: 'undo' }, { role: 'redo' }],
+          submenu: [
+            { label: 'Undo', accelerator: 'CmdOrCtrl+Z', click: undo },
+            { label: 'Redo', accelerator: 'CmdOrCtrl+Shift+Z', click: redo },
+          ],
         },
         {
           label: 'Scene',
