@@ -26,7 +26,7 @@ const TracksList = SortableContainer(
     endLine: true,
     flex: 1,
     scroll: true,
-    color: c => c.nudge(0.025),
+    color: (c) => c.nudge(0.025),
     bg: true,
   })
 )
@@ -39,7 +39,7 @@ const SceneDivider = ctyled.div
     justify: 'center',
     bg: true,
     hover: 0.05,
-    size: s => s * 1.1,
+    size: (s) => s * 1.1,
     padd: 2,
     height: 2.7,
     color: (c, { selected }) => (selected ? c.nudge(0.15) : c.nudge(0.05)),
@@ -84,8 +84,8 @@ const SceneHeader = memo((props: SceneHeaderProps) => {
 })
 
 function Tracks() {
-  const scenes = useSelector(state => state.live.scenes),
-    currentSceneIndex = useSelector(state => state.live.sceneIndex),
+  const scenes = useSelector((state) => state.live.scenes),
+    currentSceneIndex = useSelector((state) => state.live.sceneIndex),
     dispatch = useDispatch(),
     wrapperRef = useRef(null),
     [vBounds, setVBounds] = useState<number[]>([0, 0]),
@@ -99,7 +99,7 @@ function Tracks() {
       scenes,
     ]),
     handleSelectScene = useCallback(
-      sceneIndex => {
+      (sceneIndex) => {
         dispatch(Actions.setSceneIndex(sceneIndex))
         dispatch(
           Actions.selectTrackExclusive(
@@ -160,7 +160,15 @@ function Tracks() {
         </SceneDivider>
         {scenesItems.map((item, index) => {
           if (typeof item === 'string')
-            return <Track index={index} vBounds={vBounds} key={item} trackId={item} />
+            return (
+              <Track
+                index={index}
+                vBounds={vBounds}
+                key={item}
+                trackId={item}
+                listRef={wrapperRef}
+              />
+            )
           else
             return (
               <SceneHeader

@@ -13,11 +13,7 @@ import Header from './header/header'
 import Controls from './controls/controls'
 
 const Wrapper = ctyled.div.styles({
-  color: c =>
-    c
-      .as(palette.gray)
-      .absLum(0.8)
-      .contrast(0.2),
+  color: (c) => c.as(palette.gray).absLum(0.8).contrast(0.2),
   size: 11,
   bg: true,
   lined: true,
@@ -48,13 +44,13 @@ const BodyInner = ctyled.div.styles({
 function App() {
   const selectedTrackId = useSelector(Selectors.getSelectedTrackId),
     selectedTrack = useSelector(Selectors.getSelectedTrack),
-    playing = useSelector(state => state.playback.playing),
-    scenes = useSelector(state => state.live.scenes),
-    trackIds = useMemo(() => _.flatMap(scenes, scene => scene.trackIds), [scenes]),
+    playing = useSelector((state) => state.playback.playing),
+    scenes = useSelector((state) => state.live.scenes),
+    trackIds = useMemo(() => _.flatMap(scenes, (scene) => scene.trackIds), [scenes]),
     dispatch = useDispatch(),
     tracklen = trackIds.length,
-    handleDragover = useCallback(e => e.preventDefault(), []),
-    handleDrop = useCallback(e => {
+    handleDragover = useCallback((e) => e.preventDefault(), []),
+    handleDrop = useCallback((e) => {
       e.preventDefault()
       const file = e.dataTransfer.files[0].path
       dispatch(Actions.addTrackAndSource(file))
@@ -71,7 +67,7 @@ function App() {
   }, [])
 
   const handleKeyDown = useCallback(
-    e => {
+    (e) => {
       const notInInput = document.activeElement.nodeName !== 'INPUT'
       if (e.key === ' ' && notInInput) e.preventDefault()
       if (e.key === ' ' && !e.shiftKey && notInInput)
@@ -85,25 +81,27 @@ function App() {
               },
             })
           )
-      if (e.key === ' ' && e.shiftKey && notInInput)
+      else if (e.key === ' ' && e.shiftKey && notInInput)
         dispatch(
           Actions.updatePlayback({
             playing: !playing,
           })
         )
-      if (e.key === 'ArrowUp')
+      else if (e.key === 'ArrowUp') {
+        e.preventDefault()
         dispatch(
           Actions.selectTrackExclusive(
-            trackIds[(trackIds.indexOf(selectedTrackId) + tracklen - 1) % tracklen]
+            trackIds[Math.max(trackIds.indexOf(selectedTrackId) - 1, 0)]
           )
         )
-      if (e.key === 'ArrowDown')
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
         dispatch(
           Actions.selectTrackExclusive(
-            trackIds[(trackIds.indexOf(selectedTrackId) + tracklen + 1) % tracklen]
+            trackIds[Math.min(trackIds.indexOf(selectedTrackId) + 1, tracklen - 1)]
           )
         )
-      if (e.key === 'l' && selectedTrackId)
+      } else if (e.key === 'l' && selectedTrackId)
         dispatch(
           Actions.setTrackPlayLock({
             trackId: selectedTrackId,

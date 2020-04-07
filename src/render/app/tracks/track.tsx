@@ -1,4 +1,12 @@
-import React, { memo, useRef, useMemo, useState, useCallback, useEffect } from 'react'
+import React, {
+  memo,
+  useRef,
+  MutableRefObject,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react'
 import ctyled from 'ctyled'
 import _ from 'lodash'
 import { SortableElement } from 'react-sortable-hoc'
@@ -38,7 +46,7 @@ const TrackWrapper = SortableElement(ctyled.div
         : selected
         ? c.contrast(0.2)
         : c.contrast(0.1),
-    borderColor: c => c.contrast(-0.2),
+    borderColor: (c) => c.contrast(-0.2),
   }).extendSheet`
   height:${({ size }) => Math.ceil(size * 8) + 4}px;
   outline:none;
@@ -47,7 +55,7 @@ const TrackWrapper = SortableElement(ctyled.div
 const TrackCanvasWrapper = ctyled.div.attrs({ dim: false, disabled: false }).styles({
   flex: 1,
   bg: true,
-  color: c => c.contrast(-0.1),
+  color: (c) => c.contrast(-0.1),
 }).extend`
   ${(_, { dim }) => dim && `opacity:0.5;`}
   ${(_, { disabled }) => disabled && `pointer-events:none;`}
@@ -64,6 +72,7 @@ export interface TrackContainerProps {
   trackId: string
   index: number
   vBounds: number[]
+  listRef: MutableRefObject<HTMLDivElement>
 }
 
 export interface TrackProps {
@@ -109,7 +118,7 @@ export interface ClickEventContext {
 }
 
 const Track = memo(
-  function({
+  function ({
     trackId,
     track,
     noClick,
@@ -201,7 +210,7 @@ const Track = memo(
       offsetTrackHandlers = useOffsetTrack(trackId)
 
     const handleMouseDown = useCallback(
-        e => {
+        (e) => {
           if (e.shiftKey) {
             e.preventDefault()
             e.stopPropagation()
@@ -217,7 +226,7 @@ const Track = memo(
         [...clickCtxtValues, ...viewValues, track.playback.chunks, source.bounds]
       ),
       handleMouseMove = useCallback(
-        e => {
+        (e) => {
           const pos = getRelativePos(e, left, top)
           boundHandlers.mouseMove(clickCtxt, view, pos, source.bounds)
           resizePlaybackHandlers.mouseMove(clickCtxt, pos, view, track.playback.chunks)
@@ -227,7 +236,7 @@ const Track = memo(
         [...clickCtxtValues, ...viewValues, track.playback.chunks]
       ),
       handleMouseUp = useCallback(
-        e => {
+        (e) => {
           const pos = getRelativePos(e, left, top)
 
           playbackBoundHandlers.mouseUp(
@@ -256,7 +265,7 @@ const Track = memo(
         [...clickCtxtValues, ...viewValues, source.bounds, track.selected]
       ),
       handleDoubleClick = useCallback(
-        e => {
+        (e) => {
           const pos = getRelativePos(e, left, top)
           selectBoundHandlers.doubleClick(clickCtxt, pos, view, source.bounds)
         },
@@ -299,15 +308,18 @@ const Track = memo(
 const OFFSCREEN_THRESH = 250
 
 export default function TrackContainer(props: TrackContainerProps) {
-  const track = useSelector(state => state.live.tracks[props.trackId]),
-    source = useSelector(state => state.sources[props.trackId]),
-    sample = useSelector(state => state.timing.tracks[props.trackId]),
+  const track = useSelector((state) => state.live.tracks[props.trackId]),
+    source = useSelector((state) => state.sources[props.trackId]),
+    sample = useSelector((state) => state.timing.tracks[props.trackId]),
     dispatch = useDispatch(),
     wrapperRef = useRef(null),
     [vstart, vend] = props.vBounds,
     start = wrapperRef.current && wrapperRef.current.offsetTop,
     end = wrapperRef.current && start + wrapperRef.current.offsetHeight,
     visible = !wrapperRef.current || (start < vend && end > vstart),
+    offTop = start < vstart,
+    offBottom = end > vend,
+    fullyVisible = !wrapperRef.current || (!offTop && !offBottom),
     wayOffScreen =
       !visible && (start - vend > OFFSCREEN_THRESH || vstart - end > OFFSCREEN_THRESH),
     { isSelecting, onSelect } = useSelectable<string>('track'),
@@ -315,9 +327,9 @@ export default function TrackContainer(props: TrackContainerProps) {
       if (isSelecting) onSelect(props.trackId)
       else !track.selected && dispatch(Actions.selectTrackExclusive(props.trackId))
     }, [props.trackId, isSelecting, onSelect]),
-    isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, props.trackId)),
-    hasMissingSource = _.some(_.values(source.sourceTracks), track => track.missing),
-    trackScroll = useSelector(state => state.settings.trackScroll),
+    isLoaded = useSelector((state) => Selectors.getTrackIsLoaded(state, props.trackId)),
+    hasMissingSource = _.some(_.values(source.sourceTracks), (track) => track.missing),
+    trackScroll = useSelector((state) => state.settings.trackScroll),
     inferredSample = sample || track.playback.chunks[0],
     handleMouseLeave = useCallback(() => {
       if (!track.editing && track.playback.playing && !track.playLock)
@@ -328,6 +340,21 @@ export default function TrackContainer(props: TrackContainerProps) {
           })
         )
     }, [track.editing, track.playback.playing, track.playLock, props.trackId])
+
+  useEffect(() => {
+    if (track.selected && props.listRef.current) {
+      if (offTop)
+        props.listRef.current.scrollTo({
+          top: start,
+          behavior: 'smooth',
+        })
+      else if (offBottom)
+        props.listRef.current.scrollTo({
+          top: end - props.listRef.current.offsetHeight,
+          behavior: 'smooth',
+        })
+    }
+  }, [track.selected])
 
   return (
     <TrackWrapper
@@ -351,7 +378,7 @@ export default function TrackContainer(props: TrackContainerProps) {
             source={source}
             sample={inferredSample}
             playLock={track.playLock}
-            setPlayLock={locked =>
+            setPlayLock={(locked) =>
               dispatch(
                 Actions.setTrackPlayLock({
                   trackId: props.trackId,
