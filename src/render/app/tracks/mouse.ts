@@ -180,7 +180,6 @@ export function useSelectPlayback(trackId: string) {
               trackId,
               playback: {
                 chunks: [xPos, 0],
-                alpha: 1,
                 aperiodic: true,
                 chunkIndex: -1,
               },
@@ -196,7 +195,6 @@ export function useSelectPlayback(trackId: string) {
               trackId,
               playback: {
                 chunks: [Math.min(start, xPos), len],
-                alpha: 1,
                 aperiodic: true,
                 chunkIndex: -1,
               },
@@ -229,7 +227,6 @@ export function useSelectBound(trackId: string) {
               trackId,
               playback: {
                 chunks: [bounds[closeBoundIndex], 0],
-                alpha: 1,
                 aperiodic: true,
                 chunkIndex: -1,
               },
@@ -256,7 +253,6 @@ export function useSelectBound(trackId: string) {
               trackId,
               playback: {
                 chunks: [start, next - start],
-                alpha: 1,
                 aperiodic: true,
                 chunkIndex: -1,
               },

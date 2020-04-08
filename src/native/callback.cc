@@ -12,9 +12,9 @@ double getSamplePosition(
 
 double getMixTrackPhase(
   playback* playback,
-  mixTrackPlayback* mixTrackPlayback
+  float alpha
 ){
-  double mixTrackPhase = playback->time*mixTrackPlayback->alpha;
+  double mixTrackPhase = playback->time * alpha;
   mixTrackPhase -= floor(mixTrackPhase); 
   return mixTrackPhase;
 }
@@ -96,6 +96,7 @@ int paCallbackMethod(
   double samplePositionFrac;
   float sampleValue;
   float sampleValueNext;
+  float alpha;
 
   int bufferHead;
 
@@ -116,7 +117,8 @@ int paCallbackMethod(
       bufferHead = state->buffer->head;
       
       mixTrackPlayback = mixTrack->playback;
-      mixTrackPhase = getMixTrackPhase(state->playback, mixTrackPlayback);
+      alpha = mixTrack->playback->aperiodic ? 1 : mixTrackPlayback->alpha;
+      mixTrackPhase = getMixTrackPhase(state->playback, alpha);
       chunkCount = mixTrackPlayback->chunks.size()/2;
 
       if(chunkCount == 0 || !mixTrackPlayback->playing) continue;
@@ -135,7 +137,7 @@ int paCallbackMethod(
         if(tempMixTrackChunkIndex == -1) break; //before we should be playing
 
         if(mixTrackPlayback->aperiodic){
-          samplePosition = tempMixTrackSample + mixTrackPlayback->alpha;
+          samplePosition = tempMixTrackSample + alpha;
           if(mixTrackPlayback->chunks[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
             if(samplePosition > getSamplePosition(mixTrackPlayback, tempMixTrackChunkIndex, 1)){ /* check if we looped around */
               didPassBound = true;
@@ -143,7 +145,7 @@ int paCallbackMethod(
               if(mixTrack->hasNext && (tempMixTrackChunkIndex == 0 || mixTrackPlayback->nextAtChunk)){ //chunks looped and we have next
                 didAdvancePlayback = true;
                 mixTrackPlayback = mixTrack->nextPlayback;
-                mixTrackPhase = getMixTrackPhase(state->playback, mixTrackPlayback);
+                mixTrackPhase = getMixTrackPhase(state->playback, alpha);
                 chunkCount = mixTrackPlayback->chunks.size()/2;
               }
               if(!didAdvancePlayback && tempMixTrackChunkIndex == 0 && !mixTrackPlayback->loop){
@@ -163,7 +165,7 @@ int paCallbackMethod(
               didAdvancePlayback = true;
               tempMixTrackChunkIndex = 0;
               mixTrackPlayback = mixTrack->nextPlayback;
-              mixTrackPhase = getMixTrackPhase(state->playback, mixTrackPlayback);
+              mixTrackPhase = getMixTrackPhase(state->playback, alpha);
               chunkCount = mixTrackPlayback->chunks.size()/2;
             }
             if(!didAdvancePlayback && tempMixTrackChunkIndex == 0 && !mixTrackPlayback->loop){
@@ -241,7 +243,7 @@ int paCallbackMethod(
           }
         }
         bufferHead = (bufferHead+1)%state->buffer->size;
-        mixTrackPhase += phaseStep*mixTrackPlayback->alpha; 
+        mixTrackPhase += phaseStep * alpha; 
       }/* end compute window */
     }
 

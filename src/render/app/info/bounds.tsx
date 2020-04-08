@@ -16,14 +16,12 @@ import {
   HeaderContent,
   FillButton,
   WideButton,
+  Horizontal,
 } from 'render/components/misc'
 import { useSelection } from 'render/components/selection'
 import SidebarItem from 'render/components/item'
 import { palette } from 'src/render/components/theme'
-
-const ButtonGroup = ctyled.div.styles({
-  gutter: 1,
-})
+import Alpha from './alpha'
 
 const SourceTracks = ctyled.div.styles({
   column: true,
@@ -218,7 +216,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
         </>
       }
     >
-      <ButtonGroup>
+      <Horizontal>
         <FillButton onClick={handleSelect}>
           <Icon name="eyedropper" />
           <span>{isSelecting ? 'select track...' : 'from track'}</span>
@@ -230,8 +228,8 @@ const BoundsControl = memo((props: BoundsControlProps) => {
         <SnapButton enabled={snap} onClick={handleToggleSnap}>
           <Icon name="magnet" scale={1.1} />
         </SnapButton>
-      </ButtonGroup>
-      <ButtonGroup>
+      </Horizontal>
+      <Horizontal>
         <FillButton disabled={!clength} onClick={inferLeft}>
           <Icon name="cheveron-left" />
           <span>left </span>
@@ -245,7 +243,8 @@ const BoundsControl = memo((props: BoundsControlProps) => {
           <span>right</span>
           <Icon name="cheveron-right" />
         </FillButton>
-      </ButtonGroup>
+      </Horizontal>
+      <Alpha trackId={props.trackId} />
       <SourceTracks>
         {Object.keys(playback.sourceTracksParams).map((sourceTrackId) => {
           const sourceTrackParams = playback.sourceTracksParams[sourceTrackId]

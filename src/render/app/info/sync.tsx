@@ -23,7 +23,7 @@ const Sync = memo((props: SyncProps) => {
     if (chunkIndex !== -1) setIsLoop(!!chunks[chunkIndex + 1])
   }, [chunks, chunkIndex])
 
-  const bounds = useSelector((state) => state.sources[props.trackId].bounds),
+  const { bounds, boundsAlpha } = useSelector((state) => state.sources[props.trackId]),
     dispatch = useDispatch(),
     store = useStore(),
     [isLoop, setIsLoop] = useState(false),
@@ -67,7 +67,6 @@ const Sync = memo((props: SyncProps) => {
             <span>&nbsp;Sync</span>
           </HeaderContent>
           <SelectableButton
-            disabled={!aperiodic}
             selected={aperiodic}
             onClick={() => {
               const sample = store.getState().timing.tracks[props.trackId],
@@ -76,15 +75,18 @@ const Sync = memo((props: SyncProps) => {
                 }),
                 boundIndex = nextBoundIndex - 1
               if (nextBoundIndex !== -1 && boundIndex !== -1) {
-                audio.syncToTrack(
-                  props.trackId,
-                  bounds[boundIndex],
-                  bounds[nextBoundIndex]
-                )
-                setAperiodic(false)
+                if (aperiodic) {
+                  audio.syncToTrack(
+                    props.trackId,
+                    bounds[boundIndex],
+                    bounds[nextBoundIndex]
+                  )
+                  setAperiodic(false)
+                }
                 dispatch(
                   Actions.updatePlayback({
-                    period: (bounds[nextBoundIndex] - bounds[boundIndex]) * alpha,
+                    period:
+                      (bounds[nextBoundIndex] - bounds[boundIndex]) * alpha * boundsAlpha,
                   })
                 )
               }

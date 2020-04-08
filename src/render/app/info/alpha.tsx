@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 
 import Icon from 'render/components/icon'
-import { HeaderContent, SelectableButton } from 'render/components/misc'
+import { HeaderContent, SelectableButton, Horizontal } from 'render/components/misc'
 
 import SidebarItem from 'render/components/item'
 
@@ -32,14 +32,14 @@ const Setter = (props: SetterProps) => {
 }
 
 const Alpha = memo((props: AlphaProps) => {
-  const alpha = useSelector(state => state.live.tracks[props.trackId].playback.alpha),
+  const alpha = useSelector((state) => state.sources[props.trackId].boundsAlpha),
     dispatch = useDispatch(),
     setAlpha = useCallback(
-      value => {
+      (value) => {
         dispatch(
-          Actions.setTrackPlayback({
-            trackId: props.trackId,
-            playback: { alpha: value },
+          Actions.setSourceAlpha({
+            sourceId: props.trackId,
+            boundsAlpha: value,
           })
         )
       },
@@ -47,21 +47,13 @@ const Alpha = memo((props: AlphaProps) => {
     )
 
   return (
-    <SidebarItem
-      title={
-        <>
-          <HeaderContent>
-            <Icon name="meter" scale={1.3} />
-            <span>&nbsp;Speed</span>
-          </HeaderContent>
-          <Setter alpha={1 / 4} text="1/4x" currentAlpha={alpha} setAlpha={setAlpha} />
-          <Setter alpha={1 / 2} text="1/2x" currentAlpha={alpha} setAlpha={setAlpha} />
-          <Setter alpha={1} text="1x" currentAlpha={alpha} setAlpha={setAlpha} />
-          <Setter alpha={2} text="2x" currentAlpha={alpha} setAlpha={setAlpha} />
-          <Setter alpha={4} text="4x" currentAlpha={alpha} setAlpha={setAlpha} />
-        </>
-      }
-    />
+    <Horizontal>
+      <Setter alpha={1 / 4} text="1/4x" currentAlpha={alpha} setAlpha={setAlpha} />
+      <Setter alpha={1 / 2} text="1/2x" currentAlpha={alpha} setAlpha={setAlpha} />
+      <Setter alpha={1} text="1x" currentAlpha={alpha} setAlpha={setAlpha} />
+      <Setter alpha={2} text="2x" currentAlpha={alpha} setAlpha={setAlpha} />
+      <Setter alpha={4} text="4x" currentAlpha={alpha} setAlpha={setAlpha} />
+    </Horizontal>
   )
 })
 

@@ -265,4 +265,16 @@ export default createReducer(defaultState, (handle) => [
       }
     else return state
   }),
+  handle(Actions.setSourceAlpha, (state, { payload }) => {
+    return {
+      ...state,
+      sources: {
+        ...state.sources,
+        [payload.sourceId]: {
+          ...state.sources[payload.sourceId],
+          boundsAlpha: payload.boundsAlpha,
+        },
+      },
+    }
+  }),
 ])

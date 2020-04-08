@@ -160,6 +160,7 @@ const Recording = memo(
                     source: {
                       name: srcName,
                       bounds: [...prefixBounds, ...bounds],
+                      boundsAlpha: 1,
                       sourceTracks: {
                         [sourceId]: {
                           name: srcName,

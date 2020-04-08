@@ -55,6 +55,12 @@ export const defaultPlayback: Types.Playback = {
     defaultPresetId: null,
     controlsEnabled: true,
   },
+  defaultSource: Types.Source = {
+    name: '',
+    bounds: [],
+    boundsAlpha: 1,
+    sourceTracks: {},
+  },
   defaultSources: Types.Sources = {},
   defaultTiming: Types.Times = {
     time: 0,

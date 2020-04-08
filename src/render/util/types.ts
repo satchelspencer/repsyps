@@ -30,12 +30,14 @@ export interface TrackSource {
 export interface PersistentSource {
   name: string
   bounds: Bounds
+  boundsAlpha: number
   sourceTracks: { [sourceTrackId: string]: PersistentTrackSource }
 }
 
 export interface Source {
   name: string
   bounds: Bounds
+  boundsAlpha: number
   sourceTracks: { [sourceTrackId: string]: TrackSource }
 }
 

@@ -3,7 +3,7 @@ import * as _ from 'lodash'
 import pathUtils from 'path'
 
 import * as Actions from '../actions'
-import { defaultState, defaultTrack } from '../defaults'
+import { defaultState, defaultTrack, defaultSource } from '../defaults'
 import { updateSceneIndex } from './scenes'
 import { getCuePlayback } from './cues'
 
@@ -19,6 +19,7 @@ export default createReducer(defaultState, (handle) => [
       sources: _.mapValues(payload.state.sources, (psource, sourceId) => {
         const existingSource = state.sources[sourceId]
         return {
+          ...defaultSource,
           ...psource,
           sourceTracks: _.mapValues(
             psource.sourceTracks,

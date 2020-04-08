@@ -13,7 +13,6 @@ import SourceTracks from './source-tracks'
 import Separate from './separate'
 import Cues from './cues'
 import Filter from './filter'
-import Alpha from './alpha'
 import Sync from './sync'
 import TrackVolume from './volume'
 import { palette } from 'render/components/theme'
@@ -115,7 +114,6 @@ const Sidebar = () => {
               <SourceTracks trackId={trackId} />
               <BoundsControl trackId={trackId} />
               <Sync trackId={trackId} />
-              <Alpha trackId={trackId} />
               <TrackVolume trackId={trackId} />
               <Filter trackId={trackId} />
               <Separate trackId={trackId} />

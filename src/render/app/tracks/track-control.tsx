@@ -12,14 +12,14 @@ import Icon from 'render/components/icon'
 
 const TrackControlsWrapper = ctyled.div.styles({
   width: 15,
-  borderColor: c => c.contrast(-0.2),
+  borderColor: (c) => c.contrast(-0.2),
   bg: true,
-  color: c => c.contrast(-0.1).nudge(0.05),
+  color: (c) => c.contrast(-0.1).nudge(0.05),
 })
 
 const TrackHandle = SortableHandle(ctyled.div
   .attrs({ selected: false })
-  .styles({ color: c => c.nudge(0.2), width: 1 }).extend`
+  .styles({ color: (c) => c.nudge(0.2), width: 1 }).extend`
   position:absolute;
   left:0;
   height:100%;
@@ -30,7 +30,7 @@ const TrackControlsBody = ctyled.div.styles({
   column: true,
   flex: 1,
   lined: true,
-  borderColor: c => c.contrast(-0.2),
+  borderColor: (c) => c.contrast(-0.2),
 }).extend`
   position:absolute;
   right:0;
@@ -40,10 +40,10 @@ const TrackControlsBody = ctyled.div.styles({
 
 const TrackTitle = ctyled.div.styles({
   align: 'center',
-  color: c => c.nudge(0.1),
+  color: (c) => c.nudge(0.1),
   bg: true,
   padd: 1,
-  size: s => s * 0.9,
+  size: (s) => s * 0.9,
 }).extend`
   overflow: hidden;
   white-space: nowrap;
@@ -100,11 +100,11 @@ const SpeedWrapper = ctyled.div.styles({
   width: '100%',
   flex: 1,
   bg: true,
-  color: c => c.contrast(0.1),
+  color: (c) => c.contrast(0.1),
   rounded: true,
   gutter: 1,
   border: 1,
-  borderColor: c => c.contrast(-0.3),
+  borderColor: (c) => c.contrast(-0.3),
 })
 
 const CuesWrapper = ctyled.div.styles({
@@ -124,10 +124,10 @@ export interface TrackControlsProps {
 
 function TrackControls(props: TrackControlsProps) {
   const getTrackIsSolo = useMemo(() => Selectors.makeGetTrackIsSolo(), []),
-    track = useSelector(state => state.live.tracks[props.trackId]),
-    period = useSelector(state => state.playback.period),
-    isSolo = useSelector(state => getTrackIsSolo(state, props.trackId)),
-    source = useSelector(state => state.sources[props.trackId]),
+    track = useSelector((state) => state.live.tracks[props.trackId]),
+    period = useSelector((state) => state.playback.period),
+    isSolo = useSelector((state) => getTrackIsSolo(state, props.trackId)),
+    source = useSelector((state) => state.sources[props.trackId]),
     dispatch = useDispatch()
 
   const barLen =
@@ -144,7 +144,8 @@ function TrackControls(props: TrackControlsProps) {
     canNext =
       (hasCues && atEnd) ||
       (activeCueIndex !== -1 && activeCueIndex < track.cues.length - 1),
-    pausedOnCue = !track.playback.playing && activeCueIndex !== -1
+    pausedOnCue = !track.playback.playing && activeCueIndex !== -1,
+    boundsAlpha = track.playback.aperiodic ? 1 : source.boundsAlpha
 
   return (
     <TrackControlsWrapper>
@@ -157,7 +158,7 @@ function TrackControls(props: TrackControlsProps) {
               <Icon name="timer" scale={1.2} />
               <span>
                 {barLen > 0 ? _.round(60 / (barLen / RATE), 0) + '/m' : '??'} @{' '}
-                {_.round(baseSpeed * track.playback.alpha * 100, 0)}%
+                {_.round(baseSpeed * track.playback.alpha * boundsAlpha * 100, 0)}%
               </span>
             </SpeedWrapper>
             <CuesWrapper>

@@ -60,6 +60,7 @@ export function addTrackAndSource(path: string) {
         source: {
           name,
           bounds: [],
+          boundsAlpha: 1,
           sourceTracks: {
             [id]: { name, source: path, loaded: false, missing: false, streamIndex: 0 },
           },
@@ -160,6 +161,11 @@ export const copyTrackBounds = createAction<{
   src: string
   dest: string
 }>('COPY_TRACK_BOUNDS')
+
+export const setSourceAlpha = createAction<{
+  sourceId: string,
+  boundsAlpha: number
+}>('SET_SOURCE_ALPHA')
 
 /* cues */
 

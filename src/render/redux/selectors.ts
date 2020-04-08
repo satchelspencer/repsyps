@@ -162,11 +162,14 @@ function applyControlsToPlayback(
   controls: Types.Controls,
   values: Types.ControlValues,
   initValues: Types.ControlValues,
-  enabled: boolean
+  enabled: boolean,
+  boundsAlpha: number
 ) {
+  let outPlayback: Types.TrackPlayback = {
+    ...playback,
+    alpha: playback.alpha * boundsAlpha,
+  }
   if (!enabled) return playback
-  let outPlayback: Types.TrackPlayback = { ...playback },
-    needsUpdate = false
   _.keys(controls).forEach((posStr) => {
     const controlGroup = controls[posStr],
       initValue = defaultValue(initValues[posStr]),
@@ -177,7 +180,6 @@ function applyControlsToPlayback(
       controlGroup.controls.forEach((control) => {
         const controlValue = control.invert ? 1 - value : value
         if ('trackIndex' in control && control.trackIndex === trackIndex) {
-          needsUpdate = true
           if ('trackProp' in control) {
             outPlayback = {
               ...outPlayback,
@@ -205,7 +207,7 @@ function applyControlsToPlayback(
         }
       })
   })
-  return needsUpdate ? outPlayback : playback
+  return outPlayback
 }
 
 export const makeGetTrackPlayback = () => {
@@ -215,12 +217,22 @@ export const makeGetTrackPlayback = () => {
       getTrackIndex,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].playback,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].nextPlayback,
+      (state: Types.State, trackId: string) => state.sources[trackId].boundsAlpha,
       (state: Types.State) => getControls(state.live),
       (state: Types.State) => state.live.controlValues,
       (state: Types.State) => state.live.initValues,
       (state: Types.State) => state.live.controlsEnabled,
     ],
-    (trackIndex, playback, nextPlayback, controls, values, initValues, enabled) => {
+    (
+      trackIndex,
+      playback,
+      nextPlayback,
+      boundsAlpha,
+      controls,
+      values,
+      initValues,
+      enabled
+    ) => {
       return {
         playback: applyControlsToPlayback(
           trackIndex,
@@ -228,7 +240,8 @@ export const makeGetTrackPlayback = () => {
           controls,
           values,
           initValues,
-          enabled
+          enabled,
+          boundsAlpha
         ),
         nextPlayback:
           nextPlayback &&
@@ -238,7 +251,8 @@ export const makeGetTrackPlayback = () => {
             controls,
             values,
             initValues,
-            enabled
+            enabled,
+            boundsAlpha
           ),
       }
     }

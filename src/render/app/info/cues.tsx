@@ -250,7 +250,6 @@ const Cues = memo((props: CuesProps) => {
               'chunkIndex',
               'aperiodic',
               'volume',
-              'alpha',
             ],
             startBehavior: 'immediate',
             endBehavior: playback.loop ? 'loop' : 'stop',
