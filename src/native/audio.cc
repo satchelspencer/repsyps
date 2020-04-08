@@ -556,6 +556,22 @@ Napi::Value stopRecording(const Napi::CallbackInfo &info){
   return bounds;
 }
 
+void syncToTrack(const Napi::CallbackInfo &info){
+  std::string trackId = info[0].As<Napi::String>().Utf8Value();
+  int start = info[1].As<Napi::Number>().Int32Value();
+  int end = info[2].As<Napi::Number>().Int32Value();
+
+  mixTrack* track = state.mixTracks[trackId];
+  float period = (end - start) * track->playback->alpha;
+  float trackPhase = (track->sample - start) / period;
+  state.playback->time = floor(state.playback->time)+trackPhase;
+  state.playback->period = period;
+  track->playback->aperiodic = false;
+  track->playback->chunks[0] = start;
+  track->playback->chunks[1] = period;
+  track->playback->chunkIndex = -1;
+}
+
 void InitAudio(Napi::Env env, Napi::Object exports){  
   exports.Set("init", Napi::Function::New(env, init));
   exports.Set("start", Napi::Function::New(env, start));
@@ -572,4 +588,5 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("exportSource", Napi::Function::New(env, exportSource));
   exports.Set("startRecording", Napi::Function::New(env, startRecording));
   exports.Set("stopRecording", Napi::Function::New(env, stopRecording));
+  exports.Set("syncToTrack", Napi::Function::New(env, syncToTrack));
 }

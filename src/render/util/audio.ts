@@ -20,6 +20,7 @@ interface AudioAPI {
   exportSource(path: string, sourceId: string): boolean
   startRecording(fromSourceId: string)
   stopRecording(destSourceId: string): number[]
+  syncToTrack(trackId: string, start: number, end: number)
 }
 
 export default (eval('require')(

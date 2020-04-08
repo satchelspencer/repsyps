@@ -28,5 +28,6 @@ Napi::Value loadSource(const Napi::CallbackInfo &info);
 Napi::Value exportSource(const Napi::CallbackInfo &info);
 void startRecording(const Napi::CallbackInfo &info);
 Napi::Value stopRecording(const Napi::CallbackInfo &info);
+void syncToTrack(const Napi::CallbackInfo &info);
 
 void InitAudio(Napi::Env env, Napi::Object exports);

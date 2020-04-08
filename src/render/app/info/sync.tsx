@@ -5,6 +5,7 @@ import { useDispatch, useSelector, useStore } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Types from 'render/util/types'
 
+import audio from 'render/util/audio'
 import Icon from 'render/components/icon'
 import { HeaderContent, SelectableButton, WideButton } from 'render/components/misc'
 
@@ -15,14 +16,14 @@ export interface SyncProps {
 }
 
 const Sync = memo((props: SyncProps) => {
-  const { loop, aperiodic, chunks, chunkIndex } = useSelector(
-    state => state.live.tracks[props.trackId].playback
+  const { loop, aperiodic, chunks, chunkIndex, alpha } = useSelector(
+    (state) => state.live.tracks[props.trackId].playback
   )
   useEffect(() => {
     if (chunkIndex !== -1) setIsLoop(!!chunks[chunkIndex + 1])
   }, [chunks, chunkIndex])
 
-  const bounds = useSelector(state => state.sources[props.trackId].bounds),
+  const bounds = useSelector((state) => state.sources[props.trackId].bounds),
     dispatch = useDispatch(),
     store = useStore(),
     [isLoop, setIsLoop] = useState(false),
@@ -34,14 +35,18 @@ const Sync = memo((props: SyncProps) => {
         }
         if (!aperiodic && !isLoop && bounds.length) {
           const sample = store.getState().timing.tracks[props.trackId],
-            nextBoundIndex = _.findIndex(bounds, b => {
-              return b >= sample
-            }),
-            boundIndex = nextBoundIndex - 1
-          newPlayback.chunks = [
-            bounds[boundIndex],
-            bounds[nextBoundIndex] - bounds[boundIndex],
-          ]
+            aboveBounds = _.filter(bounds, (b, bi) => {
+              const next = bounds[bi + 1]
+              return next >= sample
+            })
+          newPlayback.chunks = _.flatten(
+            aboveBounds
+              .map((bound, boundIndex) => {
+                const nextBound = aboveBounds[boundIndex + 1]
+                return nextBound && [bound, nextBound - bound]
+              })
+              .filter((a) => a)
+          )
         }
         dispatch(
           Actions.setTrackPlayback({
@@ -61,6 +66,33 @@ const Sync = memo((props: SyncProps) => {
             <Icon scale={1.4} name="av-timer" />
             <span>&nbsp;Sync</span>
           </HeaderContent>
+          <SelectableButton
+            disabled={!aperiodic}
+            selected={aperiodic}
+            onClick={() => {
+              const sample = store.getState().timing.tracks[props.trackId],
+                nextBoundIndex = _.findIndex(bounds, (b) => {
+                  return b >= sample
+                }),
+                boundIndex = nextBoundIndex - 1
+              if (nextBoundIndex !== -1 && boundIndex !== -1) {
+                audio.syncToTrack(
+                  props.trackId,
+                  bounds[boundIndex],
+                  bounds[nextBoundIndex]
+                )
+                setAperiodic(false)
+                dispatch(
+                  Actions.updatePlayback({
+                    period: (bounds[nextBoundIndex] - bounds[boundIndex]) * alpha,
+                  })
+                )
+              }
+            }}
+          >
+            <Icon scale={1} name="crosshairs" />
+            &nbsp;lock
+          </SelectableButton>
           <SelectableButton
             disabled={!canSync}
             onClick={() => setAperiodic(false)}

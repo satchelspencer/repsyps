@@ -46,7 +46,7 @@ export default function syncAudio(store: Store<Types.State>) {
       lastGlobalPlayback = playback
     }
 
-    trackIds.forEach(trackId => {
+    trackIds.forEach((trackId) => {
       const trackIsNew = !lastState || !lastTrackIds.includes(trackId),
         source = currentState.sources[trackId]
 
@@ -54,7 +54,7 @@ export default function syncAudio(store: Store<Types.State>) {
       const prev = lastTrackPlaybacks[trackId],
         current = playbackSelectors[trackId](currentState, trackId)
 
-      _.keys(current.playback.sourceTracksParams).forEach(async sourceId => {
+      _.keys(current.playback.sourceTracksParams).forEach(async (sourceId) => {
         const sourceTrack = source.sourceTracks[sourceId],
           sourceIsNew = !sourceTrack.loaded
 
@@ -141,7 +141,7 @@ export default function syncAudio(store: Store<Types.State>) {
       }
 
       if (!trackIsNew)
-        _.keys(prev.playback.sourceTracksParams).forEach(sourceId => {
+        _.keys(prev.playback.sourceTracksParams).forEach((sourceId) => {
           if (!current.playback.sourceTracksParams[sourceId]) audio.removeSource(sourceId)
         })
       lastTrackPlaybacks[trackId] = current
@@ -149,7 +149,7 @@ export default function syncAudio(store: Store<Types.State>) {
 
     if (lastState) {
       const unloadActions: Action<any>[] = []
-      lastTrackIds.forEach(trackId => {
+      lastTrackIds.forEach((trackId) => {
         if (!trackIds.includes(trackId)) {
           //track should be unloaded
           audio.removeMixTrack(trackId) //remove mixTrack
@@ -158,7 +158,7 @@ export default function syncAudio(store: Store<Types.State>) {
             track = currentState.live.tracks[trackId]
 
           if (track)
-            _.keys(source.sourceTracks).forEach(sourceTrackId => {
+            _.keys(source.sourceTracks).forEach((sourceTrackId) => {
               if (source.sourceTracks[sourceTrackId].loaded) {
                 audio.removeSource(sourceTrackId)
                 unloadActions.push(

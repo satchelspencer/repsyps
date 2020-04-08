@@ -35,6 +35,7 @@ export const WideButton = Button.styles({
   color: c => c.nudge(0.05),
   justify: 'center',
   gutter: 1,
+  alignSelf: 'stretch'
 })
 
 export const FillButton = WideButton.styles({
@@ -47,6 +48,7 @@ export const SelectableButton = WideButton.attrs<{
 }>({ selected: false, compact: false }).styles({
   color: (c, { selected }) => (selected ? c.nudge(0.1).contrast(0.1) : c),
   flex: (_, { compact }) => (compact ? 'none' : 1),
+  alignSelf: 'stretch'
 })
 
 export const SidebarValue = Value.class(inline).styles({ height: 1.8 })
