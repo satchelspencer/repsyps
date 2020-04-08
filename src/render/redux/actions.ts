@@ -11,6 +11,7 @@ function createAction<Payload>(name) {
   return createActionCreator(name, (res) => (payload: Payload) => res(payload))
 }
 
+/* global actions */
 export const reset = createAction<{}>('RESET_STATE')
 
 export const loadPersisted = createAction<{
@@ -27,6 +28,20 @@ export const updateTime = createAction<{
   commit: boolean
 }>('UPDATE_TIMES')
 
+export const setSaveStatus = createAction<Types.SaveStatus>('SET_SAVESTATUS')
+
+export const setSettings = createAction<Partial<Types.Settings>>('SET_SETTINGS')
+
+export const setRecording = createAction<Partial<Types.Recording>>('SET_RECORDING')
+
+export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAYBACK')
+
+export const updatePlaybackTime = createAction<number>('UPDATE_PLAYBACK_TIME')
+
+export const resetPlaybackTime = createAction<{}>('RESET_PLAYBACK_TIME')
+
+/* track actions */
+
 export const addTrack = createAction<{
   trackId: string
   sourceTracksParams: Types.TrackSourcesParams
@@ -35,6 +50,60 @@ export const addTrack = createAction<{
 
 export const rmTrack = createAction<string>('REMOVE_TRACK')
 
+export function addTrackAndSource(path: string) {
+  const id = getId(path),
+    name = pathUtils.basename(path)
+  return batchActions(
+    [
+      createSource({
+        sourceId: id,
+        source: {
+          name,
+          bounds: [],
+          sourceTracks: {
+            [id]: { name, source: path, loaded: false, missing: false, streamIndex: 0 },
+          },
+        },
+      }),
+      addTrack({
+        trackId: id,
+        sourceTracksParams: { [id]: { volume: 1, offset: 0 } },
+      }),
+      selectTrackExclusive(id),
+    ],
+    'ADD_TRACK_AND_SOURCE'
+  )
+}
+
+export const setTrackPlayback = createAction<{
+  trackId?: string
+  trackIndex?: number
+  playback: Partial<Types.TrackPlayback>
+}>('SET_TRACK_PLAYBACK')
+
+export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
+
+export const toggleTrack = createAction<string>('TOGGLE_TRACK_PLAYBACK')
+
+export const editTrack = createAction<{ trackId: string; edit: boolean }>(
+  'SET_TRACK_EDIT'
+)
+
+export const setTrackPlayLock = createAction<{
+  trackId: string
+  playlock: boolean
+}>('SET_TRACK_PLAYLOCK')
+
+export const setTrackMuted = createAction<{ trackId: string; muted: boolean }>(
+  'SET_TRACK_MUTE'
+)
+
+export const setTrackSolo = createAction<{ trackId: string; solo: boolean }>(
+  'SET_TRACK_SOLO'
+)
+
+/* source actions */
+
 export const setTrackSourceParams = createAction<{
   trackId?: string
   trackIndex?: number
@@ -42,6 +111,16 @@ export const setTrackSourceParams = createAction<{
   sourceTrackIndex?: number
   sourceTrackParams: Partial<Types.TrackSourceParams>
 }>('SET_TRACK_SOURCE')
+
+export const editSourceTrack = createAction<{
+  trackId: string
+  sourceTrackEditing: string | null
+}>('SET_SOURCE_TRACK_EDIT')
+
+export const setVisibleSourceTrack = createAction<{
+  trackId: string
+  visibleSourceTrack: string
+}>('SET_VIS_SOURCE_TRACK')
 
 export const createSource = createAction<{
   sourceId: string
@@ -72,12 +151,6 @@ export const removeTrackSource = createAction<{
   sourceTrackId: string
 }>('REMOVE_TRACKSOURCE')
 
-export const setTrackPlayback = createAction<{
-  trackId?: string
-  trackIndex?: number
-  playback: Partial<Types.TrackPlayback>
-}>('SET_TRACK_PLAYBACK')
-
 export const setSourceBounds = createAction<{
   sourceId: string
   bounds: number[]
@@ -88,42 +161,7 @@ export const copyTrackBounds = createAction<{
   dest: string
 }>('COPY_TRACK_BOUNDS')
 
-export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAYBACK')
-
-export const updatePlaybackTime = createAction<number>('UPDATE_PLAYBACK_TIME')
-
-export const resetPlaybackTime = createAction<{}>('RESET_PLAYBACK_TIME')
-
-export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
-
-export const toggleTrack = createAction<string>('TOGGLE_TRACK_PLAYBACK')
-
-export const editTrack = createAction<{ trackId: string; edit: boolean }>(
-  'SET_TRACK_EDIT'
-)
-
-export const setTrackPlayLock = createAction<{
-  trackId: string
-  playlock: boolean
-}>('SET_TRACK_PLAYLOCK')
-
-export const editSourceTrack = createAction<{
-  trackId: string
-  sourceTrackEditing: string | null
-}>('SET_SOURCE_TRACK_EDIT')
-
-export const setVisibleSourceTrack = createAction<{
-  trackId: string
-  visibleSourceTrack: string
-}>('SET_VIS_SOURCE_TRACK')
-
-export const setTrackMuted = createAction<{ trackId: string; muted: boolean }>(
-  'SET_TRACK_MUTE'
-)
-
-export const setTrackSolo = createAction<{ trackId: string; solo: boolean }>(
-  'SET_TRACK_SOLO'
-)
+/* cues */
 
 export const addCue = createAction<{
   trackId: string
@@ -153,6 +191,8 @@ export const setTrackCue = createAction<{
   trackIndex?: number
   cueIndex: number
 }>('SET_TRACK_CUE')
+
+/* controls */
 
 export const setControlGroup = createAction<{
   position: Types.Position
@@ -201,19 +241,6 @@ export const setBinding = createAction<{
 }>('SET_BINDING')
 
 export const removeBinding = createAction<Types.Position>('REMOVE_BINDING')
-
-export const setSceneIndex = createAction<number>('SET_SCENE_INDEX')
-
-export const addTrackToScene = createAction<{
-  trackId: string
-  toSceneIndex: number
-  fromSceneIndex: number
-  trackIndex?: number
-}>('ADD_TRACK_TO_SCENE')
-
-export const createScene = createAction<number>('CREATE_SCENE')
-
-export const deleteScene = createAction<number>('DELETE_SCENE')
 
 export const loadBindings = createAction<Types.BindingsFile>('LOAD_BINDINGS')
 
@@ -272,33 +299,17 @@ export function applyControlGroup(
   return batchActions(actions, 'APPLY_CONTROL')
 }
 
-export function addTrackAndSource(path: string) {
-  const id = getId(path),
-    name = pathUtils.basename(path)
-  return batchActions(
-    [
-      createSource({
-        sourceId: id,
-        source: {
-          name,
-          bounds: [],
-          sourceTracks: {
-            [id]: { name, source: path, loaded: false, missing: false, streamIndex: 0 },
-          },
-        },
-      }),
-      addTrack({
-        trackId: id,
-        sourceTracksParams: { [id]: { volume: 1, offset: 0 } },
-      }),
-      selectTrackExclusive(id),
-    ],
-    'ADD_TRACK_AND_SOURCE'
-  )
-}
+/* scenes */
 
-export const setSaveStatus = createAction<Types.SaveStatus>('SET_SAVESTATUS')
+export const setSceneIndex = createAction<number>('SET_SCENE_INDEX')
 
-export const setSettings = createAction<Partial<Types.Settings>>('SET_SETTINGS')
+export const addTrackToScene = createAction<{
+  trackId: string
+  toSceneIndex: number
+  fromSceneIndex: number
+  trackIndex?: number
+}>('ADD_TRACK_TO_SCENE')
 
-export const setRecording = createAction<Partial<Types.Recording>>('SET_RECORDING')
+export const createScene = createAction<number>('CREATE_SCENE')
+
+export const deleteScene = createAction<number>('DELETE_SCENE')

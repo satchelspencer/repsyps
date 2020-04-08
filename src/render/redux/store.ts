@@ -1,7 +1,8 @@
 import { createStore } from 'redux'
 import { devToolsEnhancer } from 'redux-devtools-extension'
 
-import reducer, { defaultState } from './reducer'
+import reducer from './reducer'
+import { defaultState } from './defaults'
 import * as Actions from './actions'
 import syncAudio from './audio-sync'
 import syncMidi from './midi-sync'
