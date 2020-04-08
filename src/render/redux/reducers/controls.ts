@@ -10,6 +10,7 @@ import {
   defaultBinding,
 } from '../defaults'
 import { updateSceneIndex } from './scenes'
+import { stat } from 'fs'
 
 export default createReducer(defaultState, (handle) => [
   handle(Actions.setControlGroup, (state, { payload }) => {
@@ -92,15 +93,18 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.zeroInitValues, (state) => {
-    return {
-      ...state,
-      live: updateSceneIndex(state.live, state.live.sceneIndex, true),
-      playback: {
-        ...state.playback,
-        playing: false,
+    return updateSceneIndex(
+      {
+        ...state,
+        playback: {
+          ...state.playback,
+          playing: false,
+        },
+        timing: defaultTiming,
       },
-      timing: defaultTiming,
-    }
+      state.live.sceneIndex,
+      true
+    )
   }),
   handle(Actions.clearControls, (state) => {
     return {

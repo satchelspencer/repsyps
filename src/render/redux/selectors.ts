@@ -353,13 +353,15 @@ export const makeGetPersistentTrack = () => {
       (track: Types.Track) => track.cues,
       (track: Types.Track) => track.visibleSourceTrack,
       (track: Types.Track) => track.editing,
+      (track: Types.Track) => track.lastPeriod,
     ],
-    (playback, cues, visibleSourceTrack, editing): Types.PersistentTrack => {
+    (playback, cues, visibleSourceTrack, editing, lastPeriod): Types.PersistentTrack => {
       return {
         visibleSourceTrack,
         cues,
         playback,
         editing,
+        lastPeriod,
       }
     }
   )

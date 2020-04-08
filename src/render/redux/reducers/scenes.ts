@@ -9,69 +9,86 @@ import { defaultState, defaultScene } from '../defaults'
 import { applyCue } from './cues'
 
 export function updateSceneIndex(
-  live: Types.Live,
+  state: Types.State,
   sceneIndex: number,
   forceReset?: boolean
-): Types.Live {
-  if (!forceReset && sceneIndex === live.sceneIndex) return live
+): Types.State {
+  if (!forceReset && sceneIndex === state.live.sceneIndex) return state
   else {
-    const prevActive = Selectors.getActiveTrackIdsFromLive(live, live.sceneIndex),
-      nextActive = Selectors.getActiveTrackIdsFromLive(live, sceneIndex),
+    const scene = state.live.scenes[sceneIndex],
+      prevActive = Selectors.getActiveTrackIdsFromLive(state.live, state.live.sceneIndex),
+      nextActive = Selectors.getActiveTrackIdsFromLive(state.live, sceneIndex),
       noLongerActive = _.difference(prevActive, nextActive),
-      controls = live.scenes[sceneIndex].controls
+      controls = scene.controls,
+      prevScene = state.live.scenes[sceneIndex - 1],
+      lastOfPrevId = prevScene && _.last(prevScene.trackIds),
+      lastIsPlaying = lastOfPrevId && state.live.tracks[lastOfPrevId].playback.playing,
+      firstTrack = scene.trackIds[0] && state.live.tracks[scene.trackIds[0]],
+      resetPeriod =
+        firstTrack.lastPeriod &&
+        (forceReset ||
+          sceneIndex !== state.live.sceneIndex + 1 ||
+          !state.playback.playing ||
+          !lastIsPlaying)
+
+    console.log(resetPeriod, firstTrack.lastPeriod)
 
     return {
-      ...live,
-      tracks: _.mapValues(live.tracks, (track, trackId) => {
-        if (!forceReset && !noLongerActive.includes(trackId)) return track
-        else {
-          const firstCue = track.cues[0],
-            cuedTrack: Types.Track = firstCue
-              ? applyCue(track, 0)
-              : {
-                  ...track,
-                  nextPlayback: null,
-                  nextCueIndex: -1,
-                  cueIndex: -1,
-                }
-          return {
-            ...cuedTrack,
-            playback: {
-              ...cuedTrack.playback,
-              playing: false,
-              muted: false,
-              unpause: false,
-            },
+      ...state,
+      playback: {
+        ...state.playback,
+        period: resetPeriod ? firstTrack.lastPeriod : state.playback.period,
+      },
+      live: {
+        ...state.live,
+        tracks: _.mapValues(state.live.tracks, (track, trackId) => {
+          if (!forceReset && !noLongerActive.includes(trackId)) return track
+          else {
+            const firstCue = track.cues[0],
+              cuedTrack: Types.Track = firstCue
+                ? applyCue(track, 0)
+                : {
+                    ...track,
+                    nextPlayback: null,
+                    nextCueIndex: -1,
+                    cueIndex: -1,
+                  }
+            return {
+              ...cuedTrack,
+              playback: {
+                ...cuedTrack.playback,
+                playing: false,
+                muted: false,
+                unpause: false,
+              },
+            }
           }
-        }
-      }),
-      initValues: _.mapValues(controls, (control, pos) => {
-        const binding = live.bindings[pos],
-          value = live.controlValues[pos]
-        if (binding && !binding.twoway && value !== undefined) return value
-        else return 1
-      }),
-      controlValues: _.mapValues(controls, (control, pos) => {
-        const binding = live.bindings[pos],
-          value = live.controlValues[pos]
-        if (
-          (control && !control.absolute && (!binding || binding.twoway)) ||
-          value === undefined
-        )
-          return 1
-        else return value
-      }),
-      sceneIndex,
+        }),
+        initValues: _.mapValues(controls, (control, pos) => {
+          const binding = state.live.bindings[pos],
+            value = state.live.controlValues[pos]
+          if (binding && !binding.twoway && value !== undefined) return value
+          else return 1
+        }),
+        controlValues: _.mapValues(controls, (control, pos) => {
+          const binding = state.live.bindings[pos],
+            value = state.live.controlValues[pos]
+          if (
+            (control && !control.absolute && (!binding || binding.twoway)) ||
+            value === undefined
+          )
+            return 1
+          else return value
+        }),
+        sceneIndex,
+      },
     }
   }
 }
 
 export default createReducer(defaultState, (handle) => [
   handle(Actions.setSceneIndex, (state, { payload: sceneIndex }) => {
-    return {
-      ...state,
-      live: updateSceneIndex(state.live, sceneIndex),
-    }
+    return updateSceneIndex(state, sceneIndex)
   }),
   handle(Actions.addTrackToScene, (state, { payload }) => {
     const currentScene = state.live.scenes[payload.toSceneIndex] || defaultScene,
@@ -142,16 +159,16 @@ export default createReducer(defaultState, (handle) => [
       }
 
     newScenes.splice(sceneIndex, 0, newScene)
-    return {
-      ...state,
-      live: updateSceneIndex(
-        {
+    return updateSceneIndex(
+      {
+        ...state,
+        live: {
           ...state.live,
           scenes: newScenes,
         },
-        sceneIndex
-      ),
-    }
+      },
+      sceneIndex
+    )
   }),
   handle(Actions.deleteScene, (state, { payload: sceneIndex }) => {
     if (state.live.scenes.length == 1) return state
@@ -160,21 +177,21 @@ export default createReducer(defaultState, (handle) => [
       newSceneIndex = Math.min(state.live.sceneIndex, newScenes.length - 2)
 
     newScenes.splice(sceneIndex, 1)
-    return {
-      ...state,
-      sources: _.omitBy(state.sources, (_, sourceId) =>
-        deletedScene.trackIds.includes(sourceId)
-      ),
-      live: updateSceneIndex(
-        {
+    return updateSceneIndex(
+      {
+        ...state,
+        sources: _.omitBy(state.sources, (_, sourceId) =>
+          deletedScene.trackIds.includes(sourceId)
+        ),
+        live: {
           ...state.live,
           tracks: _.omitBy(state.live.tracks, (_, trackId) =>
             deletedScene.trackIds.includes(trackId)
           ),
           scenes: newScenes,
         },
-        newSceneIndex
-      ),
-    }
+      },
+      newSceneIndex
+    )
   }),
 ])

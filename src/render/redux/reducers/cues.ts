@@ -47,10 +47,16 @@ export function getCuePlayback(
   }
 }
 
-export function applyCue(track: Types.Track, cueIndex: number): Types.Track {
+export function applyCue(
+  track: Types.Track,
+  cueIndex: number,
+  currentPeriod?: number
+): Types.Track {
   const cue = track.cues[cueIndex]
   if (!cue) return track
-  const followingCue = track.cues[cueIndex + 1]
+  const followingCue = track.cues[cueIndex + 1],
+    isUnpausing = !track.playback.playing && cue.playback.playing,
+    lastPeriod = isUnpausing && currentPeriod ? currentPeriod : track.lastPeriod
 
   if (cue.startBehavior === 'immediate') {
     const hasFollowing = cue.endBehavior === 'next' && followingCue
@@ -60,6 +66,7 @@ export function applyCue(track: Types.Track, cueIndex: number): Types.Track {
       nextCueIndex: hasFollowing ? cueIndex + 1 : -1,
       playback: getCuePlayback(cue, track.playback),
       nextPlayback: hasFollowing ? getCuePlayback(followingCue, track.playback) : null,
+      lastPeriod,
     }
   } else if (cue.startBehavior === 'on-chunk' || cue.startBehavior === 'on-end') {
     return {
@@ -70,6 +77,7 @@ export function applyCue(track: Types.Track, cueIndex: number): Types.Track {
         nextAtChunk: cue.startBehavior === 'on-chunk',
         unpause: true,
       },
+      lastPeriod,
       nextPlayback: getCuePlayback(cue, track.playback),
     }
   } else return track
@@ -150,6 +158,7 @@ export default createReducer(defaultState, (handle) => [
                 ...track.playback,
                 playing: true,
               },
+              lastPeriod: state.playback.period,
             },
           },
         }
@@ -158,7 +167,7 @@ export default createReducer(defaultState, (handle) => [
           ...state.live,
           tracks: {
             ...state.live.tracks,
-            [trackId]: applyCue(track, nextIndex),
+            [trackId]: applyCue(track, nextIndex, state.playback.period),
           },
         }
       } else
@@ -199,7 +208,11 @@ export default createReducer(defaultState, (handle) => [
             ...state.live,
             tracks: {
               ...state.live.tracks,
-              [trackId]: applyCue(state.live.tracks[trackId], payload.cueIndex),
+              [trackId]: applyCue(
+                state.live.tracks[trackId],
+                payload.cueIndex,
+                state.playback.period
+              ),
             },
           }
         : state.live,

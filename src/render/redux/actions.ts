@@ -84,8 +84,6 @@ export const setTrackPlayback = createAction<{
 
 export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
 
-export const toggleTrack = createAction<string>('TOGGLE_TRACK_PLAYBACK')
-
 export const editTrack = createAction<{ trackId: string; edit: boolean }>(
   'SET_TRACK_EDIT'
 )

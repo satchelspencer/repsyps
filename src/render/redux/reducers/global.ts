@@ -14,35 +14,35 @@ export default createReducer(defaultState, (handle) => [
       firstScene = payload.state.live.scenes[0],
       firstTrackId = firstScene && firstScene.trackIds[0]
 
-    return {
-      ...state,
-      sources: _.mapValues(payload.state.sources, (psource, sourceId) => {
-        const existingSource = state.sources[sourceId]
-        return {
-          ...defaultSource,
-          ...psource,
-          sourceTracks: _.mapValues(
-            psource.sourceTracks,
-            (psourceTrack, sourceTrackId) => {
-              const existingSourceTrack =
-                existingSource && existingSource.sourceTracks[sourceTrackId]
-              return {
-                ...psourceTrack,
-                loaded:
-                  payload.reset || !existingSourceTrack
-                    ? false
-                    : existingSourceTrack.loaded,
-                missing:
-                  payload.reset || !existingSourceTrack
-                    ? false
-                    : existingSourceTrack.missing,
+    return updateSceneIndex(
+      {
+        ...state,
+        sources: _.mapValues(payload.state.sources, (psource, sourceId) => {
+          const existingSource = state.sources[sourceId]
+          return {
+            ...defaultSource,
+            ...psource,
+            sourceTracks: _.mapValues(
+              psource.sourceTracks,
+              (psourceTrack, sourceTrackId) => {
+                const existingSourceTrack =
+                  existingSource && existingSource.sourceTracks[sourceTrackId]
+                return {
+                  ...psourceTrack,
+                  loaded:
+                    payload.reset || !existingSourceTrack
+                      ? false
+                      : existingSourceTrack.loaded,
+                  missing:
+                    payload.reset || !existingSourceTrack
+                      ? false
+                      : existingSourceTrack.missing,
+                }
               }
-            }
-          ),
-        }
-      }),
-      live: updateSceneIndex(
-        {
+            ),
+          }
+        }),
+        live: {
           ...state.live,
           ...pLive,
           bindings: {
@@ -61,14 +61,16 @@ export default createReducer(defaultState, (handle) => [
                 ...ptrack.playback,
               },
               selected: shouldReset ? trackId === firstTrackId : existingTrack.selected,
+              lastPeriod: ptrack.lastPeriod || 0,
             }
           }),
         },
-        pLive.sceneIndex || 0,
-        payload.reset
-      ),
-      playback: payload.state.playback,
-    }
+
+        playback: payload.state.playback,
+      },
+      pLive.sceneIndex || 0,
+      payload.reset
+    )
   }),
   handle(Actions.loadLocalPersisted, (state, { payload: localPersisted }) => {
     return {

@@ -36,6 +36,7 @@ export default createReducer(defaultState, (handle) => [
             cueIndex: -1,
             nextCueIndex: -1,
             playLock: false,
+            lastPeriod: 0,
           },
         },
         scenes: newScenes,
@@ -53,18 +54,18 @@ export default createReducer(defaultState, (handle) => [
       }),
       newSceneIndex = Math.min(newScenes.length - 1, state.live.sceneIndex)
 
-    return {
-      ...state,
-      sources: _.omit(state.sources, trackId),
-      live: updateSceneIndex(
-        {
+    return updateSceneIndex(
+      {
+        ...state,
+        sources: _.omit(state.sources, trackId),
+        live: {
           ...state.live,
           scenes: newScenes,
           tracks: _.omit(state.live.tracks, trackId),
         },
-        newSceneIndex
-      ),
-    }
+      },
+      newSceneIndex
+    )
   }),
   handle(Actions.setTrackPlayback, (state, { payload }) => {
     const trackId =
@@ -90,7 +91,7 @@ export default createReducer(defaultState, (handle) => [
             },
           },
         }
-      else
+      else {
         newLive = {
           ...state.live,
           tracks: {
@@ -102,9 +103,11 @@ export default createReducer(defaultState, (handle) => [
                 ...payload.playback,
                 unpause: false,
               },
+              lastPeriod: state.playback.period,
             },
           },
         }
+      }
     }
     return {
       ...state,
@@ -127,10 +130,11 @@ export default createReducer(defaultState, (handle) => [
       shouldNotJump =
         (isLastOfScene && state.live.sceneIndex === containingIndex + 1) || !inScene,
       newSceneIndex = shouldNotJump ? state.live.sceneIndex : containingIndex
-    return {
-      ...state,
-      live: updateSceneIndex(
-        {
+
+    return updateSceneIndex(
+      {
+        ...state,
+        live: {
           ...state.live,
           tracks: _.mapValues(state.live.tracks, (track, thisTrackId) => {
             if (thisTrackId === trackId) {
@@ -140,27 +144,9 @@ export default createReducer(defaultState, (handle) => [
             } else return track
           }),
         },
-        newSceneIndex
-      ),
-    }
-  }),
-  handle(Actions.toggleTrack, (state, { payload: trackId }) => {
-    return {
-      ...state,
-      live: {
-        ...state.live,
-        tracks: {
-          ...state.live.tracks,
-          [trackId]: {
-            ...state.live.tracks[trackId],
-            playback: {
-              ...state.live.tracks[trackId].playback,
-              playing: !state.live.tracks[trackId].playback.playing,
-            },
-          },
-        },
       },
-    }
+      newSceneIndex
+    )
   }),
   handle(Actions.editTrack, (state, { payload }) => {
     return {

@@ -120,6 +120,7 @@ export interface Track extends NativeTrack {
   sourceTrackEditing: string | null
   visibleSourceTrack: string
   playLock: boolean
+  lastPeriod: number
 }
 
 export interface PersistentTrack {
@@ -127,6 +128,7 @@ export interface PersistentTrack {
   playback: PersitentTrackPlayback
   cues: Cue[]
   editing: boolean
+  lastPeriod: number
 }
 
 export interface PersistentTracks {
