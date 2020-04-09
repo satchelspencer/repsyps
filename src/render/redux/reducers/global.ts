@@ -136,8 +136,8 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.setSaveStatus, (state, { payload: saveStatus }) => {
-    const lastPath = state.save.path,
-      nextPath = saveStatus.path
+    const lastPath = state.save.path ? pathUtils.dirname(state.save.path) : '',
+      nextPath = pathUtils.dirname(saveStatus.path)
     let newSources = state.sources
     if (lastPath !== nextPath) {
       newSources = _.mapValues(state.sources, (source) => {

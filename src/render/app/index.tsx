@@ -77,7 +77,7 @@ function App() {
               trackId: selectedTrackId,
               playback: {
                 playing: !selectedTrack.playback.playing,
-                chunkIndex: -1,
+                //chunkIndex: -1,
               },
             })
           )

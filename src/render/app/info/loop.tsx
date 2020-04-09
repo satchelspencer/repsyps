@@ -3,9 +3,14 @@ import * as _ from 'lodash'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import * as Selectors from 'render/redux/selectors'
 
 import Icon from 'render/components/icon'
 import { WideButton, Horizontal, FillButton } from 'render/components/misc'
+import { adder } from 'render/components/control-adder'
+
+const WideLoopButton = adder(WideButton),
+  FillLoopButton = adder(FillButton)
 
 export interface LoopProps {
   trackId: string
@@ -18,6 +23,8 @@ const Loop = memo((props: LoopProps) => {
       (state) => state.live.tracks[props.trackId].playback
     ),
     bounds = useSelector((state) => state.sources[props.trackId].bounds),
+    getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
+    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch(),
     chunkLength = chunks[chunkIndex * 2 + 1],
     wrapperStyles = useMemo(() => ({ disabled: !chunkLength || !bounds.length }), [
@@ -28,19 +35,27 @@ const Loop = memo((props: LoopProps) => {
   return (
     <Horizontal styles={wrapperStyles}>
       {options.map((n) => (
-        <WideButton
+        <WideLoopButton
           key={n}
+          params={{
+            trackIndex,
+            loop: n,
+          }}
           onClick={() => dispatch(Actions.loopTrack({ trackId: props.trackId, loop: n }))}
         >
           <Icon name="loop" /> &nbsp;{n}
-        </WideButton>
+        </WideLoopButton>
       ))}
-      <FillButton
+      <FillLoopButton
+        params={{
+          trackIndex,
+          loop: -1,
+        }}
         onClick={() => dispatch(Actions.loopTrack({ trackId: props.trackId, loop: -1 }))}
       >
         <Icon name="next" />
         &nbsp;to end
-      </FillButton>
+      </FillLoopButton>
     </Horizontal>
   )
 })

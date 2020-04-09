@@ -66,8 +66,12 @@ export default function syncAudio(store: Store<Types.State>) {
         ) {
           const trackName = source.name,
             sourcePath = sourceTrack.source,
-            absSorucePath = sourcePath && pathUtils.resolve(currentPath, sourcePath)
-          // console.log(currentPath, sourcePath, absSorucePath)
+            isAbsolute = sourcePath && pathUtils.isAbsolute(sourcePath),
+            absSorucePath =
+              sourcePath &&
+              (isAbsolute
+                ? sourcePath
+                : pathUtils.resolve(pathUtils.dirname(currentPath), sourcePath))
 
           loadingSources[sourceId] = true
           const loadedIds =

@@ -101,7 +101,11 @@ export const setTrackSolo = createAction<{ trackId: string; solo: boolean }>(
   'SET_TRACK_SOLO'
 )
 
-export const loopTrack = createAction<{ trackId: string; loop: number }>('LOOP_TRACK')
+export const loopTrack = createAction<{
+  trackId?: string
+  trackIndex?: number
+  loop: number
+}>('LOOP_TRACK')
 
 /* source actions */
 
@@ -162,10 +166,24 @@ export const copyTrackBounds = createAction<{
   dest: string
 }>('COPY_TRACK_BOUNDS')
 
+export const inferBounds = createAction<{
+  sourceId: string
+  chunks: number[]
+  impulses: number[]
+  snap: boolean
+  direction: 'left' | 'right' | 'both'
+}>('INFER_BOUNDS')
+
 export const setSourceAlpha = createAction<{
   sourceId: string
   boundsAlpha: number
 }>('SET_SOURCE_ALPHA')
+
+export const moveSourceTrack = createAction<{
+  sourceId: string
+  sourceTrackId: string
+  source: string
+}>('MOVE_SOURCETRACK')
 
 /* cues */
 
@@ -301,6 +319,14 @@ export function applyControlGroup(
           cueIndex: control.cueIndex,
         })
       )
+    else if ('loop' in control && thisValue > 0.5 && thisLastValue < 0.5) {
+      actions.push(
+        loopTrack({
+          trackIndex: control.trackIndex,
+          loop: control.loop,
+        })
+      )
+    }
   })
   return batchActions(actions, 'APPLY_CONTROL')
 }

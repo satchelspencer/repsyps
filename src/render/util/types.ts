@@ -154,6 +154,11 @@ export interface ControlMapping {
   invert: boolean
 }
 
+export interface LoopControl extends ControlMapping {
+  trackIndex: number
+  loop: number
+}
+
 export interface CueControl extends ControlMapping {
   trackIndex: number
   cueIndex: number
@@ -182,6 +187,7 @@ export interface GlobalValueControl extends ControlMapping {
 export type Control =
   | CueControl
   | CueStepControl
+  | LoopControl
   | SourceTrackValueControl
   | TrackValueControl
   | GlobalValueControl

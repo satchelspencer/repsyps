@@ -4,12 +4,14 @@ import { Store } from 'redux'
 import * as Types from 'render/util/types'
 import * as Actions from './actions'
 import * as Selectors from './selectors'
-import { getPath } from 'render/loading/app-paths'
-import { loadBindings, saveBindings } from 'render/loading/bindings'
-import { loadProject, saveProject } from 'render/loading/project'
-import { undo, redo } from './history'
 
-const { Menu, dialog, BrowserWindow } = electron.remote,
+import { getPath, getAppPath } from 'render/loading/app-paths'
+import { loadBindings, saveBindings } from 'render/loading/bindings'
+import { loadProject, saveProject, exportProject } from 'render/loading/project'
+import { undo, redo } from './history'
+import audio from 'render/util/audio'
+
+const { Menu, dialog } = electron.remote,
   isMac = process.platform === 'darwin'
 
 export default function init(store: Store<Types.State>) {
@@ -25,14 +27,14 @@ export default function init(store: Store<Types.State>) {
           label: 'File',
           submenu: [
             {
-              label: 'New',
+              label: 'New Project',
               accelerator: 'CmdOrCtrl+N',
               click: () => {
                 store.dispatch(Actions.reset({}))
               },
             },
             {
-              label: 'Open',
+              label: 'Open Project',
               accelerator: 'CmdOrCtrl+O',
               click: () => {
                 const path = dialog.showOpenDialog({
@@ -42,8 +44,9 @@ export default function init(store: Store<Types.State>) {
                 if (path && path[0]) loadProject(path[0], store)
               },
             },
+            { type: 'separator' },
             {
-              label: 'Save',
+              label: 'Save Project',
               accelerator: 'CmdOrCtrl+S',
               click: () => {
                 const savedPath = store.getState().save.path
@@ -52,9 +55,19 @@ export default function init(store: Store<Types.State>) {
               },
             },
             {
-              label: 'Save As',
+              label: 'Save Project As',
               accelerator: 'CmdOrCtrl+Shift+S',
               click: saveAs,
+            },
+            {
+              label: 'Export Project',
+              click: () => {
+                const path = dialog.showSaveDialog({
+                  title: 'Export Project',
+                  defaultPath: getAppPath('documents'),
+                })
+                if (path) exportProject(path, store)
+              },
             },
             { type: 'separator' },
             {
@@ -162,11 +175,24 @@ export default function init(store: Store<Types.State>) {
           label: 'Track',
           submenu: [
             {
+              label: 'Export Track',
+              click: () => {
+                const selectedTrackId = Selectors.getSelectedTrackId(store.getState())
+                if (!selectedTrackId) return
+                const path = dialog.showSaveDialog({
+                  title: 'Export Track',
+                  defaultPath: getAppPath('documents'),
+                })
+                if (path) audio.exportSource(path + '.m4a', selectedTrackId)
+              },
+            },
+            { type: 'separator' },
+            {
               label: 'Delete Track',
               accelerator: 'CmdOrCtrl+Backspace',
               click: () => {
                 const selectedTrackId = Selectors.getSelectedTrackId(store.getState())
-                store.dispatch(Actions.rmTrack(selectedTrackId))
+                if (selectedTrackId) store.dispatch(Actions.rmTrack(selectedTrackId))
               },
             },
           ],

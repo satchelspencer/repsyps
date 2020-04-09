@@ -12,7 +12,7 @@ export default function initPaths() {
       'repsyps/recordings',
     ]
 
-  ensurePaths.forEach(path => {
+  ensurePaths.forEach((path) => {
     const p = pathUtils.join(documents, path)
     if (!fs.existsSync(p)) fs.mkdirSync(p)
   })
@@ -20,4 +20,8 @@ export default function initPaths() {
 
 export function getPath(path: string) {
   return pathUtils.join(remote.app.getPath('documents'), 'repsyps', path)
+}
+
+export function getAppPath(path: string) {
+  return remote.app.getPath(path)
 }

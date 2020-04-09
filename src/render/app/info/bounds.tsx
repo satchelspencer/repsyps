@@ -7,7 +7,6 @@ import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 
 import getImpulses from 'render/util/impulse-detect'
-import inferTimeBase from 'render/util/infer-timebase'
 import { RATE } from 'render/util/audio'
 
 import Icon from 'render/components/icon'
@@ -96,47 +95,25 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       props.trackId,
     ]),
     hasTimeBase = !!bounds.length,
-    cstart = playback.chunks[0],
     clength = playback.chunks[1],
+    inferPayload = useMemo(
+      () => ({
+        sourceId: props.trackId,
+        chunks: playback.chunks,
+        impulses,
+        snap,
+      }),
+      [playback.chunks, impulses, playback.chunks, snap]
+    ),
     inferLR = useCallback(() => {
-      if (!clength || !impulses) return
-      dispatch(
-        Actions.setSourceBounds({
-          sourceId: props.trackId,
-          bounds: inferTimeBase(playback.chunks, impulses, snap),
-        })
-      )
-    }, [playback.chunks, impulses, snap]),
+      dispatch(Actions.inferBounds({ ...inferPayload, direction: 'both' }))
+    }, [inferPayload]),
     inferLeft = useCallback(() => {
-      if (!clength || !impulses) return
-      const endPoint = cstart + clength,
-        inferredBounds = inferTimeBase(playback.chunks, impulses, snap).filter(
-          (bound) => bound <= endPoint
-        ),
-        existingBounds = bounds.filter((bound) => bound > endPoint)
-
-      dispatch(
-        Actions.setSourceBounds({
-          sourceId: props.trackId,
-          bounds: _.sortBy([...inferredBounds, ...existingBounds]),
-        })
-      )
-    }, [playback.chunks, bounds, impulses, snap]),
+      dispatch(Actions.inferBounds({ ...inferPayload, direction: 'left' }))
+    }, [inferPayload]),
     inferRight = useCallback(() => {
-      if (!clength || !impulses) return
-      const startPoint = cstart,
-        inferredBounds = inferTimeBase(playback.chunks, impulses, snap).filter(
-          (bound) => bound >= startPoint
-        ),
-        existingBounds = bounds.filter((bound) => bound < startPoint)
-
-      dispatch(
-        Actions.setSourceBounds({
-          sourceId: props.trackId,
-          bounds: _.sortBy([...inferredBounds, ...existingBounds]),
-        })
-      )
-    }, [playback.chunks, bounds, impulses, snap]),
+      dispatch(Actions.inferBounds({ ...inferPayload, direction: 'right' }))
+    }, [inferPayload]),
     avgBar = useMemo(() => {
       let sum = 0
       bounds.forEach((bound, i) => {

@@ -35,11 +35,17 @@ export function getControlName(control: Types.Control) {
     )}`
   else if ('cueIndex' in control)
     return `Cue ${normIndex(control.cueIndex)} Track ${normIndex(control.trackIndex)}`
+  else if ('loop' in control)
+    return control.loop === -1
+      ? `To End Track ${normIndex(control.trackIndex)}`
+      : `Loop ${control.loop} Track ${normIndex(control.trackIndex)}`
   else return '???'
 }
 
 export function getDefaultBindingType(control: Types.Control): Types.BindingType {
-  return 'cueIndex' in control || 'cueStep' in control ? 'note' : 'value'
+  return 'cueIndex' in control || 'cueStep' in control || 'loop' in control
+    ? 'note'
+    : 'value'
 }
 
 export function getIcon(control: Types.Control): string {

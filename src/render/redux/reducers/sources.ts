@@ -7,6 +7,8 @@ import * as Selectors from '../selectors'
 import * as Types from 'render/util/types'
 import { defaultState, defaultTrackSourceParams } from '../defaults'
 
+import inferTimeBase from 'render/util/infer-timebase'
+
 export function makeSourceTracksRelative(
   source: Types.Source,
   path: string
@@ -17,7 +19,7 @@ export function makeSourceTracksRelative(
       if (sourceTrack.source && pathUtils.isAbsolute(sourceTrack.source) && path)
         return {
           ...sourceTrack,
-          source: pathUtils.relative(path, sourceTrack.source),
+          source: pathUtils.relative(pathUtils.dirname(path), sourceTrack.source),
         }
       else return sourceTrack
     }),
@@ -273,6 +275,56 @@ export default createReducer(defaultState, (handle) => [
         [payload.sourceId]: {
           ...state.sources[payload.sourceId],
           boundsAlpha: payload.boundsAlpha,
+        },
+      },
+    }
+  }),
+  handle(Actions.inferBounds, (state, { payload }) => {
+    const [cstart, clength] = payload.chunks
+    if (!clength || !payload.impulses) return state
+    else {
+      const inferred = inferTimeBase(payload.chunks, payload.impulses, payload.snap),
+        existingBounds = state.sources[payload.sourceId].bounds,
+        cend = cstart + clength
+
+      let newBounds = inferred
+      if (payload.direction === 'left')
+        newBounds = _.sortBy([
+          ...inferred.filter((bound) => bound <= cend),
+          ...existingBounds.filter((bound) => bound > cend),
+        ])
+      else if (payload.direction === 'right')
+        newBounds = _.sortBy([
+          ...existingBounds.filter((bound) => bound < cstart),
+          ...inferred.filter((bound) => bound >= cstart),
+        ])
+
+      return {
+        ...state,
+        sources: {
+          ...state.sources,
+          [payload.sourceId]: {
+            ...state.sources[payload.sourceId],
+            bounds: newBounds,
+          },
+        },
+      }
+    }
+  }),
+  handle(Actions.moveSourceTrack, (state, { payload }) => {
+    return {
+      ...state,
+      sources: {
+        ...state.sources,
+        [payload.sourceId]: {
+          ...state.sources[payload.sourceId],
+          sourceTracks: {
+            ...state.sources[payload.sourceId].sourceTracks,
+            [payload.sourceTrackId]: {
+              ...state.sources[payload.sourceId].sourceTracks[payload.sourceTrackId],
+              source: payload.source,
+            },
+          },
         },
       },
     }

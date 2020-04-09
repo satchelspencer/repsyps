@@ -25,6 +25,7 @@ export function updateSceneIndex(
       lastIsPlaying = lastOfPrevId && state.live.tracks[lastOfPrevId].playback.playing,
       firstTrack = scene.trackIds[0] && state.live.tracks[scene.trackIds[0]],
       resetPeriod =
+        firstTrack &&
         firstTrack.lastPeriod &&
         (forceReset ||
           sceneIndex !== state.live.sceneIndex + 1 ||

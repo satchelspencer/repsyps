@@ -72,7 +72,7 @@ export default createReducer(defaultState, (handle) => [
       payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex)
     let newLive = state.live
     if (trackId) {
-      if (!!payload.playback.chunks || !payload.playback.playing)
+      if (!!payload.playback.chunks)
         newLive = {
           ...state.live,
           tracks: {
@@ -214,10 +214,13 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.loopTrack, (state, { payload }) => {
-    const track = state.live.tracks[payload.trackId]
+    const trackId =
+        payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
+      track = state.live.tracks[trackId]
+
     if (!track) return state
     else {
-      const bounds = state.sources[payload.trackId].bounds,
+      const bounds = state.sources[trackId].bounds,
         [chunkStart, chunkLength] = track.playback.chunks.slice(
           track.playback.chunkIndex * 2
         ),
@@ -257,7 +260,7 @@ export default createReducer(defaultState, (handle) => [
           ...state.live,
           tracks: {
             ...state.live.tracks,
-            [payload.trackId]: {
+            [trackId]: {
               ...track,
               playback: {
                 ...track.playback,

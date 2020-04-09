@@ -1,5 +1,7 @@
 import fs from 'fs'
 import { Store } from 'redux'
+import pathUtils from 'path'
+import _ from 'lodash'
 
 import * as Types from 'render/util/types'
 import * as Selectors from 'render/redux/selectors'
@@ -54,4 +56,33 @@ export function saveProject(path: string, store: Store<Types.State>) {
   store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
   const bindings = Selectors.getPersistentState(store.getState())
   fs.writeFileSync(path, JSON.stringify(version(bindings)))
+}
+
+export function exportProject(path: string, store: Store<Types.State>) {
+  const state = store.getState(),
+    baseName = pathUtils.basename(path),
+    sources = state.sources,
+    currentPath = state.save.path || ''
+
+  fs.mkdirSync(path)
+  _.keys(sources).forEach((sourceId) => {
+    const source = sources[sourceId]
+    _.keys(source.sourceTracks).forEach((sourceTrackId) => {
+      const sourceTrack = source.sourceTracks[sourceTrackId],
+        newPath = pathUtils.basename(sourceTrack.source),
+        absSource = pathUtils.resolve(pathUtils.dirname(currentPath), sourceTrack.source),
+        absDest = pathUtils.join(path, newPath)
+
+      fs.copyFileSync(absSource, absDest)
+      store.dispatch(
+        Actions.moveSourceTrack({
+          sourceId,
+          sourceTrackId,
+          source: absDest,
+        })
+      )
+    })
+  })
+  const projectPath = pathUtils.join(path, baseName + '.rproj')
+  saveProject(projectPath, store)
 }
