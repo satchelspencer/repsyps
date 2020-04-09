@@ -31,8 +31,6 @@ export function updateSceneIndex(
           !state.playback.playing ||
           !lastIsPlaying)
 
-    console.log(resetPeriod, firstTrack.lastPeriod)
-
     return {
       ...state,
       playback: {

@@ -101,6 +101,8 @@ export const setTrackSolo = createAction<{ trackId: string; solo: boolean }>(
   'SET_TRACK_SOLO'
 )
 
+export const loopTrack = createAction<{ trackId: string; loop: number }>('LOOP_TRACK')
+
 /* source actions */
 
 export const setTrackSourceParams = createAction<{
@@ -161,7 +163,7 @@ export const copyTrackBounds = createAction<{
 }>('COPY_TRACK_BOUNDS')
 
 export const setSourceAlpha = createAction<{
-  sourceId: string,
+  sourceId: string
   boundsAlpha: number
 }>('SET_SOURCE_ALPHA')
 

@@ -213,4 +213,61 @@ export default createReducer(defaultState, (handle) => [
       },
     }
   }),
+  handle(Actions.loopTrack, (state, { payload }) => {
+    const track = state.live.tracks[payload.trackId]
+    if (!track) return state
+    else {
+      const bounds = state.sources[payload.trackId].bounds,
+        [chunkStart, chunkLength] = track.playback.chunks.slice(
+          track.playback.chunkIndex * 2
+        ),
+        chunkEnd = chunkStart + chunkLength,
+        startBoundIndex = bounds.indexOf(chunkStart),
+        endBoundIndex = bounds.indexOf(chunkEnd),
+        trackEnd = _.last(bounds),
+        desiredCount = payload.loop > 0 ? payload.loop : Infinity
+
+      let newChunks = [chunkStart, chunkLength]
+
+      if (startBoundIndex === -1 || endBoundIndex === -1) {
+        //not in bounds
+        let start = chunkEnd
+        while (start <= trackEnd && newChunks.length / 2 < desiredCount) {
+          newChunks.push(start)
+          newChunks.push(chunkLength)
+          start += chunkLength
+        }
+      } else {
+        const aboveBounds = _.take(
+          bounds.filter((b) => b >= chunkStart),
+          desiredCount + 1
+        )
+        newChunks = _.flatten(
+          aboveBounds
+            .map((bound, boundIndex) => {
+              const nextBound = aboveBounds[boundIndex + 1]
+              return nextBound && [bound, nextBound - bound]
+            })
+            .filter((a) => a)
+        )
+      }
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          tracks: {
+            ...state.live.tracks,
+            [payload.trackId]: {
+              ...track,
+              playback: {
+                ...track.playback,
+                chunkIndex: 0,
+                chunks: newChunks,
+              },
+            },
+          },
+        },
+      }
+    }
+  }),
 ])

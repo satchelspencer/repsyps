@@ -13,6 +13,7 @@ import SourceTracks from './source-tracks'
 import Separate from './separate'
 import Cues from './cues'
 import Filter from './filter'
+import Loop from './loop'
 import Sync from './sync'
 import TrackVolume from './volume'
 import { palette } from 'render/components/theme'
@@ -21,7 +22,7 @@ import Icon from 'render/components/icon'
 const SidebarWrapper = ctyled.div.styles({
   column: true,
   bg: true,
-  color: c => c.nudge(-0.05),
+  color: (c) => c.nudge(-0.05),
   lined: true,
   scroll: true,
 }).extendSheet`
@@ -40,7 +41,7 @@ const SourceTrackWarningWrapper = ctyled.div.class(active).styles({
   align: 'center',
   hover: true,
   bg: true,
-  color: c => c.as(palette.primary_red),
+  color: (c) => c.as(palette.primary_red),
   gutter: 1,
 })
 
@@ -92,15 +93,15 @@ const SourceTrackWarning = memo((props: SourceTrackWarningProps) => {
 const Sidebar = () => {
   const trackId = useSelector(Selectors.getSelectedTrackId),
     track = useSelector(Selectors.getSelectedTrack),
-    source = useSelector(state => state.sources[trackId]),
-    isLoaded = useSelector(state => Selectors.getTrackIsLoaded(state, trackId))
+    source = useSelector((state) => state.sources[trackId]),
+    isLoaded = useSelector((state) => Selectors.getTrackIsLoaded(state, trackId))
 
   return useMemo(
     () => (
       <SidebarWrapper>
         {!!track && (
           <>
-            {_.keys(source.sourceTracks).map(sourceTrackId => {
+            {_.keys(source.sourceTracks).map((sourceTrackId) => {
               return (
                 <SourceTrackWarning
                   sourceTrack={source.sourceTracks[sourceTrackId]}
@@ -114,6 +115,7 @@ const Sidebar = () => {
               <SourceTracks trackId={trackId} />
               <BoundsControl trackId={trackId} />
               <Sync trackId={trackId} />
+              <Loop trackId={trackId} />
               <TrackVolume trackId={trackId} />
               <Filter trackId={trackId} />
               <Separate trackId={trackId} />
