@@ -123,8 +123,14 @@ export default function init(store: Store<Types.State>) {
                 if (path) saveBindings(path + '.rbind', store)
               },
             },
+            {
+              label: 'Clear Bindings',
+              click: () => {
+                store.dispatch(Actions.resetBindings())
+              },
+            },
             { type: 'separator' },
-            isMac ? { role: 'close' } : { role: 'quit' },
+            { role: 'quit' },
           ],
         },
         {

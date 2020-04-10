@@ -22,7 +22,11 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
   getChannel = (byte: number) => byte & midiChannelMask,
   nav: any = navigator, //any so as to allow web midi api
   outputs: { [portId: string]: any } = {}, //web midi output (no type defs)
-  sentMidiValues: { [portName: string]: { [controlId: string]: number } } = {}
+  midiValues: { [portName: string]: { [controlId: string]: number } } = {},
+  absValueSelectors: {
+    [controlId: string]: (state: Types.State, control: Types.Control) => any
+  } = {}
+let lastControlIds = []
 
 export default async function init(store: Store<Types.State>) {
   const handleMessage = ({ data }, portName) => {
@@ -41,27 +45,30 @@ export default async function init(store: Store<Types.State>) {
 
         if (binding.waiting) {
           store.dispatch(
-            batchActions([
-              Actions.setBinding({
-                position,
-                binding: {
-                  ...binding,
-                  type: instantFunctions.includes(fn) ? 'note' : 'value',
-                  note,
-                  channel,
-                  function: fn,
-                  waiting: false,
-                },
-              }),
-              Actions.setInitValue({
-                position,
-                value: 1,
-              }),
-              Actions.setControlGroupValue({
-                position,
-                value: normValue,
-              }),
-            ])
+            batchActions(
+              [
+                Actions.setBinding({
+                  position,
+                  binding: {
+                    ...binding,
+                    type: instantFunctions.includes(fn) ? 'note' : 'value',
+                    note,
+                    channel,
+                    function: fn,
+                    waiting: false,
+                  },
+                }),
+                Actions.setInitValue({
+                  position,
+                  value: 1,
+                }),
+                Actions.setControlGroupValue({
+                  position,
+                  value: normValue,
+                }),
+              ],
+              'BIND_MIDI'
+            )
           )
           break
         } else if (
@@ -71,7 +78,8 @@ export default async function init(store: Store<Types.State>) {
         ) {
           const control = controls[posStr],
             lastValue = state.live.controlValues[posStr] || 0
-          sentMidiValues[portName][posStr] = normValue
+          midiValues[portName][posStr] = normValue
+
           if (control) {
             const absValue =
               control && control.absolute
@@ -81,10 +89,10 @@ export default async function init(store: Store<Types.State>) {
             if (
               binding.twoway ||
               !binding.badMidiValue ||
-              Math.abs(normValue - absValue) < 0.05
+              Math.abs(normValue - absValue) < 0.02
             ) {
               store.dispatch(
-                Actions.applyControlGroup(position, control, lastValue, normValue)
+                Actions.applyControlGroupMidi(position, control, lastValue, normValue)
               )
             } else if (binding.badMidiValue) {
               store.dispatch(
@@ -112,14 +120,14 @@ export default async function init(store: Store<Types.State>) {
       console.log('disconnect', port.name)
     },
     addOutput = (port) => {
-      sentMidiValues[port.name] = sentMidiValues[port.name] || {}
+      midiValues[port.name] = midiValues[port.name] || {}
       outputs[port.name] = port
       port.send([255])
       handleStoreUpdate()
     },
     removeOutput = (port) => {
       delete outputs[port.name]
-      delete sentMidiValues[port.name]
+      delete midiValues[port.name]
     }
 
   nav.requestMIDIAccess().then((midiAccess) => {
@@ -136,11 +144,6 @@ export default async function init(store: Store<Types.State>) {
     for (let output of midiAccess.outputs.values()) addOutput(output)
     for (let input of midiAccess.inputs.values()) addInput(input)
   })
-
-  const absValueSelectors: {
-    [controlId: string]: (state: Types.State, control: Types.Control) => any
-  } = {}
-  let lastControlIds = []
 
   const handleStoreUpdate = _.throttle(
     () => {
@@ -168,7 +171,7 @@ export default async function init(store: Store<Types.State>) {
 
           if (absValue !== null) {
             for (let outputId in outputs) {
-              if (absValue !== sentMidiValues[outputId][controlPos]) {
+              if (Math.abs(absValue - midiValues[outputId][controlPos]) > 0.02) {
                 if (binding.twoway)
                   outputs[outputId].send([
                     176 + binding.channel,
@@ -176,7 +179,6 @@ export default async function init(store: Store<Types.State>) {
                     Math.floor(absValue * 127),
                   ])
                 else if (!binding.badMidiValue) {
-                  //console.log('oneway', controlPos, absValue)
                   store.dispatch(
                     Actions.setBadMidiValue({
                       position: Selectors.str2pos(controlPos),
@@ -184,7 +186,7 @@ export default async function init(store: Store<Types.State>) {
                     })
                   )
                 }
-                sentMidiValues[outputId][controlPos] = absValue
+                midiValues[outputId][controlPos] = absValue
               }
             }
           }

@@ -26,7 +26,7 @@ function createMainWindow() {
       windowOpts: mainOpts,
       templateUrl: !isDevelopment
         ? path.join(__dirname, 'splash.html')
-        : path.resolve(__dirname, '../../conf/build/splash.html'),
+        : path.resolve(__dirname, '../conf/build/splash.html'),
       splashScreenOpts: {
         width: 500,
         height: 500,
@@ -53,9 +53,7 @@ function createMainWindow() {
   return window
 }
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
+app.on('window-all-closed', () => app.quit())
 
 app.on('activate', () => {
   if (mainWindow === null) mainWindow = createMainWindow()

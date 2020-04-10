@@ -8,9 +8,9 @@ import {
   defaultControlGroup,
   defaultTiming,
   defaultBinding,
+  defaultBindings,
 } from '../defaults'
 import { updateSceneIndex } from './scenes'
-import { stat } from 'fs'
 
 export default createReducer(defaultState, (handle) => [
   handle(Actions.setControlGroup, (state, { payload }) => {
@@ -237,6 +237,15 @@ export default createReducer(defaultState, (handle) => [
       live: {
         ...state.live,
         ...bindingsFile,
+      },
+    }
+  }),
+  handle(Actions.resetBindings, (state) => {
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        bindings: defaultBindings,
       },
     }
   }),

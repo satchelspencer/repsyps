@@ -8,7 +8,15 @@ import { updateSceneIndex } from './scenes'
 import { getCuePlayback } from './cues'
 
 export default createReducer(defaultState, (handle) => [
-  handle(Actions.reset, () => defaultState),
+  handle(Actions.reset, (state) => {
+    return {
+      ...defaultState,
+      live: {
+        ...defaultState.live,
+        bindings: state.live.bindings,
+      },
+    }
+  }),
   handle(Actions.loadPersisted, (state, { payload }) => {
     const pLive = payload.state.live,
       firstScene = payload.state.live.scenes[0],

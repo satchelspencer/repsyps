@@ -45,6 +45,7 @@
       "webpackConfig": "conf/webpack.renderer.additions.js"
     },
     "main": {
+      "sourceDirectory": "src",
       "webpackConfig": "conf/webpack.main.additions.js"
     }
   },

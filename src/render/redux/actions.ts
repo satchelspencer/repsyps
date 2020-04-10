@@ -274,7 +274,9 @@ export const removeBinding = createAction<Types.Position>('REMOVE_BINDING')
 
 export const loadBindings = createAction<Types.BindingsFile>('LOAD_BINDINGS')
 
-export function applyControlGroup(
+export const resetBindings = createAction<void>('RESET_BINDINGS')
+
+export function getApplyControlGroupActions(
   position: Types.Position,
   controlGroup: Types.ControlGroup,
   lastValue: number,
@@ -333,9 +335,39 @@ export function applyControlGroup(
         })
       )
     }
-    actions.push(setBadMidiValue({ position, badMidiValue: false, lastMidiValue: value }))
   })
-  return batchActions(actions, 'APPLY_CONTROL')
+  return actions
+}
+
+export function applyControlGroup(
+  position: Types.Position,
+  controlGroup: Types.ControlGroup,
+  lastValue: number,
+  value: number
+) {
+  return batchActions(
+    getApplyControlGroupActions(position, controlGroup, lastValue, value),
+    'APPLY_CONTROL'
+  )
+}
+
+export function applyControlGroupMidi(
+  position: Types.Position,
+  controlGroup: Types.ControlGroup,
+  lastValue: number,
+  value: number
+) {
+  return batchActions(
+    [
+      ...getApplyControlGroupActions(position, controlGroup, lastValue, value),
+      setBadMidiValue({
+        position,
+        badMidiValue: false,
+        lastMidiValue: value,
+      }),
+    ],
+    'APPLY_CONTROL_MIDI'
+  )
 }
 
 /* scenes */
