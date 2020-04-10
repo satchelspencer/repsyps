@@ -264,6 +264,12 @@ export const setBinding = createAction<{
   binding: Partial<Types.Binding>
 }>('SET_BINDING')
 
+export const setBadMidiValue = createAction<{
+  position: Types.Position
+  badMidiValue: boolean
+  lastMidiValue?: number
+}>('SET_BAD_MIDI_VALUE')
+
 export const removeBinding = createAction<Types.Position>('REMOVE_BINDING')
 
 export const loadBindings = createAction<Types.BindingsFile>('LOAD_BINDINGS')
@@ -327,6 +333,7 @@ export function applyControlGroup(
         })
       )
     }
+    actions.push(setBadMidiValue({ position, badMidiValue: false, lastMidiValue: value }))
   })
   return batchActions(actions, 'APPLY_CONTROL')
 }

@@ -240,4 +240,24 @@ export default createReducer(defaultState, (handle) => [
       },
     }
   }),
+  handle(Actions.setBadMidiValue, (state, { payload }) => {
+    const posStr = Selectors.pos2str(payload.position)
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        bindings: {
+          ...state.live.bindings,
+          [posStr]: {
+            ...state.live.bindings[posStr],
+            badMidiValue: payload.badMidiValue,
+            lastMidiValue:
+              payload.lastMidiValue === undefined
+                ? state.live.bindings[posStr].lastMidiValue
+                : payload.lastMidiValue,
+          },
+        },
+      },
+    }
+  }),
 ])

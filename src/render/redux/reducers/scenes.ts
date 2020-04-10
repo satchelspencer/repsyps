@@ -71,12 +71,10 @@ export function updateSceneIndex(
         }),
         controlValues: _.mapValues(controls, (control, pos) => {
           const binding = state.live.bindings[pos],
-            value = state.live.controlValues[pos]
-          if (
-            (control && !control.absolute && (!binding || binding.twoway)) ||
-            value === undefined
-          )
-            return 1
+            rvalue = state.live.controlValues[pos],
+            value = rvalue === undefined ? 1 : rvalue
+          if (control && !control.absolute)
+            return binding.twoway ? 1 : value > 0.5 ? 1 : 0
           else return value
         }),
         sceneIndex,

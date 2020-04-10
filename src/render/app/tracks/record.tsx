@@ -37,7 +37,7 @@ const RecordingControls = ctyled.div.styles({
 })
 
 const WaveformWrapper = ctyled.div.styles({
-  color: c => c.contrast(0.2),
+  color: (c) => c.contrast(0.2),
   flex: 1,
   bg: true,
   alignSelf: 'stretch',
@@ -47,8 +47,8 @@ const TimeCode = ctyled.div.styles({
   height: 1.7,
   width: 7,
   border: 1,
-  borderColor: c => c.contrast(-0.1),
-  color: c => c.nudge(0.05),
+  borderColor: (c) => c.contrast(-0.1),
+  color: (c) => c.nudge(0.05),
   align: 'center',
   justify: 'center',
   bg: true,
@@ -72,15 +72,15 @@ export interface RecordingProps {
 
 const RIcon = extend(Icon, () => ({
   styles: {
-    color: c => c.as(['rgba(255,0,0,0.6)', 'rgba(255,0,0,0.6)']),
+    color: (c) => c.as(['rgba(255,0,0,0.6)', 'rgba(255,0,0,0.6)']),
   },
 }))
 
 const Recording = memo(
   (props: RecordingProps) => {
     const { recLength, time, enabled } = props,
-      { fromTrack } = useSelector(state => state.recording),
-      period = useSelector(state => state.playback.period),
+      { fromTrack } = useSelector((state) => state.recording),
+      period = useSelector((state) => state.playback.period),
       dispatch = useDispatch(),
       store = useStore(),
       [started, setStarted] = useState(false),
@@ -142,7 +142,7 @@ const Recording = memo(
             bounds = audio.stopRecording(sourceId),
             firstBound = bounds[0],
             prefixBounds = firstBound
-              ? fromSourceBounds.filter(b => firstBound - b > 44100)
+              ? fromSourceBounds.filter((b) => firstBound - b > 44100)
               : [],
             path = dialog.showSaveDialog({
               title: 'Save Recording',
@@ -225,19 +225,19 @@ const Recording = memo(
     )
   },
   (prevProps, nextProps) => {
-    return (!prevProps.enabled && !nextProps.enabled) || prevProps.time === nextProps.time
+    return prevProps.time === nextProps.time || (!prevProps.enabled && !nextProps.enabled)
   }
 )
 
 export default function RecordingContainer() {
   const recLength = useSelector(
-      state => state.timing.recTime,
+      (state) => state.timing.recTime,
       (a, b) => Math.abs(a - b) < UPDATE_THRESH
     ),
     time = useSelector(
-      state => state.timing.time,
+      (state) => state.timing.time,
       (a, b) => Math.abs(a - b) < 0.01
     ),
-    enabled = useSelector(state => state.recording.enabled)
+    enabled = useSelector((state) => state.recording.enabled)
   return <Recording recLength={recLength} time={time} enabled={enabled} />
 }

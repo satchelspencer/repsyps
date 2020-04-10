@@ -22,7 +22,6 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
   getChannel = (byte: number) => byte & midiChannelMask,
   nav: any = navigator, //any so as to allow web midi api
   outputs: { [portId: string]: any } = {}, //web midi output (no type defs)
-  //sentMidiValues: { [controlId: string]: number } = {}
   sentMidiValues: { [portName: string]: { [controlId: string]: number } } = {}
 
 export default async function init(store: Store<Types.State>) {
@@ -74,38 +73,57 @@ export default async function init(store: Store<Types.State>) {
             lastValue = state.live.controlValues[posStr] || 0
           sentMidiValues[portName][posStr] = normValue
           if (control) {
-            store.dispatch(
-              Actions.applyControlGroup(position, control, lastValue, normValue)
-            )
+            const absValue =
+              control && control.absolute
+                ? absValueSelectors[posStr](state, control.controls[0])
+                : state.live.controlValues[posStr]
+
+            if (
+              binding.twoway ||
+              !binding.badMidiValue ||
+              Math.abs(normValue - absValue) < 0.05
+            ) {
+              store.dispatch(
+                Actions.applyControlGroup(position, control, lastValue, normValue)
+              )
+            } else if (binding.badMidiValue) {
+              store.dispatch(
+                Actions.setBadMidiValue({
+                  position,
+                  badMidiValue: true,
+                  lastMidiValue: normValue,
+                })
+              )
+            }
           }
         }
       }
     },
     throttledHandle = _.throttle(handleMessage, 100, { leading: false }),
-    addInput = port => {
+    addInput = (port) => {
       console.log('connect', port.name)
-      port.onmidimessage = mes => {
+      port.onmidimessage = (mes) => {
         const fn = getFunction(mes.data[0])
         if (instantFunctions.includes(fn)) handleMessage(mes, port.name)
         else throttledHandle(mes, port.name)
       }
     },
-    removeInput = port => {
+    removeInput = (port) => {
       console.log('disconnect', port.name)
     },
-    addOutput = port => {
+    addOutput = (port) => {
       sentMidiValues[port.name] = sentMidiValues[port.name] || {}
       outputs[port.name] = port
       port.send([255])
       handleStoreUpdate()
     },
-    removeOutput = port => {
+    removeOutput = (port) => {
       delete outputs[port.name]
       delete sentMidiValues[port.name]
     }
 
-  nav.requestMIDIAccess().then(midiAccess => {
-    midiAccess.onstatechange = e => {
+  nav.requestMIDIAccess().then((midiAccess) => {
+    midiAccess.onstatechange = (e) => {
       if (e.port.type === 'input') {
         if (e.port.state === 'connected' && e.port.connection === 'open') addInput(e.port)
         else if (e.port.state === 'disconnected') removeInput(e.port)
@@ -132,33 +150,43 @@ export default async function init(store: Store<Types.State>) {
         addedControlsIds = _.difference(currentControlIds, lastControlIds),
         removedControlsIds = _.difference(lastControlIds, currentControlIds)
 
-      addedControlsIds.forEach(controlId => {
+      addedControlsIds.forEach((controlId) => {
         absValueSelectors[controlId] = Selectors.makeGetControlAbsValue()
       })
-      removedControlsIds.forEach(controlId => {
+      removedControlsIds.forEach((controlId) => {
         delete absValueSelectors[controlId]
       })
 
-      for (let controlId in currentControls) {
-        const control = currentControls[controlId],
-          binding = state.live.bindings[controlId]
-        if (binding && binding.twoway && binding.note) {
+      for (let controlPos in currentControls) {
+        const control = currentControls[controlPos],
+          binding = state.live.bindings[controlPos]
+        if (binding && binding.note) {
           const absValue =
             control && control.absolute
-              ? absValueSelectors[controlId](state, control.controls[0])
-              : state.live.controlValues[controlId]
+              ? absValueSelectors[controlPos](state, control.controls[0])
+              : state.live.controlValues[controlPos]
 
           if (absValue !== null) {
             for (let outputId in outputs) {
-              if (absValue !== sentMidiValues[outputId][controlId]) {
-                outputs[outputId].send([
-                  176 + binding.channel,
-                  binding.note,
-                  Math.floor(absValue * 127),
-                ])
+              if (absValue !== sentMidiValues[outputId][controlPos]) {
+                if (binding.twoway)
+                  outputs[outputId].send([
+                    176 + binding.channel,
+                    binding.note,
+                    Math.floor(absValue * 127),
+                  ])
+                else if (!binding.badMidiValue) {
+                  //console.log('oneway', controlPos, absValue)
+                  store.dispatch(
+                    Actions.setBadMidiValue({
+                      position: Selectors.str2pos(controlPos),
+                      badMidiValue: true,
+                    })
+                  )
+                }
+                sentMidiValues[outputId][controlPos] = absValue
               }
             }
-            sentMidiValues[controlId] = absValue
           }
         }
       }

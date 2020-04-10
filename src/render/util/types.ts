@@ -221,6 +221,16 @@ export type Binding = {
   function: MidiFunctionName
   waiting?: boolean
   twoway: boolean
+  badMidiValue: boolean
+  lastMidiValue: number
+}
+
+export interface PersistentBinding {
+  type: BindingType
+  channel: number
+  note: number
+  function: MidiFunctionName
+  twoway: boolean
 }
 
 export type Controls = Grid<ControlGroup>
@@ -234,6 +244,8 @@ export type ControlValues = Grid<number>
 
 export type Bindings = Grid<Binding>
 
+export type PersistentBindings = Grid<PersistentBinding>
+
 export interface ControlPreset {
   name: string
   controls: Controls
@@ -245,7 +257,7 @@ export interface ControlPresets {
 
 export interface PersistentLive {
   scenes: Scene[]
-  bindings: Bindings
+  bindings: PersistentBindings
   controlPresets: ControlPresets
   defaultPresetId: string
   tracks: PersistentTracks

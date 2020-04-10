@@ -1,4 +1,11 @@
-import React, { useContext, useEffect, useCallback, useState, useRef } from 'react'
+import React, {
+  useContext,
+  useEffect,
+  useCallback,
+  useState,
+  useRef,
+  useMemo,
+} from 'react'
 import * as _ from 'lodash'
 import ctyled, { CtyledContext } from 'ctyled'
 
@@ -34,11 +41,10 @@ const getD = (startValue: number, endValue: number, radius: number) => {
 export interface KnobProps {
   value: number
   center: number
+  badMidiValue: number
   onChange: (newValue: number) => any
   throttle?: number
 }
-
-const svgStyle = { width: '100%', height: '100%' }
 
 export default function Knob(props: KnobProps) {
   const { value, onChange } = props,
@@ -57,7 +63,7 @@ export default function Knob(props: KnobProps) {
     )
 
   useEffect(() => {
-    const handleDrag = e => {
+    const handleDrag = (e) => {
         e.preventDefault()
         const dx = e.clientX - startPos[0],
           dy = e.clientY - startPos[1],
@@ -72,47 +78,77 @@ export default function Knob(props: KnobProps) {
           throttledOnChange(clippedValue)
         }
       },
-      handleMouseUp = () => {
+      handleMouseUp = (e) => {
         if (lastTempValue.current !== null) props.onChange(lastTempValue.current)
         window.removeEventListener('mousemove', handleDrag)
         window.removeEventListener('mouseup', handleMouseUp)
         setDragging(false)
         lastTempValue.current === null
+        document.body.style.pointerEvents = 'all'
       }
+
     if (dragging) {
       window.addEventListener('mousemove', handleDrag)
       window.addEventListener('mouseup', handleMouseUp)
+      window.addEventListener('mouseleave', handleMouseUp)
     }
     return () => {
       window.removeEventListener('mousemove', handleDrag)
       window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('mouseleave', handleMouseUp)
     }
   }, [dragging])
 
   const handleMouseDown = useCallback(
-    e => {
-      e.stopPropagation()
-      setDragging(true)
-      setStartValue(value)
-      setTempValue(value)
-      setStartPos([e.clientX, e.clientY])
-    },
-    [value]
-  )
+      (e) => {
+        e.stopPropagation()
+        setDragging(true)
+        document.body.style.pointerEvents = 'none'
+        setStartValue(value)
+        setTempValue(value)
+        setStartPos([e.clientX, e.clientY])
+      },
+      [value]
+    ),
+    color = style.theme.color,
+    svgStyle = useMemo(
+      () => ({
+        width: '100%',
+        height: '100%',
+        opacity: props.badMidiValue !== null ? 0.3 : 1,
+      }),
+      [props.badMidiValue]
+    ),
+    badVangle =
+      props.badMidiValue !== null &&
+      props.badMidiValue > 0 &&
+      value2angle(props.badMidiValue)
 
   return (
     <KnobWrapper onMouseDown={handleMouseDown}>
       <svg style={svgStyle} viewBox="0 -5 100 100">
         <path
-          fill={style.theme.color.bg}
-          stroke={style.theme.color.nudge(0.2).bg}
+          fill={color.bg}
+          stroke={color.nudge(0.2).bg}
           strokeWidth="8"
           d={getD(0, 1, radius)}
           strokeLinecap="round"
         />
+        {badVangle && (
+          <line
+            fill="none"
+            stroke="red"
+            strokeWidth="5"
+            strokeLinecap="round"
+            x1={50 + Math.cos(badVangle) * (radius - 15)}
+            y1={50 + Math.sin(badVangle) * (radius - 15)}
+            x2={50 + Math.cos(badVangle) * (radius - 5)}
+            y2={50 + Math.sin(badVangle) * (radius - 5)}
+          />
+        )}
         <line
           fill="none"
-          stroke={style.theme.color.nudge(0.4).bg}
+          stroke={color.nudge(0.4).bg}
           strokeWidth="5"
           strokeLinecap="round"
           x1="50"
@@ -122,7 +158,7 @@ export default function Knob(props: KnobProps) {
         />
         <path
           fill="none"
-          stroke={style.theme.color.nudge(0.4).bq}
+          stroke={color.nudge(0.4).bq}
           strokeWidth="8"
           d={getD(
             Math.min(props.center, displayValue),

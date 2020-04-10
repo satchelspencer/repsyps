@@ -40,6 +40,8 @@ export const defaultPlayback: Types.Playback = {
     note: null,
     function: null,
     twoway: true,
+    badMidiValue: false,
+    lastMidiValue: -1
   },
   defaultScene: Types.Scene = {
     controls: {},

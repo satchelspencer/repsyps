@@ -381,11 +381,20 @@ export const getPersistentLiveTracks = createSelector(
   }
 )
 
+export const getPersistentLiveBindings = createSelector(
+  [(live: Types.Live) => live.bindings],
+  (bindings) => {
+    return _.mapValues(bindings, (binding) =>
+      _.omit(binding, ['badMidiValue', 'lastMidiValue', 'waiting'])
+    )
+  }
+)
+
 export const getPersistentLive = createShallowSelector(
   [
     (live: Types.Live) => live.scenes,
     (live: Types.Live) => live.sceneIndex,
-    (live: Types.Live) => live.bindings,
+    getPersistentLiveBindings,
     (live: Types.Live) => live.controlPresets,
     (live: Types.Live) => live.defaultPresetId,
     getPersistentLiveTracks,
