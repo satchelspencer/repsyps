@@ -2901,10 +2901,8 @@ csstype@^2.5.2:
   resolved "https://registry.yarnpkg.com/csstype/-/csstype-2.6.10.tgz#e63af50e66d7c266edb6b32909cfd0aabe03928b"
   integrity sha512-D34BqZU4cIlMCY93rZHbrq9pjTAQJ3U8S8rfBqjwHxkGPThWFjzZDQpgMJY0QViLxth6ZKYiwFBo14RdN44U/w==
 
-ctyled@^0.0.20:
-  version "0.0.20"
-  resolved "https://registry.yarnpkg.com/ctyled/-/ctyled-0.0.20.tgz#6ed5e856aabbe31511d40b39b8eab688b6c24cf8"
-  integrity sha512-pfL+rxPbSs+YbS5l2rUhS80mtkGwwrS5hx0EiUYTC7wACYBxcNLfedvXzq1X45hE+ID/2d6WJCkBfOZ6TwlkQw==
+"ctyled@file:.yalc/ctyled":
+  version "0.0.20-83b8536c"
   dependencies:
     "@types/tinycolor2" "^1.4.2"
     emotion "9.2.4"

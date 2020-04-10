@@ -12,7 +12,7 @@ function createAction<Payload>(name) {
 }
 
 /* global actions */
-export const reset = createAction<{}>('RESET_STATE')
+export const reset = createAction<void>('RESET_STATE')
 
 export const loadPersisted = createAction<{
   state: Types.PersistentState
@@ -38,7 +38,7 @@ export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAY
 
 export const updatePlaybackTime = createAction<number>('UPDATE_PLAYBACK_TIME')
 
-export const resetPlaybackTime = createAction<{}>('RESET_PLAYBACK_TIME')
+export const resetPlaybackTime = createAction<void>('RESET_PLAYBACK_TIME')
 
 /* track actions */
 
@@ -238,9 +238,9 @@ export const setInitValue = createAction<{
   value: number
 }>('SET_INIT_VALUE')
 
-export const zeroInitValues = createAction<{}>('ZERO_INIT_VALUES')
+export const zeroInitValues = createAction<void>('ZERO_INIT_VALUES')
 
-export const clearControls = createAction<{}>('CLEAR_CONTROLS')
+export const clearControls = createAction<void>('CLEAR_CONTROLS')
 
 export const deleteControlGroup = createAction<{
   position: Types.Position

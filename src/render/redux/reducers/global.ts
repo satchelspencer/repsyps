@@ -14,6 +14,7 @@ export default createReducer(defaultState, (handle) => [
       live: {
         ...defaultState.live,
         bindings: state.live.bindings,
+        controlPresets: state.live.controlPresets,
       },
     }
   }),
@@ -60,6 +61,10 @@ export default createReducer(defaultState, (handle) => [
               ...pbinding,
             })),
           },
+          controlPresets: {
+            ...state.live.controlPresets,
+            ...pLive.controlPresets,
+          },
           tracks: _.mapValues(pLive.tracks, (ptrack, trackId) => {
             const existingTrack = state.live.tracks[trackId],
               shouldReset = payload.reset || !existingTrack,
@@ -79,7 +84,7 @@ export default createReducer(defaultState, (handle) => [
 
         playback: payload.state.playback,
       },
-      pLive.sceneIndex || 0,
+      0,
       payload.reset
     )
   }),

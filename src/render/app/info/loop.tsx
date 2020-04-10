@@ -6,7 +6,7 @@ import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 
 import Icon from 'render/components/icon'
-import { WideButton, Horizontal, FillButton } from 'render/components/misc'
+import { WideButton, Horizontal, FillButton, HeaderContent } from 'render/components/misc'
 import { adder } from 'render/components/control-adder'
 
 const WideLoopButton = adder(WideButton),
@@ -34,16 +34,21 @@ const Loop = memo((props: LoopProps) => {
 
   return (
     <Horizontal styles={wrapperStyles}>
+      <HeaderContent>
+        <Icon scale={1.25} name="loop" />
+        <span>&nbsp;Loop</span>
+      </HeaderContent>
       {options.map((n) => (
         <WideLoopButton
           key={n}
+          style={{ fontWeight: 'bold' }}
           params={{
             trackIndex,
             loop: n,
           }}
           onClick={() => dispatch(Actions.loopTrack({ trackId: props.trackId, loop: n }))}
         >
-          <Icon name="loop" /> &nbsp;{n}
+          {n}
         </WideLoopButton>
       ))}
       <FillLoopButton

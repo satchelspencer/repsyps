@@ -68,7 +68,7 @@ const GridCell = memo((props: GridCellProps) => {
                 ? 0
                 : 1
             }
-            badMidiValue={binding.badMidiValue ? binding.lastMidiValue : null}
+            badMidiValue={binding && binding.badMidiValue ? binding.lastMidiValue : null}
             value={displayValue}
             onChange={(value) =>
               dispatch(Actions.applyControlGroup(position, control, displayValue, value))

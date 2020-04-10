@@ -12,8 +12,13 @@ import Sidebar from './info/sidebar'
 import Header from './header/header'
 import Controls from './controls/controls'
 
+const invert = false
+
 const Wrapper = ctyled.div.styles({
-  color: (c) => c.as(palette.gray).absLum(0.8).contrast(0.2),
+  color: (c) =>
+    invert
+      ? c.as(palette.gray).absLum(0.3).contrast(0.2).invert()
+      : c.as(palette.gray).absLum(0.8).contrast(0.2),
   size: 11,
   bg: true,
   lined: true,

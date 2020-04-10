@@ -8,7 +8,8 @@ const PadWrapper = ctyled.div.attrs({ active: false }).styles({
   border: 2,
   rounded: 2,
   bg: true,
-  color: (c, { active }) => c.nudge(active ? 0.1 : 0.025),
+  borderColor: (c) => c.contrast(0.1),
+  bgColor: (c, { active }) => c.nudge(active ? 0.1 : 0.025),
 })
 
 export interface PadProps {
@@ -19,7 +20,7 @@ export interface PadProps {
 function Pad(props: PadProps) {
   const { value, onChange } = props,
     handleMouseDown = useCallback(
-      e => {
+      (e) => {
         e.stopPropagation()
         e.preventDefault()
         onChange(1 - value)

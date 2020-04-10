@@ -148,7 +148,7 @@ export default function Knob(props: KnobProps) {
         )}
         <line
           fill="none"
-          stroke={color.nudge(0.4).bg}
+          stroke={color.contrast(0.12).bq}
           strokeWidth="5"
           strokeLinecap="round"
           x1="50"
@@ -158,7 +158,7 @@ export default function Knob(props: KnobProps) {
         />
         <path
           fill="none"
-          stroke={color.nudge(0.4).bq}
+          stroke={color.contrast(0.12).bq}
           strokeWidth="8"
           d={getD(
             Math.min(props.center, displayValue),

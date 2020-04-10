@@ -163,7 +163,7 @@ function ControlsGrid() {
     <ControlsH>
       <PositionDetail position={selected} />
       <ControlsIH>
-        <ControlsOptions onIncZoom={handleIncZoom} />
+        <ControlsOptions onIncZoom={handleIncZoom} position={selected} />
         <ControlsGridWrapper
           enabled={enabled}
           onMouseDown={handleMouseDown}

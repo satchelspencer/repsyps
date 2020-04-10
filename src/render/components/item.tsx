@@ -7,6 +7,7 @@ import Icon from 'render/components/icon'
 const TrackItem = ctyled.div.class(active).styles({
   gutter: 1,
   column: true,
+  hover: 0,
 })
 
 const Horizontal = ctyled.div.styles({

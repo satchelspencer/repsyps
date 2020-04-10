@@ -21,17 +21,25 @@ import Icon from 'render/components/icon'
 import { shortNames, getControlName, getDefaultBindingType, getIcon } from './utils'
 
 const ControlSelectableButton = SelectableButton.styles({
-  color: (c, { selected }) => (selected ? c.nudge(0.05) : c.contrast(-0.2)),
+  color: (c, { selected }) =>
+    c.serial().inverted
+      ? selected
+        ? c.nudge(0.1).contrast(0.1)
+        : c
+      : selected
+      ? c.nudge(0.05)
+      : c.contrast(-0.2),
 })
 
 const ControlInspector = ctyled.div.styles({
   width: 20,
   column: true,
   lined: true,
+  bg: true,
 })
 
 const ControlInspectorBody = ctyled.div.styles({
-  flex: 1,
+  flex: 1, 
 })
 
 const BodyInner = ctyled.div.styles({
@@ -54,9 +62,9 @@ const ControlBloc = ctyled.div
     gutter: 1,
     flex: (_, { compact }) => (compact ? 'none' : 1),
     bg: true,
-    color: c => c.nudge(0.05),
+    color: (c) => c.nudge(0.05),
     border: 1,
-    borderColor: c => c.contrast(-0.1),
+    borderColor: (c) => c.contrast(-0.1),
     padd: 1,
     height: 1.75,
     align: 'center',
@@ -86,7 +94,7 @@ const ControlNameInner = ctyled.div.styles({}).extendSheet`
 `
 
 const MidiWrapper = ctyled.div.styles({
-  color: c => c.nudge(-0.05),
+  color: (c) => c.nudge(-0.05),
   gutter: 1,
   align: 'center',
   bg: true,
@@ -98,10 +106,10 @@ export interface ControlDetailProps {
 }
 
 function PositionDetail(props: ControlDetailProps) {
-  const selectedControlGroup = useSelector(state =>
+  const selectedControlGroup = useSelector((state) =>
       Selectors.getByPos(Selectors.getControls(state.live), props.position)
     ),
-    selectedBinding = useSelector(state =>
+    selectedBinding = useSelector((state) =>
       Selectors.getByPos(state.live.bindings, props.position)
     ),
     dispatch = useDispatch()

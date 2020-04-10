@@ -168,17 +168,18 @@ export default async function init(store: Store<Types.State>) {
             control && control.absolute
               ? absValueSelectors[controlPos](state, control.controls[0])
               : state.live.controlValues[controlPos]
-
           if (absValue !== null) {
             for (let outputId in outputs) {
-              if (Math.abs(absValue - midiValues[outputId][controlPos]) > 0.02) {
-                if (binding.twoway)
+              const midiValue = midiValues[outputId][controlPos]
+              if (midiValue === undefined || Math.abs(absValue - midiValue) > 0.02) {
+                if (binding.twoway) {
+                  console.log('send', controlPos, absValue)
                   outputs[outputId].send([
                     176 + binding.channel,
                     binding.note,
                     Math.floor(absValue * 127),
                   ])
-                else if (!binding.badMidiValue) {
+                } else if (!binding.badMidiValue) {
                   store.dispatch(
                     Actions.setBadMidiValue({
                       position: Selectors.str2pos(controlPos),

@@ -25,7 +25,7 @@ export const defaultPlayback: Types.Playback = {
     playback: defaultTrackPlayback,
     nextPlayback: null,
     selected: false,
-    editing: true,
+    editing: false,
     sourceTrackEditing: null,
     cues: [],
     cueIndex: -1,
@@ -41,12 +41,13 @@ export const defaultPlayback: Types.Playback = {
     function: null,
     twoway: true,
     badMidiValue: false,
-    lastMidiValue: -1
+    lastMidiValue: -1,
   },
   defaultScene: Types.Scene = {
     controls: {},
     trackIds: [],
   },
+  defaultControlPresets: Types.ControlPresets = {},
   defaultLive: Types.Live = {
     sceneIndex: 0,
     scenes: [defaultScene],
@@ -54,7 +55,7 @@ export const defaultPlayback: Types.Playback = {
     controlValues: {},
     initValues: {},
     bindings: defaultBindings,
-    controlPresets: {},
+    controlPresets: defaultControlPresets,
     defaultPresetId: null,
     controlsEnabled: true,
   },

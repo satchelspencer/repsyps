@@ -8,6 +8,7 @@ import { useSelector, useStore } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
 import relink from 'render/util/relink'
 
+import TrackTitle from './title'
 import BoundsControl from './bounds'
 import SourceTracks from './source-tracks'
 import Separate from './separate'
@@ -112,14 +113,15 @@ const Sidebar = () => {
               )
             })}
             <TrackDetailsWrapper disabled={!isLoaded}>
-              <SourceTracks trackId={trackId} />
+              <TrackTitle trackId={trackId} />
+              <TrackVolume trackId={trackId} />
+              <Filter trackId={trackId} />
               <BoundsControl trackId={trackId} />
               <Sync trackId={trackId} />
               <Loop trackId={trackId} />
-              <TrackVolume trackId={trackId} />
-              <Filter trackId={trackId} />
               <Separate trackId={trackId} />
               <Cues trackId={trackId} />
+              <SourceTracks trackId={trackId} />
             </TrackDetailsWrapper>
           </>
         )}

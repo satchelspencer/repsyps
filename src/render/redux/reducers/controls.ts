@@ -9,6 +9,7 @@ import {
   defaultTiming,
   defaultBinding,
   defaultBindings,
+  defaultControlPresets,
 } from '../defaults'
 import { updateSceneIndex } from './scenes'
 
@@ -246,6 +247,7 @@ export default createReducer(defaultState, (handle) => [
       live: {
         ...state.live,
         bindings: defaultBindings,
+        controlPresets: defaultControlPresets,
       },
     }
   }),

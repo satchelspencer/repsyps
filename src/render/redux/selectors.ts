@@ -352,15 +352,13 @@ export const makeGetPersistentTrack = () => {
       getPlayback,
       (track: Types.Track) => track.cues,
       (track: Types.Track) => track.visibleSourceTrack,
-      (track: Types.Track) => track.editing,
       (track: Types.Track) => track.lastPeriod,
     ],
-    (playback, cues, visibleSourceTrack, editing, lastPeriod): Types.PersistentTrack => {
+    (playback, cues, visibleSourceTrack, lastPeriod): Types.PersistentTrack => {
       return {
         visibleSourceTrack,
         cues,
         playback,
-        editing,
         lastPeriod,
       }
     }
@@ -393,27 +391,18 @@ export const getPersistentLiveBindings = createSelector(
 export const getPersistentLive = createShallowSelector(
   [
     (live: Types.Live) => live.scenes,
-    (live: Types.Live) => live.sceneIndex,
     getPersistentLiveBindings,
     (live: Types.Live) => live.controlPresets,
     (live: Types.Live) => live.defaultPresetId,
     getPersistentLiveTracks,
   ],
-  (
-    scenes,
-    sceneIndex,
-    bindings,
-    controlPresets,
-    defaultPresetId,
-    tracks
-  ): Types.PersistentLive => {
+  (scenes, bindings, controlPresets, defaultPresetId, tracks): Types.PersistentLive => {
     return {
       tracks,
       scenes,
       bindings,
       controlPresets,
       defaultPresetId,
-      sceneIndex,
     }
   }
 )

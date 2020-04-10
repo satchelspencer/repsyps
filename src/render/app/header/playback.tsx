@@ -47,7 +47,7 @@ const Playback = memo(() => {
         scale={2}
         asButton
         name="replay"
-        onClick={() => dispatch(Actions.resetPlaybackTime({}))}
+        onClick={() => dispatch(Actions.zeroInitValues())}
       />
       <Value>{time}</Value>
     </ControlsWrapper>

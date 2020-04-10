@@ -4,6 +4,7 @@ import ctyled from 'ctyled'
 
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import * as Types from 'render/util/types'
 
 import Icon from 'render/components/icon'
 import extend from 'render/util/extend'
@@ -11,12 +12,12 @@ import extend from 'render/util/extend'
 const ControlsOptionsWrapper = ctyled.div.styles({
   width: 1.5,
   bg: true,
-  color: c => c.nudge(0.05),
+  color: (c) => c.nudge(0.05),
   align: 'center',
   padd: 1,
   column: true,
   gutter: 1.5,
-  size: s => s * 1.3,
+  size: (s) => s * 1.3,
   justify: 'space-between',
 })
 
@@ -31,7 +32,7 @@ const DisableIcon = extend(
   Icon,
   ({ enabled }) => ({
     styles: {
-      color: c => (enabled ? c : c.as(['#ff000080', '#ff000080'])),
+      color: (c) => (enabled ? c : c.as(['#ff000080', '#ff000080'])),
     },
   }),
   { enabled: false }
@@ -39,16 +40,20 @@ const DisableIcon = extend(
 
 export interface OptionsProps {
   onIncZoom: (diff: number) => void
+  position: Types.Position
 }
 
 function ControlsOptions(props: OptionsProps) {
-  const enabled = useSelector(state => state.live.controlsEnabled),
+  const enabled = useSelector((state) => state.live.controlsEnabled),
     dispatch = useDispatch(),
     handleDisable = useCallback(() => dispatch(Actions.setControlsEnabled(!enabled)), [
       enabled,
     ]),
-    handleReplay = useCallback(() => dispatch(Actions.zeroInitValues({})), []),
-    handleClear = useCallback(() => dispatch(Actions.clearControls({})), []),
+    handleReplay = useCallback(() => dispatch(Actions.zeroInitValues()), []),
+    handleClear = useCallback(
+      () => dispatch(Actions.deleteControlGroup({ position: props.position })),
+      [props.position]
+    ),
     handleZoomIn = useCallback(() => props.onIncZoom(-1), [props.onIncZoom]),
     handleZoomOut = useCallback(() => props.onIncZoom(+1), [props.onIncZoom])
 

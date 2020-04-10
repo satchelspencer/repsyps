@@ -7,9 +7,7 @@ import * as Types from 'render/util/types'
 
 import audio from 'render/util/audio'
 import Icon from 'render/components/icon'
-import { HeaderContent, SelectableButton, WideButton } from 'render/components/misc'
-
-import SidebarItem from 'render/components/item'
+import { HeaderContent, SelectableButton, Horizontal } from 'render/components/misc'
 
 export interface SyncProps {
   trackId: string
@@ -59,74 +57,66 @@ const Sync = memo((props: SyncProps) => {
     )
 
   return (
-    <SidebarItem
-      title={
-        <>
-          <HeaderContent>
-            <Icon scale={1.4} name="av-timer" />
-            <span>&nbsp;Sync</span>
-          </HeaderContent>
-          <SelectableButton
-            selected={aperiodic}
-            onClick={() => {
-              const sample = store.getState().timing.tracks[props.trackId],
-                nextBoundIndex = _.findIndex(bounds, (b) => {
-                  return b >= sample
-                }),
-                boundIndex = nextBoundIndex - 1
-              if (nextBoundIndex !== -1 && boundIndex !== -1) {
-                if (aperiodic) {
-                  audio.syncToTrack(
-                    props.trackId,
-                    bounds[boundIndex],
-                    bounds[nextBoundIndex]
-                  )
-                  setAperiodic(false)
-                }
-                dispatch(
-                  Actions.updatePlayback({
-                    period:
-                      (bounds[nextBoundIndex] - bounds[boundIndex]) * alpha * boundsAlpha,
-                  })
-                )
-              }
-            }}
-          >
-            <Icon scale={1} name="crosshairs" />
-            &nbsp;lock
-          </SelectableButton>
-          <SelectableButton
-            disabled={!canSync}
-            onClick={() => setAperiodic(false)}
-            selected={!aperiodic}
-          >
-            <Icon name="check" />
-            &nbsp;on
-          </SelectableButton>
-          <SelectableButton onClick={() => setAperiodic(true)} selected={aperiodic}>
-            <Icon name="close-thin" />
-            &nbsp;off
-          </SelectableButton>
-          <SelectableButton
-            compact
-            disabled={!isLoop}
-            onClick={() =>
-              dispatch(
-                Actions.setTrackPlayback({
-                  trackId: props.trackId,
-                  playback: {
-                    loop: !loop,
-                  },
-                })
-              )
+    <Horizontal>
+      <HeaderContent>
+        <Icon scale={1.4} name="av-timer" />
+        <span>&nbsp;Sync</span>
+      </HeaderContent>
+      <SelectableButton
+        selected={aperiodic}
+        onClick={() => {
+          const sample = store.getState().timing.tracks[props.trackId],
+            nextBoundIndex = _.findIndex(bounds, (b) => {
+              return b >= sample
+            }),
+            boundIndex = nextBoundIndex - 1
+          if (nextBoundIndex !== -1 && boundIndex !== -1) {
+            if (aperiodic) {
+              audio.syncToTrack(props.trackId, bounds[boundIndex], bounds[nextBoundIndex])
+              setAperiodic(false)
             }
-            selected={loop}
-          >
-            <Icon scale={1.1} name={loop ? 'loop' : 'stop'} />
-          </SelectableButton>
-        </>
-      }
-    />
+            dispatch(
+              Actions.updatePlayback({
+                period:
+                  (bounds[nextBoundIndex] - bounds[boundIndex]) * alpha * boundsAlpha,
+              })
+            )
+          }
+        }}
+      >
+        <Icon scale={1} name="crosshairs" />
+        &nbsp;lock
+      </SelectableButton>
+      <SelectableButton
+        disabled={!canSync}
+        onClick={() => setAperiodic(false)}
+        selected={!aperiodic}
+      >
+        <Icon name="check" />
+        &nbsp;on
+      </SelectableButton>
+      <SelectableButton onClick={() => setAperiodic(true)} selected={aperiodic}>
+        <Icon name="close-thin" />
+        &nbsp;off
+      </SelectableButton>
+      <SelectableButton
+        compact
+        disabled={!isLoop}
+        onClick={() =>
+          dispatch(
+            Actions.setTrackPlayback({
+              trackId: props.trackId,
+              playback: {
+                loop: !loop,
+              },
+            })
+          )
+        }
+        selected={loop}
+      >
+        <Icon scale={1.1} name={loop ? 'loop' : 'stop'} />
+      </SelectableButton>
+    </Horizontal>
   )
 })
 

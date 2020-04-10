@@ -127,7 +127,6 @@ export interface PersistentTrack {
   visibleSourceTrack: string
   playback: PersitentTrackPlayback
   cues: Cue[]
-  editing: boolean
   lastPeriod: number
 }
 
@@ -214,7 +213,15 @@ export type MidiFunctionName =
 
 export type BindingType = 'note' | 'value'
 
-export type Binding = {
+export interface PersistentBinding {
+  type: BindingType
+  channel: number
+  note: number
+  function: MidiFunctionName
+  twoway: boolean
+}
+
+export interface Binding extends PersistentBinding {
   type: BindingType
   channel: number
   note: number
@@ -223,14 +230,6 @@ export type Binding = {
   twoway: boolean
   badMidiValue: boolean
   lastMidiValue: number
-}
-
-export interface PersistentBinding {
-  type: BindingType
-  channel: number
-  note: number
-  function: MidiFunctionName
-  twoway: boolean
 }
 
 export type Controls = Grid<ControlGroup>
@@ -261,7 +260,6 @@ export interface PersistentLive {
   controlPresets: ControlPresets
   defaultPresetId: string
   tracks: PersistentTracks
-  sceneIndex: number
 }
 
 export interface Live {

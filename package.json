@@ -60,7 +60,7 @@
     "bindings": "^1.5.0",
     "clone": "^2.1.2",
     "copy-webpack-plugin": "^5.1.1",
-    "ctyled": "^0.0.20",
+    "ctyled": "file:.yalc/ctyled",
     "deox": "^3.2.1",
     "electron-context-menu": "^0.14.0",
     "electron-devtools-installer": "^2.2.4",

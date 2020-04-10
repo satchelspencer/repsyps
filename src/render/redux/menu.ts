@@ -14,6 +14,12 @@ import audio from 'render/util/audio'
 const { Menu, dialog } = electron.remote,
   isMac = process.platform === 'darwin'
 
+const noInput = (handler: () => void) => {
+  return () => {
+    if (document.activeElement.nodeName !== 'INPUT') handler()
+  }
+}
+
 export default function init(store: Store<Types.State>) {
   let lastMenuState = null
 
@@ -30,7 +36,7 @@ export default function init(store: Store<Types.State>) {
               label: 'New Project',
               accelerator: 'CmdOrCtrl+N',
               click: () => {
-                store.dispatch(Actions.reset({}))
+                store.dispatch(Actions.reset())
               },
             },
             {
@@ -103,33 +109,6 @@ export default function init(store: Store<Types.State>) {
               },
             },
             { type: 'separator' },
-            {
-              label: 'Open Bindings',
-              click: () => {
-                const path = dialog.showOpenDialog({
-                  defaultPath: getPath('bindings'),
-                  filters: [{ name: 'repsyps binding', extensions: ['rbind'] }],
-                })
-                if (path && path[0]) loadBindings(path[0], store)
-              },
-            },
-            {
-              label: 'Save Bindings',
-              click: () => {
-                const path = dialog.showSaveDialog({
-                  title: 'Save Contol Bindings',
-                  defaultPath: getPath('bindings/untitled'),
-                })
-                if (path) saveBindings(path + '.rbind', store)
-              },
-            },
-            {
-              label: 'Clear Bindings',
-              click: () => {
-                store.dispatch(Actions.resetBindings())
-              },
-            },
-            { type: 'separator' },
             { role: 'quit' },
           ],
         },
@@ -146,7 +125,7 @@ export default function init(store: Store<Types.State>) {
             {
               label: 'Reset Scene',
               accelerator: 'CmdOrCtrl+R',
-              click: () => store.dispatch(Actions.zeroInitValues({})),
+              click: () => store.dispatch(Actions.zeroInitValues()),
             },
             { type: 'separator' },
             {
@@ -200,6 +179,44 @@ export default function init(store: Store<Types.State>) {
                 const selectedTrackId = Selectors.getSelectedTrackId(store.getState())
                 if (selectedTrackId) store.dispatch(Actions.rmTrack(selectedTrackId))
               },
+            },
+          ],
+        },
+        {
+          label: 'Controls',
+          submenu: [
+            {
+              label: 'Clear Controls',
+              click: noInput(() => {
+                store.dispatch(Actions.clearControls())
+              }),
+            },
+            { type: 'separator' },
+            {
+              label: 'Open Binding Confing',
+              click: () => {
+                const path = dialog.showOpenDialog({
+                  defaultPath: getPath('bindings'),
+                  filters: [{ name: 'repsyps binding', extensions: ['rbind'] }],
+                })
+                if (path && path[0]) loadBindings(path[0], store)
+              },
+            },
+            {
+              label: 'Save Binding Config',
+              click: () => {
+                const path = dialog.showSaveDialog({
+                  title: 'Save Contol Bindings',
+                  defaultPath: getPath('bindings/untitled'),
+                })
+                if (path) saveBindings(path + '.rbind', store)
+              },
+            },
+            {
+              label: 'Clear Bindings',
+              click: noInput(() => {
+                store.dispatch(Actions.resetBindings())
+              }),
             },
           ],
         },
