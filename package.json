@@ -32,12 +32,77 @@
       "buildResources": "conf/build"
     },
     "mac": {
-      "fileAssociations": {
-        "ext": "syp",
-        "icon": "conf/build/icon.icns",
-        "role": "Viewer"
+      "fileAssociations": [
+        {
+          "ext": "syp",
+          "icon": "conf/build/icon.icns",
+          "role": "Viewer"
+        },
+        {
+          "ext": "rbind",
+          "icon": "conf/build/rbind.icns",
+          "role": "Viewer"
+        }
+      ]
+    },
+    "win": {
+      "fileAssociations": [
+        {
+          "ext": "syp",
+          "description": "Repsyps Project",
+          "icon": "conf/build/icon.ico"
+        },
+        {
+          "ext": "rbind",
+          "description": "Repsyps Bindings",
+          "icon": "conf/build/rbind.ico"
+        }
+      ]
+    },
+    "fileAssociations": [
+      {
+        "ext": "syp"
+      },
+      {
+        "ext": "rbind"
+      },
+      {
+        "ext": "aac"
+      },
+      {
+        "ext": "ac3"
+      },
+      {
+        "ext": "aiff"
+      },
+      {
+        "ext": "caf"
+      },
+      {
+        "ext": "aiff"
+      },
+      {
+        "ext": "flac"
+      },
+      {
+        "ext": "mp4"
+      },
+      {
+        "ext": "m4a"
+      },
+      {
+        "ext": "mp2"
+      },
+      {
+        "ext": "mp3"
+      },
+      {
+        "ext": "oga"
+      },
+      {
+        "ext": "wav"
       }
-    }
+    ]
   },
   "gypfile": true,
   "electronWebpack": {

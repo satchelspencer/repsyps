@@ -9,6 +9,7 @@ import syncMidi from './midi-sync'
 import initMenu from './menu'
 import initPersist from './persist'
 import initHistory from './history'
+import initFileAssoc from './file-assoc'
 
 const store = createStore(
   reducer,
@@ -24,5 +25,6 @@ syncMidi(store)
 initMenu(store)
 initPersist(store)
 initHistory(store)
+initFileAssoc(store)
 
 export default store

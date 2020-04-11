@@ -1,4 +1,4 @@
-import { app, dialog } from 'electron'
+import { app, dialog, ipcMain } from 'electron'
 import * as path from 'path'
 import { format as formatUrl } from 'url'
 import contextMenu from 'electron-context-menu'
@@ -53,19 +53,47 @@ function createMainWindow() {
   return window
 }
 
-app.on('window-all-closed', () => app.quit())
+const hasLock = process.platform === 'darwin' || app.requestSingleInstanceLock()
 
-app.on('activate', () => {
-  if (mainWindow === null) mainWindow = createMainWindow()
-})
+if (!hasLock) app.quit()
+else {
+  /* file association opening */
+  let fileQueue: string[] = [],
+    renderer: Electron.WebContents = null
 
-// create main BrowserWindow when electron is ready
-app.on('ready', () => {
-  mainWindow = createMainWindow()
-  mainWindow.webContents.on('did-frame-finish-load', () => {
-    imp.default(
-      [imp.REACT_DEVELOPER_TOOLS, imp.REDUX_DEVTOOLS],
-      process.env.UPDATE_DEVTOOLS === 'true'
-    )
+  ipcMain.on('connect', (e: Electron.IpcMessageEvent) => {
+    console.log('ipc connected')
+    renderer = e.sender
+    fileQueue.forEach((file) => renderer.send('openFile', file))
+    fileQueue = []
   })
-})
+
+  app.on('second-instance', (e, cl, dir) => {
+    if (cl[1]) {
+      if (renderer) renderer.send('openFile', cl[1])
+      else fileQueue.push(cl[1])
+    }
+  })
+  app.on('open-file', (e, url) => {
+    e.preventDefault()
+    if (renderer) renderer.send('openFile', url)
+    else fileQueue.push(url)
+  })
+
+  app.on('window-all-closed', () => app.quit())
+
+  app.on('activate', () => {
+    if (mainWindow === null) mainWindow = createMainWindow()
+  })
+
+  // create main BrowserWindow when electron is ready
+  app.on('ready', () => {
+    mainWindow = createMainWindow()
+    mainWindow.webContents.on('did-frame-finish-load', () => {
+      imp.default(
+        [imp.REACT_DEVELOPER_TOOLS, imp.REDUX_DEVTOOLS],
+        process.env.UPDATE_DEVTOOLS === 'true'
+      )
+    })
+  })
+}
