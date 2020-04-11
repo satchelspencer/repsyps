@@ -158,6 +158,13 @@ export interface LoopControl extends ControlMapping {
   loop: number
 }
 
+export type SyncControlState = 'on' | 'off' | 'lock'
+
+export interface SyncControl extends ControlMapping {
+  trackIndex: number
+  sync: SyncControlState
+}
+
 export interface CueControl extends ControlMapping {
   trackIndex: number
   cueIndex: number
@@ -187,6 +194,7 @@ export type Control =
   | CueControl
   | CueStepControl
   | LoopControl
+  | SyncControl
   | SourceTrackValueControl
   | TrackValueControl
   | GlobalValueControl

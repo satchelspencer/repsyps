@@ -1,7 +1,7 @@
 export const palette = {
   gray: [
     'black',
-    { color: '#424242', pos: 0.3 },
+    { color: '#424242', pos: 0.25 },
     { color: '#eeecec', pos: 0.95 },
     'white',
   ],

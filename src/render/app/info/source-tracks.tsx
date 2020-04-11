@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useRef, useEffect, useCallback } from 'react'
 import * as _ from 'lodash'
-import ctyled from 'ctyled'
+import ctyled, { active } from 'ctyled'
 import pathUtils from 'path'
 
 import { useSelector, useDispatch } from 'render/redux/react'
@@ -43,10 +43,10 @@ const TrackWrapper = ctyled.div.attrs({ loaded: false }).styles({
   flex: 1,
   padd: 0.75,
   bg: true,
-  color: c => c.nudge(0.05),
+  color: (c) => c.nudge(0.05),
   rounded: true,
   border: true,
-  borderColor: c => c.contrast(-0.1),
+  borderColor: (c) => c.contrast(-0.1),
 }).extend`
   opacity:${(_, { loaded }) => (loaded ? 1 : 0)};
 `
@@ -62,6 +62,18 @@ const TrackH = adder(
 const TrackHead = ctyled.div.styles({
   gutter: 1,
   align: 'center',
+})
+
+const SoloButton = ctyled.div.class(active).styles({
+  bg: true,
+  hover: true,
+  color: (c) => c.nudge(0.1),
+  height: 2,
+  width: 2,
+  rounded: true,
+  align: 'center',
+  size: (s) => s * 0.9,
+  justify: 'center',
 })
 
 export interface TrackVolumeProps {
@@ -110,7 +122,7 @@ const SourceTrack = memo((props: SourceTrackProps) => {
       [props.trackIndex, props.sourceTrackIndex]
     ),
     handleVolumeChange = useCallback(
-      v =>
+      (v) =>
         dispatch(
           Actions.setTrackSourceParams({
             trackId: props.trackId,
@@ -119,6 +131,16 @@ const SourceTrack = memo((props: SourceTrackProps) => {
           })
         ),
       [props.trackId, props.sourceTrackId]
+    ),
+    handleSolo = useCallback(
+      () =>
+        dispatch(
+          Actions.soloTrackSource({
+            trackId: props.trackId,
+            sourceTrackId: props.sourceTrackId,
+          })
+        ),
+      []
     )
   return (
     <SidebarItem
@@ -128,12 +150,15 @@ const SourceTrack = memo((props: SourceTrackProps) => {
           <TrackHead>
             <Icon name="wave" scale={1.75} />
             {props.many && (
-              <Icon
-                asButton
-                name={props.visible ? 'show' : 'hide'}
-                onClick={setVisible}
-                scale={1.2}
-              />
+              <>
+                <Icon
+                  asButton
+                  name={props.visible ? 'show' : 'hide'}
+                  onClick={setVisible}
+                  scale={1.2}
+                />
+                <SoloButton onClick={handleSolo}>S</SoloButton>
+              </>
             )}
             <TrackName selected={false}>
               <TrackNameInner>{props.sourceTrack.name}</TrackNameInner>
@@ -143,7 +168,7 @@ const SourceTrack = memo((props: SourceTrackProps) => {
             )}
           </TrackHead>
           <TrackH params={volumeControlParams}>
-            <Volume volume={props.params.volume} onChange={handleVolumeChange} />
+            <Volume noIcon volume={props.params.volume} onChange={handleVolumeChange} />
           </TrackH>
         </TrackWrapper>
       }
@@ -153,21 +178,21 @@ const SourceTrack = memo((props: SourceTrackProps) => {
 
 const SourceTracks = (props: TrackVolumeProps) => {
   const sourceTracksParams = useSelector(
-      state => state.live.tracks[props.trackId].playback.sourceTracksParams
+      (state) => state.live.tracks[props.trackId].playback.sourceTracksParams
     ),
     visibleSourceTrackId = useSelector(
-      state => state.live.tracks[props.trackId].visibleSourceTrack
+      (state) => state.live.tracks[props.trackId].visibleSourceTrack
     ),
-    source = useSelector(state => state.sources[props.trackId]),
+    source = useSelector((state) => state.sources[props.trackId]),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
-    trackIndex = useSelector(state => getTrackIndex(state, props.trackId)),
+    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch()
 
   const input = useRef(null)
   useEffect(() => {
     input.current = document.createElement('input')
     input.current.type = 'file'
-    input.current.onchange = e => {
+    input.current.onchange = (e) => {
       const { files } = input.current
       const id = getId(files[0].path)
       dispatch(

@@ -64,6 +64,43 @@ export default createReducer(defaultState, (handle) => [
         },
       }
   }),
+  handle(Actions.soloTrackSource, (state, { payload }) => {
+    const trackId =
+        payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
+      sourceTrackId =
+        payload.sourceTrackId ||
+        (trackId &&
+          _.keys(state.live.tracks[trackId].playback.sourceTracksParams)[
+            payload.sourceTrackIndex
+          ])
+
+    if (!trackId || !sourceTrackId) return state
+    else
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          tracks: {
+            ...state.live.tracks,
+            [trackId]: {
+              ...state.live.tracks[trackId],
+              playback: {
+                ...state.live.tracks[trackId].playback,
+                sourceTracksParams: _.mapValues(
+                  state.live.tracks[trackId].playback.sourceTracksParams,
+                  (params, id) => {
+                    return {
+                      ...params,
+                      volume: sourceTrackId === id ? 1 : 0,
+                    }
+                  }
+                ),
+              },
+            },
+          },
+        },
+      }
+  }),
   handle(Actions.editSourceTrack, (state, { payload }) => {
     return {
       ...state,

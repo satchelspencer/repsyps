@@ -1,13 +1,15 @@
-import React, { memo, useEffect, useState, useCallback } from 'react'
+import React, { memo, useMemo, useEffect, useState, useCallback } from 'react'
 import * as _ from 'lodash'
 
-import { useDispatch, useSelector, useStore } from 'render/redux/react'
+import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
-import * as Types from 'render/util/types'
+import * as Selectors from 'render/redux/selectors'
 
-import audio from 'render/util/audio'
 import Icon from 'render/components/icon'
 import { HeaderContent, SelectableButton, Horizontal } from 'render/components/misc'
+import { adder } from 'render/components/control-adder'
+
+const SyncButton = adder(SelectableButton)
 
 export interface SyncProps {
   trackId: string
@@ -23,38 +25,21 @@ const Sync = memo((props: SyncProps) => {
 
   const { bounds, boundsAlpha } = useSelector((state) => state.sources[props.trackId]),
     dispatch = useDispatch(),
-    store = useStore(),
+    getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
+    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     [isLoop, setIsLoop] = useState(false),
     canSync = isLoop || bounds.length > 1,
     setAperiodic = useCallback(
       (aperiodic: boolean) => {
-        const newPlayback: Partial<Types.TrackPlayback> = {
-          aperiodic,
-        }
-        if (!aperiodic && !isLoop && bounds.length) {
-          const sample = store.getState().timing.tracks[props.trackId],
-            aboveBounds = _.filter(bounds, (b, bi) => {
-              const next = bounds[bi + 1]
-              return next >= sample
-            })
-          newPlayback.chunks = _.flatten(
-            aboveBounds
-              .map((bound, boundIndex) => {
-                const nextBound = aboveBounds[boundIndex + 1]
-                return nextBound && [bound, nextBound - bound]
-              })
-              .filter((a) => a)
-          )
-        }
         dispatch(
-          Actions.setTrackPlayback({
-            trackId: props.trackId,
-            playback: newPlayback,
-          })
+          Actions.setTrackSync({ trackId: props.trackId, sync: aperiodic ? 'off' : 'on' })
         )
       },
       [props.trackId, isLoop]
-    )
+    ),
+    handleLock = useCallback(() => {
+      dispatch(Actions.setTrackSync({ trackId: props.trackId, sync: 'lock' }))
+    }, [bounds, aperiodic, alpha, boundsAlpha])
 
   return (
     <Horizontal>
@@ -62,43 +47,40 @@ const Sync = memo((props: SyncProps) => {
         <Icon scale={1.4} name="av-timer" />
         <span>&nbsp;Sync</span>
       </HeaderContent>
-      <SelectableButton
-        selected={aperiodic}
-        onClick={() => {
-          const sample = store.getState().timing.tracks[props.trackId],
-            nextBoundIndex = _.findIndex(bounds, (b) => {
-              return b >= sample
-            }),
-            boundIndex = nextBoundIndex - 1
-          if (nextBoundIndex !== -1 && boundIndex !== -1) {
-            if (aperiodic) {
-              audio.syncToTrack(props.trackId, bounds[boundIndex], bounds[nextBoundIndex])
-              setAperiodic(false)
-            }
-            dispatch(
-              Actions.updatePlayback({
-                period:
-                  (bounds[nextBoundIndex] - bounds[boundIndex]) * alpha * boundsAlpha,
-              })
-            )
-          }
+      <SyncButton
+        selected
+        params={{
+          trackIndex,
+          sync: 'lock',
         }}
+        onClick={handleLock}
       >
         <Icon scale={1} name="crosshairs" />
         &nbsp;lock
-      </SelectableButton>
-      <SelectableButton
+      </SyncButton>
+      <SyncButton
         disabled={!canSync}
         onClick={() => setAperiodic(false)}
         selected={!aperiodic}
+        params={{
+          trackIndex,
+          sync: 'on',
+        }}
       >
         <Icon name="check" />
         &nbsp;on
-      </SelectableButton>
-      <SelectableButton onClick={() => setAperiodic(true)} selected={aperiodic}>
+      </SyncButton>
+      <SyncButton
+        onClick={() => setAperiodic(true)}
+        selected={aperiodic}
+        params={{
+          trackIndex,
+          sync: 'off',
+        }}
+      >
         <Icon name="close-thin" />
         &nbsp;off
-      </SelectableButton>
+      </SyncButton>
       <SelectableButton
         compact
         disabled={!isLoop}

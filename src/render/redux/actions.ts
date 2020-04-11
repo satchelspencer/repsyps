@@ -117,6 +117,13 @@ export const setTrackSourceParams = createAction<{
   sourceTrackParams: Partial<Types.TrackSourceParams>
 }>('SET_TRACK_SOURCE')
 
+export const soloTrackSource = createAction<{
+  trackId?: string
+  trackIndex?: number
+  sourceTrackId?: string
+  sourceTrackIndex?: number
+}>('SOLO_TRACKSOURCE')
+
 export const editSourceTrack = createAction<{
   trackId: string
   sourceTrackEditing: string | null
@@ -216,6 +223,12 @@ export const setTrackCue = createAction<{
   cueIndex: number
 }>('SET_TRACK_CUE')
 
+export const setTrackSync = createAction<{
+  trackId?: string
+  trackIndex?: number
+  sync: Types.SyncControlState
+}>('SET_TRACK_SYNC')
+
 /* controls */
 
 export const setControlGroup = createAction<{
@@ -285,7 +298,9 @@ export function getApplyControlGroupActions(
   const actions: Action<any>[] = [setControlGroupValue({ position, value })]
   controlGroup.controls.forEach((control) => {
     const thisValue = control.invert ? 1 - value : value,
-      thisLastValue = control.invert ? 1 - lastValue : lastValue
+      thisLastValue = control.invert ? 1 - lastValue : lastValue,
+      risingEdge = thisValue > 0.5 && thisLastValue < 0.5
+
     if (controlGroup.absolute && 'globalProp' in control)
       actions.push(
         updatePlayback({
@@ -313,27 +328,29 @@ export function getApplyControlGroupActions(
           },
         })
       )
-    else if ('cueStep' in control && thisValue > 0.5 && thisLastValue < 0.5)
+    else if ('cueStep' in control && risingEdge)
       actions.push(
         stepTrackCue({
           trackIndex: control.trackIndex,
           cueStep: control.cueStep,
         })
       )
-    else if ('cueIndex' in control && thisValue > 0.5 && thisLastValue < 0.5)
+    else if ('cueIndex' in control && risingEdge)
       actions.push(
         setTrackCue({
           trackIndex: control.trackIndex,
           cueIndex: control.cueIndex,
         })
       )
-    else if ('loop' in control && thisValue > 0.5 && thisLastValue < 0.5) {
+    else if ('loop' in control && risingEdge) {
       actions.push(
         loopTrack({
           trackIndex: control.trackIndex,
           loop: control.loop,
         })
       )
+    } else if ('sync' in control && risingEdge) {
+      actions.push(setTrackSync({ trackIndex: control.trackIndex, sync: control.sync }))
     }
   })
   return actions

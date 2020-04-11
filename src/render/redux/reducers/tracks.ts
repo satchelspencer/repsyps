@@ -5,6 +5,7 @@ import * as Actions from '../actions'
 import * as Selectors from '../selectors'
 import { defaultState, defaultTrackPlayback } from '../defaults'
 import { updateSceneIndex } from './scenes'
+import audio from 'render/util/audio'
 
 export default createReducer(defaultState, (handle) => [
   handle(Actions.addTrack, (state, { payload }) => {
@@ -118,6 +119,68 @@ export default createReducer(defaultState, (handle) => [
       },
     }
   }),
+  handle(Actions.setTrackSync, (state, { payload }) => {
+    const trackId =
+        payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
+      playback = state.live.tracks[trackId].playback,
+      aperiodic = payload.sync === 'off',
+      isLoop = !!playback.chunks[playback.chunkIndex * 2 + 1],
+      { bounds, boundsAlpha } = state.sources[trackId],
+      sample = state.timing.tracks[trackId],
+      newPlayback = {
+        ...playback,
+        aperiodic,
+      }
+    let newPeriod = null
+
+    if (!aperiodic && !isLoop && bounds.length) {
+      const aboveBounds = _.filter(bounds, (b, bi) => {
+        const next = bounds[bi + 1]
+        return next >= sample
+      })
+      newPlayback.chunks = _.flatten(
+        aboveBounds
+          .map((bound, boundIndex) => {
+            const nextBound = aboveBounds[boundIndex + 1]
+            return nextBound && [bound, nextBound - bound]
+          })
+          .filter((a) => a)
+      )
+    }
+
+    if (payload.sync === 'lock') {
+      const nextBoundIndex = _.findIndex(bounds, (b) => {
+          return b >= sample
+        }),
+        boundIndex = nextBoundIndex - 1
+      if (nextBoundIndex !== -1 && boundIndex !== -1) {
+        if (playback.aperiodic)
+          audio.syncToTrack(trackId, bounds[boundIndex], bounds[nextBoundIndex])
+        newPeriod =
+          (bounds[nextBoundIndex] - bounds[boundIndex]) * playback.alpha * boundsAlpha
+      }
+    }
+
+    return {
+      ...state,
+      playback: newPeriod
+        ? {
+            ...state.playback,
+            period: newPeriod,
+          }
+        : state.playback,
+      live: {
+        ...state.live,
+        tracks: {
+          ...state.live.tracks,
+          [trackId]: {
+            ...state.live.tracks[trackId],
+            playback: newPlayback,
+          },
+        },
+      },
+    }
+  }),
   handle(Actions.selectTrackExclusive, (state, { payload: trackId }) => {
     const containingIndex = state.live.scenes.findIndex((scene) =>
         scene.trackIds.includes(trackId)
@@ -140,7 +203,7 @@ export default createReducer(defaultState, (handle) => [
             if (thisTrackId === trackId) {
               return { ...track, selected: true }
             } else if (track.selected) {
-              return { ...track, selected: false }
+              return { ...track, selected: false, editing: false }
             } else return track
           }),
         },

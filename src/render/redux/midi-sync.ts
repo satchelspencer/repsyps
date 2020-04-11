@@ -173,7 +173,6 @@ export default async function init(store: Store<Types.State>) {
               const midiValue = midiValues[outputId][controlPos]
               if (midiValue === undefined || Math.abs(absValue - midiValue) > 0.02) {
                 if (binding.twoway) {
-                  console.log('send', controlPos, absValue)
                   outputs[outputId].send([
                     176 + binding.channel,
                     binding.note,

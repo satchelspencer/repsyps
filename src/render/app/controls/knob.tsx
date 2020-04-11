@@ -148,7 +148,7 @@ export default function Knob(props: KnobProps) {
         )}
         <line
           fill="none"
-          stroke={color.contrast(0.12).bq}
+          stroke={color.contrast(0.2).bq}
           strokeWidth="5"
           strokeLinecap="round"
           x1="50"

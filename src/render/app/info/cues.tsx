@@ -22,12 +22,12 @@ const CueWrapper = adder(ctyled.div
     align: 'center',
     padd: 1.5,
     justify: 'space-between',
-    color: c => c.nudge(0.05),
+    color: (c) => c.nudge(0.05),
     rounded: true,
     border: 1,
     height: 2,
     flex: 1,
-    borderColor: c => c.contrast(-0.1),
+    borderColor: (c) => c.contrast(-0.1),
   }).extend`
   padding-right:0px !important;
   background:${({ color }, { active, next }) =>
@@ -64,7 +64,7 @@ const JumpButton = adder(
 )
 
 const CueNumber = ctyled.div.styles({
-  size: s => s * 1.2,
+  size: (s) => s * 1.2,
 }).extend`
   font-weight:bold;
 `
@@ -73,7 +73,7 @@ const BehaviorWrapper = ctyled.div.styles({
   lined: true,
   border: 1,
   rounded: 1,
-  borderColor: c => c.contrast(-0.1),
+  borderColor: (c) => c.contrast(-0.1),
 })
 
 const CueBehavior = ctyled.div
@@ -84,7 +84,7 @@ const CueBehavior = ctyled.div
     align: 'center',
     padd: 1,
     justify: 'center',
-    color: c => c.nudge(0.05),
+    color: (c) => c.nudge(0.05),
     height: 1.8,
     bg: true,
   }).extend`
@@ -115,8 +115,15 @@ interface CueUsePickerProps extends CueProps {
   icon: string
 }
 
+const defaultUsed: (keyof Types.TrackPlayback)[] = [
+  'chunks',
+  'playing',
+  'chunkIndex',
+  'aperiodic',
+]
+
 const CueUsePicker = (props: CueUsePickerProps) => {
-  const isUsed = _.every(props.props, prop => props.cue.used.includes(prop)),
+  const isUsed = _.every(props.props, (prop) => props.cue.used.includes(prop)),
     dispatch = useDispatch(),
     handleClick = useCallback(() => {
       dispatch(
@@ -195,7 +202,25 @@ const Cue = SortableElement((xprops: any) => {
       () =>
         dispatch(Actions.deleteCue({ trackId: props.trackId, index: props.cueIndex })),
       [props.trackId, props.cueIndex]
-    )
+    ),
+    playback = useSelector((state) => state.live.tracks[props.trackId].playback),
+    updateCue = useCallback(() => {
+      dispatch(
+        Actions.addCue({
+          trackId: props.trackId,
+          cue: {
+            ...props.cue,
+            playback: {
+              ...playback,
+              chunkIndex: -1,
+              playing: true,
+            },
+          },
+          index: props.cueIndex,
+        })
+      )
+    }, [playback, props.trackId])
+
   return (
     <CueH>
       <CueWrapper
@@ -209,6 +234,7 @@ const Cue = SortableElement((xprops: any) => {
           <span>at {_.round(props.cue.playback.chunks[0] / RATE, 2)}s</span>
         </CueTitle>
       </CueWrapper>
+
       <BehaviorWrapper>
         <CueUsePicker {...props} icon="volume" props={['sourceTracksParams', 'volume']} />
         <CueUsePicker {...props} icon="spectrum" props={['filter']} />
@@ -219,18 +245,23 @@ const Cue = SortableElement((xprops: any) => {
           <Icon name={props.cue.endBehavior} />
         </CueBehavior>
       </BehaviorWrapper>
-      <Icon asButton name="close" onClick={removeCue} />
+      <BehaviorWrapper onClick={updateCue}>
+        <CueBehavior>
+          <Icon name="eyedropper" />
+        </CueBehavior>
+      </BehaviorWrapper>
+      <Icon asButton name="close-thin" onClick={removeCue} />
     </CueH>
   )
 })
 
 const Cues = memo((props: CuesProps) => {
   const { playback, cues, cueIndex, nextCueIndex } = useSelector(
-      state => state.live.tracks[props.trackId]
+      (state) => state.live.tracks[props.trackId]
     ),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
-    trackIndex = useSelector(state => getTrackIndex(state, props.trackId)),
-    { name } = useSelector(state => state.sources[props.trackId]),
+    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
+    { name } = useSelector((state) => state.sources[props.trackId]),
     dispatch = useDispatch(),
     handleAddCue = useCallback(() => {
       dispatch(
@@ -242,15 +273,7 @@ const Cues = memo((props: CuesProps) => {
               chunkIndex: -1,
               playing: true,
             },
-            used: [
-              'sourceTracksParams',
-              'filter',
-              'chunks',
-              'playing',
-              'chunkIndex',
-              'aperiodic',
-              'volume',
-            ],
+            used: defaultUsed,
             startBehavior: 'immediate',
             endBehavior: playback.loop ? 'loop' : 'stop',
           },
