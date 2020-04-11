@@ -1,6 +1,7 @@
 import { createReducer } from 'deox'
 import * as _ from 'lodash'
 
+import audio from 'render/util/audio'
 import * as Actions from '../actions'
 import * as Selectors from '../selectors'
 import {
@@ -94,6 +95,7 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.zeroInitValues, (state) => {
+    audio.updateTime(0, false)
     return updateSceneIndex(
       {
         ...state,

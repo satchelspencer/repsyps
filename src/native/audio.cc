@@ -123,6 +123,34 @@ void updatePlayback(const Napi::CallbackInfo &info){
   }
 }
 
+void updateTime(const Napi::CallbackInfo &info){
+  if(REPSYS_LOG) std::cout << "update time" << std::endl;
+  float time = info[0].As<Napi::Number>().DoubleValue();
+  bool relative =  info[1].As<Napi::Boolean>().Value();
+  int chunkOffset = floor(time);
+  int chunkCount;
+  state.playback->time = relative ? state.playback->time + time : time;
+  mixTrack* mixTrack;
+  for(auto mixTrackPair: state.mixTracks){
+    mixTrack = mixTrackPair.second;
+    if(
+      mixTrack != NULL
+      && mixTrack->playback->playing 
+      && state.sources.find(mixTrackPair.first) != state.sources.end() 
+      && state.sources[mixTrackPair.first] != NULL
+    ){
+      if(relative){
+        chunkCount = mixTrack->playback->chunks.size() / 2;
+        mixTrack->playback->chunkIndex = 
+          (mixTrack->playback->chunkIndex + chunkOffset + chunkCount) % chunkCount;
+        if(mixTrack->playback->chunkIndex == 0) mixTrack->playback->chunkIndex = -1;
+      }else{
+        mixTrack->playback->chunkIndex = -1;
+      }
+    }
+  }
+}
+
 Napi::Value removeSource(const Napi::CallbackInfo &info){
   if(REPSYS_LOG) std::cout << "rm src" << std::endl;
   Napi::Env env = info.Env();
@@ -608,6 +636,7 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("start", Napi::Function::New(env, start));
   exports.Set("stop", Napi::Function::New(env, stop));
   exports.Set("updatePlayback", Napi::Function::New(env, updatePlayback));
+  exports.Set("updateTime", Napi::Function::New(env, updateTime));
   exports.Set("removeSource", Napi::Function::New(env, removeSource));
   exports.Set("setMixTrack", Napi::Function::New(env, setMixTrack));
   exports.Set("removeMixTrack", Napi::Function::New(env, removeMixTrack));

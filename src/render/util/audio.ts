@@ -11,6 +11,7 @@ interface AudioAPI {
   start(deviceIndex: number): void
   stop(): void
   updatePlayback(playback: Partial<Types.Playback>): void
+  updateTime(time: number, relative: boolean): void
   removeSource(sourceId: string): boolean
   setMixTrack(trackId: string, track: Types.NativeTrackChange)
   removeMixTrack(trackId: string)

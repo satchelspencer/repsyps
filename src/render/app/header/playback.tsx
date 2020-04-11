@@ -4,6 +4,7 @@ import ctyled from 'ctyled'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import audio from 'render/util/audio'
 
 import Icon from 'render/components/icon'
 import { Value } from 'render/components/misc'
@@ -19,30 +20,20 @@ const ControlsWrapper = ctyled.div.styles({
 `
 
 const Playback = memo(() => {
-  const playing = useSelector(state => state.playback.playing),
-    time = useSelector(state => Math.floor(state.timing.time)),
+  const playing = useSelector((state) => state.playback.playing),
+    time = useSelector((state) => Math.floor(state.timing.time)),
     dispatch = useDispatch()
 
   return (
     <ControlsWrapper>
-      <Icon
-        scale={2}
-        asButton
-        name="prev"
-        onClick={() => dispatch(Actions.updatePlaybackTime(-1))}
-      />
+      <Icon scale={2} asButton name="prev" onClick={() => audio.updateTime(-1, true)} />
       <Icon
         scale={2}
         asButton
         name={playing ? 'pause' : 'play'}
         onClick={() => dispatch(Actions.updatePlayback({ playing: !playing }))}
       />
-      <Icon
-        scale={2}
-        asButton
-        name="next"
-        onClick={() => dispatch(Actions.updatePlaybackTime(+1))}
-      />
+      <Icon scale={2} asButton name="next" onClick={() => audio.updateTime(1, true)} />
       <Icon
         scale={2}
         asButton
