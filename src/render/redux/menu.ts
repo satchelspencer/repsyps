@@ -45,7 +45,7 @@ export default function init(store: Store<Types.State>) {
               click: () => {
                 const path = dialog.showOpenDialog({
                   defaultPath: getPath('projects'),
-                  filters: [{ name: 'repsyps project', extensions: ['rproj'] }],
+                  filters: [{ name: 'repsyps project', extensions: ['syp'] }],
                 })
                 if (path && path[0]) loadProject(path[0], store)
               },
@@ -70,7 +70,7 @@ export default function init(store: Store<Types.State>) {
               click: () => {
                 const path = dialog.showSaveDialog({
                   title: 'Export Project',
-                  defaultPath: getAppPath('documents'),
+                  defaultPath: getPath('projects'),
                 })
                 if (path) exportProject(path, store)
               },
@@ -221,6 +221,22 @@ export default function init(store: Store<Types.State>) {
           ],
         },
         {
+          label: 'Output',
+          submenu: menuState.output.devices.map((device) => {
+            return {
+              label: device.name,
+              type: 'checkbox',
+              checked: device.index === menuState.output.current,
+              click: () =>
+                store.dispatch(
+                  Actions.setOutputs({
+                    current: device.index,
+                  })
+                ),
+            }
+          }),
+        },
+        {
           label: 'View',
           submenu: [
             {
@@ -279,6 +295,6 @@ export default function init(store: Store<Types.State>) {
       title: 'Save Project',
       defaultPath: getPath('projects/untitled'),
     })
-    if (path) saveProject(path + '.rproj', store)
+    if (path) saveProject(path + '.syp', store)
   }
 }

@@ -16,7 +16,6 @@ let lastPersistent: Types.PersistentState = null,
 
 export function undo() {
   if (index > 0 && inSync) {
-    //console.log('undoing', history[index - 1])
     const newState = unpatch(clone(lastPatched, false), history[index - 1])
     lastPatched = newState
     index--

@@ -10,6 +10,10 @@ const RATE = 44100
 async function init() {
   audio.init('./')
 
+  const outputs = audio.getOutputs(),
+    defaultIndex = audio.getDefaultOutput()
+  console.log(outputs, defaultIndex)
+
   const mp3 = '/Users/satchel/Downloads/Flava in Ya Ear.mp3',
     stem = '/Users/satchel/Downloads/STEMS FINAL/VH_SpaceBlapz.stem.mp4',
     mono = '/Users/satchel/Downloads/IMG_1177.MOV',
@@ -22,14 +26,13 @@ async function init() {
   const src = './lib/test/bench.wav'
   const ssize = (5.41 * RATE) / 2
 
-  const ids = await audio.loadSource(stem, 'mysource')
+  const ids = await audio.loadSource(short, 'mysource')
   console.log(ids)
-  process.exit()
   // console.log('exp', audio.exportSource('./lib/test/test_out.m4a', 'mysource'))
 
   // audio.loadSource('./lib/test/test_out.m4a', 'mysourceaac')
 
-  //audio.separateSource('mysource')
+  audio.separateSource('mysource')
 
   const dest = new Float32Array(256)
   audio.getWaveform('mysource', -2000, 200, dest)
@@ -60,11 +63,11 @@ async function init() {
       volume: 1,
       sourceTracksParams: {
         mysource_vocal: {
-          volume: 0.5,
+          volume: 0.8,
           offset: 0,
         },
         mysource_instru: {
-          volume: 0.5,
+          volume: 0.1,
           offset: 0,
         },
       },
@@ -77,7 +80,9 @@ async function init() {
     playing: true,
   })
 
-  audio.start()
+  audio.start(defaultIndex)
+
+  setTimeout(() => audio.start(7), 3000)
 
   let i = 0
   setInterval(() => {

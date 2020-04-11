@@ -16,6 +16,7 @@ export default createReducer(defaultState, (handle) => [
         bindings: state.live.bindings,
         controlPresets: state.live.controlPresets,
       },
+      output: state.output,
     }
   }),
   handle(Actions.loadPersisted, (state, { payload }) => {
@@ -93,6 +94,10 @@ export default createReducer(defaultState, (handle) => [
       ...state,
       save: localPersisted.save,
       settings: localPersisted.settings,
+      output: {
+        ...state.output,
+        ...localPersisted.output,
+      },
     }
   }),
   handle(Actions.updateTime, (state, { payload }) => {
@@ -225,6 +230,15 @@ export default createReducer(defaultState, (handle) => [
       timing: {
         ...state.timing,
         time: 0,
+      },
+    }
+  }),
+  handle(Actions.setOutputs, (state, { payload: newOutputs }) => {
+    return {
+      ...state,
+      output: {
+        ...state.output,
+        ...newOutputs,
       },
     }
   }),

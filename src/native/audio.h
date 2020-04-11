@@ -14,6 +14,8 @@
 #include "recording.h"
 
 Napi::Value init(const Napi::CallbackInfo &info);
+Napi::Value getOutputs(const Napi::CallbackInfo &info);
+Napi::Value getDefaultOutput(const Napi::CallbackInfo &info);
 Napi::Value start(const Napi::CallbackInfo &info);
 void stop(const Napi::CallbackInfo &info);
 void updatePlayback(const Napi::CallbackInfo &info);

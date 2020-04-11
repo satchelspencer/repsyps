@@ -13,7 +13,7 @@ const short = './lib/test/bench.wav'
 const ssize = (5.41 * RATE) / 2
 
 let i = 0
-async function doeet(){
+async function doeet() {
   console.log(i++)
   const sourceId = Math.random().toString(16).substr(2),
     trackId = Math.random().toString(16).substr(2)
@@ -49,7 +49,7 @@ audio.updatePlayback({
   playing: true,
 })
 
-audio.start()
+audio.start(audio.getDefaultOutput())
 
 setInterval(() => {
   console.log(audio.getTiming().tracks)

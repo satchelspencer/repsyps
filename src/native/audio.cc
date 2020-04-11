@@ -1,11 +1,13 @@
 #include "audio.h" 
 
 static streamState state;
-static PaStream * gstream;
+static PaStream * gstream = NULL;
 
 Napi::Value init(const Napi::CallbackInfo &info){
   std::string rootPath = info[0].As<Napi::String>().Utf8Value();
   init_separator(rootPath);
+
+  Pa_Initialize();
 
   playback * newPlayback = new playback{};
   newPlayback->time = 0.;
@@ -38,19 +40,46 @@ Napi::Value init(const Napi::CallbackInfo &info){
   return Napi::Number::New(env, 666);
 }
 
+Napi::Value getOutputs(const Napi::CallbackInfo &info){
+  Napi::Env env = info.Env();
+  Napi::Array outputs = Napi::Array::New(env);
+
+  int deviceCount = Pa_GetDeviceCount();
+  int outputIndex = 0;
+  for(int deviceIndex=0;deviceIndex<deviceCount;deviceIndex++){
+    const PaDeviceInfo* dinfo = Pa_GetDeviceInfo(deviceIndex);
+    if(dinfo->maxOutputChannels >= 2){
+       Napi::Object output = Napi::Object::New(env);
+      output.Set("name", dinfo->name);
+      output.Set("index", deviceIndex);
+      output.Set("channels", dinfo->maxOutputChannels);
+      outputs.Set(outputIndex++, output);
+    }
+  }
+  return outputs;
+}
+
+Napi::Value getDefaultOutput(const Napi::CallbackInfo &info){
+  Napi::Env env = info.Env();
+  return Napi::Number::New(env, Pa_GetDefaultOutputDevice());
+}
 
 Napi::Value start(const Napi::CallbackInfo &info){
-  if(REPSYS_LOG) std::cout << "start" << std::endl;
   Napi::Env env = info.Env();
-
-  Pa_Initialize();
+  int deviceIndex = info[0].As<Napi::Number>().Int32Value();
+  if(REPSYS_LOG) std::cout << "start " << deviceIndex << std::endl;
 
   PaStreamParameters outputParameters;
-  outputParameters.device = Pa_GetDefaultOutputDevice();
+  outputParameters.device = deviceIndex;
   outputParameters.channelCount = 2; /* stereo output */
   outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
   outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultHighOutputLatency;
   outputParameters.hostApiSpecificStreamInfo = NULL;
+
+  if(gstream != NULL){
+    if(REPSYS_LOG) std::cout << "stopping old stream" << std::endl;
+    Pa_StopStream(gstream);
+  }
 
   Pa_OpenStream(
     &gstream,
@@ -572,8 +601,10 @@ void syncToTrack(const Napi::CallbackInfo &info){
   track->playback->chunkIndex = -1;
 }
 
-void InitAudio(Napi::Env env, Napi::Object exports){  
+void InitAudio(Napi::Env env, Napi::Object exports){ 
   exports.Set("init", Napi::Function::New(env, init));
+  exports.Set("getOutputs", Napi::Function::New(env, getOutputs));
+  exports.Set("getDefaultOutput", Napi::Function::New(env, getDefaultOutput));
   exports.Set("start", Napi::Function::New(env, start));
   exports.Set("stop", Napi::Function::New(env, stop));
   exports.Set("updatePlayback", Napi::Function::New(env, updatePlayback));

@@ -133,10 +133,10 @@ export default async function init(store: Store<Types.State>) {
   nav.requestMIDIAccess().then((midiAccess) => {
     midiAccess.onstatechange = (e) => {
       if (e.port.type === 'input') {
-        if (e.port.state === 'connected' && e.port.connection === 'open') addInput(e.port)
+        if (e.port.state === 'connected') addInput(e.port)
         else if (e.port.state === 'disconnected') removeInput(e.port)
       } else if (e.port.type === 'output') {
-        if (e.port.state === 'connected' && e.port.connection === 'open')
+        if (e.port.state === 'connected')
           addOutput(e.port)
         else if (e.port.state === 'disconnected') removeOutput(e.port)
       }

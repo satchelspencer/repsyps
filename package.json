@@ -30,6 +30,13 @@
     ],
     "directories": {
       "buildResources": "conf/build"
+    },
+    "mac": {
+      "fileAssociations": {
+        "ext": "syp",
+        "icon": "conf/build/icon.icns",
+        "role": "Viewer"
+      }
     }
   },
   "gypfile": true,

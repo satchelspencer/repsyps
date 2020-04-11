@@ -32,6 +32,20 @@ export default function syncAudio(store: Store<Types.State>) {
   const appPath = isDev ? './' : remote.app.getAppPath() + '/'
   audio.init(appPath)
 
+  const currentOutput = store.getState().output.current,
+    availableOutputs = audio.getOutputs(),
+    matchingOutput = availableOutputs.find((output) => output.index === currentOutput),
+    defaultOutput = audio.getDefaultOutput(),
+    currentOut = matchingOutput ? currentOutput : defaultOutput
+
+  store.dispatch(
+    Actions.setOutputs({
+      default: defaultOutput,
+      devices: availableOutputs,
+      current: currentOut,
+    })
+  )
+
   const handleUpdate = () => {
     const currentState = store.getState(),
       trackIds = Selectors.getActiveTrackIds(currentState),
@@ -180,6 +194,10 @@ export default function syncAudio(store: Store<Types.State>) {
         store.dispatch(batchActions(unloadActions, 'UNLOAD_TRACKS'))
     }
 
+    /* change audio output */
+    if (!lastState || lastState.output.current !== currentState.output.current)
+      audio.start(currentState.output.current)
+
     lastState = currentState
   }
   store.subscribe(handleUpdate)
@@ -200,6 +218,4 @@ export default function syncAudio(store: Store<Types.State>) {
     setTimeout(update, Math.max(UPDATE_PERIOD - (new Date().getTime() - start), 0))
   }
   update()
-
-  audio.start()
 }

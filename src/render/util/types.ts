@@ -311,6 +311,23 @@ export interface PersistentState {
 export interface LocalPersistentState {
   save: SaveStatus
   settings: Settings
+  output: LocalPersistentOutputState
+}
+
+export interface Output {
+  name: string
+  index: number
+  channels: number
+}
+
+export interface LocalPersistentOutputState {
+  current: number
+}
+
+export interface OutputState {
+  devices: Output[]
+  default: number
+  current: number
 }
 
 export interface State {
@@ -321,4 +338,5 @@ export interface State {
   save: SaveStatus
   settings: Settings
   recording: Recording
+  output: OutputState
 }

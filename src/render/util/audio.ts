@@ -6,7 +6,9 @@ import { isDev } from 'render/util/env'
 
 interface AudioAPI {
   init(root: string): void
-  start(): void
+  getOutputs(): Types.Output[]
+  getDefaultOutput(): number
+  start(deviceIndex: number): void
   stop(): void
   updatePlayback(playback: Partial<Types.Playback>): void
   removeSource(sourceId: string): boolean

@@ -68,8 +68,8 @@ export default function Knob(props: KnobProps) {
         const dx = e.clientX - startPos[0],
           dy = e.clientY - startPos[1],
           dist = Math.sqrt(dx * dx + dy * dy),
-          positive = Math.abs(dx) > Math.abs(dy) ? dx > 0 : dy < 0,
-          value = startValue + (dist / 100) * (positive ? 1 : -1),
+          dot = dx * 1 + dy * -1, //wow that's nice!
+          value = startValue + dot / 100,
           clippedValue = Math.max(Math.min(value, 1), 0)
 
         if (dist > 2) {

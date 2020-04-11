@@ -133,12 +133,18 @@ const SourceTrack = memo((props: SourceTrackProps) => {
       [props.trackId, props.sourceTrackId]
     ),
     handleSolo = useCallback(
-      () =>
+      (e: React.MouseEvent) =>
         dispatch(
-          Actions.soloTrackSource({
-            trackId: props.trackId,
-            sourceTrackId: props.sourceTrackId,
-          })
+          e.shiftKey
+            ? Actions.setTrackSourceParams({
+                trackId: props.trackId,
+                sourceTrackId: props.sourceTrackId,
+                sourceTrackParams: { volume: 1 },
+              })
+            : Actions.soloTrackSource({
+                trackId: props.trackId,
+                sourceTrackId: props.sourceTrackId,
+              })
         ),
       []
     )

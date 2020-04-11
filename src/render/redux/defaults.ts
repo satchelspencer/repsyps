@@ -89,6 +89,11 @@ export const defaultPlayback: Types.Playback = {
     enabled: false,
     fromTrack: null,
   },
+  defaultOutput: Types.OutputState = {
+    default: 1,
+    current: 1,
+    devices: [],
+  },
   defaultState: Types.State = {
     save: defaultSave,
     timing: defaultTiming,
@@ -97,4 +102,5 @@ export const defaultPlayback: Types.Playback = {
     sources: defaultSources,
     settings: defaultSettings,
     recording: defaultRecording,
+    output: defaultOutput,
   }

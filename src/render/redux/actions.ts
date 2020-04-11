@@ -40,6 +40,8 @@ export const updatePlaybackTime = createAction<number>('UPDATE_PLAYBACK_TIME')
 
 export const resetPlaybackTime = createAction<void>('RESET_PLAYBACK_TIME')
 
+export const setOutputs = createAction<Partial<Types.OutputState>>('SET_OUTPUTS')
+
 /* track actions */
 
 export const addTrack = createAction<{
