@@ -49,7 +49,7 @@ repsyps depends on native libraries that must be installed manually for developm
 
    ~~~
       wget http://ffmpeg.org/releases/ffmpeg-4.2.2.tar.xz
-      tar xvzf ffmpeg-4.2.2.tar.xz
+      tar xf ffmpeg-4.2.2.tar.xz
       rm ffmpeg-4.2.2.tar.xz
    ~~~
  - `cd ffmpeg-4.2.2`
@@ -63,7 +63,9 @@ repsyps depends on native libraries that must be installed manually for developm
 - prerequisites:
    - autoconf `sudo apt-get install automake autoconf`
    - nodejs 10+ [see installer](https://nodejs.org/en/download/)
-   - yarn `npm install -g yarn`
+   - yarn `sudo npm install -g yarn`
+   - yasm `sudo apt-get install yasm`
+   - alsa `sudo apt-get install libasound2-dev`
  - clone repsyps to a reasonable place `git clone https://github.com/satchelspencer/repsyps && cd repsyps`
  - repsyps uses [spleeter](https://github.com/deezer/spleeter) for source separation. pre-trained weights and test data can be downloaded by running the following command in the project root
 
@@ -81,7 +83,7 @@ repsyps depends on native libraries that must be installed manually for developm
     && rm pa_stable_v190600_20161030.tgz
     ~~~
  - open portaudio `cd portaudio`
- - configure and compile `./configure CFLAGS=-fPIC && make`
+ - configure and compile `./configure --with-alsa CFLAGS=-fPIC && make`
  - `cd ../` back to our libs folder
  - `cd ../` back to our libs folder
  - clone the liquid-dsp source `git clone git://github.com/jgaeddert/liquid-dsp.git`
@@ -97,5 +99,15 @@ repsyps depends on native libraries that must be installed manually for developm
     && tar xvzf libtensorflow-gpu-linux-x86_64-1.15.0.tar.gz \
     && rm libtensorflow-gpu-linux-x86_64-1.15.0.tar.gz
     ~~~
+ - `cd ../` back to libs
+
+   ~~~
+      wget http://ffmpeg.org/releases/ffmpeg-4.2.2.tar.xz
+      tar xf ffmpeg-4.2.2.tar.xz
+      rm ffmpeg-4.2.2.tar.xz
+   ~~~
+ - `cd ffmpeg-4.2.2`
+ - `./configure --disable-autodetect --enable-pic --enable-shared`
+ - `make`
  - `cd ../../` back to repsyps root folder
  - `yarn` install node dependencies and build native modules

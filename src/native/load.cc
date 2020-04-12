@@ -11,14 +11,14 @@ void loadSrc(
   /* open file */
   ret = avformat_open_input(&pFormatCtx, path.c_str(), NULL, 0);
   if(ret < 0){
-    std::cout << "could not open input " << av_err2str(ret) << std::endl;
+    std::cout << "could not open input " << std::endl;
     return;
   }
 
   /* automatically find streams info */
   ret = avformat_find_stream_info(pFormatCtx, NULL);
    if(ret < 0){
-    std::cout << "could not find stream info " << av_err2str(ret) << std::endl;
+    std::cout << "could not find stream info " << std::endl;
     return;
   }
 
@@ -208,7 +208,7 @@ void loadSrc(
     swr_free(&swr); //free if it worked or not
 
     if(ret < 0){
-      std::cout << "resampling error " << av_err2str(ret) << std::endl;
+      std::cout << "resampling error" << std::endl;
       continue;
     }
     

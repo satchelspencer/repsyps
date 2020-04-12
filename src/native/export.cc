@@ -22,7 +22,7 @@ void encode_audio_frame(
   while (avcodec_receive_packet(output_codec_context, &output_packet) >= 0) {
     ret = av_write_frame(output_format_context, &output_packet);
     if(ret < 0){
-      std::cout << "write error " << av_err2str(ret) << std::endl;
+      std::cout << "write error " << std::endl;
       break;
     }
   }
@@ -49,7 +49,7 @@ bool exportSrc(std::string path, source* expSource){
   /* open file */
   ret = avio_open(&output_io_context, path.c_str(), AVIO_FLAG_WRITE);
   if(ret < 0){
-    std::cout << "could not open file " << av_err2str(ret) << std::endl;
+    std::cout << "could not open file " << std::endl;
     free_export(avctx, output_format_context);
     return result;
   }
@@ -108,7 +108,7 @@ bool exportSrc(std::string path, source* expSource){
 
   ret = avcodec_open2(avctx, output_codec, NULL);
   if(ret < 0){
-    std::cout << "could not open codec " << av_err2str(ret) << std::endl;
+    std::cout << "could not open codec " << std::endl;
     free_export(avctx, output_format_context);
     return result;
   }
@@ -123,7 +123,7 @@ bool exportSrc(std::string path, source* expSource){
   /* write header */
   ret = avformat_write_header(output_format_context, NULL);
   if(ret < 0){
-    std::cout << "failed to write header " << av_err2str(ret) << std::endl;
+    std::cout << "failed to write header "  << std::endl;
     free_export(avctx, output_format_context);
     return result;
   }
@@ -168,7 +168,7 @@ bool exportSrc(std::string path, source* expSource){
 
   ret = av_write_trailer(output_format_context);
   if(ret < 0){
-    std::cout << "failed to write trailer " << av_err2str(ret) << std::endl;
+    std::cout << "failed to write trailer " << std::endl;
     free_export(avctx, output_format_context);
     av_frame_free(&frame);
     av_packet_unref(pkt);

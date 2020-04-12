@@ -27,8 +27,13 @@
       	[ "OS==\"linux\"", {
           "cflags_cc": [ "-fno-rtti", "-std=c++1z", "-fpermissive"],
           "libraries": [
-		        "-lportaudio",
-		        "-L../lib/libtensorflow/lib -ltensorflow -Wl,-rpath,./lib/libtensorflow/lib"
+		        "-L<@(libsdir)/portaudio/lib/.libs -lportaudio -Wl,-rpath,./lib/portaudio/lib/.libs",
+			"<@(libsdir)/liquid-dsp/libliquid.a",
+            		"-L<@(libsdir)/ffmpeg-4.2.2/libavutil -lavutil -Wl,-rpath,./lib/ffmpeg-4.2.2/libavutil",
+            		"-L<@(libsdir)/ffmpeg-4.2.2/libavcodec -lavcodec -Wl,-rpath,./lib/ffmpeg-4.2.2/libavcodec",
+            		"-L<@(libsdir)/ffmpeg-4.2.2/libavformat -lavformat -Wl,-rpath,./lib/ffmpeg-4.2.2/libavformat",
+            		"-L<@(libsdir)/ffmpeg-4.2.2/libswresample -lswresample -Wl,-rpath,./lib/ffmpeg-4.2.2/libswresample",
+		        "-L<@(libsdir)/libtensorflow/lib -ltensorflow -Wl,-rpath,./lib/libtensorflow/lib"
 		      ],
         }],
         [ "OS==\"mac\"", {
