@@ -71,6 +71,7 @@ export function addTrackAndSource(path: string) {
       addTrack({
         trackId: id,
         sourceTracksParams: { [id]: { volume: 1, offset: 0 } },
+        editing: true,
       }),
       selectTrackExclusive(id),
     ],
