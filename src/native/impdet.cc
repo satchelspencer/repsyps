@@ -3,7 +3,7 @@
 static unsigned int IMPDET_WINSIZE = 512;
 static unsigned int IMPDET_AVGLEN = 80;
 static float IMPDET_CUTOFF = 3000 / 44100.;
-static unsigned int IMPDET_NTAPS = 121;
+static const unsigned int IMPDET_NTAPS = 121;
 
 std::vector<int> impulseDetect(float* source, int sourceLen){
   /* setup highpass filter */

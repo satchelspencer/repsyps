@@ -31,9 +31,10 @@ export default function useZoom(
         setStart(start - dx)
         setScale(nextScale < 800 ? nextScale : Math.floor(nextScale))
       } else {
-        const xonly = Math.abs(deltaX) > 4 && Math.abs(deltaY) < 4
+        const xonly = e.shiftKey || Math.abs(deltaX) > 4 && Math.abs(deltaY) < 4,
+          dx = e.shiftKey ? deltaY : deltaX
         if (xonly && playLocked) setPlayLocked(false)
-        if (!playLocked || xonly) setStart(start + clip(deltaX) * scale)
+        if (!playLocked || xonly) setStart(start + clip(dx) * scale)
       }
     }
   }, [scale, start, playLocked])

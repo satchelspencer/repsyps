@@ -1,4 +1,4 @@
-#import "export.h"
+#include "export.h"
 
 void encode_audio_frame(
   AVFrame *frame,

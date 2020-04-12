@@ -10,7 +10,7 @@ void setMixTrackFilter(mixTrack * mixTrack, float filter){
     float cutoff_mag = abs(filter - 0.5);
     if(filter < 0.5) cutoff_mag = 0.5 - cutoff_mag;
 
-    unsigned int num_taps  =  121;      
+    const unsigned int num_taps  =  121;      
     float h[num_taps];
     unsigned int num_bands = 2;
     float ft = estimate_req_filter_df(60, num_taps); //-60db

@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "start": "electron-webpack dev",
-    "build": "node-gyp configure build --libsdir=$(pwd)/lib",
-    "install": "node-gyp configure rebuild --libsdir=$(pwd)/lib",
+    "build": "node-gyp configure build --libsdir=\"$(pwd)/lib\"",
     "test-native": "node src/native/test.js",
     "clean": "node-gyp clean",
     "build-electron": "electron-webpack",

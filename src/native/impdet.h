@@ -1,5 +1,6 @@
 #include <vector>
 #include <list>
+#include <cmath>
 #include <complex.h>
 #include <liquid.h>
 
