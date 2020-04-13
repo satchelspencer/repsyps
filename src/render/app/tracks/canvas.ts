@@ -6,6 +6,10 @@ import * as Types from 'render/util/types'
 import { findNearest } from 'render/util/impulse-detect'
 import audio from 'render/util/audio'
 import { DrawViewContext } from './track'
+import { canvasScale } from 'render/util/env'
+
+const lineWidth = canvasScale === 1 ? 1 : 3,
+  thickLine = canvasScale === 1 ? 3 : 5
 
 export default function useWaveformCanvas(
   view: DrawViewContext,
@@ -21,7 +25,7 @@ export default function useWaveformCanvas(
     visibleLoaded = source.sourceTracks[track.visibleSourceTrack].loaded,
     effectivePos = track.playback.playing ? 0 /* position */ : 0,
     { scale, start, impulses, width, height, clickX, center, mouseDown } = view,
-    pwidth = width * 2,
+    pwidth = width * canvasScale,
     isSTEditing = !!track.sourceTrackEditing,
     editTrackLoaded = isSTEditing && source.sourceTracks[track.sourceTrackEditing].loaded,
     editTrackOffset =
@@ -30,7 +34,7 @@ export default function useWaveformCanvas(
   useEffect(() => {
     ctxt.current = canvasRef.current.getContext('2d')
     ctxt.current.scale(2, 2)
-    ctxt.current.imageSmoothingEnabled = false
+    ctxt.current.imageSmoothingEnabled = canvasScale === 1
   }, [])
 
   const bufferRes = pwidth,
@@ -64,8 +68,8 @@ export default function useWaveformCanvas(
 
   useEffect(() => {
     if (!width) return
-    const pwidth = width * 2,
-      pheight = height * 2,
+    const pwidth = width * canvasScale,
+      pheight = height * canvasScale,
       ctx = ctxt.current,
       drawContext = {
         pwidth,
@@ -73,8 +77,8 @@ export default function useWaveformCanvas(
         scale,
         start,
         ctx,
-        clickX: clickX * 2,
-        center: center * 2,
+        clickX: clickX * canvasScale,
+        center: center * canvasScale,
         mouseDown,
         sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
@@ -177,7 +181,7 @@ export function drawImpulses(context: DrawingContext, impulses: number[]) {
     white = 500,
     trans = 100
 
-  ctx.lineWidth = 3
+  ctx.lineWidth = lineWidth
   const r = 128 + Math.max((1 - scale / white) * 128, 0),
     o = 1 - Math.min(Math.max((scale - white) / trans, 0), 1)
   ctx.strokeStyle = `rgba(${r},${255 - r},${255 - r},${o})`
@@ -212,7 +216,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
 
   let px = playLocked && scroll ? pwidth / 2 : (sample - start) / scale
   ctx.fillStyle = context.color.fg + '33'
-  ctx.fillRect(px - 10, 0, 20, pheight)
+  ctx.fillRect(px - thickLine * 2, 0, thickLine * 4, pheight)
 
   for (let i = 0; i < track.playback.chunks.length; i += 2) {
     const cstart = track.playback.chunks[i],
@@ -221,7 +225,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       endX = (cstart + clength - start) / scale
 
     if (!clength) {
-      ctx.lineWidth = 5
+      ctx.lineWidth = thickLine
       ctx.strokeStyle = 'rgba(255,0,0,0.5)'
       ctx.beginPath()
       ctx.lineTo(startX, 0)
@@ -231,7 +235,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       ctx.fillStyle = playing ? 'rgba(255,0,0,0.1)' : 'rgba(0,0,0,0.05)'
       ctx.fillRect(startX, 0, endX - startX, pheight)
 
-      ctx.lineWidth = 3
+      ctx.lineWidth = lineWidth
       ctx.strokeStyle = 'rgba(255,0,0,0.5)'
       ctx.beginPath()
       ctx.lineTo(startX, 0)
@@ -258,7 +262,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
     }
   }
 
-  ctx.lineWidth = 3
+  ctx.lineWidth = lineWidth
   ctx.strokeStyle = 'rgb(255,0,0)'
   ctx.beginPath()
   ctx.lineTo(px, 0)

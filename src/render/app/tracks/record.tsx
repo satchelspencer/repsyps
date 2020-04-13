@@ -8,6 +8,7 @@ import { batchActions } from 'redux-batched-actions'
 
 import { useSelector, useDispatch, useStore } from 'render/redux/react'
 import { getPath } from 'render/loading/app-paths'
+import { canvasScale } from 'render/util/env'
 
 import audio, { RATE } from 'render/util/audio'
 import extend from 'render/util/extend'
@@ -93,8 +94,8 @@ const Recording = memo(
     const container = useRef(null),
       pos = useMeasure(container)
 
-    const pwidth = pos.width * 2,
-      pheight = pos.height * 2,
+    const pwidth = pos.width * canvasScale,
+      pheight = pos.height * canvasScale,
       drawBuffer = useMemo(() => new Float32Array(pwidth * 2), [pos.width]),
       scale = 200,
       sampleWidth = scale * pwidth,
@@ -216,7 +217,7 @@ const Recording = memo(
           </TimeCode>
         </RecordingControls>
         <WaveformWrapper inRef={container}>
-          <RecCanvas inRef={canvasRef} width={pos.width * 2} height={pos.height * 2} />
+          <RecCanvas inRef={canvasRef} width={pos.width * canvasScale} height={pos.height * canvasScale} />
         </WaveformWrapper>
         <RecordingControls>
           <Icon scale={1.4} asButton onClick={handleCancel} name="close-thin" />

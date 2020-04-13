@@ -15,6 +15,7 @@ import * as Types from 'render/util/types'
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
+import {canvasScale} from 'render/util/env'
 
 import getImpulses from 'render/util/impulse-detect'
 
@@ -34,7 +35,6 @@ import {
 } from './mouse'
 import TrackControls from './track-control'
 import { palette } from 'src/render/components/theme'
-import sources from 'src/render/redux/reducers/sources'
 
 const TrackWrapper = SortableElement(ctyled.div
   .attrs({ selected: false, warn: false })
@@ -267,6 +267,7 @@ const Track = memo(
       ),
       handleDoubleClick = useCallback(
         (e) => {
+          e.preventDefault()
           const pos = getRelativePos(e, left, top)
           selectBoundHandlers.doubleClick(clickCtxt, pos, view, source.bounds)
         },
@@ -301,8 +302,8 @@ const Track = memo(
           <TrackCanvas
             selected={track.selected}
             inRef={canvasRef}
-            width={width * 2}
-            height={height * 2}
+            width={width * canvasScale}
+            height={height * canvasScale}
           />
         </TrackCanvasWrapper>
       </>

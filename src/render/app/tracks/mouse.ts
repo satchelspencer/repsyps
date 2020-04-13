@@ -5,6 +5,7 @@ import { useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import { getTimeFromPosition, getBoundIndex, getNextBoundIndex } from './utils'
 import * as Types from 'render/util/types'
+import {canvasScale} from 'render/util/env'
 
 import { ClickEventContext, ViewContext } from './track'
 
@@ -72,7 +73,7 @@ export function useOffsetTrack(trackId: string) {
       },
       mouseMove(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
         if (startX !== -1) {
-          const offset = (pos.x - startX) * 2 * view.scale
+          const offset = (pos.x - startX) * canvasScale * view.scale
           dispatch(
             Actions.setTrackSourceParams({
               trackId,
