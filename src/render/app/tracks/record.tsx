@@ -61,6 +61,7 @@ const RecCanvas = ctyled.canvas.extend`
   position:absolute;
   width:100%;
   height:100%;
+  image-rendering:pixelated;
 `
 
 const UPDATE_THRESH = 44100 / 20
@@ -217,7 +218,11 @@ const Recording = memo(
           </TimeCode>
         </RecordingControls>
         <WaveformWrapper inRef={container}>
-          <RecCanvas inRef={canvasRef} width={pos.width * canvasScale} height={pos.height * canvasScale} />
+          <RecCanvas
+            inRef={canvasRef}
+            width={pos.width * canvasScale}
+            height={pos.height * canvasScale}
+          />
         </WaveformWrapper>
         <RecordingControls>
           <Icon scale={1.4} asButton onClick={handleCancel} name="close-thin" />

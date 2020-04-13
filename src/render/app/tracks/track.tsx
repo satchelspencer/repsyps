@@ -67,6 +67,7 @@ const TrackCanvas = ctyled.canvas.attrs({ selected: false }).extend`
   width:100%;
   height:100%;
   transition:0.15s all;
+  image-rendering:pixelated;
 `
 
 export interface TrackContainerProps {
