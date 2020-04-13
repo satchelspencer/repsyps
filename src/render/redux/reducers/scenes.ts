@@ -74,7 +74,7 @@ export function updateSceneIndex(
             rvalue = state.live.controlValues[pos],
             value = rvalue === undefined ? 1 : rvalue
           if (control && !control.absolute)
-            return binding.twoway ? 1 : value > 0.5 ? 1 : 0
+            return !binding || binding.twoway ? 1 : value > 0.5 ? 1 : 0
           else return value
         }),
         sceneIndex,

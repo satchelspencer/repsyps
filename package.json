@@ -5,11 +5,12 @@
   "scripts": {
     "start": "electron-webpack dev",
     "build": "node-gyp configure build --libsdir=\"$(pwd)/lib\"",
+    "install": "node-gyp configure build --libsdir=\"$(pwd)/lib\"",
     "test-native": "node src/native/test.js",
     "clean": "node-gyp clean",
     "build-electron": "electron-webpack",
-    "dist": "yarn build-electron && electron-builder",
-    "dist:dir": "yarn dist --dir -c.compression=store -c.mac.identity=null"
+    "dist": "yarn build-electron && electron-builder -c.mac.identity=null",
+    "dist-sign": "yarn build-electron && electron-builder -c.afterSign=conf/notarize.js"
   },
   "build": {
     "appId": "repsyps",
@@ -19,13 +20,7 @@
       "!docs/*",
       "build/*/*",
       "lib/spleeter/**/*",
-      "lib/portaudio/lib/**/*",
-      "lib/liquid-dsp/libliquid*",
-      "lib/libtensorflow/lib/*",
-      "lib/ffmpeg-4.2.2/libavutil/libavutil*",
-      "lib/ffmpeg-4.2.2/libavcodec/libavcodec*",
-      "lib/ffmpeg-4.2.2/libavformat/libavformat*",
-      "lib/ffmpeg-4.2.2/libswresample/libswresample*"
+      "lib/libtensorflow/lib/*"
     ],
     "directories": {
       "buildResources": "conf/build"
@@ -42,7 +37,14 @@
           "icon": "conf/build/rbind.icns",
           "role": "Viewer"
         }
-      ]
+      ],
+      "hardenedRuntime": true,
+      "entitlements": "conf/build/entitlements.plist",
+      "entitlementsInherit": "conf/build/entitlements.plist",
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "sign": false
     },
     "win": {
       "fileAssociations": [
@@ -135,6 +137,7 @@
     "deox": "^3.2.1",
     "electron-context-menu": "^0.14.0",
     "electron-devtools-installer": "^2.2.4",
+    "electron-notarize": "^0.3.0",
     "express": "^4.17.1",
     "file-loader": "^4.2.0",
     "jsondiffpatch": "^0.4.1",

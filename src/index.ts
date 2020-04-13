@@ -5,12 +5,13 @@ import contextMenu from 'electron-context-menu'
 import * as imp from 'electron-devtools-installer'
 import * as Splashscreen from '@trodi/electron-splashscreen'
 
-contextMenu({
-  showInspectElement: true,
-})
-
 const isDevelopment = process.env.NODE_ENV !== 'production'
 let mainWindow: any = null
+
+if (isDevelopment)
+  contextMenu({
+    showInspectElement: true,
+  })
 
 dialog.showErrorBox = (title, content) => console.log('err', title, content)
 

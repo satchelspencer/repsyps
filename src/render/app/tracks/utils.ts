@@ -15,7 +15,7 @@ export function getTimeFromPosition(x: number, snap: boolean, view: ViewContext)
 export function getBoundIndex(x: number, view: ViewContext, bounds: number[]) {
   const sample = getTimeFromPosition(x, false, view)
   return _.findIndex(bounds, b => {
-    return Math.abs(b - sample) < 7 * view.scale
+    return Math.abs(b - sample) < 9 * view.scale
   })
 }
 

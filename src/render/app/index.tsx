@@ -82,7 +82,9 @@ function App() {
               trackId: selectedTrackId,
               playback: {
                 playing: !selectedTrack.playback.playing,
-                //chunkIndex: -1,
+                chunkIndex: selectedTrack.editing
+                  ? -1
+                  : selectedTrack.playback.chunkIndex,
               },
             })
           )

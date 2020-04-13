@@ -62,10 +62,10 @@
 		      ],
           "include_dirs": [
             "src/native",
-            "<@(libsdir)\portaudio\include",
-            "<@(libsdir)\libtensorflow\include",
-            "<@(libsdir)\liquid-dsp\include",
-            "<@(libsdir)\ffmpeg-4.2.2",
+            "<@(libsdir)/portaudio/include",
+            "<@(libsdir)/libtensorflow/include",
+            "<@(libsdir)/liquid-dsp/include",
+            "<@(libsdir)/ffmpeg-4.2.2",
             "<!@(node -p \"require('node-addon-api').include\")"
           ],
         }],
@@ -91,10 +91,10 @@
 		      ],
           "include_dirs": [
             "src/native",
-            "<@(libsdir)\portaudio\include",
-            "<@(libsdir)\libtensorflow\include",
-            "<@(libsdir)\liquid-dsp\include",
-            "<@(libsdir)\ffmpeg-4.2.2",
+            "<@(libsdir)/portaudio/include",
+            "<@(libsdir)/libtensorflow/include",
+            "<@(libsdir)/liquid-dsp/include",
+            "<@(libsdir)/ffmpeg-4.2.2",
             "<!@(node -p \"require('node-addon-api').include\")"
           ],
         }]

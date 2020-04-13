@@ -18,7 +18,7 @@ import * as Actions from 'render/redux/actions'
 
 import getImpulses from 'render/util/impulse-detect'
 
-import { getRelativePos } from './utils'
+import { getRelativePos, getBoundIndex, getTimeFromPosition } from './utils'
 import { useSelectable } from 'render/components/selection'
 import useMeasure from 'render/components/measure'
 
@@ -34,6 +34,7 @@ import {
 } from './mouse'
 import TrackControls from './track-control'
 import { palette } from 'src/render/components/theme'
+import sources from 'src/render/redux/reducers/sources'
 
 const TrackWrapper = SortableElement(ctyled.div
   .attrs({ selected: false, warn: false })
@@ -272,9 +273,23 @@ const Track = memo(
         [...clickCtxtValues, ...viewValues, source.bounds]
       )
 
+    const cursor = useMemo(() => {
+      if (!track.editing) return 'crosshair'
+      else {
+        const boundIndex = getBoundIndex(center, view, source.bounds),
+          sample = getTimeFromPosition(center, false, view),
+          nearChunkIndex = _.findIndex(track.playback.chunks, (chunk, i) => {
+            const csample = i % 2 === 0 ? chunk : chunk + track.playback.chunks[i - 1]
+            return Math.abs(csample - sample) < 9 * view.scale
+          })
+        return boundIndex !== -1 || nearChunkIndex !== -1 ? 'col-resize' : 'crosshair'
+      }
+    }, [center, track.editing, source.bounds, track.playback.chunks, view.scale])
+
     return (
       <>
         <TrackCanvasWrapper
+          style={{ cursor }}
           inRef={container}
           onMouseMove={handleMouseMove}
           onMouseDown={handleMouseDown}

@@ -112,7 +112,7 @@ export function useResizePlayback(trackId: string) {
         const sample = getTimeFromPosition(pos.x, false, view),
           nearChunkIndex = _.findIndex(chunks, (chunk, i) => {
             const csample = i % 2 === 0 ? chunk : chunk + chunks[i - 1]
-            return Math.abs(csample - sample) < 7 * view.scale
+            return Math.abs(csample - sample) < 9 * view.scale
           })
         setChunkIndex(nearChunkIndex)
         return nearChunkIndex !== -1
