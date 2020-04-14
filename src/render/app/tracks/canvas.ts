@@ -83,10 +83,9 @@ export default function useWaveformCanvas(
         mouseDown,
         sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
-        size: ctyledContext.theme.size,
+        size: canvasScale === 1 ? ctyledContext.theme.size / 2 : ctyledContext.theme.size,
         playLocked,
         scroll,
-        boundsAlpha: scale > 3200 ? Math.max(1 - (scale - 3200) / 1000, 0) : 1,
       }
 
     ctx.clearRect(0, 0, pwidth, pheight)
@@ -135,7 +134,6 @@ export interface DrawingContext {
   mouseDown: boolean
   playLocked: boolean
   scroll: boolean
-  boundsAlpha: number
 }
 
 const GUTTER_SIZE = 1.5
@@ -348,7 +346,7 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
 
         ctx.font = size + 'px sans-serif'
         ctx.fillStyle = color.fg
-        ctx.fillText(i + '', px + size / 2, size)
+        ctx.fillText(i + '', px + size / 2, size * 1.1)
 
         ctx.globalAlpha = 0.3
         ctx.beginPath()
