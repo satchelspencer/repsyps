@@ -76,14 +76,17 @@ export default function useWaveformCanvas(
         pheight,
         scale,
         start,
+        end: start + pwidth * scale,
         ctx,
         clickX: clickX * canvasScale,
         center: center * canvasScale,
         mouseDown,
         sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
+        size: ctyledContext.theme.size,
         playLocked,
         scroll,
+        boundsAlpha: scale > 3200 ? Math.max(1 - (scale - 3200) / 1000, 0) : 1,
       }
 
     ctx.clearRect(0, 0, pwidth, pheight)
@@ -94,6 +97,8 @@ export default function useWaveformCanvas(
 
     if (impulses) drawImpulses(drawContext, impulses)
 
+    drawGutter(drawContext, track.editing)
+    //drawCues(drawContext, track)
     drawPlayback(drawContext, track)
     drawBounds(drawContext, source.bounds, track.editing)
     drawDrag(drawContext)
@@ -108,6 +113,7 @@ export default function useWaveformCanvas(
     track.visibleSourceTrack,
     source.bounds,
     playLocked,
+    track.cues,
     ..._.values(view),
   ])
 
@@ -119,14 +125,25 @@ export interface DrawingContext {
   pheight: number
   scale: number
   start: number
+  end: number
   ctx: CanvasRenderingContext2D
   color: Color
+  size: number
   sample: number
   clickX: number
   center: number
   mouseDown: boolean
   playLocked: boolean
   scroll: boolean
+  boundsAlpha: number
+}
+
+const GUTTER_SIZE = 1.5
+
+function drawGutter(context: DrawingContext, editing: boolean) {
+  const { pwidth, size, color, ctx } = context
+  ctx.fillStyle = color.nudge(0.3).bg
+  ctx.fillRect(0, 0, pwidth, size * GUTTER_SIZE)
 }
 
 function drawWaveform(
@@ -135,14 +152,15 @@ function drawWaveform(
   loaded: boolean,
   color?: string
 ) {
-  const { pheight, pwidth, ctx } = context
+  const { pheight, pwidth, ctx, size } = context
   waveformLine(
     pwidth,
     pheight,
     ctx,
     waveform,
     color || context.color.contrast(-0.1).fg,
-    loaded
+    loaded,
+    size * GUTTER_SIZE
   )
 }
 
@@ -152,9 +170,12 @@ export function waveformLine(
   ctx: CanvasRenderingContext2D,
   waveform: Float32Array,
   color: string,
-  loaded: boolean
+  loaded: boolean,
+  offset?: number
 ) {
-  const halfHeight = pheight / 2
+  offset = offset || 0
+  const halfHeight = (pheight - offset) / 2,
+    center = halfHeight + offset
   ctx.lineWidth = 1
   ctx.strokeStyle = color
   ctx.beginPath()
@@ -164,19 +185,20 @@ export function waveformLine(
     for (let i = 0; i < waveform.length / 2; i++) {
       maxp = waveform[i * 2]
       maxn = waveform[i * 2 + 1]
-      if (maxp) ctx.lineTo(i, maxp * halfHeight + halfHeight)
-      if (maxn) ctx.lineTo(i, maxn * halfHeight + halfHeight)
-      if (!maxp && !maxn) ctx.lineTo(i, halfHeight)
+      if (maxp) ctx.lineTo(i, maxp * halfHeight + center)
+      if (maxn) ctx.lineTo(i, maxn * halfHeight + center)
+      if (!maxp && !maxn) ctx.lineTo(i, center)
     }
   } else {
-    ctx.lineTo(0, halfHeight)
-    ctx.lineTo(pwidth, halfHeight)
+    ctx.lineTo(0, center)
+    ctx.lineTo(pwidth, center)
   }
   ctx.stroke()
 }
 
 export function drawImpulses(context: DrawingContext, impulses: number[]) {
-  const { pwidth, pheight, scale, start, ctx } = context,
+  const { pwidth, pheight, scale, start, ctx, size } = context,
+    offset = size * GUTTER_SIZE,
     end = scale * pwidth + start,
     white = 500,
     trans = 100
@@ -196,8 +218,8 @@ export function drawImpulses(context: DrawingContext, impulses: number[]) {
         value = 0.1
 
       ctx.beginPath()
-      ctx.lineTo(x, pheight * (0.5 - value / 2))
-      ctx.lineTo(x, pheight * (0.5 + value / 2))
+      ctx.lineTo(x, pheight * (0.5 - value / 2) + offset / 2)
+      ctx.lineTo(x, pheight * (0.5 + value / 2) + offset / 2)
       ctx.stroke()
     }
 }
@@ -210,8 +232,38 @@ export function drawDrag(context: DrawingContext) {
   }
 }
 
+export function drawCues(context: DrawingContext, track: Types.Track) {
+  const { ctx, start, scale, size } = context
+  for (let cueIndex = 0; cueIndex < track.cues.length; cueIndex++) {
+    const cue = track.cues[cueIndex],
+      chunks = cue.playback.chunks
+    for (let i = 0; i < chunks.length; i += 2) {
+      const cstart = chunks[i],
+        clength = chunks[i + 1],
+        startX = (cstart - start) / scale,
+        endX = (cstart + clength - start) / scale
+
+      if (clength) {
+        ctx.fillStyle = 'gainsboro'
+        ctx.fillRect(startX, 0, endX - startX, size * GUTTER_SIZE)
+      }
+    }
+  }
+}
+
 export function drawPlayback(context: DrawingContext, track: Types.Track) {
-  const { pheight, scale, start, ctx, sample, playLocked, pwidth, scroll } = context,
+  const {
+      pheight,
+      scale,
+      start,
+      end: vend,
+      ctx,
+      sample,
+      playLocked,
+      pwidth,
+      scroll,
+      size,
+    } = context,
     playing = track.playback.playing
 
   let px = playLocked && scroll ? pwidth / 2 : (sample - start) / scale
@@ -231,10 +283,11 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       ctx.lineTo(startX, 0)
       ctx.lineTo(startX, pheight)
       ctx.stroke()
-    } else {
-      ctx.fillStyle = playing ? 'rgba(255,0,0,0.1)' : 'rgba(0,0,0,0.05)'
-      ctx.fillRect(startX, 0, endX - startX, pheight)
+    } else if (cstart > start - clength && vend + clength) {
+      ctx.fillStyle = playing ? 'rgba(255,0,0,0.3)' : 'rgba(0,0,0,0.1)'
+      ctx.fillRect(startX, 0, endX - startX, size * GUTTER_SIZE)
 
+      /* draw lines at start and end of current chunk */
       ctx.lineWidth = lineWidth
       ctx.strokeStyle = 'rgba(255,0,0,0.5)'
       ctx.beginPath()
@@ -257,7 +310,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
 
       if (clength) {
         ctx.fillStyle = playing ? 'rgba(255,0,0,0.03)' : 'rgba(0,0,0,0.03)'
-        ctx.fillRect(startX, 0, endX - startX, pheight)
+        ctx.fillRect(startX, 0, endX - startX, size * GUTTER_SIZE)
       }
     }
   }
@@ -271,18 +324,39 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
 }
 
 export function drawBounds(context: DrawingContext, bounds: number[], editing: boolean) {
-  const { pheight, scale, start, ctx, color } = context,
-    highContrast = color.contrast(0.3)
+  const { pheight, scale, start, end, ctx, color, size } = context,
+    highContrast = color.contrast(0.2)
 
   bounds.forEach((sample, i) => {
-    const px = (sample - start) / scale
-    ctx.lineWidth = 1
-    ctx.strokeStyle = highContrast.fg
-    if (editing) ctx.setLineDash([10, 10])
-    ctx.beginPath()
-    ctx.lineTo(px, 0)
-    ctx.lineTo(px, pheight)
-    ctx.stroke()
-    ctx.setLineDash([])
+    const next = bounds[i + 1],
+      sampleWidth = next - sample
+    if (next && sample > start - sampleWidth && next < end + sampleWidth) {
+      const pixelwidth = sampleWidth / scale,
+        px = (sample - start) / scale,
+        alpha = pixelwidth > size * 3 ? 1 : Math.max((pixelwidth - size * 2) / size, 0)
+
+      if (alpha > 0.0001) {
+        ctx.globalAlpha = alpha * 0.7
+        ctx.lineWidth = 1
+        ctx.strokeStyle = highContrast.fg
+        if (editing) ctx.setLineDash([10, 10])
+        ctx.beginPath()
+        ctx.lineTo(px, 0)
+        ctx.lineTo(px, editing ? pheight : size * GUTTER_SIZE)
+        ctx.stroke()
+        ctx.setLineDash([])
+
+        ctx.font = size + 'px sans-serif'
+        ctx.fillStyle = color.fg
+        ctx.fillText(i + '', px + size / 2, size)
+
+        ctx.globalAlpha = 0.3
+        ctx.beginPath()
+        ctx.lineTo(px, 0)
+        ctx.lineTo(px, pheight)
+        ctx.stroke()
+        ctx.globalAlpha = 1
+      }
+    }
   })
 }

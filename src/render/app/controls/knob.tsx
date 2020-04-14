@@ -69,7 +69,7 @@ export default function Knob(props: KnobProps) {
           dy = e.clientY - startPos[1],
           dist = Math.sqrt(dx * dx + dy * dy),
           dot = dx * 1 + dy * -1, //wow that's nice!
-          value = startValue + dot / 100,
+          value = startValue + dot / 200,
           clippedValue = Math.max(Math.min(value, 1), 0)
 
         if (dist > 2) {

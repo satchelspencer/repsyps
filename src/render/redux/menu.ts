@@ -117,6 +117,9 @@ export default function init(store: Store<Types.State>) {
           submenu: [
             { label: 'Undo', accelerator: 'CmdOrCtrl+Z', click: undo },
             { label: 'Redo', accelerator: 'CmdOrCtrl+Shift+Z', click: redo },
+            { type: 'separator' },
+            { role: 'copy' },
+            { role: 'paste' },
           ],
         },
         {

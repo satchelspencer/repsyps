@@ -146,7 +146,7 @@ const SourceTrack = memo((props: SourceTrackProps) => {
                 sourceTrackId: props.sourceTrackId,
               })
         ),
-      []
+      [props.trackId, props.sourceTrackId]
     )
   return (
     <SidebarItem

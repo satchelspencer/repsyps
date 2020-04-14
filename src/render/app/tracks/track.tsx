@@ -15,7 +15,7 @@ import * as Types from 'render/util/types'
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
-import {canvasScale} from 'render/util/env'
+import { canvasScale } from 'render/util/env'
 
 import getImpulses from 'render/util/impulse-detect'
 
@@ -286,7 +286,14 @@ const Track = memo(
           })
         return boundIndex !== -1 || nearChunkIndex !== -1 ? 'col-resize' : 'crosshair'
       }
-    }, [center, track.editing, source.bounds, track.playback.chunks, view.scale])
+    }, [
+      center,
+      track.editing,
+      source.bounds,
+      track.playback.chunks,
+      view.scale,
+      view.start,
+    ])
 
     return (
       <>
