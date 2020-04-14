@@ -83,7 +83,8 @@ export default function useWaveformCanvas(
         mouseDown,
         sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
-        size: canvasScale === 1 ? ctyledContext.theme.size / 1.5 : ctyledContext.theme.size,
+        size:
+          canvasScale === 1 ? ctyledContext.theme.size / 1.5 : ctyledContext.theme.size,
         playLocked,
         scroll,
       }
@@ -113,6 +114,7 @@ export default function useWaveformCanvas(
     source.bounds,
     playLocked,
     track.cues,
+    ctyledContext.theme.color,
     ..._.values(view),
   ])
 
@@ -261,6 +263,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       pwidth,
       scroll,
       size,
+      color,
     } = context,
     playing = track.playback.playing
 
@@ -282,7 +285,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       ctx.lineTo(startX, pheight)
       ctx.stroke()
     } else if (cstart > start - clength && vend + clength) {
-      ctx.fillStyle = playing ? 'rgba(255,0,0,0.3)' : 'rgba(0,0,0,0.1)'
+      ctx.fillStyle = playing ? 'rgba(255,0,0,0.3)' : color.contrast(-0.3).bq
       ctx.fillRect(startX, 0, endX - startX, size * GUTTER_SIZE)
 
       /* draw lines at start and end of current chunk */

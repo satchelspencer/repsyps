@@ -458,13 +458,11 @@ export const getLocalPersistentState = createSelector(
 )
 
 export const getMenuState = createSelector(
-  [
-    (state: Types.State) => state.settings.trackScroll,
-    (state: Types.State) => state.output,
-  ],
-  (trackScroll, output) => {
+  [(state: Types.State) => state.settings, (state: Types.State) => state.output],
+  (settings, output) => {
     return {
-      trackScroll,
+      trackScroll: settings.trackScroll,
+      darkMode: settings.darkMode,
       output,
     }
   }

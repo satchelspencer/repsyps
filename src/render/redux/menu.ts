@@ -256,6 +256,20 @@ export default function init(store: Store<Types.State>) {
                 )
               },
             },
+            {
+              label: 'Dark Mode',
+              type: 'checkbox',
+              accelerator: 'CmdOrCtrl+Shift+D',
+              checked: menuState.darkMode,
+              click: () => {
+                const currentDark = store.getState().settings.darkMode
+                store.dispatch(
+                  Actions.setSettings({
+                    darkMode: !currentDark,
+                  })
+                )
+              },
+            },
             { type: 'separator' },
             { role: 'reload', accelerator: 'Alt+R' },
             { role: 'toggledevtools' },

@@ -154,7 +154,7 @@ const SourceTrack = memo((props: SourceTrackProps) => {
       title={
         <TrackWrapper loaded={props.sourceTrack.loaded}>
           <TrackHead>
-            <Icon name="wave" scale={1.75} />
+            <Icon name="repsyps" scale={1} />
             {props.many && (
               <>
                 <Icon

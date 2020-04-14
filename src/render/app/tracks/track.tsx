@@ -273,7 +273,11 @@ const Track = memo(
           selectBoundHandlers.doubleClick(clickCtxt, pos, view, source.bounds)
         },
         [...clickCtxtValues, ...viewValues, source.bounds]
-      )
+      ),
+      handleMouseLeave = useCallback(() => {
+        setClickX(null)
+        setMouseDown(false)
+      }, [])
 
     const cursor = useMemo(() => {
       if (!track.editing) return 'crosshair'
@@ -303,6 +307,7 @@ const Track = memo(
           onMouseMove={handleMouseMove}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
           onDoubleClick={handleDoubleClick}
           dim={!loaded}
           disabled={noClick || !loaded}
@@ -343,7 +348,6 @@ export default function TrackContainer(props: TrackContainerProps) {
     visible = !wrapperRef.current || (start < vend && end > vstart),
     offTop = start < vstart,
     offBottom = end > vend,
-    fullyVisible = !wrapperRef.current || (!offTop && !offBottom),
     wayOffScreen =
       !visible && (start - vend > OFFSCREEN_THRESH || vstart - end > OFFSCREEN_THRESH),
     { isSelecting, onSelect } = useSelectable<string>('track'),

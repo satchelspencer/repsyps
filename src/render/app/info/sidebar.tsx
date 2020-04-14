@@ -113,7 +113,7 @@ const Sidebar = () => {
               )
             })}
             <TrackDetailsWrapper disabled={!isLoaded}>
-              <TrackTitle trackId={trackId} />
+              <SourceTracks trackId={trackId} />
               <TrackVolume trackId={trackId} />
               <Filter trackId={trackId} />
               <BoundsControl trackId={trackId} />
@@ -121,7 +121,6 @@ const Sidebar = () => {
               <Loop trackId={trackId} />
               <Separate trackId={trackId} />
               <Cues trackId={trackId} />
-              <SourceTracks trackId={trackId} />
             </TrackDetailsWrapper>
           </>
         )}

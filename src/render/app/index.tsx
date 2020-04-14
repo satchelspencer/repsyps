@@ -12,10 +12,8 @@ import Sidebar from './info/sidebar'
 import Header from './header/header'
 import Controls from './controls/controls'
 
-const invert = false
-
-const Wrapper = ctyled.div.styles({
-  color: (c) =>
+const Wrapper = ctyled.div.attrs({ invert: false }).styles({
+  color: (c, { invert }) =>
     invert
       ? c.as(palette.gray).absLum(0.3).contrast(0.2).invert()
       : c.as(palette.gray).absLum(0.8).contrast(0.2),
@@ -51,6 +49,7 @@ function App() {
     selectedTrack = useSelector(Selectors.getSelectedTrack),
     playing = useSelector((state) => state.playback.playing),
     scenes = useSelector((state) => state.live.scenes),
+    darkMode = useSelector((state) => state.settings.darkMode),
     trackIds = useMemo(() => _.flatMap(scenes, (scene) => scene.trackIds), [scenes]),
     dispatch = useDispatch(),
     tracklen = trackIds.length,
@@ -118,7 +117,7 @@ function App() {
   )
 
   return (
-    <Wrapper tabIndex={0} onKeyDown={handleKeyDown}>
+    <Wrapper invert={darkMode} tabIndex={0} onKeyDown={handleKeyDown}>
       <Header />
       <Body>
         <Sidebar />

@@ -26,7 +26,7 @@ const Loop = memo((props: LoopProps) => {
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch(),
-    chunkLength = chunks[chunkIndex * 2 + 1],
+    chunkLength = chunks[1],
     wrapperStyles = useMemo(() => ({ disabled: !chunkLength || !bounds.length }), [
       chunkLength,
       bounds,

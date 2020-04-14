@@ -295,6 +295,7 @@ export interface SaveStatus {
 
 export interface Settings {
   trackScroll: boolean
+  darkMode: boolean
 }
 
 export interface Recording {

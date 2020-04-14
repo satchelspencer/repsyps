@@ -5,7 +5,7 @@ import { useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import { getTimeFromPosition, getBoundIndex, getNextBoundIndex } from './utils'
 import * as Types from 'render/util/types'
-import {canvasScale} from 'render/util/env'
+import { canvasScale } from 'render/util/env'
 
 import { ClickEventContext, ViewContext } from './track'
 
@@ -279,18 +279,32 @@ export function usePlaybackBound(trackId: string) {
         bounds: number[],
         selected: boolean
       ) {
-        if (ctxt.aperiodic || !bounds.length || (!selected && ctxt.clickX === pos.x))
+        if (ctxt.aperiodic || bounds.length < 2 || (!selected && ctxt.clickX === pos.x))
           return false
-        let startBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
-          endBoundIndex = getNextBoundIndex(pos.x, view, bounds)
+        const firstBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
+          secondBoundIndex = getNextBoundIndex(pos.x, view, bounds)
 
-        if (startBoundIndex < 1) startBoundIndex = 1
-        if (endBoundIndex === -1) endBoundIndex = bounds.length - 1
+        let startBoundIndex = Math.min(firstBoundIndex, secondBoundIndex),
+          endBoundIndex = Math.max(firstBoundIndex, secondBoundIndex)
+
+        if (startBoundIndex === endBoundIndex) {
+          if (startBoundIndex === 0) {
+            startBoundIndex = 1
+            endBoundIndex = 1
+          } else if (startBoundIndex === -1) {
+            startBoundIndex = bounds.length - 1
+            endBoundIndex = bounds.length - 1
+          }
+        } else {
+          if (startBoundIndex < 1) startBoundIndex = 1
+          if (endBoundIndex === -1) endBoundIndex = bounds.length - 1
+        }
+
         if (startBoundIndex && endBoundIndex) {
           const chunkCount = Math.abs(endBoundIndex - startBoundIndex) + 1,
             initIndex = Math.min(startBoundIndex, endBoundIndex),
             chunks = _.flatten(
-              _.range(chunkCount).map(ci => {
+              _.range(chunkCount).map((ci) => {
                 const start = bounds[initIndex + ci - 1],
                   end = bounds[initIndex + ci]
                 return [start, end - start]
