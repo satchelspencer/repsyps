@@ -83,7 +83,7 @@ export default function useWaveformCanvas(
         mouseDown,
         sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
-        size: canvasScale === 1 ? ctyledContext.theme.size / 2 : ctyledContext.theme.size,
+        size: canvasScale === 1 ? ctyledContext.theme.size / 1.5 : ctyledContext.theme.size,
         playLocked,
         scroll,
       }
@@ -344,7 +344,7 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
         ctx.stroke()
         ctx.setLineDash([])
 
-        ctx.font = size + 'px sans-serif'
+        ctx.font = 'bold ' + size + 'px sans-serif'
         ctx.fillStyle = color.fg
         ctx.fillText(i + '', px + size / 2, size * 1.1)
 
