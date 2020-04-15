@@ -312,7 +312,7 @@ export default function init(store: Store<Types.State>) {
             },
             {
               label: 'Zoom In',
-              accelerator: 'CmdOrCtrl+Plus',
+              accelerator: 'CmdOrCtrl+Shift+Plus',
               click: () => {
                 const currentSize = store.getState().settings.size
                 store.dispatch(
@@ -324,7 +324,7 @@ export default function init(store: Store<Types.State>) {
             },
             {
               label: 'Zoom Out',
-              accelerator: 'CmdOrCtrl+-',
+              accelerator: 'CmdOrCtrl+Shift+-',
               click: () => {
                 const currentSize = store.getState().settings.size
                 store.dispatch(

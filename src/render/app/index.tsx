@@ -22,13 +22,25 @@ const Wrapper = ctyled.div.attrs({ invert: false }).styles({
   lined: true,
   align: 'stretch',
   column: true,
-}).extend`
+}).extendSheet`
     width:100%;
     height:100%;
     top:0;
     left:0;
     position:absolute;
     overflow:hidden;
+    & * ::-webkit-scrollbar {     
+      background-color: ${({ color }) => color.bg};
+      width:${({ size }) => size}px;
+      border-left:1px solid rgba(0,0,0,${({ color }) =>
+        color.serial().inverted ? 0.35 : 0.1});
+    }
+    & ::-webkit-scrollbar-thumb {
+      background: ${({ color }) => color.contrast(-0.2).nudge(0.1).bq};
+    }
+    & ::-webkit-scrollbar-thumb:hover {
+      background: ${({ color }) => color.contrast(-0.2).nudge(0.2).bq};
+    }
   `
 
 const Body = ctyled.div.styles({
