@@ -404,3 +404,13 @@ export const addTrackToScene = createAction<{
 export const createScene = createAction<number>('CREATE_SCENE')
 
 export const deleteScene = createAction<number>('DELETE_SCENE')
+
+export const cycleScenes = createAction<number>('CYCLE_SCENES')
+
+export const deleteAfter = createAction<number>('DELETE_SCENES_AFTER')
+
+export const loadScenes = createAction<{
+  insertIndex: number
+  state: Types.PersistentState
+  fromPath: string
+}>('LOAD_SCENES')

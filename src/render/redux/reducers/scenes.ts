@@ -1,12 +1,16 @@
 import { createReducer } from 'deox'
 import * as _ from 'lodash'
 import arrayMove from 'array-move'
+import pathUtils from 'path'
 
 import * as Types from 'render/util/types'
 import * as Actions from '../actions'
 import * as Selectors from '../selectors'
 import { defaultState, defaultScene } from '../defaults'
 import { applyCue } from './cues'
+import uid from 'render/util/uid'
+
+import globalReducer, { updateSourcesPaths } from './global'
 
 export function updateSceneIndex(
   state: Types.State,
@@ -191,4 +195,111 @@ export default createReducer(defaultState, (handle) => [
       newSceneIndex
     )
   }),
+  handle(Actions.cycleScenes, (state, { payload: startingSceneIndex }) => {
+    if (startingSceneIndex >= state.live.scenes.length) return state
+    else {
+      const newScenes = [...state.live.scenes],
+        movedScene = newScenes.splice(startingSceneIndex, 1)
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          scenes: newScenes.concat(movedScene),
+        },
+      }
+    }
+  }),
+  handle(Actions.deleteAfter, (state, { payload: afterSceneIndex }) => {
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        scenes: state.live.scenes.slice(0, afterSceneIndex + 1),
+      },
+    }
+  }),
+  handle(Actions.loadScenes, (state, { payload }) => {
+    const newState = globalReducer(
+        defaultState,
+        Actions.loadPersisted({
+          state: payload.state,
+          reset: true,
+        })
+      ),
+      idMap: { [id: string]: string } = {}
+
+    _.each(newState.sources, (source, sourceId) => {
+      if (state.sources[sourceId]) {
+        const suffix = '_' + uid().substr(0, 5)
+        idMap[sourceId] = sourceId + suffix
+        _.each(source.sourceTracks, (_, sourceTrackId) => {
+          idMap[sourceTrackId] = sourceTrackId + suffix
+        })
+      }
+    })
+
+    const mappedState = remap(newState, idMap),
+      newScenes = [...state.live.scenes]
+    newScenes.splice(payload.insertIndex, 0, ...mappedState.live.scenes)
+
+    return {
+      ...state,
+      sources: {
+        ...state.sources,
+        ...updateSourcesPaths(
+          mappedState.sources,
+          payload.fromPath,
+          pathUtils.dirname(state.save.path || '')
+        ),
+      },
+      live: {
+        ...state.live,
+        tracks: {
+          ...state.live.tracks,
+          ..._.mapValues(mappedState.live.tracks, (track) => ({
+            ...track,
+            selected: false,
+          })),
+        },
+        scenes: newScenes,
+      },
+    }
+  }),
 ])
+
+export type IdMap = { [id: string]: string }
+
+export function remap(input: Types.State, idMap: IdMap): Types.State {
+  const state = applyIdMap(input, idMap)
+  return {
+    ...state,
+    live: {
+      ...state.live,
+      scenes: state.live.scenes.map((scene) => {
+        return {
+          ...scene,
+          trackIds: scene.trackIds.map((id) => idMap[id] || id),
+        }
+      }),
+      tracks: _.mapValues(state.live.tracks, (track) => {
+        return {
+          ...track,
+          visibleSourceTrack: idMap[track.visibleSourceTrack] || track.visibleSourceTrack,
+        }
+      }),
+    },
+  }
+}
+
+export function applyIdMap<T>(obj: T, idMap: IdMap): T {
+  if (_.isPlainObject(obj)) {
+    const res = {}
+    for (var key in obj) {
+      const k = idMap[key] || key
+      res[k] = applyIdMap(obj[key], idMap)
+    }
+    return res as T
+  } else if (_.isArray(obj)) {
+    return obj.map((v) => applyIdMap(v, idMap)) as any
+  } else return obj
+}

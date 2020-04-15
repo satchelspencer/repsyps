@@ -37,18 +37,38 @@ export function saveLocalStorage(store: Store<Types.State>) {
   localStorage.setItem('repsyps:local', JSON.stringify(version(lpersisted)))
 }
 
-export function loadProject(path: string, store: Store<Types.State>) {
+function getPropjectFromFile(path: string) {
   const raw = fs.readFileSync(path, 'utf8')
   try {
     const state = JSON.parse(raw),
       migrated = apply(state, migration) as Versioned<Types.PersistentState>
     if (migrated.version === env.version) {
-      store.dispatch(Actions.reset())
-      store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
-      store.dispatch(Actions.loadPersisted({ state: migrated.state, reset: true }))
-    }
+      return migrated.state
+    } else return null
   } catch (e) {
-    console.log('load err', e)
+    return null
+  }
+}
+
+export function loadProject(path: string, store: Store<Types.State>) {
+  const state = getPropjectFromFile(path)
+  if (state) {
+    store.dispatch(Actions.reset())
+    store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
+    store.dispatch(Actions.loadPersisted({ state, reset: true }))
+  }
+}
+
+export function loadProjectScenes(
+  path: string,
+  insertIndex: number,
+  store: Store<Types.State>
+) {
+  const state = getPropjectFromFile(path)
+  if (state) {
+    store.dispatch(
+      Actions.loadScenes({ state, insertIndex, fromPath: pathUtils.dirname(path) })
+    )
   }
 }
 

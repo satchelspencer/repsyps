@@ -53,7 +53,9 @@ export const makeGetTrackIndex = () =>
     (scene, prevScene, trackId) => {
       const currentSceneIndex = scene.trackIds.indexOf(trackId)
       return currentSceneIndex === -1
-        ? prevScene.trackIds.indexOf(trackId) - prevScene.trackIds.length
+        ? prevScene
+          ? prevScene.trackIds.indexOf(trackId) - prevScene.trackIds.length
+          : -1
         : currentSceneIndex
     }
   )
@@ -458,13 +460,20 @@ export const getLocalPersistentState = createSelector(
 )
 
 export const getMenuState = createSelector(
-  [(state: Types.State) => state.settings, (state: Types.State) => state.output],
-  (settings, output) => {
+  [
+    (state: Types.State) => state.settings,
+    (state: Types.State) => state.output,
+    (state: Types.State) => state.live.sceneIndex,
+    (state: Types.State) => state.live.scenes.length,
+  ],
+  (settings, output, sceneIndex, scenesCount) => {
     return {
       trackScroll: settings.trackScroll,
       darkMode: settings.darkMode,
       size: settings.size,
       updateRate: settings.updateRate,
+      sceneIndex,
+      scenesCount,
       output,
     }
   }

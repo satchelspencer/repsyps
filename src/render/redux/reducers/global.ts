@@ -3,6 +3,7 @@ import * as _ from 'lodash'
 import pathUtils from 'path'
 
 import * as Actions from '../actions'
+import * as Types from 'render/util/types'
 import {
   defaultState,
   defaultTrack,
@@ -12,6 +13,31 @@ import {
 } from '../defaults'
 import { updateSceneIndex } from './scenes'
 import { getCuePlayback } from './cues'
+
+export function updateSourcesPaths(
+  sources: Types.Sources,
+  lastPath: string,
+  nextPath: string
+): Types.Sources {
+  if (lastPath === nextPath) return sources
+  else
+    return _.mapValues(sources, (source) => {
+      return {
+        ...source,
+        sourceTracks: _.mapValues(source.sourceTracks, (sourceTrack) => {
+          const absSource =
+            sourceTrack.source &&
+            (pathUtils.isAbsolute(sourceTrack.source)
+              ? sourceTrack.source
+              : pathUtils.resolve(lastPath, sourceTrack.source))
+          return {
+            ...sourceTrack,
+            source: nextPath ? pathUtils.relative(nextPath, absSource) : absSource,
+          }
+        }),
+      }
+    })
+}
 
 export default createReducer(defaultState, (handle) => [
   handle(Actions.reset, (state) => {
@@ -173,30 +199,11 @@ export default createReducer(defaultState, (handle) => [
   handle(Actions.setSaveStatus, (state, { payload: saveStatus }) => {
     const lastPath = state.save.path ? pathUtils.dirname(state.save.path) : '',
       nextPath = pathUtils.dirname(saveStatus.path)
-    let newSources = state.sources
-    if (lastPath !== nextPath) {
-      newSources = _.mapValues(state.sources, (source) => {
-        return {
-          ...source,
-          sourceTracks: _.mapValues(source.sourceTracks, (sourceTrack) => {
-            const absSource =
-              sourceTrack.source &&
-              (pathUtils.isAbsolute(sourceTrack.source)
-                ? sourceTrack.source
-                : pathUtils.resolve(lastPath, sourceTrack.source))
-            return {
-              ...sourceTrack,
-              source: nextPath ? pathUtils.relative(nextPath, absSource) : absSource,
-            }
-          }),
-        }
-      })
-    }
 
     return {
       ...state,
       save: saveStatus,
-      sources: newSources,
+      sources: updateSourcesPaths(state.sources, lastPath, nextPath),
     }
   }),
   handle(Actions.setSettings, (state, { payload: newSettings }) => {

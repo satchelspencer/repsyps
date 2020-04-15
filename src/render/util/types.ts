@@ -22,9 +22,13 @@ export interface PersistentTrackSource {
 export interface TrackSource {
   name: string
   source: string
+  streamIndex: number
   loaded: boolean
   missing: boolean
-  streamIndex: number
+}
+
+export interface TrackSources {
+  [sourceTrackId: string]: TrackSource
 }
 
 export interface PersistentSource {
@@ -38,7 +42,7 @@ export interface Source {
   name: string
   bounds: Bounds
   boundsAlpha: number
-  sourceTracks: { [sourceTrackId: string]: TrackSource }
+  sourceTracks: TrackSources
 }
 
 export interface PersistentSources {

@@ -7,7 +7,12 @@ import * as Selectors from './selectors'
 
 import { getPath, getAppPath } from 'render/loading/app-paths'
 import { loadBindings, saveBindings } from 'render/loading/bindings'
-import { loadProject, saveProject, exportProject } from 'render/loading/project'
+import {
+  loadProject,
+  saveProject,
+  exportProject,
+  loadProjectScenes,
+} from 'render/loading/project'
 import { undo, redo } from './history'
 import audio from 'render/util/audio'
 
@@ -133,28 +138,74 @@ export default function init(store: Store<Types.State>) {
             { type: 'separator' },
             {
               label: 'New Scene After',
-              //accelerator: 'CmdOrCtrl+N',
+              accelerator: 'CmdOrCtrl+Shift+N',
               click: () => {
-                const sceneIndex = store.getState().live.sceneIndex
                 store.dispatch(Actions.selectTrackExclusive(null))
-                store.dispatch(Actions.createScene(sceneIndex + 1))
+                store.dispatch(Actions.createScene(menuState.sceneIndex + 1))
               },
             },
             {
               label: 'New Scene Before',
-              //accelerator: 'CmdOrCtrl+Shift+N',
+              accelerator: 'CmdOrCtrl+Alt+N',
               click: () => {
-                const sceneIndex = store.getState().live.sceneIndex
                 store.dispatch(Actions.selectTrackExclusive(null))
-                store.dispatch(Actions.createScene(sceneIndex))
+                store.dispatch(Actions.createScene(menuState.sceneIndex))
               },
             },
             { type: 'separator' },
             {
-              label: 'Delete Scene',
+              label: 'Import Scene Next',
+              accelerator: 'CmdOrCtrl+Shift+I',
               click: () => {
-                const sceneIndex = store.getState().live.sceneIndex
-                store.dispatch(Actions.deleteScene(sceneIndex))
+                const path = dialog.showOpenDialog({
+                  defaultPath: getPath('projects'),
+                  filters: [{ name: 'repsyps project', extensions: ['syp'] }],
+                })
+                if (path && path[0])
+                  loadProjectScenes(path[0], menuState.sceneIndex + 1, store)
+              },
+            },
+            {
+              label: 'Import Scene to End',
+              accelerator: 'CmdOrCtrl+Alt+I',
+              click: () => {
+                const path = dialog.showOpenDialog({
+                  defaultPath: getPath('projects'),
+                  filters: [{ name: 'repsyps project', extensions: ['syp'] }],
+                })
+                if (path && path[0])
+                  loadProjectScenes(path[0], menuState.scenesCount, store)
+              },
+            },
+            { type: 'separator' },
+            {
+              label: 'Skip Next',
+              accelerator: 'CmdOrCtrl+Shift+Right',
+              enabled: menuState.sceneIndex < menuState.scenesCount - 2,
+              click: () => {
+                store.dispatch(Actions.cycleScenes(menuState.sceneIndex + 1))
+              },
+            },
+            {
+              label: 'Delete Next',
+              accelerator: 'CmdOrCtrl+Alt+Right',
+              enabled: menuState.sceneIndex < menuState.scenesCount - 1,
+              click: () => {
+                store.dispatch(Actions.deleteScene(menuState.sceneIndex + 1))
+              },
+            },
+            {
+              label: 'Delete Following',
+              accelerator: 'CmdOrCtrl+Alt+Shift+Right',
+              enabled: menuState.sceneIndex < menuState.scenesCount - 1,
+              click: () => store.dispatch(Actions.deleteAfter(menuState.sceneIndex)),
+            },
+            { type: 'separator' },
+            {
+              label: 'Delete Scene',
+              accelerator: 'CmdOrCtrl+Shift+Backspace',
+              click: () => {
+                store.dispatch(Actions.deleteScene(menuState.sceneIndex))
               },
             },
           ],
@@ -298,6 +349,10 @@ export default function init(store: Store<Types.State>) {
             { type: 'separator' },
             { role: 'reload', accelerator: 'Alt+R' },
             { role: 'toggledevtools' },
+            // { type: 'separator' },
+            // { role: 'resetzoom' },
+            // { role: 'zoomin' },
+            // { role: 'zoomout' },
             { type: 'separator' },
             {
               label: 'Reset Zoom',
