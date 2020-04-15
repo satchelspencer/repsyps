@@ -293,9 +293,13 @@ export interface SaveStatus {
   path: string
 }
 
+export type UpdateRate = 'high' | 'medium' | 'low'
+
 export interface Settings {
   trackScroll: boolean
   darkMode: boolean
+  size: number
+  updateRate: UpdateRate
 }
 
 export interface Recording {

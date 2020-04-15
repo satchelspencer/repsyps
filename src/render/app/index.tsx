@@ -49,7 +49,7 @@ function App() {
     selectedTrack = useSelector(Selectors.getSelectedTrack),
     playing = useSelector((state) => state.playback.playing),
     scenes = useSelector((state) => state.live.scenes),
-    darkMode = useSelector((state) => state.settings.darkMode),
+    { darkMode, size } = useSelector((state) => state.settings),
     trackIds = useMemo(() => _.flatMap(scenes, (scene) => scene.trackIds), [scenes]),
     dispatch = useDispatch(),
     tracklen = trackIds.length,
@@ -71,53 +71,61 @@ function App() {
   }, [])
 
   const handleKeyDown = useCallback(
-    (e) => {
-      const notInInput = document.activeElement.nodeName !== 'INPUT'
-      if (e.key === ' ' && notInInput) e.preventDefault()
-      if (e.key === ' ' && !e.shiftKey && notInInput)
-        selectedTrackId &&
+      (e) => {
+        const notInInput = document.activeElement.nodeName !== 'INPUT'
+        if (e.key === ' ' && notInInput) e.preventDefault()
+        if (e.key === ' ' && !e.shiftKey && notInInput)
+          selectedTrackId &&
+            dispatch(
+              Actions.setTrackPlayback({
+                trackId: selectedTrackId,
+                playback: {
+                  playing: !selectedTrack.playback.playing,
+                  chunkIndex: -1,
+                },
+              })
+            )
+        else if (e.key === ' ' && e.shiftKey && notInInput)
           dispatch(
-            Actions.setTrackPlayback({
-              trackId: selectedTrackId,
-              playback: {
-                playing: !selectedTrack.playback.playing,
-                chunkIndex: -1,
-              },
+            Actions.updatePlayback({
+              playing: !playing,
             })
           )
-      else if (e.key === ' ' && e.shiftKey && notInInput)
-        dispatch(
-          Actions.updatePlayback({
-            playing: !playing,
-          })
-        )
-      else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        dispatch(
-          Actions.selectTrackExclusive(
-            trackIds[Math.max(trackIds.indexOf(selectedTrackId) - 1, 0)]
+        else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          dispatch(
+            Actions.selectTrackExclusive(
+              trackIds[Math.max(trackIds.indexOf(selectedTrackId) - 1, 0)]
+            )
           )
-        )
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        dispatch(
-          Actions.selectTrackExclusive(
-            trackIds[Math.min(trackIds.indexOf(selectedTrackId) + 1, tracklen - 1)]
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          dispatch(
+            Actions.selectTrackExclusive(
+              trackIds[Math.min(trackIds.indexOf(selectedTrackId) + 1, tracklen - 1)]
+            )
           )
-        )
-      } else if (e.key === 'l' && selectedTrackId)
-        dispatch(
-          Actions.setTrackPlayLock({
-            trackId: selectedTrackId,
-            playlock: !selectedTrack.playLock,
-          })
-        )
-    },
-    [selectedTrackId, selectedTrack, trackIds, playing]
-  )
+        } else if (e.key === 'l' && selectedTrackId)
+          dispatch(
+            Actions.setTrackPlayLock({
+              trackId: selectedTrackId,
+              playlock: !selectedTrack.playLock,
+            })
+          )
+      },
+      [selectedTrackId, selectedTrack, trackIds, playing]
+    ),
+    wrapperStyles = useMemo(() => {
+      return { size: (_) => size }
+    }, [size])
 
   return (
-    <Wrapper invert={darkMode} tabIndex={0} onKeyDown={handleKeyDown}>
+    <Wrapper
+      invert={darkMode}
+      styles={wrapperStyles}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
       <Header />
       <Body>
         <Sidebar />

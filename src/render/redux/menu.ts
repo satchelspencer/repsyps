@@ -270,13 +270,70 @@ export default function init(store: Store<Types.State>) {
                 )
               },
             },
+            {
+              label: 'Update Rate',
+              submenu: [
+                {
+                  label: 'High',
+                  type: 'checkbox',
+                  checked: menuState.updateRate === 'high',
+                  click: () =>
+                    store.dispatch(Actions.setSettings({ updateRate: 'high' })),
+                },
+                {
+                  label: 'Medium',
+                  type: 'checkbox',
+                  checked: menuState.updateRate === 'medium',
+                  click: () =>
+                    store.dispatch(Actions.setSettings({ updateRate: 'medium' })),
+                },
+                {
+                  label: 'Low',
+                  type: 'checkbox',
+                  checked: menuState.updateRate === 'low',
+                  click: () => store.dispatch(Actions.setSettings({ updateRate: 'low' })),
+                },
+              ],
+            },
             { type: 'separator' },
             { role: 'reload', accelerator: 'Alt+R' },
             { role: 'toggledevtools' },
             { type: 'separator' },
-            { role: 'resetzoom' },
-            { role: 'zoomin' },
-            { role: 'zoomout' },
+            {
+              label: 'Reset Zoom',
+              accelerator: 'CmdOrCtrl+0',
+              click: () => {
+                store.dispatch(
+                  Actions.setSettings({
+                    size: 11,
+                  })
+                )
+              },
+            },
+            {
+              label: 'Zoom In',
+              accelerator: 'CmdOrCtrl+Plus',
+              click: () => {
+                const currentSize = store.getState().settings.size
+                store.dispatch(
+                  Actions.setSettings({
+                    size: currentSize + 1,
+                  })
+                )
+              },
+            },
+            {
+              label: 'Zoom Out',
+              accelerator: 'CmdOrCtrl+-',
+              click: () => {
+                const currentSize = store.getState().settings.size
+                store.dispatch(
+                  Actions.setSettings({
+                    size: currentSize - 1,
+                  })
+                )
+              },
+            },
             { type: 'separator' },
             { role: 'togglefullscreen' },
           ],

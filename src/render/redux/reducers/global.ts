@@ -3,7 +3,13 @@ import * as _ from 'lodash'
 import pathUtils from 'path'
 
 import * as Actions from '../actions'
-import { defaultState, defaultTrack, defaultSource, defaultBinding } from '../defaults'
+import {
+  defaultState,
+  defaultTrack,
+  defaultSource,
+  defaultBinding,
+  defaultSettings,
+} from '../defaults'
 import { updateSceneIndex } from './scenes'
 import { getCuePlayback } from './cues'
 
@@ -16,6 +22,7 @@ export default createReducer(defaultState, (handle) => [
         bindings: state.live.bindings,
         controlPresets: state.live.controlPresets,
       },
+      settings: state.settings,
       output: state.output,
     }
   }),
@@ -93,7 +100,10 @@ export default createReducer(defaultState, (handle) => [
     return {
       ...state,
       save: localPersisted.save,
-      settings: localPersisted.settings,
+      settings: {
+        ...defaultSettings,
+        ...localPersisted.settings,
+      },
       output: {
         ...state.output,
         ...localPersisted.output,
@@ -145,7 +155,8 @@ export default createReducer(defaultState, (handle) => [
         tracks: {
           ...state.timing.tracks,
           ..._.mapValues(payload.timing.tracks, (t, trackId) => {
-            const isPlaying = state.live.tracks[trackId].playback.playing
+            const track = state.live.tracks[trackId],
+              isPlaying = track && track.playback.playing
             return isPlaying ? t.sample : state.timing.tracks[trackId]
           }),
         },

@@ -12,7 +12,11 @@ import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
 import isEqual from 'render/util/is-equal'
 
-export const UPDATE_PERIOD = 40,
+export const UPDATE_PERIODS = {
+    high: 17,
+    medium: 40,
+    low: 100,
+  },
   isDev = process.env.NODE_ENV === 'development'
 
 type TrackPlaybackState = {
@@ -215,7 +219,13 @@ export default function syncAudio(store: Store<Types.State>) {
       )
       store.dispatch(Actions.updateTime({ timing: currentTiming, commit: true }))
     }
-    setTimeout(update, Math.max(UPDATE_PERIOD - (new Date().getTime() - start), 0))
+    setTimeout(
+      update,
+      Math.max(
+        UPDATE_PERIODS[lastState.settings.updateRate] - (new Date().getTime() - start),
+        0
+      )
+    )
   }
   update()
 }

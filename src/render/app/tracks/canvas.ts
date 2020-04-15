@@ -285,7 +285,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       ctx.lineTo(startX, pheight)
       ctx.stroke()
     } else if (cstart > start - clength && vend + clength) {
-      ctx.fillStyle = playing ? 'rgba(255,0,0,0.3)' : color.contrast(-0.3).bq
+      ctx.fillStyle = playing ? 'rgba(255,0,0,0.3)' : color.contrast(-0.3).nudge(0.1).bq
       ctx.fillRect(startX, 0, endX - startX, size * GUTTER_SIZE)
 
       /* draw lines at start and end of current chunk */

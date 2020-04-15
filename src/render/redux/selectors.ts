@@ -463,6 +463,8 @@ export const getMenuState = createSelector(
     return {
       trackScroll: settings.trackScroll,
       darkMode: settings.darkMode,
+      size: settings.size,
+      updateRate: settings.updateRate,
       output,
     }
   }
