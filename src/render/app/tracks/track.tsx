@@ -370,7 +370,7 @@ export default function TrackContainer(props: TrackContainerProps) {
     }, [track.editing, track.playback.playing, track.playLock, props.trackId])
 
   useEffect(() => {
-    if (track.selected && props.listRef.current) {
+    if (track.selected && props.listRef.current && wrapperRef.current) {
       if (offTop)
         props.listRef.current.scrollTo({
           top: start,
@@ -382,7 +382,7 @@ export default function TrackContainer(props: TrackContainerProps) {
           behavior: 'smooth',
         })
     }
-  }, [track.selected])
+  }, [track.selected, wrapperRef.current])
 
   return (
     <TrackWrapper

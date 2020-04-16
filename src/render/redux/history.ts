@@ -1,5 +1,5 @@
 import { Store } from 'redux'
-import { diff, patch, unpatch, Delta, create } from 'jsondiffpatch'
+import { diff, patch, unpatch } from 'jsondiffpatch'
 import clone from 'clone'
 import _ from 'lodash'
 

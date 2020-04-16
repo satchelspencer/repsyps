@@ -6,6 +6,8 @@ import * as Selectors from '../selectors'
 import { defaultState, defaultTrackPlayback } from '../defaults'
 import { updateSceneIndex } from './scenes'
 import audio from 'render/util/audio'
+import uid from 'src/render/util/uid'
+import { IdMap, applyIdMap } from 'render/util/remap'
 
 export default createReducer(defaultState, (handle) => [
   handle(Actions.addTrack, (state, { payload }) => {
@@ -334,6 +336,57 @@ export default createReducer(defaultState, (handle) => [
           },
         },
       }
+    }
+  }),
+  handle(Actions.duplicateTrack, (state, { payload: trackId }) => {
+    const suffix = '_' + uid().substr(0, 5),
+      newTrackId = trackId + suffix
+
+    const idMap: IdMap = {}
+    _.each(
+      state.sources[trackId].sourceTracks,
+      (_, sourceTrackId) => (idMap[sourceTrackId] = sourceTrackId + suffix)
+    )
+
+    const newSource = applyIdMap(state.sources[trackId], idMap),
+      newTrack = applyIdMap(state.live.tracks[trackId], idMap)
+
+    return {
+      ...state,
+      sources: {
+        ...state.sources,
+        [newTrackId]: {
+          ...newSource,
+          sourceTracks: _.mapValues(newSource.sourceTracks, (sourceTrack) => ({
+            ...sourceTrack,
+            loaded: false,
+          })),
+        },
+      },
+      live: {
+        ...state.live,
+        tracks: {
+          ..._.mapValues(state.live.tracks, (t) =>
+            t.selected ? { ...t, selected: false } : t
+          ),
+          [newTrackId]: {
+            ...newTrack,
+            visibleSourceTrack: newTrack.visibleSourceTrack + suffix,
+            selected: true,
+          },
+        },
+        scenes: _.map(state.live.scenes, (scene) => {
+          const trackIndex = scene.trackIds.indexOf(trackId)
+          if (trackIndex !== -1) {
+            const newTrackIds = [...scene.trackIds]
+            newTrackIds.splice(trackIndex + 1, 0, newTrackId)
+            return {
+              ...scene,
+              trackIds: newTrackIds,
+            }
+          } else return scene
+        }),
+      },
     }
   }),
 ])

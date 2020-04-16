@@ -238,6 +238,15 @@ export default function init(store: Store<Types.State>) {
           label: 'Track',
           submenu: [
             {
+              label: 'Duplicate Track',
+              accelerator: 'CmdOrCtrl+D',
+              click: () => {
+                const selectedTrackId = Selectors.getSelectedTrackId(store.getState())
+                if (!selectedTrackId) return
+                store.dispatch(Actions.duplicateTrack(selectedTrackId))
+              },
+            },
+            {
               label: 'Export Track',
               click: () => {
                 const selectedTrackId = Selectors.getSelectedTrackId(store.getState())

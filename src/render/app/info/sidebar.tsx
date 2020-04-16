@@ -39,7 +39,7 @@ const TrackDetailsWrapper = ctyled.div.attrs({ disabled: false }).styles({
   disabled: (_, { disabled }) => disabled,
 })
 
-const clip = (size: number) => Math.min(Math.max(size, 25), 35)
+const clip = (size: number) => Math.min(Math.max(size, 25.5), 35)
 
 function Sidebar() {
   const trackId = useSelector(Selectors.getSelectedTrackId),

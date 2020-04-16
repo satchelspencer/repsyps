@@ -54,6 +54,8 @@ export const addTrack = createAction<{
 
 export const rmTrack = createAction<string>('REMOVE_TRACK')
 
+export const duplicateTrack = createAction<string>('DUPLICATE_TRACK')
+
 export function addTrackAndSource(path: string) {
   const id = getId(path),
     name = pathUtils.basename(path)

@@ -194,6 +194,7 @@ const Recording = memo(
         } else {
           setStarted(true)
           audio.startRecording(fromTrack)
+          dispatch(Actions.updatePlayback({ playing: true }))
         }
       }, [!recLength, fromTrack]),
       handleCancel = useCallback(() => {
@@ -230,7 +231,10 @@ const Recording = memo(
     )
   },
   (prevProps, nextProps) => {
-    return prevProps.time === nextProps.time || (!prevProps.enabled && !nextProps.enabled)
+    return (
+      (!nextProps.enabled && !prevProps.enabled) ||
+      (prevProps.time === nextProps.time && prevProps.enabled === nextProps.enabled)
+    )
   }
 )
 
