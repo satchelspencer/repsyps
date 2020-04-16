@@ -106,4 +106,5 @@ export const defaultPlayback: Types.Playback = {
     settings: defaultSettings,
     recording: defaultRecording,
     output: defaultOutput,
+    modalRoute: null
   }

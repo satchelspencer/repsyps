@@ -1,5 +1,6 @@
 import electron from 'electron'
 import { Store } from 'redux'
+import pathUtils from 'path'
 
 import * as Types from 'render/util/types'
 import * as Actions from './actions'
@@ -12,6 +13,7 @@ import {
   saveProject,
   exportProject,
   loadProjectScenes,
+  exportCurrentScene,
 } from 'render/loading/project'
 import { undo, redo } from './history'
 import audio from 'render/util/audio'
@@ -71,7 +73,7 @@ export default function init(store: Store<Types.State>) {
               click: saveAs,
             },
             {
-              label: 'Export Project',
+              label: 'Export Project With Audio',
               click: () => {
                 const path = dialog.showSaveDialog({
                   title: 'Export Project',
@@ -90,7 +92,9 @@ export default function init(store: Store<Types.State>) {
                 })
                 if (paths)
                   paths.forEach((path) => {
-                    store.dispatch(Actions.addTrackAndSource(path))
+                    if (pathUtils.extname(path) === '.syp') {
+                      loadProjectScenes(path, menuState.sceneIndex + 1, store)
+                    } else store.dispatch(Actions.addTrackAndSource(path))
                   })
               },
             },
@@ -111,6 +115,14 @@ export default function init(store: Store<Types.State>) {
                     fromTrack: Selectors.getSelectedTrackId(store.getState()),
                   })
                 )
+              },
+            },
+            { type: 'separator' },
+            {
+              label: 'Find Missing Media',
+              accelerator: 'CmdOrCtrl+F',
+              click: () => {
+                store.dispatch(Actions.setModalRoute('relink'))
               },
             },
             { type: 'separator' },
@@ -175,6 +187,18 @@ export default function init(store: Store<Types.State>) {
                 })
                 if (path && path[0])
                   loadProjectScenes(path[0], menuState.scenesCount, store)
+              },
+            },
+            { type: 'separator' },
+            {
+              label: 'Save Current Scene',
+              accelerator: 'CmdOrCtrl+Shift+E',
+              click: () => {
+                const path = dialog.showSaveDialog({
+                  title: 'Save Project',
+                  defaultPath: getPath('projects/untitled'),
+                })
+                if (path) exportCurrentScene(path + '.syp', store)
               },
             },
             { type: 'separator' },

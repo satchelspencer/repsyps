@@ -260,4 +260,10 @@ export default createReducer(defaultState, (handle) => [
       },
     }
   }),
+  handle(Actions.setModalRoute, (state, { payload: route }) => {
+    return {
+      ...state,
+      modalRoute: route,
+    }
+  }),
 ])

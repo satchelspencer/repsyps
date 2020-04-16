@@ -25,7 +25,7 @@ export const palette = {
     { color: '#e6f6e6', pos: 0.9 },
     'white',
   ],
-  wack: ['red','green', 'yellow'],
+  wack: ['red', 'green', 'yellow'],
   primary_green: ['#28a745', '#34d058', 'white'],
   primary_red: ['darkred', '#CB8A8A', 'white'],
   greenBlue: ['#28a745', { color: '#3488d0', pos: 0.25 }, 'white'],
@@ -36,4 +36,5 @@ export const palette = {
     'white',
   ],
   red: ['black', { color: '#4e0e0d', pos: 0.1 }, { color: '#f7ebea', pos: 0.9 }, 'white'],
+  redalpha: ['rgba(255,0,0,0.5)', 'rgba(255,0,0,0.5)'],
 }

@@ -42,6 +42,8 @@ export const resetPlaybackTime = createAction<void>('RESET_PLAYBACK_TIME')
 
 export const setOutputs = createAction<Partial<Types.OutputState>>('SET_OUTPUTS')
 
+export const setModalRoute = createAction<string>('SET_MODAL_ROUTE')
+
 /* track actions */
 
 export const addTrack = createAction<{

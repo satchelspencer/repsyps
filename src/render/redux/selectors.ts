@@ -1,9 +1,11 @@
 import _ from 'lodash'
 import { createSelector, defaultMemoize, createSelectorCreator } from 'reselect'
+import pathUtils from 'path'
 
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
 import { objShallowEqual } from 'render/util/is-equal'
+import { updateSourcesPaths } from 'render/redux/reducers/global'
 
 const createShallowSelector = createSelectorCreator(defaultMemoize, objShallowEqual)
 
@@ -476,5 +478,80 @@ export const getMenuState = createSelector(
       scenesCount,
       output,
     }
+  }
+)
+
+export const getSceneState = createSelector(
+  [getPersistentState, (state: Types.State) => state.live.sceneIndex],
+  (pstate, sceneIndex) => {
+    const currentScene = pstate.live.scenes[sceneIndex]
+    return {
+      ...pstate,
+      live: {
+        ...pstate.live,
+        scenes: [currentScene],
+        tracks: _.pickBy(pstate.live.tracks, (_, trackId) =>
+          currentScene.trackIds.includes(trackId)
+        ),
+      },
+      sources: _.pickBy(pstate.sources, (_, sourceId) =>
+        currentScene.trackIds.includes(sourceId)
+      ),
+    }
+  }
+)
+
+export function getSceneExport(
+  state: Types.State,
+  sceneIndex: number,
+  destPath: string
+): Types.PersistentState {
+  const pstate = getPersistentState({
+      ...state,
+      sources: updateSourcesPaths(
+        state.sources,
+        pathUtils.dirname(state.save.path),
+        pathUtils.dirname(destPath)
+      ),
+    }),
+    currentScene = pstate.live.scenes[sceneIndex]
+  return {
+    ...pstate,
+    live: {
+      ...pstate.live,
+      scenes: [currentScene],
+      tracks: _.pickBy(pstate.live.tracks, (_, trackId) =>
+        currentScene.trackIds.includes(trackId)
+      ),
+      controlPresets: {},
+      bindings: {},
+    },
+    sources: _.pickBy(pstate.sources, (_, sourceId) =>
+      currentScene.trackIds.includes(sourceId)
+    ),
+  }
+}
+
+export interface MissingSourceInfo {
+  sourceId: string
+  sourceTrackId: string
+  path: string
+}
+
+export const getMissingSources = createSelector(
+  [(state: Types.State) => state.sources],
+  (sources) => {
+    const results: MissingSourceInfo[] = []
+    _.each(sources, (source, sourceId) => {
+      _.each(source.sourceTracks, (sourceTrack, sourceTrackId) => {
+        if (sourceTrack.missing && sourceTrack.streamIndex === 0)
+          results.push({
+            sourceId,
+            sourceTrackId,
+            path: sourceTrack.source,
+          })
+      })
+    })
+    return results
   }
 )

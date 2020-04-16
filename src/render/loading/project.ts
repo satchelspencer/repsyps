@@ -72,6 +72,12 @@ export function loadProjectScenes(
   }
 }
 
+export function exportCurrentScene(path: string, store: Store<Types.State>) {
+  const state = store.getState(),
+    sceneState = Selectors.getSceneExport(state, state.live.sceneIndex, path)
+  fs.writeFileSync(path, JSON.stringify(version(sceneState)))
+}
+
 export function saveProject(path: string, store: Store<Types.State>) {
   store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
   const bindings = Selectors.getPersistentState(store.getState())

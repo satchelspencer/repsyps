@@ -350,12 +350,13 @@ export default function TrackContainer(props: TrackContainerProps) {
     wayOffScreen =
       !visible && (start - vend > OFFSCREEN_THRESH || vstart - end > OFFSCREEN_THRESH),
     { isSelecting, onSelect } = useSelectable<string>('track'),
+    hasMissingSource = _.some(_.values(source.sourceTracks), (track) => track.missing),
     handleClick = useCallback(() => {
       if (isSelecting) onSelect(props.trackId)
       else !track.selected && dispatch(Actions.selectTrackExclusive(props.trackId))
-    }, [props.trackId, isSelecting, onSelect]),
+      if (hasMissingSource) dispatch(Actions.setModalRoute('relink'))
+    }, [props.trackId, isSelecting, onSelect, hasMissingSource]),
     isLoaded = useSelector((state) => Selectors.getTrackIsLoaded(state, props.trackId)),
-    hasMissingSource = _.some(_.values(source.sourceTracks), (track) => track.missing),
     trackScroll = useSelector((state) => state.settings.trackScroll),
     inferredSample = sample || track.playback.chunks[0],
     handleMouseLeave = useCallback(() => {

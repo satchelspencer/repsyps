@@ -348,4 +348,5 @@ export interface State {
   settings: Settings
   recording: Recording
   output: OutputState
+  modalRoute: string
 }

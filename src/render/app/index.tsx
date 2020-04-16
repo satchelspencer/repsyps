@@ -11,6 +11,7 @@ import Tracks from './tracks/tracks'
 import Sidebar from './info/sidebar'
 import Header from './header/header'
 import Controls from './controls/controls'
+import Modal from './modal/modal'
 
 const Wrapper = ctyled.div.attrs({ invert: false }).styles({
   color: (c, { invert }) =>
@@ -124,6 +125,7 @@ function App() {
               playlock: !selectedTrack.playLock,
             })
           )
+        else if (e.key === 'Escape') dispatch(Actions.setModalRoute(null))
       },
       [selectedTrackId, selectedTrack, trackIds, playing]
     ),
@@ -146,6 +148,7 @@ function App() {
           <Controls />
         </BodyInner>
       </Body>
+      <Modal />
     </Wrapper>
   )
 }
