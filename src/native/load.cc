@@ -81,8 +81,6 @@ void loadSrc(
         ret = avcodec_send_packet(ainfo->aCodecContext, pkt);
         if(ret < 0){
           std::cout << "error sending packet to decoder on #" << aStreamIndex << std::endl;
-          ainfo->failed = true;
-          continue;
         }
 
         /* get raw data frame from decoder */

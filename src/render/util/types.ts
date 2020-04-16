@@ -31,6 +31,13 @@ export interface TrackSources {
   [sourceTrackId: string]: TrackSource
 }
 
+export interface SourceInfo {
+  sourceId: string
+  sourceTrackId: string
+  path: string
+  missing: boolean
+}
+
 export interface PersistentSource {
   name: string
   bounds: Bounds
@@ -304,6 +311,8 @@ export interface Settings {
   darkMode: boolean
   size: number
   updateRate: UpdateRate
+  controlsSize: number
+  sidebarSize: number
 }
 
 export interface Recording {

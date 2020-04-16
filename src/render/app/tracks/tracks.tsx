@@ -11,8 +11,7 @@ import Track from './track'
 import Recording from './record'
 
 const TrackWrapper = ctyled.div.styles({
-  height: '65%',
-  flex: 'none',
+  flex: 1,
   lined: true,
 }).extend`
   overflow:hidden;

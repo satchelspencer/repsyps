@@ -43,6 +43,7 @@ function createMainWindow() {
         })
 
   if (isDevelopment) window.webContents.openDevTools({ mode: 'detach' })
+  window.webContents.setZoomFactor(1)
 
   window.loadURL(windowUrl)
   // init things
@@ -64,6 +65,7 @@ else {
 
   ipcMain.on('connect', (e: Electron.IpcMessageEvent) => {
     console.log('ipc connected')
+    mainWindow.webContents.setZoomFactor(1)
     renderer = e.sender
     fileQueue.forEach((file) => renderer.send('openFile', file))
     fileQueue = []

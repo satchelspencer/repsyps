@@ -9,4 +9,6 @@ try {
   ratio = window.devicePixelRatio
 } catch (e) {}
 
+export const devRatio = ratio
+
 export const canvasScale = ratio

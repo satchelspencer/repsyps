@@ -1,16 +1,20 @@
 import React, { memo, useState, useCallback, useEffect, useMemo } from 'react'
+import electron from 'electron'
 import { palette } from 'render/components/theme'
 import * as _ from 'lodash'
 import ctyled, { active } from 'ctyled'
 import pathUtils from 'path'
+import { batchActions } from 'redux-batched-actions'
+import fs from 'fs'
 
 import { useSelector, useDispatch, useStore } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
-import relink from 'render/util/relink'
+import * as Types from 'render/util/types'
 
 import Icon from 'render/components/icon'
-import init from 'src/render/redux/midi-sync'
+
+const { dialog } = electron.remote
 
 const RelinkWrapper = ctyled.div.styles({
   width: 40,
@@ -65,16 +69,72 @@ const MissingSourceNameWrapper = ctyled.div.styles({ flex: 1, height: 1.2 }),
 
 function Relink() {
   const missing = useSelector(Selectors.getMissingSources),
-    [initialMissing, setInitialMissing] = useState<Selectors.MissingSourceInfo[]>([]),
-    store = useStore()
+    [initialMissing, setInitialMissing] = useState<Types.SourceInfo[]>([]),
+    store = useStore(),
+    handleRelink = useCallback(
+      (missingSource: Types.SourceInfo) => {
+        const path = dialog.showOpenDialog({
+          defaultPath: undefined,
+          title: 'replace',
+          properties: ['openFile'],
+        })
+        if (path && path[0]) {
+          const oldPath = missingSource.path,
+            actions = []
+
+          missing.forEach((source) => {
+            if (
+              source.sourceId !== missingSource.sourceId ||
+              source.sourceTrackId !== missingSource.sourceTrackId
+            ) {
+              const pathGuess = pathUtils.resolve(
+                pathUtils.dirname(path[0]),
+                pathUtils.relative(
+                  pathUtils.dirname(oldPath),
+                  pathUtils.dirname(source.path)
+                ),
+                pathUtils.basename(source.path)
+              )
+              try {
+                /* only if the path exists give it a shot */
+                fs.statSync(pathGuess)
+                actions.push(
+                  Actions.relinkTrackSource({
+                    sourceId: source.sourceId,
+                    sourceTrackId: source.sourceTrackId,
+                    newSource: pathGuess,
+                  })
+                )
+              } catch (e) {}
+            } else {
+              actions.push(
+                Actions.relinkTrackSource({
+                  sourceId: source.sourceId,
+                  sourceTrackId: source.sourceTrackId,
+                  newSource: path[0],
+                })
+              )
+            }
+          })
+
+          store.dispatch(batchActions(actions, 'RELINK_SOURCES'))
+        }
+      },
+      [missing]
+    )
 
   useEffect(() => {
-    setInitialMissing(missing)
-  }, [])
+    setInitialMissing(
+      _.uniqBy(
+        [...missing, ...initialMissing],
+        (src) => src.sourceId + '-' + src.sourceTrackId
+      )
+    )
+  }, [missing])
 
   return (
     <RelinkWrapper>
-      {initialMissing.length ? (
+      {missing.length ? (
         <MissingList>
           {initialMissing.map((source, index) => {
             const stillMissing = missing.find(
@@ -82,12 +142,7 @@ function Relink() {
                 s.sourceTrackId === source.sourceTrackId && s.sourceId === source.sourceId
             )
             return (
-              <MissingSource
-                key={index}
-                onClick={() => {
-                  relink(source.sourceId, source.sourceTrackId, store)
-                }}
-              >
+              <MissingSource key={index} onClick={() => handleRelink(source)}>
                 {stillMissing ? (
                   <Icon
                     styles={{ color: (c) => c.as(palette.redalpha) }}

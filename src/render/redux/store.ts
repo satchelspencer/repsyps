@@ -10,6 +10,7 @@ import initMenu from './menu'
 import initPersist from './persist'
 import initHistory from './history'
 import initFileAssoc from './file-assoc'
+import initSrcChecker from './src-checker'
 
 const store = createStore(
   reducer,
@@ -26,5 +27,6 @@ initMenu(store)
 initPersist(store)
 initHistory(store)
 initFileAssoc(store)
+initSrcChecker(store)
 
 export default store

@@ -86,7 +86,9 @@ export const defaultPlayback: Types.Playback = {
     trackScroll: true,
     darkMode: false,
     size: 11,
-    updateRate: 'medium'
+    updateRate: 'medium',
+    controlsSize: 35,
+    sidebarSize: 25
   },
   defaultRecording: Types.Recording = {
     enabled: false,
@@ -106,5 +108,5 @@ export const defaultPlayback: Types.Playback = {
     settings: defaultSettings,
     recording: defaultRecording,
     output: defaultOutput,
-    modalRoute: null
+    modalRoute: null,
   }

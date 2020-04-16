@@ -23,6 +23,7 @@ export default function useWaveformCanvas(
     ctxt = useRef(null),
     ctyledContext = useContext(CtyledContext),
     visibleLoaded = source.sourceTracks[track.visibleSourceTrack].loaded,
+    visibleOffset = track.playback.sourceTracksParams[track.visibleSourceTrack].offset,
     effectivePos = track.playback.playing ? 0 /* position */ : 0,
     { scale, start, impulses, width, height, clickX, center, mouseDown } = view,
     pwidth = width * canvasScale,
@@ -46,7 +47,12 @@ export default function useWaveformCanvas(
   /* main waveform compute */
   useEffect(() => {
     if (visibleLoaded && width)
-      audio.getWaveform(track.visibleSourceTrack, start, scale, drawBuffers[0])
+      audio.getWaveform(
+        track.visibleSourceTrack,
+        start - visibleOffset,
+        scale,
+        drawBuffers[0]
+      )
   }, [drawBuffers, track.visibleSourceTrack, start, scale, visibleLoaded])
   useEffect(() => {
     if (editTrackLoaded && width) {

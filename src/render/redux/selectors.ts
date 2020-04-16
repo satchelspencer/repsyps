@@ -532,26 +532,25 @@ export function getSceneExport(
   }
 }
 
-export interface MissingSourceInfo {
-  sourceId: string
-  sourceTrackId: string
-  path: string
-}
-
-export const getMissingSources = createSelector(
+export const getAllSources = createSelector(
   [(state: Types.State) => state.sources],
   (sources) => {
-    const results: MissingSourceInfo[] = []
+    const results: Types.SourceInfo[] = []
     _.each(sources, (source, sourceId) => {
       _.each(source.sourceTracks, (sourceTrack, sourceTrackId) => {
-        if (sourceTrack.missing && sourceTrack.streamIndex === 0)
+        if (sourceTrack.streamIndex === 0)
           results.push({
             sourceId,
             sourceTrackId,
             path: sourceTrack.source,
+            missing: sourceTrack.missing,
           })
       })
     })
     return results
   }
 )
+
+export const getMissingSources = createSelector([getAllSources], (sources) => {
+  return sources.filter((source) => source.missing)
+})

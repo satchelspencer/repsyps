@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import { palette } from 'render/components/theme'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
@@ -6,6 +6,7 @@ import ctyled from 'ctyled'
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
+import useMeasure from 'render/components/measure'
 
 import Tracks from './tracks/tracks'
 import Sidebar from './info/sidebar'
@@ -131,8 +132,9 @@ function App() {
     ),
     wrapperStyles = useMemo(() => {
       return { size: (_) => size }
-    }, [size])
-
+    }, [size]),
+    bodyRef = useRef(null),
+    { height } = useMeasure(bodyRef)
   return (
     <Wrapper
       invert={darkMode}
@@ -141,11 +143,11 @@ function App() {
       onKeyDown={handleKeyDown}
     >
       <Header />
-      <Body>
+      <Body inRef={bodyRef}>
         <Sidebar />
         <BodyInner>
           <Tracks />
-          <Controls />
+          <Controls bodyHeight={height} />
         </BodyInner>
       </Body>
       <Modal />

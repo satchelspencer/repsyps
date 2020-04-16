@@ -96,7 +96,7 @@ const InnerV = ctyled.div.styles({
 
 const SpeedWrapper = ctyled.div.styles({
   align: 'center',
-  justify: 'center',
+  justify: 'space-around',
   width: '100%',
   flex: 1,
   bg: true,
@@ -105,7 +105,9 @@ const SpeedWrapper = ctyled.div.styles({
   gutter: 1,
   border: 1,
   borderColor: (c) => c.contrast(-0.3),
-})
+}).extend`
+  padding:0px ${({ size }) => size / 1.6}px;
+`
 
 const CuesWrapper = ctyled.div.styles({
   width: '100%',
@@ -118,6 +120,12 @@ const CueLabel = ControlsButton.styles({
   border: 0,
 })
 
+const TrackIndex = ctyled.div.styles({
+  size: (s) => s * 1.2,
+}).extend`
+  font-weight:bold;
+`
+
 export interface TrackControlsProps {
   trackId: string
 }
@@ -128,6 +136,8 @@ function TrackControls(props: TrackControlsProps) {
     period = useSelector((state) => state.playback.period),
     isSolo = useSelector((state) => getTrackIsSolo(state, props.trackId)),
     source = useSelector((state) => state.sources[props.trackId]),
+    getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
+    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch()
 
   const barLen =
@@ -155,7 +165,7 @@ function TrackControls(props: TrackControlsProps) {
         <TrackControlsInner>
           <InnerV>
             <SpeedWrapper>
-              <Icon name="timer" scale={1.2} />
+              <TrackIndex>{trackIndex < 0 ? '-' : trackIndex + 1}</TrackIndex>
               <span>
                 {barLen > 0 ? _.round(60 / (barLen / RATE), 0) + '/m' : '??'} @{' '}
                 {_.round(baseSpeed * track.playback.alpha * boundsAlpha * 100, 0)}%
@@ -179,19 +189,38 @@ function TrackControls(props: TrackControlsProps) {
                 <b>{activeCueIndex === -1 ? 'n/a' : activeCueIndex + 1}</b>
               </CueLabel>
               <ControlsButton
-                disabled={!hasCues}
-                onClick={() =>
-                  dispatch(
-                    Actions.stepTrackCue({
-                      trackId: props.trackId,
-                      cueStep: 1,
-                    })
-                  )
-                }
+                onClick={() => {
+                  if (hasCues)
+                    dispatch(
+                      Actions.stepTrackCue({
+                        trackId: props.trackId,
+                        cueStep: 1,
+                      })
+                    )
+                  else
+                    dispatch(
+                      Actions.setTrackPlayback({
+                        trackId: props.trackId,
+                        playback: {
+                          playing: !track.playback.playing,
+                        },
+                      })
+                    )
+                }}
               >
                 <Icon
                   name={
-                    pausedOnCue ? 'play' : canNext ? (atEnd ? 'stop' : 'next') : 'play'
+                    hasCues
+                      ? pausedOnCue
+                        ? 'play'
+                        : canNext
+                        ? atEnd
+                          ? 'stop'
+                          : 'next'
+                        : 'play'
+                      : track.playback.playing
+                      ? 'pause'
+                      : 'play'
                   }
                   scale={1.2}
                 />
