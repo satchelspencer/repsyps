@@ -233,18 +233,11 @@ export type MidiFunctionName =
 export type BindingType = 'note' | 'value'
 
 export interface PersistentBinding {
-  type: BindingType
-  channel: number
-  note: number
-  function: MidiFunctionName
+  midi: number //first two bits of midi message
   twoway: boolean
 }
 
 export interface Binding extends PersistentBinding {
-  type: BindingType
-  channel: number
-  note: number
-  function: MidiFunctionName
   waiting?: boolean
   twoway: boolean
   badMidiValue: boolean

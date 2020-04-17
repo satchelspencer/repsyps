@@ -7,7 +7,7 @@ import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 import * as Types from 'render/util/types'
 
-import { shortNames, getControlName } from './utils'
+import { midiName, getControlName } from './utils'
 import Knob from './knob'
 import Pad from './pad'
 
@@ -55,9 +55,7 @@ const GridCell = memo((props: GridCellProps) => {
     displayValue = (control && control.absolute ? absValue : value) || 0
   return (
     <>
-      {binding && binding.note !== null && (
-        <CellMidi>{binding.note + shortNames[binding.function]}</CellMidi>
-      )}
+      {binding && binding.midi !== null && <CellMidi>{midiName(binding.midi)}</CellMidi>}
       {control && control.bindingType === 'value' && (
         <>
           <Knob

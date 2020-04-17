@@ -18,30 +18,46 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
   instantFunctions: Types.MidiFunctionName[] = ['note'],
   midiFnMask = parseInt('11110000', 2),
   getFunction = (byte: number) => midiFunctions[byte & midiFnMask],
-  midiChannelMask = parseInt('00001111', 2),
-  getChannel = (byte: number) => byte & midiChannelMask,
   nav: any = navigator, //any so as to allow web midi api
   outputs: { [portId: string]: any } = {}, //web midi output (no type defs)
   midiValues: { [portName: string]: { [controlId: string]: number } } = {},
   absValueSelectors: {
     [controlId: string]: (state: Types.State, control: Types.Control) => any
   } = {}
-let lastControlIds = []
+let lastControlIds = [],
+  midiChanges: { [upperBytes: number]: number } = {}
 
 export default async function init(store: Store<Types.State>) {
-  const handleMessage = ({ data }, portName) => {
+  const handleMessage = (portName) => {
       const state = store.getState(),
-        controls = Selectors.getControls(state.live),
-        [fnbyte, note, value] = data,
-        fn = getFunction(fnbyte),
-        channel = getChannel(fnbyte),
-        normValue = instantFunctions.includes(fn) ? 1 - value / 127 : value / 127
+        controls = Selectors.getControls(state.live)
 
       if (!state.live.controlsEnabled) return
 
+      let upper: any,
+        leastNote = Infinity,
+        leastUpper: number = null
+
+      for (upper in midiChanges) {
+        upper = parseInt(upper, 10)
+        const value = midiChanges[upper],
+          fnbyte = upper >> 8,
+          note = upper & 127,
+          fn = getFunction(fnbyte & midiFnMask)
+
+        /* replace with normed values */
+        midiChanges[upper] = instantFunctions.includes(fn) ? 1 - value / 127 : value / 127
+
+        if (note < leastNote) {
+          leastNote = note
+          leastUpper = upper
+        }
+      }
+
       for (let posStr in state.live.bindings) {
         const binding = state.live.bindings[posStr],
-          position = Selectors.str2pos(posStr)
+          position = Selectors.str2pos(posStr),
+          normValue = midiChanges[binding.midi]
 
         if (binding.waiting) {
           store.dispatch(
@@ -51,10 +67,7 @@ export default async function init(store: Store<Types.State>) {
                   position,
                   binding: {
                     ...binding,
-                    type: instantFunctions.includes(fn) ? 'note' : 'value',
-                    note,
-                    channel,
-                    function: fn,
+                    midi: leastUpper,
                     waiting: false,
                   },
                 }),
@@ -64,18 +77,14 @@ export default async function init(store: Store<Types.State>) {
                 }),
                 Actions.setControlGroupValue({
                   position,
-                  value: normValue,
+                  value: midiChanges[leastUpper],
                 }),
               ],
               'BIND_MIDI'
             )
           )
           break
-        } else if (
-          binding.note === note &&
-          binding.channel === channel &&
-          binding.function === fn
-        ) {
+        } else if (normValue !== undefined) {
           const control = controls[posStr],
             lastValue = state.live.controlValues[posStr] || 0
           midiValues[portName][posStr] = normValue
@@ -106,24 +115,22 @@ export default async function init(store: Store<Types.State>) {
           }
         }
       }
+      midiChanges = {}
     },
-    throttledHandle = _.throttle(handleMessage, 100, { leading: false }),
+    throttledHandle = _.throttle(handleMessage, 100, { trailing: true }),
     wrappedThrottleHandle = (message, portName) => {
-      const [fn, note, value] = message.data
-      if (!(note & 32)) { 
-        if (value === 0 || value === 127) {
-          handleMessage(message, portName)
-          throttledHandle(message, portName)
-        } else throttledHandle(message, portName)
-      }
+      const [fn, note, value] = message.data,
+        fname = getFunction(fn)
+      midiChanges[(fn << 8) + note] = value
+
+      if (value === 0 || value === 127 || instantFunctions.includes(fname)) {
+        handleMessage(portName)
+        //throttledHandle(portName)
+      } else throttledHandle(portName)
     },
     addInput = (port) => {
       console.log('connect', port.name)
-      port.onmidimessage = (mes) => {
-        const fn = getFunction(mes.data[0])
-        if (instantFunctions.includes(fn)) handleMessage(mes, port.name)
-        else wrappedThrottleHandle(mes, port.name)
-      }
+      port.onmidimessage = (mes) => wrappedThrottleHandle(mes, port.name)
     },
     removeInput = (port) => {
       console.log('disconnect', port.name)
@@ -171,7 +178,7 @@ export default async function init(store: Store<Types.State>) {
       for (let controlPos in currentControls) {
         const control = currentControls[controlPos],
           binding = state.live.bindings[controlPos]
-        if (binding && binding.note) {
+        if (binding && binding.midi) {
           const absValue =
             control && control.absolute
               ? absValueSelectors[controlPos](state, control.controls[0])
@@ -181,11 +188,9 @@ export default async function init(store: Store<Types.State>) {
               const midiValue = midiValues[outputId][controlPos]
               if (midiValue === undefined || Math.abs(absValue - midiValue) > 0.02) {
                 if (binding.twoway) {
-                  outputs[outputId].send([
-                    176 + binding.channel,
-                    binding.note,
-                    Math.floor(absValue * 127),
-                  ])
+                  const note = binding.midi & 127,
+                    fn = binding.midi >> 8
+                  outputs[outputId].send([fn, note, Math.floor(absValue * 127)])
                 } else if (!binding.badMidiValue) {
                   store.dispatch(
                     Actions.setBadMidiValue({

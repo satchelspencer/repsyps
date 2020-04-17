@@ -35,10 +35,7 @@ export const defaultPlayback: Types.Playback = {
   },
   defaultBindings: Types.Bindings = {},
   defaultBinding: Types.Binding = {
-    type: 'value',
-    channel: null,
-    note: null,
-    function: null,
+    midi: null,
     twoway: true,
     badMidiValue: false,
     lastMidiValue: -1,
@@ -88,7 +85,7 @@ export const defaultPlayback: Types.Playback = {
     size: 11,
     updateRate: 'medium',
     controlsSize: 35,
-    sidebarSize: 25.7
+    sidebarSize: 25.7,
   },
   defaultRecording: Types.Recording = {
     enabled: false,

@@ -18,7 +18,7 @@ import {
 } from 'render/components/misc'
 import Icon from 'render/components/icon'
 
-import { shortNames, getControlName, getDefaultBindingType, getIcon } from './utils'
+import { midiName, getControlName, getDefaultBindingType, getIcon } from './utils'
 
 const ControlSelectableButton = SelectableButton.styles({
   color: (c, { selected }) =>
@@ -39,7 +39,7 @@ const ControlInspector = ctyled.div.styles({
 })
 
 const ControlInspectorBody = ctyled.div.styles({
-  flex: 1, 
+  flex: 1,
 })
 
 const BodyInner = ctyled.div.styles({
@@ -122,7 +122,6 @@ function PositionDetail(props: ControlDetailProps) {
         Actions.setBinding({
           position: props.position,
           binding: {
-            type: 'value',
             waiting: shouldStartWaiting,
           },
         })
@@ -236,9 +235,7 @@ function PositionDetail(props: ControlDetailProps) {
               />
             </ControlBloc>
             <SidebarValue>
-              {selectedBinding && selectedBinding.note
-                ? selectedBinding.note + shortNames[selectedBinding.function]
-                : '--'}
+              {selectedBinding && selectedBinding.midi ? midiName(selectedBinding.midi) : '--'}
             </SidebarValue>
             <Icon
               disabled={!selectedBinding}

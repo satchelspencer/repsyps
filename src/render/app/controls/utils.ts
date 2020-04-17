@@ -2,15 +2,23 @@ import _ from 'lodash'
 
 import * as Types from 'render/util/types'
 
-export const shortNames: { [fn: string]: string } = {
-  note: 'n',
-  'note-off': 'no',
-  'note-on': 'n',
-  'poly-aftertouch': 'pa',
-  control: 'c',
-  program: 'p',
-  'channel-aftertouch': 'ca',
-  'pitch-bend': 'pb',
+const midiFunctions: { [byte: number]: string } = {
+    128: 'n',
+    144: 'n',
+    160: 'pa',
+    176: 'c',
+    192: 'p',
+    207: 'ca',
+    224: 'pb',
+  },
+  midiFnMask = parseInt('11110000', 2)
+
+export function midiName(midi: number) {
+  const fnbyte = midi >> 8,
+    note = midi & 127,
+    channel = fnbyte & 15
+
+  return `${midiFunctions[fnbyte & midiFnMask]}${note}.${channel}`
 }
 
 function normIndex(index: number) {

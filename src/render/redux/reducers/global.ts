@@ -90,10 +90,13 @@ export default createReducer(defaultState, (handle) => [
           ...pLive,
           bindings: {
             ...state.live.bindings,
-            ..._.mapValues(pLive.bindings, (pbinding) => ({
-              ...defaultBinding,
-              ...pbinding,
-            })),
+            ..._.mapValues(
+              _.pickBy(pLive.bindings, (b) => (b as any).note === undefined),
+              (pbinding) => ({
+                ...defaultBinding,
+                ...pbinding,
+              })
+            ),
           },
           controlPresets: {
             ...state.live.controlPresets,
