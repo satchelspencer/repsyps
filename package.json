@@ -7,7 +7,6 @@
     "build": "node-gyp configure build",
     "install": "node-gyp configure build",
     "test-native": "node src/native/test.js",
-    "postinstall": "electron-rebuild",
     "clean": "node-gyp clean",
     "build-electron": "electron-webpack",
     "dist": "yarn build-electron && electron-builder -c.mac.identity=null",
