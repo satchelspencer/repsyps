@@ -10,3 +10,4 @@ lib/
 yalc.lock
 .yalc/
 .env
+bin/

@@ -138,7 +138,6 @@
     "electron-context-menu": "^0.14.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-notarize": "^0.3.0",
-    "electron-rebuild": "^1.10.1",
     "express": "^4.17.1",
     "file-loader": "^4.2.0",
     "jsondiffpatch": "^0.4.1",
