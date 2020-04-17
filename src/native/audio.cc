@@ -352,7 +352,7 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
       if(REPSYS_LOG) std::cout << "free track " << mixTrackPair.first << std::endl;
       state.mixTracks[mixTrackPair.first] = NULL;
       if(mixTrack->hasFilter){
-        for(int filterIndex = 0;filterIndex<mixTrack->filters.size();filterIndex++){
+        for(unsigned int filterIndex = 0;filterIndex<mixTrack->filters.size();filterIndex++){
           firfilt_rrrf_destroy(mixTrack->filters[filterIndex]);
         }
       }

@@ -2,6 +2,9 @@
   "targets": [
     {
       "target_name": "audio",
+      "variables": {
+        "libsdir": "<@(PRODUCT_DIR)/../../lib"
+      },
       "sources": [
         "src/native/addon.cc",
         "src/native/audio.cc",

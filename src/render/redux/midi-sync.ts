@@ -16,9 +16,9 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
     224: 'pitch-bend',
   },
   instantFunctions: Types.MidiFunctionName[] = ['note'],
-  midiFnMask = 0xf0,
+  midiFnMask = parseInt('11110000', 2),
   getFunction = (byte: number) => midiFunctions[byte & midiFnMask],
-  midiChannelMask = 0x0f,
+  midiChannelMask = parseInt('00001111', 2),
   getChannel = (byte: number) => byte & midiChannelMask,
   nav: any = navigator, //any so as to allow web midi api
   outputs: { [portId: string]: any } = {}, //web midi output (no type defs)
@@ -108,12 +108,21 @@ export default async function init(store: Store<Types.State>) {
       }
     },
     throttledHandle = _.throttle(handleMessage, 100, { leading: false }),
+    wrappedThrottleHandle = (message, portName) => {
+      const [fn, note, value] = message.data
+      if (!(note & 32)) { 
+        if (value === 0 || value === 127) {
+          handleMessage(message, portName)
+          throttledHandle(message, portName)
+        } else throttledHandle(message, portName)
+      }
+    },
     addInput = (port) => {
       console.log('connect', port.name)
       port.onmidimessage = (mes) => {
         const fn = getFunction(mes.data[0])
         if (instantFunctions.includes(fn)) handleMessage(mes, port.name)
-        else throttledHandle(mes, port.name)
+        else wrappedThrottleHandle(mes, port.name)
       }
     },
     removeInput = (port) => {
@@ -136,8 +145,7 @@ export default async function init(store: Store<Types.State>) {
         if (e.port.state === 'connected') addInput(e.port)
         else if (e.port.state === 'disconnected') removeInput(e.port)
       } else if (e.port.type === 'output') {
-        if (e.port.state === 'connected')
-          addOutput(e.port)
+        if (e.port.state === 'connected') addOutput(e.port)
         else if (e.port.state === 'disconnected') removeOutput(e.port)
       }
     }

@@ -55,7 +55,7 @@ const GridCell = memo((props: GridCellProps) => {
     displayValue = (control && control.absolute ? absValue : value) || 0
   return (
     <>
-      {binding && binding.note && (
+      {binding && binding.note !== null && (
         <CellMidi>{binding.note + shortNames[binding.function]}</CellMidi>
       )}
       {control && control.bindingType === 'value' && (
