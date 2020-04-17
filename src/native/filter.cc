@@ -26,10 +26,16 @@ void setMixTrackFilter(mixTrack * mixTrack, float filter){
 
     firdespm_run(num_taps,num_bands,bands,des,weights,wtype,LIQUID_FIRDESPM_BANDPASS,h);
 
-    firfilt_rrrf q = firfilt_rrrf_create(h,num_taps);
-    firfilt_rrrf oldFilter = mixTrack->filter;
-    mixTrack->filter = q;
+    int startingSize = mixTrack->filters.size();
+    mixTrack->filters.reserve(OVERLAP_COUNT);
+    for(int filterIndex=0;filterIndex<OVERLAP_COUNT;filterIndex++){
+      firfilt_rrrf q = firfilt_rrrf_create(h,num_taps);
+      if(filterIndex < startingSize){
+        firfilt_rrrf oldFilter = mixTrack->filters[filterIndex];
+        if(oldFilter != NULL) firfilt_rrrf_destroy(oldFilter);
+      }
+      mixTrack->filters[filterIndex] = q;
+    }
     mixTrack->hasFilter = true;
-    if(oldFilter != NULL) firfilt_rrrf_destroy(oldFilter);
   }
 }

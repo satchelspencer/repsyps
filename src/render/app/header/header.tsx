@@ -39,7 +39,7 @@ export default function Header() {
   const fixed = isMac && !full
   return (
     <HeaderWrapper fixed={fixed}>
-      <PlaybackControl fixed={fixed} />
+      <PlaybackControl />
       <VolumeControl />
       <PeriodControl />
     </HeaderWrapper>

@@ -232,9 +232,9 @@ int paCallbackMethod(
                 sampleValue *= mixTrackSourceConfig->volume;
 
                 sampleValue *= mixTrackPlayback->volume;
-                if(mixTrack->hasFilter){
-                  firfilt_rrrf_push(mixTrack->filter, sampleValue);   
-                  firfilt_rrrf_execute(mixTrack->filter, &sampleValue);
+                if(mixTrack->hasFilter && mixTrack->filters[mixTrack->windowIndex] != NULL){
+                  firfilt_rrrf_push(mixTrack->filters[mixTrack->windowIndex], sampleValue);   
+                  firfilt_rrrf_execute(mixTrack->filters[mixTrack->windowIndex], &sampleValue);
                 }
                 sampleValue *= state->window[frameIndex];                
               }
@@ -249,7 +249,7 @@ int paCallbackMethod(
 
     //head only moves forward by half the window size
     state->buffer->head = (state->buffer->head + (state->windowSize/2)) % state->buffer->size;
-
+    if(mixTrack) mixTrack->windowIndex = (mixTrack->windowIndex + 1) % OVERLAP_COUNT;
     /* empty the ringbuffer into the output... again */
     out = (float*)outputBuffer;
     copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, state->recording);

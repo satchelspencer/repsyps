@@ -10,6 +10,8 @@
 
 static bool REPSYS_LOG = false;
 
+static int OVERLAP_COUNT = 2;
+
 typedef struct{
   float volume;
   double time;
@@ -43,7 +45,8 @@ typedef struct{
   mixTrackPlayback* nextPlayback;
   bool hasNext;
   double sample;
-  firfilt_rrrf filter;
+  int windowIndex;
+  std::vector<firfilt_rrrf> filters;
   bool hasFilter;
   bool removed;
   bool safe;

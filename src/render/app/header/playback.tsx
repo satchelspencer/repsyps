@@ -8,28 +8,24 @@ import audio from 'render/util/audio'
 
 import Icon from 'render/components/icon'
 import { Value } from 'render/components/misc'
+import { isMac } from 'render/util/env'
 
-const ControlsWrapper = ctyled.div.attrs({ fixed: false }).styles({
+const ControlsWrapper = ctyled.div.styles({
   gutter: 2,
   align: 'center',
   padd: 2,
   justify: 'space-between',
 }).extendSheet`
-  width:${({ size }, { fixed }) =>
-    size * 25 - (fixed ? 144 / window.devicePixelRatio : 0)}px;
+  width:${({ size }) => size * 25 - (isMac ? 144 / window.devicePixelRatio : 0)}px;
 `
 
-export interface PlaybackProps {
-  fixed: boolean
-}
-
-const Playback = memo((props: PlaybackProps) => {
+const Playback = memo(() => {
   const playing = useSelector((state) => state.playback.playing),
     time = useSelector((state) => Math.floor(state.timing.time)),
     dispatch = useDispatch()
 
   return (
-    <ControlsWrapper fixed={props.fixed}>
+    <ControlsWrapper>
       <Icon scale={2} asButton name="prev" onClick={() => audio.updateTime(-1, true)} />
       <Icon
         scale={2}
