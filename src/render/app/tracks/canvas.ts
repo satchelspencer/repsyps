@@ -103,7 +103,7 @@ export default function useWaveformCanvas(
 
     if (impulses) drawImpulses(drawContext, impulses)
 
-    drawGutter(drawContext, track.editing)
+    drawGutter(drawContext)
     drawPlayback(drawContext, track)
     drawCues(drawContext, track)
     drawBounds(drawContext, source.bounds, track.editing)
@@ -146,7 +146,7 @@ export interface DrawingContext {
 
 const GUTTER_SIZE = 1.5
 
-function drawGutter(context: DrawingContext, editing: boolean) {
+function drawGutter(context: DrawingContext) {
   const { pwidth, size, color, ctx } = context
   ctx.fillStyle = color.nudge(0.3).bg
   ctx.fillRect(0, 0, pwidth, size * GUTTER_SIZE)
@@ -238,8 +238,20 @@ export function drawDrag(context: DrawingContext) {
   }
 }
 
+function getChunkEdges(chunks: number[], context: DrawingContext) {
+  const lastChunkWidth = chunks[chunks.length - 1],
+    endOfChunks = lastChunkWidth && chunks[chunks.length - 2] + lastChunkWidth,
+    chunksStartX = (chunks[0] - context.start) / context.scale,
+    chunksEndX = endOfChunks && (endOfChunks - context.start) / context.scale
+  return [chunksStartX, chunksEndX]
+}
+
+function isVisible(xs: number[], context: DrawingContext) {
+  return !(_.every(xs, (x) => x < 0) || _.every(xs, (x) => x > context.pwidth))
+}
+
 export function drawCues(context: DrawingContext, track: Types.Track) {
-  const { ctx, start, scale, size } = context,
+  const { ctx, size } = context,
     gsize = size * GUTTER_SIZE
 
   ctx.strokeStyle = 'rgba(255,0,130,0.5)'
@@ -247,30 +259,26 @@ export function drawCues(context: DrawingContext, track: Types.Track) {
 
   for (let cueIndex = 0; cueIndex < track.cues.length; cueIndex++) {
     const cue = track.cues[cueIndex],
-      chunks = cue.playback.chunks
-    for (let i = 0; i < chunks.length; i += 2) {
-      const cstart = chunks[i],
-        clength = chunks[i + 1],
-        startX = (cstart - start) / scale,
-        endX = (cstart + clength - start) / scale
+      [chunksStartX, chunksEndX] = getChunkEdges(cue.playback.chunks, context)
 
-      if (clength) {
+    if (isVisible([chunksStartX, chunksEndX], context)) {
+      /* vertical marker */
+      if (chunksEndX) {
         ctx.beginPath()
-        ctx.lineTo(startX, gsize)
-        ctx.lineTo(endX, gsize)
+        ctx.lineTo(chunksStartX, gsize)
+        ctx.lineTo(chunksEndX, gsize)
         ctx.stroke()
       }
 
-      if (i === 0) {
-        ctx.textAlign = 'start'
-        ctx.fillText(cueIndex + 1 + '', startX + size * 0.5, gsize * 1.75)
+      /* cue number */
+      ctx.textAlign = 'start'
+      ctx.fillText(cueIndex + 1 + '', chunksStartX + size * 0.5, gsize * 1.75)
 
-        ctx.lineWidth = lineWidth
-        ctx.beginPath()
-        ctx.lineTo(startX, 0)
-        ctx.lineTo(startX, gsize * 2)
-        ctx.stroke()
-      }
+      ctx.lineWidth = lineWidth
+      ctx.beginPath()
+      ctx.lineTo(chunksStartX, 0)
+      ctx.lineTo(chunksStartX, gsize * 2)
+      ctx.stroke()
     }
   }
 }
@@ -280,7 +288,6 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       pheight,
       scale,
       start,
-      end: vend,
       ctx,
       sample,
       playLocked,
@@ -289,62 +296,52 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       size,
       color,
     } = context,
-    playing = track.playback.playing
+    playing = track.playback.playing,
+    [chunksStartX, chunksEndX] = getChunkEdges(track.playback.chunks, context)
 
+  /* cursor shadow */
   let px = playLocked && scroll ? pwidth / 2 : (sample - start) / scale
   ctx.fillStyle = context.color.fg + '33'
   ctx.fillRect(px - thickLine * 1.5, 0, thickLine * 3, pheight)
 
-  for (let i = 0; i < track.playback.chunks.length; i += 2) {
-    const cstart = track.playback.chunks[i],
-      clength = track.playback.chunks[i + 1],
-      startX = (cstart - start) / scale,
-      endX = (cstart + clength - start) / scale
+  if (isVisible([chunksStartX, chunksEndX], context)) {
+    /* start chunk line */
+    ctx.lineWidth = chunksEndX ? lineWidth : thickLine
+    ctx.strokeStyle = 'rgba(255,0,0,0.5)'
+    ctx.beginPath()
+    ctx.lineTo(chunksStartX, 0)
+    ctx.lineTo(chunksStartX, pheight)
+    ctx.stroke()
 
-    if (!clength) {
-      ctx.lineWidth = thickLine
-      ctx.strokeStyle = 'rgba(255,0,0,0.5)'
-      ctx.beginPath()
-      ctx.lineTo(startX, 0)
-      ctx.lineTo(startX, pheight)
-      ctx.stroke()
-    } else if (cstart > start - clength && vend + clength) {
+    if (chunksEndX) {
+      /* gutter hilight */
       ctx.fillStyle = playing ? 'rgba(255,0,0,0.3)' : color.contrast(-0.3).nudge(0.1).bq
-      ctx.fillRect(startX, 0, endX - startX, size * GUTTER_SIZE)
+      ctx.fillRect(chunksStartX, 0, chunksEndX - chunksStartX, size * GUTTER_SIZE)
 
-      /* draw lines at start and end of current chunk */
-      ctx.lineWidth = lineWidth
-      ctx.strokeStyle = 'rgba(255,0,000,0.5)'
-      if (i === 0) {
-        ctx.beginPath()
-        ctx.lineTo(startX, 0)
-        ctx.lineTo(startX, pheight)
-        ctx.stroke()
-      }
+      /* end line */
+      ctx.beginPath()
+      ctx.lineTo(chunksEndX, 0)
+      ctx.lineTo(chunksEndX, pheight)
+      ctx.stroke()
+    }
 
-      if (i === track.playback.chunks.length - 2) {
-        ctx.beginPath()
-        ctx.lineTo(endX, 0)
-        ctx.lineTo(endX, pheight)
-        ctx.stroke()
-      }
+    /* upcoming playback */
+    if (track.nextPlayback) {
+      const [nextChunksStartX, nextChunksEndX] = getChunkEdges(
+        track.nextPlayback.chunks,
+        context
+      )
+      ctx.fillStyle = playing ? 'rgba(255,0,0,0.03)' : 'rgba(0,0,0,0.03)'
+      ctx.fillRect(
+        nextChunksStartX,
+        0,
+        nextChunksEndX - nextChunksStartX,
+        size * GUTTER_SIZE
+      )
     }
   }
 
-  if (track.nextPlayback) {
-    for (let i = 0; i < track.nextPlayback.chunks.length; i += 2) {
-      const cstart = track.nextPlayback.chunks[i],
-        clength = track.nextPlayback.chunks[i + 1],
-        startX = (cstart - start) / scale,
-        endX = (cstart + clength - start) / scale
-
-      if (clength) {
-        ctx.fillStyle = playing ? 'rgba(255,0,0,0.03)' : 'rgba(0,0,0,0.03)'
-        ctx.fillRect(startX, 0, endX - startX, size * GUTTER_SIZE)
-      }
-    }
-  }
-
+  /* cursor */
   ctx.lineWidth = lineWidth
   ctx.strokeStyle = 'rgb(255,0,0)'
   ctx.beginPath()

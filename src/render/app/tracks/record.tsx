@@ -116,7 +116,7 @@ const Recording = memo(
 
       ctxt.current.clearRect(0, 0, pwidth, pheight)
       if (recLength)
-        waveformLine(pwidth, pheight, ctxt.current, drawBuffer, 'rgba(255,0,0,0.7)', true)
+        waveformLine(pwidth, pheight, ctxt.current, drawBuffer, 'rgba(255,0,0,0.35)', true)
     }, [drawBuffer, recLength, pos.width])
 
     const handleClick = useCallback(async () => {

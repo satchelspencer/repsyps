@@ -15,7 +15,8 @@ export default function useZoom(
   sample: number,
   playLocked: boolean,
   setPlayLocked: (locked: boolean) => any,
-  scroll: boolean
+  scroll: boolean,
+  loaded: boolean
 ) {
   const [scale, setScale] = useState(1200),
     [start, setStart] = useState(-200 * 24 * canvasScale),
@@ -60,7 +61,7 @@ export default function useZoom(
       if (!scroll && offScreen) setStart(sample)
       if (scroll) setStart(rStart)
     }
-  }, [playLocked, rStart, offScreen])
+  }, [playLocked, rStart, offScreen, loaded])
 
   return { scale, start }
 }

@@ -9,6 +9,21 @@ import audio from 'render/util/audio'
 import uid from 'src/render/util/uid'
 import { IdMap, applyIdMap } from 'render/util/remap'
 
+export function getChunksFromBounds(startSample: number, bounds: number[]) {
+  const aboveBounds = _.filter(bounds, (b, bi) => {
+    const next = bounds[bi + 1]
+    return next >= startSample
+  })
+  return _.flatten(
+    aboveBounds
+      .map((bound, boundIndex) => {
+        const nextBound = aboveBounds[boundIndex + 1]
+        return nextBound && [bound, nextBound - bound]
+      })
+      .filter((a) => a)
+  )
+}
+
 export default createReducer(defaultState, (handle) => [
   handle(Actions.addTrack, (state, { payload }) => {
     const currentScene = state.live.scenes[state.live.sceneIndex],
@@ -72,7 +87,9 @@ export default createReducer(defaultState, (handle) => [
   }),
   handle(Actions.setTrackPlayback, (state, { payload }) => {
     const trackId =
-      payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex)
+        payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
+      track = state.live.tracks[trackId]
+
     let newLive = state.live
     if (trackId) {
       if (!!payload.playback.chunks)
@@ -81,9 +98,9 @@ export default createReducer(defaultState, (handle) => [
           tracks: {
             ...state.live.tracks,
             [trackId]: {
-              ...state.live.tracks[trackId],
+              ...track,
               playback: {
-                ...state.live.tracks[trackId].playback,
+                ...track.playback,
                 ...payload.playback,
                 unpause: false,
                 nextAtChunk: false,
@@ -100,9 +117,9 @@ export default createReducer(defaultState, (handle) => [
           tracks: {
             ...state.live.tracks,
             [trackId]: {
-              ...state.live.tracks[trackId],
+              ...track,
               playback: {
-                ...state.live.tracks[trackId].playback,
+                ...track.playback,
                 ...payload.playback,
                 unpause: false,
               },
@@ -135,20 +152,8 @@ export default createReducer(defaultState, (handle) => [
       }
     let newPeriod = null
 
-    if (!aperiodic && !isLoop && bounds.length) {
-      const aboveBounds = _.filter(bounds, (b, bi) => {
-        const next = bounds[bi + 1]
-        return next >= sample
-      })
-      newPlayback.chunks = _.flatten(
-        aboveBounds
-          .map((bound, boundIndex) => {
-            const nextBound = aboveBounds[boundIndex + 1]
-            return nextBound && [bound, nextBound - bound]
-          })
-          .filter((a) => a)
-      )
-    }
+    if (!aperiodic && !isLoop && bounds.length)
+      newPlayback.chunks = getChunksFromBounds(sample, bounds)
 
     if (payload.sync === 'lock') {
       const nextBoundIndex = _.findIndex(bounds, (b) => {

@@ -12,6 +12,7 @@ import uid from 'render/util/uid'
 import { remap } from 'render/util/remap'
 
 import globalReducer, { updateSourcesPaths } from './global'
+import { getChunksFromBounds } from './tracks'
 
 export function updateSceneIndex(
   state: Types.State,
@@ -43,6 +44,10 @@ export function updateSceneIndex(
         ...state.playback,
         period: resetPeriod ? firstTrack.lastPeriod : state.playback.period,
       },
+      timing: {
+        ...state.timing,
+        tracks: _.omit(state.timing.tracks, noLongerActive),
+      },
       live: {
         ...state.live,
         tracks: _.mapValues(state.live.tracks, (track, trackId) => {
@@ -61,6 +66,10 @@ export function updateSceneIndex(
               ...cuedTrack,
               playback: {
                 ...cuedTrack.playback,
+                chunks:
+                  !cuedTrack.playback.aperiodic && !firstCue && forceReset
+                    ? getChunksFromBounds(0, state.sources[trackId].bounds)
+                    : cuedTrack.playback.chunks,
                 playing: false,
                 muted: false,
                 unpause: false,

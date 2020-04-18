@@ -149,7 +149,8 @@ const Track = memo(
       sample,
       playLock,
       setPlayLock,
-      trackScroll
+      trackScroll,
+      loaded
     )
 
     /* automatically lock track */
