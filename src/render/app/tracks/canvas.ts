@@ -104,8 +104,8 @@ export default function useWaveformCanvas(
     if (impulses) drawImpulses(drawContext, impulses)
 
     drawGutter(drawContext, track.editing)
-    //drawCues(drawContext, track)
     drawPlayback(drawContext, track)
+    drawCues(drawContext, track)
     drawBounds(drawContext, source.bounds, track.editing)
     drawDrag(drawContext)
   }, [
@@ -239,7 +239,12 @@ export function drawDrag(context: DrawingContext) {
 }
 
 export function drawCues(context: DrawingContext, track: Types.Track) {
-  const { ctx, start, scale, size } = context
+  const { ctx, start, scale, size } = context,
+    gsize = size * GUTTER_SIZE
+
+  ctx.strokeStyle = 'rgba(255,0,130,0.5)'
+  ctx.fillStyle = 'rgba(255,0,130,0.8)'
+
   for (let cueIndex = 0; cueIndex < track.cues.length; cueIndex++) {
     const cue = track.cues[cueIndex],
       chunks = cue.playback.chunks
@@ -250,8 +255,21 @@ export function drawCues(context: DrawingContext, track: Types.Track) {
         endX = (cstart + clength - start) / scale
 
       if (clength) {
-        ctx.fillStyle = 'gainsboro'
-        ctx.fillRect(startX, 0, endX - startX, size * GUTTER_SIZE)
+        ctx.beginPath()
+        ctx.lineTo(startX, gsize)
+        ctx.lineTo(endX, gsize)
+        ctx.stroke()
+      }
+
+      if (i === 0) {
+        ctx.textAlign = 'start'
+        ctx.fillText(cueIndex + 1 + '', startX + size * 0.5, gsize * 1.75)
+
+        ctx.lineWidth = lineWidth
+        ctx.beginPath()
+        ctx.lineTo(startX, 0)
+        ctx.lineTo(startX, gsize * 2)
+        ctx.stroke()
       }
     }
   }
@@ -275,7 +293,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
 
   let px = playLocked && scroll ? pwidth / 2 : (sample - start) / scale
   ctx.fillStyle = context.color.fg + '33'
-  ctx.fillRect(px - thickLine * 2, 0, thickLine * 4, pheight)
+  ctx.fillRect(px - thickLine * 1.5, 0, thickLine * 3, pheight)
 
   for (let i = 0; i < track.playback.chunks.length; i += 2) {
     const cstart = track.playback.chunks[i],
@@ -296,15 +314,20 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
 
       /* draw lines at start and end of current chunk */
       ctx.lineWidth = lineWidth
-      ctx.strokeStyle = 'rgba(255,0,0,0.5)'
-      ctx.beginPath()
-      ctx.lineTo(startX, 0)
-      ctx.lineTo(startX, pheight)
-      ctx.stroke()
-      ctx.beginPath()
-      ctx.lineTo(endX, 0)
-      ctx.lineTo(endX, pheight)
-      ctx.stroke()
+      ctx.strokeStyle = 'rgba(255,0,000,0.5)'
+      if (i === 0) {
+        ctx.beginPath()
+        ctx.lineTo(startX, 0)
+        ctx.lineTo(startX, pheight)
+        ctx.stroke()
+      }
+
+      if (i === track.playback.chunks.length - 2) {
+        ctx.beginPath()
+        ctx.lineTo(endX, 0)
+        ctx.lineTo(endX, pheight)
+        ctx.stroke()
+      }
     }
   }
 
@@ -354,8 +377,9 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
         ctx.setLineDash([])
 
         ctx.font = 'bold ' + size + 'px sans-serif'
+        ctx.textAlign = 'start'
         ctx.fillStyle = color.fg
-        ctx.fillText(i + '', px + size / 2, size * 1.1)
+        ctx.fillText(i + '', px + size * 0.5, size * 1.1)
 
         ctx.globalAlpha = 0.3
         ctx.beginPath()
