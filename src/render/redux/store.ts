@@ -6,7 +6,6 @@ import { defaultState } from './defaults'
 import * as Actions from './actions'
 import syncAudio from './audio-sync'
 import syncMidi from './midi-sync'
-import initMenu from './menu'
 import initPersist from './persist'
 import initHistory from './history'
 import initFileAssoc from './file-assoc'
@@ -23,7 +22,6 @@ const store = createStore(
 
 syncAudio(store)
 syncMidi(store)
-initMenu(store)
 initPersist(store)
 initHistory(store)
 initFileAssoc(store)

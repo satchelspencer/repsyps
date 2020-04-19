@@ -3,6 +3,7 @@ import * as _ from 'lodash'
 
 import * as Actions from '../actions'
 import * as Selectors from '../selectors'
+import * as Types from 'render/util/types'
 import { defaultState, defaultTrackPlayback } from '../defaults'
 import { updateSceneIndex } from './scenes'
 import audio from 'render/util/audio'
@@ -21,6 +22,108 @@ export function getChunksFromBounds(startSample: number, bounds: number[]) {
         return nextBound && [bound, nextBound - bound]
       })
       .filter((a) => a)
+  )
+}
+
+export function applyTrackPlayback(
+  state: Types.State,
+  trackId: string,
+  playback: Partial<Types.TrackPlayback>
+) {
+  const track = state.live.tracks[trackId]
+  let newLive = state.live,
+    newTracks = newLive.tracks
+
+  if (!state.playback.playing)
+    newTracks = _.mapValues(newTracks, (track) =>
+      track.playback.playing
+        ? {
+            ...track,
+            playback: {
+              ...track.playback,
+              playing: false,
+              unpause: false,
+            },
+          }
+        : track
+    )
+
+  if (trackId) {
+    if (!!playback.chunks)
+      newLive = {
+        ...state.live,
+        tracks: {
+          ...newTracks,
+          [trackId]: {
+            ...track,
+            playback: {
+              ...track.playback,
+              ...playback,
+              unpause: false,
+              nextAtChunk: false,
+            },
+            nextPlayback: null,
+            cueIndex: -1,
+            nextCueIndex: -1,
+          },
+        },
+      }
+    else {
+      newLive = {
+        ...state.live,
+        tracks: {
+          ...newTracks,
+          [trackId]: {
+            ...track,
+            playback: {
+              ...track.playback,
+              ...playback,
+              unpause: false,
+            },
+            lastPeriod: state.playback.period,
+          },
+        },
+      }
+    }
+  }
+  return {
+    ...state,
+    live: newLive,
+    playback: {
+      ...state.playback,
+      playing: true,
+    },
+  }
+}
+
+export function selectTrack(state: Types.State, trackId: string) {
+  const containingIndex = state.live.scenes.findIndex((scene) =>
+      scene.trackIds.includes(trackId)
+    ),
+    inScene = containingIndex !== -1,
+    isLastOfScene =
+      inScene &&
+      state.live.scenes[containingIndex].trackIds.indexOf(trackId) ===
+        state.live.scenes[containingIndex].trackIds.length - 1,
+    shouldNotJump =
+      (isLastOfScene && state.live.sceneIndex === containingIndex + 1) || !inScene,
+    newSceneIndex = shouldNotJump ? state.live.sceneIndex : containingIndex
+
+  return updateSceneIndex(
+    {
+      ...state,
+      live: {
+        ...state.live,
+        tracks: _.mapValues(state.live.tracks, (track, thisTrackId) => {
+          if (thisTrackId === trackId) {
+            return { ...track, selected: true }
+          } else if (track.selected) {
+            return { ...track, selected: false, editing: false }
+          } else return track
+        }),
+      },
+    },
+    newSceneIndex
   )
 }
 
@@ -85,56 +188,39 @@ export default createReducer(defaultState, (handle) => [
       newSceneIndex
     )
   }),
+  handle(Actions.playPauseTrack, (state, { payload: trackId }) => {
+    const track = state.live.tracks[trackId],
+      isPlaying = state.playback.playing
+    return applyTrackPlayback(state, trackId, {
+      playing: isPlaying ? !track.playback.playing : true,
+      chunkIndex: -1,
+    })
+  }),
   handle(Actions.setTrackPlayback, (state, { payload }) => {
     const trackId =
-        payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
-      track = state.live.tracks[trackId]
+      payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex)
 
-    let newLive = state.live
-    if (trackId) {
-      if (!!payload.playback.chunks)
-        newLive = {
-          ...state.live,
-          tracks: {
-            ...state.live.tracks,
-            [trackId]: {
-              ...track,
-              playback: {
-                ...track.playback,
-                ...payload.playback,
-                unpause: false,
-                nextAtChunk: false,
-              },
-              nextPlayback: null,
-              cueIndex: -1,
-              nextCueIndex: -1,
-            },
-          },
-        }
-      else {
-        newLive = {
-          ...state.live,
-          tracks: {
-            ...state.live.tracks,
-            [trackId]: {
-              ...track,
-              playback: {
-                ...track.playback,
-                ...payload.playback,
-                unpause: false,
-              },
-              lastPeriod: state.playback.period,
-            },
-          },
-        }
-      }
-    }
+    return applyTrackPlayback(state, trackId, payload.playback)
+  }),
+  handle(Actions.stopAll, (state) => {
     return {
       ...state,
-      live: newLive,
+      live: {
+        ...state.live,
+        tracks: _.mapValues(state.live.tracks, (track) => {
+          return {
+            ...track,
+            playback: {
+              ...track.playback,
+              unpause: false,
+              playing: false,
+            },
+          }
+        }),
+      },
       playback: {
         ...state.playback,
-        playing: true,
+        playing: false,
       },
     }
   }),
@@ -142,24 +228,27 @@ export default createReducer(defaultState, (handle) => [
     const trackId =
         payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
       playback = state.live.tracks[trackId].playback,
-      aperiodic = payload.sync === 'off',
+      sync =
+        payload.sync === undefined ? (playback.aperiodic ? 'on' : 'off') : payload.sync,
+      aperiodic = sync === 'off',
       isLoop = !!playback.chunks[playback.chunkIndex * 2 + 1],
       { bounds, boundsAlpha } = state.sources[trackId],
-      sample = state.timing.tracks[trackId],
+      sample = state.timing.tracks[trackId] || 0,
       newPlayback = {
         ...playback,
         aperiodic,
       }
     let newPeriod = null
 
-    if (!aperiodic && !isLoop && bounds.length)
+    if (!aperiodic && !isLoop && bounds.length && sample)
       newPlayback.chunks = getChunksFromBounds(sample, bounds)
 
-    if (payload.sync === 'lock') {
+    if (sync === 'lock') {
       const nextBoundIndex = _.findIndex(bounds, (b) => {
-          return b >= sample
+          return b > sample
         }),
         boundIndex = nextBoundIndex - 1
+      console.log(nextBoundIndex, boundIndex)
       if (nextBoundIndex !== -1 && boundIndex !== -1) {
         if (playback.aperiodic)
           audio.syncToTrack(trackId, bounds[boundIndex], bounds[nextBoundIndex])
@@ -189,33 +278,15 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.selectTrackExclusive, (state, { payload: trackId }) => {
-    const containingIndex = state.live.scenes.findIndex((scene) =>
-        scene.trackIds.includes(trackId)
-      ),
-      inScene = containingIndex !== -1,
-      isLastOfScene =
-        inScene &&
-        state.live.scenes[containingIndex].trackIds.indexOf(trackId) ===
-          state.live.scenes[containingIndex].trackIds.length - 1,
-      shouldNotJump =
-        (isLastOfScene && state.live.sceneIndex === containingIndex + 1) || !inScene,
-      newSceneIndex = shouldNotJump ? state.live.sceneIndex : containingIndex
+    return selectTrack(state, trackId)
+  }),
+  handle(Actions.stepSelectedTrack, (state, { payload: step }) => {
+    const trackIds = _.flatMap(state.live.scenes, (scene) => scene.trackIds),
+      selectedTrackId = Selectors.getSelectedTrackId(state)
 
-    return updateSceneIndex(
-      {
-        ...state,
-        live: {
-          ...state.live,
-          tracks: _.mapValues(state.live.tracks, (track, thisTrackId) => {
-            if (thisTrackId === trackId) {
-              return { ...track, selected: true }
-            } else if (track.selected) {
-              return { ...track, selected: false, editing: false }
-            } else return track
-          }),
-        },
-      },
-      newSceneIndex
+    return selectTrack(
+      state,
+      trackIds[Math.max(trackIds.indexOf(selectedTrackId) + step, 0)]
     )
   }),
   handle(Actions.editTrack, (state, { payload }) => {
@@ -249,6 +320,7 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.setTrackMuted, (state, { payload }) => {
+    const toggle = payload.muted === undefined
     return {
       ...state,
       live: {
@@ -259,7 +331,9 @@ export default createReducer(defaultState, (handle) => [
             ...state.live.tracks[payload.trackId],
             playback: {
               ...state.live.tracks[payload.trackId].playback,
-              muted: payload.muted,
+              muted: toggle
+                ? !state.live.tracks[payload.trackId].playback.muted
+                : payload.muted,
             },
           },
         },
@@ -267,6 +341,8 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.setTrackSolo, (state, { payload }) => {
+    const toggle = payload.solo === undefined,
+      solo = toggle ? !Selectors.getTrackIsSolo(state, payload.trackId) : payload.solo
     return {
       ...state,
       live: {
@@ -276,7 +352,7 @@ export default createReducer(defaultState, (handle) => [
             ...track,
             playback: {
               ...track.playback,
-              muted: payload.solo ? payload.trackId !== trackId : false,
+              muted: solo ? payload.trackId !== trackId : false,
             },
           }
         }),

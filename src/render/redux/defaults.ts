@@ -55,6 +55,7 @@ export const defaultPlayback: Types.Playback = {
     controlPresets: defaultControlPresets,
     defaultPresetId: null,
     controlsEnabled: true,
+    selectedPosition: { x: 0, y: 0 },
   },
   defaultSource: Types.Source = {
     name: '',

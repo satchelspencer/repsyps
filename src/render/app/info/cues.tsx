@@ -115,13 +115,6 @@ interface CueUsePickerProps extends CueProps {
   icon: string
 }
 
-const defaultUsed: (keyof Types.TrackPlayback)[] = [
-  'chunks',
-  'playing',
-  'chunkIndex',
-  'aperiodic',
-]
-
 const CueUsePicker = (props: CueUsePickerProps) => {
   const isUsed = _.every(props.props, (prop) => props.cue.used.includes(prop)),
     dispatch = useDispatch(),
@@ -211,7 +204,6 @@ const Cue = SortableElement((xprops: any) => {
           cue: {
             ...props.cue,
             playback: {
-              ...playback,
               chunkIndex: -1,
               playing: true,
             },
@@ -269,11 +261,9 @@ const Cues = memo((props: CuesProps) => {
           trackId: props.trackId,
           cue: {
             playback: {
-              ...playback,
               chunkIndex: -1,
               playing: true,
             },
-            used: defaultUsed,
             startBehavior: 'immediate',
             endBehavior: playback.loop ? 'loop' : 'stop',
           },

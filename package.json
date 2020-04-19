@@ -137,6 +137,7 @@
     "deox": "^3.2.1",
     "electron-context-menu": "^0.14.0",
     "electron-devtools-installer": "^2.2.4",
+    "electron-localshortcut": "^3.2.1",
     "electron-notarize": "^0.3.0",
     "express": "^4.17.1",
     "file-loader": "^4.2.0",

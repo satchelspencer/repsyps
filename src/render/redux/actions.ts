@@ -6,6 +6,7 @@ import pathUtils from 'path'
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
 import { getId } from 'render/util/uid'
+import { create } from 'domain'
 
 function createAction<Payload>(name) {
   return createActionCreator(name, (res) => (payload: Payload) => res(payload))
@@ -35,6 +36,8 @@ export const setSettings = createAction<Partial<Types.Settings>>('SET_SETTINGS')
 export const setRecording = createAction<Partial<Types.Recording>>('SET_RECORDING')
 
 export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAYBACK')
+
+export const stopAll = createAction<void>('STOP_ALL')
 
 export const updatePlaybackTime = createAction<number>('UPDATE_PLAYBACK_TIME')
 
@@ -89,7 +92,11 @@ export const setTrackPlayback = createAction<{
   playback: Partial<Types.TrackPlayback>
 }>('SET_TRACK_PLAYBACK')
 
+export const playPauseTrack = createAction<string>('PLAY_PAUSE_TRACK')
+
 export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
+
+export const stepSelectedTrack = createAction<number>('STEP_SELECTED_TRACK')
 
 export const editTrack = createAction<{ trackId: string; edit: boolean }>(
   'SET_TRACK_EDIT'
@@ -100,11 +107,11 @@ export const setTrackPlayLock = createAction<{
   playlock: boolean
 }>('SET_TRACK_PLAYLOCK')
 
-export const setTrackMuted = createAction<{ trackId: string; muted: boolean }>(
+export const setTrackMuted = createAction<{ trackId: string; muted?: boolean }>(
   'SET_TRACK_MUTE'
 )
 
-export const setTrackSolo = createAction<{ trackId: string; solo: boolean }>(
+export const setTrackSolo = createAction<{ trackId: string; solo?: boolean }>(
   'SET_TRACK_SOLO'
 )
 
@@ -113,6 +120,12 @@ export const loopTrack = createAction<{
   trackIndex?: number
   loop: number
 }>('LOOP_TRACK')
+
+export const setTrackSync = createAction<{
+  trackId?: string
+  trackIndex?: number
+  sync?: Types.SyncControlState
+}>('SET_TRACK_SYNC')
 
 /* source actions */
 
@@ -182,8 +195,6 @@ export const copyTrackBounds = createAction<{
 
 export const inferBounds = createAction<{
   sourceId: string
-  chunks: number[]
-  impulses: number[]
   snap: boolean
   direction: 'left' | 'right' | 'both'
 }>('INFER_BOUNDS')
@@ -203,7 +214,7 @@ export const moveSourceTrack = createAction<{
 
 export const addCue = createAction<{
   trackId: string
-  cue: Types.Cue
+  cue: Types.CueBasis
   index?: number
 }>('ADD_CUE')
 
@@ -230,18 +241,19 @@ export const setTrackCue = createAction<{
   cueIndex: number
 }>('SET_TRACK_CUE')
 
-export const setTrackSync = createAction<{
-  trackId?: string
-  trackIndex?: number
-  sync: Types.SyncControlState
-}>('SET_TRACK_SYNC')
-
 /* controls */
 
+export const setSelectedPosition = createAction<Types.Position>('SET_SELECTED_POSITION')
+
 export const setControlGroup = createAction<{
-  position: Types.Position
+  position?: Types.Position
   controlGroup: Partial<Types.ControlGroup>
 }>('SET_CONTROL_GROUP')
+
+export const addControlToGroup = createAction<{
+  position?: Types.Position
+  control: Types.Control
+}>('ADD_TO_CONTROL_GROUP')
 
 export const setControlGroupValue = createAction<{
   position: Types.Position
@@ -280,7 +292,7 @@ export const applyControlPreset = createAction<string>('APPLY_CONTROL_PRESET')
 export const setControlsEnabled = createAction<boolean>('SET_CONTROLS_ENABLED')
 
 export const setBinding = createAction<{
-  position: Types.Position
+  position?: Types.Position
   binding: Partial<Types.Binding>
 }>('SET_BINDING')
 
@@ -290,7 +302,7 @@ export const setBadMidiValue = createAction<{
   lastMidiValue?: number
 }>('SET_BAD_MIDI_VALUE')
 
-export const removeBinding = createAction<Types.Position>('REMOVE_BINDING')
+export const removeBinding = createAction<Types.Position | void>('REMOVE_BINDING')
 
 export const loadBindings = createAction<Types.BindingsFile>('LOAD_BINDINGS')
 

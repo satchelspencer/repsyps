@@ -77,6 +77,8 @@ function Relink() {
           defaultPath: undefined,
           title: 'replace',
           properties: ['openFile'],
+          message: `Find ${pathUtils.basename(missingSource.path)}`,
+          buttonLabel: 'Relink File'
         })
         if (path && path[0]) {
           const oldPath = missingSource.path,

@@ -4,9 +4,7 @@ import ctyled from 'ctyled'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
-import * as Selectors from 'render/redux/selectors'
 
-import getImpulses from 'render/util/impulse-detect'
 import { RATE } from 'render/util/audio'
 
 import Icon from 'render/components/icon'
@@ -86,25 +84,15 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       (state) => state.live.tracks[props.trackId]
     ),
     { bounds, sourceTracks } = useSelector((state) => state.sources[props.trackId]),
-    loaded = useSelector((state) => Selectors.getTrackIsLoaded(state, props.trackId)),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection<string>('track'),
     [snap, setSnap] = useState(true),
-    impulses = useMemo(() => loaded && getImpulses(props.trackId), [
-      loaded,
-      props.trackId,
-    ]),
     hasTimeBase = !!bounds.length,
     clength = playback.chunks[1],
-    inferPayload = useMemo(
-      () => ({
-        sourceId: props.trackId,
-        chunks: playback.chunks,
-        impulses,
-        snap,
-      }),
-      [playback.chunks, impulses, playback.chunks, snap]
-    ),
+    inferPayload = useMemo(() => ({ sourceId: props.trackId, snap }), [
+      props.trackId,
+      snap,
+    ]),
     inferLR = useCallback(() => {
       dispatch(Actions.inferBounds({ ...inferPayload, direction: 'both' }))
     }, [inferPayload]),

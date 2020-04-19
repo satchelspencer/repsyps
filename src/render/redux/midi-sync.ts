@@ -17,6 +17,7 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
   },
   instantFunctions: Types.MidiFunctionName[] = ['note'],
   midiFnMask = parseInt('11110000', 2),
+  midiChannelMask = parseInt('00001111', 2),
   getFunction = (byte: number) => midiFunctions[byte & midiFnMask],
   nav: any = navigator, //any so as to allow web midi api
   outputs: { [portId: string]: any } = {}, //web midi output (no type defs)
@@ -120,8 +121,10 @@ export default async function init(store: Store<Types.State>) {
     throttledHandle = _.throttle(handleMessage, 100, { trailing: true }),
     wrappedThrottleHandle = (message, portName) => {
       const [fn, note, value] = message.data,
-        fname = getFunction(fn)
-      midiChanges[(fn << 8) + note] = value
+        fname = getFunction(fn),
+        mappedFn = fname === 'note' ? 144 + (midiChannelMask & fn) : fn
+
+      midiChanges[(mappedFn << 8) + note] = value
 
       if (value === 0 || value === 127 || instantFunctions.includes(fname)) {
         handleMessage(portName)

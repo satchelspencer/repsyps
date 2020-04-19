@@ -83,11 +83,26 @@ export function applyCue(
   } else return track
 }
 
+const defaultUsed: (keyof Types.TrackPlayback)[] = [
+  'chunks',
+  'playing',
+  'chunkIndex',
+  'aperiodic',
+]
+
 export default createReducer(defaultState, (handle) => [
   handle(Actions.addCue, (state, { payload }) => {
     const track = state.live.tracks[payload.trackId],
       newCues = [...track.cues]
-    newCues[payload.index === undefined ? newCues.length : payload.index] = payload.cue
+    newCues[payload.index === undefined ? newCues.length : payload.index] = {
+      ...payload.cue,
+      used: _.uniq([...defaultUsed, ...(payload.cue.used||[])]),
+      playback: {
+        ...track.playback,
+        ...payload.cue.playback,
+      },
+      endBehavior: payload.cue.endBehavior || track.playback.loop ? 'loop' : 'stop',
+    }
     return {
       ...state,
       live: {

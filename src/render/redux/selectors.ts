@@ -467,8 +467,27 @@ export const getMenuState = createSelector(
     (state: Types.State) => state.output,
     (state: Types.State) => state.live.sceneIndex,
     (state: Types.State) => state.live.scenes.length,
+    getSelectedTrackId,
+    (state: Types.State) => {
+      const track = getSelectedTrack(state)
+      return track && track.editing
+    },
+    (state: Types.State) => {
+      const track = getSelectedTrack(state)
+      return track && track.playback.playing
+    },
+    (state: Types.State) => state.playback.playing,
   ],
-  (settings, output, sceneIndex, scenesCount) => {
+  (
+    settings,
+    output,
+    sceneIndex,
+    scenesCount,
+    selectedTrackId,
+    editing,
+    trackPlaying,
+    playing
+  ): Types.MenuState => {
     return {
       trackScroll: settings.trackScroll,
       darkMode: settings.darkMode,
@@ -477,6 +496,10 @@ export const getMenuState = createSelector(
       sceneIndex,
       scenesCount,
       output,
+      selectedTrackId,
+      editing,
+      trackPlaying,
+      playing,
     }
   }
 )

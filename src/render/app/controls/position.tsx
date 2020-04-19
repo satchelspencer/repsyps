@@ -18,7 +18,7 @@ import {
 } from 'render/components/misc'
 import Icon from 'render/components/icon'
 
-import { midiName, getControlName, getDefaultBindingType, getIcon } from './utils'
+import { midiName, getControlName, getIcon } from './utils'
 
 const ControlSelectableButton = SelectableButton.styles({
   color: (c, { selected }) =>
@@ -120,95 +120,72 @@ function PositionDetail(props: ControlDetailProps) {
   const addMidiBinding = useCallback(() => {
       dispatch(
         Actions.setBinding({
-          position: props.position,
           binding: {
             waiting: shouldStartWaiting,
           },
         })
       )
-    }, [props.position, shouldStartWaiting]),
+    }, [shouldStartWaiting]),
     toggleTwoWay = useCallback(() => {
       if (selectedBinding)
         dispatch(
           Actions.setBinding({
-            position: props.position,
             binding: {
               twoway: !selectedBinding.twoway,
             },
           })
         )
-    }, [selectedBinding && selectedBinding.twoway, props.position]),
-    removeMidiBinding = useCallback(
-      () => dispatch(Actions.removeBinding(props.position)),
-      [props.position]
-    ),
+    }, [selectedBinding && selectedBinding.twoway]),
+    removeMidiBinding = useCallback(() => dispatch(Actions.removeBinding()), []),
     setAbsolute = useCallback(
       () =>
         dispatch(
           Actions.setControlGroup({
-            position: props.position,
             controlGroup: {
               absolute: true,
             },
           })
         ),
-      [props.position]
+      []
     ),
     setRelative = useCallback(
       () =>
         dispatch(
           Actions.setControlGroup({
-            position: props.position,
             controlGroup: {
               absolute: false,
             },
           })
         ),
-      [props.position]
+      []
     ),
     setAsValue = useCallback(
       () =>
         dispatch(
           Actions.setControlGroup({
-            position: props.position,
             controlGroup: {
               bindingType: 'value',
             },
           })
         ),
-      [props.position]
+      []
     ),
     setAsNote = useCallback(
       () =>
         dispatch(
           Actions.setControlGroup({
-            position: props.position,
             controlGroup: {
               bindingType: 'note',
             },
           })
         ),
-      [props.position]
+      []
     ),
     handleAddControl = useCallback(async () => {
       const control = await getSelection()
       if (!control) return
-      const currentControls = selectedControlGroup ? selectedControlGroup.controls : [],
-        currentType = selectedControlGroup && selectedControlGroup.bindingType,
-        type = currentType || getDefaultBindingType(control)
-
-      dispatch(
-        Actions.setControlGroup({
-          position: props.position,
-          controlGroup: {
-            absolute: 'globalProp' in control,
-            bindingType: type,
-            position: props.position,
-            controls: [...currentControls, control],
-          },
-        })
-      )
-    }, [selectedControlGroup, props.position])
+      dispatch(Actions.addControlToGroup({ control }))
+    }, [])
 
   return (
     <ControlInspector>
@@ -235,7 +212,9 @@ function PositionDetail(props: ControlDetailProps) {
               />
             </ControlBloc>
             <SidebarValue>
-              {selectedBinding && selectedBinding.midi ? midiName(selectedBinding.midi) : '--'}
+              {selectedBinding && selectedBinding.midi
+                ? midiName(selectedBinding.midi)
+                : '--'}
             </SidebarValue>
             <Icon
               disabled={!selectedBinding}
@@ -337,7 +316,6 @@ const Control = memo((props: ControlProps) => {
       }
       dispatch(
         Actions.setControlGroup({
-          position: props.position,
           controlGroup: {
             controls: newControls,
           },
@@ -350,7 +328,6 @@ const Control = memo((props: ControlProps) => {
         newControls.splice(props.index, 1)
         dispatch(
           Actions.setControlGroup({
-            position: props.position,
             controlGroup: {
               controls: newControls,
             },

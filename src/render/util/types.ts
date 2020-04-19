@@ -112,6 +112,13 @@ export interface Cue {
   endBehavior: CueEndBehavior
 }
 
+export interface CueBasis {
+  playback: Partial<TrackPlayback>
+  used?: (keyof TrackPlayback)[]
+  startBehavior: CueStartBehavior
+  endBehavior?: CueEndBehavior
+}
+
 export interface NativeTrack {
   playback: TrackPlayback
   nextPlayback: TrackPlayback
@@ -284,6 +291,7 @@ export interface Live {
   controlPresets: ControlPresets
   defaultPresetId: string
   controlsEnabled: boolean
+  selectedPosition: Position
 }
 
 export interface BindingsFile {
@@ -339,6 +347,20 @@ export interface OutputState {
   devices: Output[]
   default: number
   current: number
+}
+
+export interface MenuState {
+  trackScroll: boolean
+  darkMode: boolean
+  size: number
+  updateRate: UpdateRate
+  sceneIndex: number
+  scenesCount: number
+  output: OutputState
+  selectedTrackId: string
+  editing: boolean
+  trackPlaying: boolean
+  playing: boolean
 }
 
 export interface State {

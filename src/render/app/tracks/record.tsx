@@ -116,7 +116,14 @@ const Recording = memo(
 
       ctxt.current.clearRect(0, 0, pwidth, pheight)
       if (recLength)
-        waveformLine(pwidth, pheight, ctxt.current, drawBuffer, 'rgba(255,0,0,0.35)', true)
+        waveformLine(
+          pwidth,
+          pheight,
+          ctxt.current,
+          drawBuffer,
+          'rgba(255,0,0,0.35)',
+          true
+        )
     }, [drawBuffer, recLength, pos.width])
 
     const handleClick = useCallback(async () => {
@@ -146,8 +153,9 @@ const Recording = memo(
               ? fromSourceBounds.filter((b) => firstBound - b > 44100)
               : [],
             path = dialog.showSaveDialog({
-              title: 'Save Recording',
+              nameFieldLabel: 'Recording Name',
               defaultPath: getPath('recordings/untitled'),
+              buttonLabel: 'Save Recording',
             })
           if (path) {
             const outPath = path + '.m4a',

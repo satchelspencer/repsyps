@@ -2,6 +2,7 @@ import { createReducer } from 'deox'
 import * as _ from 'lodash'
 
 import audio from 'render/util/audio'
+import * as Types from 'render/util/types'
 import * as Actions from '../actions'
 import * as Selectors from '../selectors'
 import {
@@ -13,36 +14,76 @@ import {
   defaultControlPresets,
 } from '../defaults'
 import { updateSceneIndex } from './scenes'
+import { stat } from 'fs'
+
+function setControlGroup(
+  state: Types.State,
+  controlGroup: Partial<Types.ControlGroup>,
+  pposition: Types.Position
+) {
+  const position = pposition || state.live.selectedPosition
+  if (!position) return state
+
+  const posStr = Selectors.pos2str(position)
+  return {
+    ...state,
+    live: {
+      ...state.live,
+      controlValues: {
+        ...state.live.controlValues,
+        [posStr]: controlGroup.absolute ? state.live.controlValues[posStr] : 1,
+      },
+      scenes: state.live.scenes.map((scene, sceneIndex) => {
+        if (sceneIndex !== state.live.sceneIndex) return scene
+        else {
+          const newControlGroup = {
+            ...(scene.controls[posStr] || defaultControlGroup),
+            ...controlGroup,
+          }
+          return {
+            ...scene,
+            controls: {
+              ...scene.controls,
+              [posStr]: newControlGroup,
+            },
+          }
+        }
+      }),
+    },
+  }
+}
+
+export function getDefaultBindingType(control: Types.Control): Types.BindingType {
+  return 'cueIndex' in control ||
+    'cueStep' in control ||
+    'loop' in control ||
+    'sync' in control
+    ? 'note'
+    : 'value'
+}
 
 export default createReducer(defaultState, (handle) => [
-  handle(Actions.setControlGroup, (state, { payload }) => {
-    const posStr = Selectors.pos2str(payload.position)
-    return {
-      ...state,
-      live: {
-        ...state.live,
-        controlValues: {
-          ...state.live.controlValues,
-          [posStr]: payload.controlGroup.absolute ? state.live.controlValues[posStr] : 1,
-        },
-        scenes: state.live.scenes.map((scene, sceneIndex) => {
-          if (sceneIndex !== state.live.sceneIndex) return scene
-          else {
-            const newControlGroup = {
-              ...(scene.controls[posStr] || defaultControlGroup),
-              ...payload.controlGroup,
-            }
-            return {
-              ...scene,
-              controls: {
-                ...scene.controls,
-                [posStr]: newControlGroup,
-              },
-            }
-          }
-        }),
+  handle(Actions.setControlGroup, (state, { payload }) =>
+    setControlGroup(state, payload.controlGroup, payload.position)
+  ),
+  handle(Actions.addControlToGroup, (state, { payload }) => {
+    const position = payload.position || state.live.selectedPosition,
+      posStr = Selectors.pos2str(position),
+      selectedControlGroup = state.live.scenes[state.live.sceneIndex].controls[posStr],
+      currentControls = selectedControlGroup ? selectedControlGroup.controls : [],
+      currentType = selectedControlGroup && selectedControlGroup.bindingType,
+      type = currentType || getDefaultBindingType(payload.control)
+
+    return setControlGroup(
+      state,
+      {
+        absolute: 'globalProp' in payload.control,
+        bindingType: type,
+        position: position,
+        controls: [...currentControls, payload.control],
       },
-    }
+      payload.position
+    )
   }),
   handle(Actions.setControlGroupValue, (state, { payload }) => {
     return {
@@ -204,12 +245,13 @@ export default createReducer(defaultState, (handle) => [
       ...state,
       live: {
         ...state.live,
-        controlsEnabled: enabled,
+        controlsEnabled: enabled === null ? !state.live.controlsEnabled : enabled,
       },
     }
   }),
   handle(Actions.setBinding, (state, { payload }) => {
-    const posStr = Selectors.pos2str(payload.position)
+    const position = payload.position || state.live.selectedPosition,
+      posStr = Selectors.pos2str(position)
     return {
       ...state,
       live: {
@@ -226,11 +268,13 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.removeBinding, (state, { payload }) => {
+    const position = payload || state.live.selectedPosition,
+      posStr = Selectors.pos2str(position)
     return {
       ...state,
       live: {
         ...state.live,
-        bindings: _.omit(state.live.bindings, Selectors.pos2str(payload)),
+        bindings: _.omit(state.live.bindings, posStr),
       },
     }
   }),
@@ -270,6 +314,15 @@ export default createReducer(defaultState, (handle) => [
                 : payload.lastMidiValue,
           },
         },
+      },
+    }
+  }),
+  handle(Actions.setSelectedPosition, (state, { payload: position }) => {
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        selectedPosition: position,
       },
     }
   }),

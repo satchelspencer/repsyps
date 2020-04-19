@@ -52,15 +52,6 @@ export function getControlName(control: Types.Control) {
   else return '???'
 }
 
-export function getDefaultBindingType(control: Types.Control): Types.BindingType {
-  return 'cueIndex' in control ||
-    'cueStep' in control ||
-    'loop' in control ||
-    'sync' in control
-    ? 'note'
-    : 'value'
-}
-
 export function getIcon(control: Types.Control): string {
   if ('globalProp' in control) return control.globalProp === 'volume' ? 'volume' : 'timer'
   else if ('sourceTrackProp' in control) return 'wave'

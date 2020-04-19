@@ -6,6 +6,7 @@ import * as Actions from '../actions'
 import * as Selectors from '../selectors'
 import * as Types from 'render/util/types'
 import { defaultState, defaultTrackSourceParams } from '../defaults'
+import getImpulses from 'render/util/impulse-detect'
 
 import inferTimeBase from 'render/util/infer-timebase'
 
@@ -317,10 +318,12 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.inferBounds, (state, { payload }) => {
-    const [cstart, clength] = payload.chunks
-    if (!clength || !payload.impulses) return state
+    const track = state.live.tracks[payload.sourceId],
+      [cstart, clength] = track.playback.chunks,
+      impulses = getImpulses(payload.sourceId)
+    if (!clength || !impulses) return state
     else {
-      const inferred = inferTimeBase(payload.chunks, payload.impulses, payload.snap),
+      const inferred = inferTimeBase(track.playback.chunks, impulses, payload.snap),
         existingBounds = state.sources[payload.sourceId].bounds,
         cend = cstart + clength
 

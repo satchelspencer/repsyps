@@ -24,7 +24,7 @@ import isEqual from 'src/render/util/is-equal'
 const ControlsGridWrapper = ctyled.div.attrs({ enabled: true }).styles({
   flex: 1,
   bg: true,
-  color: c => c.nudge(0.05),
+  color: (c) => c.nudge(0.05),
   disabled: (_, { enabled }) => !enabled,
 })
 
@@ -90,7 +90,7 @@ function CellWrapper(props: CellWrapperProps) {
       props.setSelected(pos)
     }, [pos]),
     handleMouseLeave = useCallback(
-      e => {
+      (e) => {
         if (props.mouseDown && isSelected && e.shiftKey) props.setExited(true)
       },
       [props.mouseDown, isSelected]
@@ -123,12 +123,13 @@ function CellWrapper(props: CellWrapperProps) {
 
 function ControlsGrid() {
   const container = useRef(null),
-    { width, height } = useMeasure(container)
+    { width, height } = useMeasure(container),
+    dispatch = useDispatch()
 
   const size = useContext(CtyledContext).theme.size,
-    [selected, setSelected] = useState<Types.Position>(null),
+    selected = useSelector((state) => state.live.selectedPosition),
     [targetWidth, setTargetWidth] = useState(size * 8),
-    enabled = useSelector(state => state.live.controlsEnabled)
+    enabled = useSelector((state) => state.live.controlsEnabled)
 
   const count = Math.ceil(width / targetWidth),
     cellSize = width / count,
@@ -146,18 +147,21 @@ function ControlsGrid() {
     return () => window.removeEventListener('mouseup', handleMouseUp)
   }, [])
 
-  const handleMouseDown = useCallback(e => {
+  const handleMouseDown = useCallback((e) => {
       e.preventDefault()
       setMouseDown(true)
     }, []),
     handleMouseUp = useCallback(() => setMouseDown(false), []),
-    handleMouseMove = useCallback(e => e.preventDefault(), []),
+    handleMouseMove = useCallback((e) => e.preventDefault(), []),
     handleIncZoom = useCallback(
-      diff => {
+      (diff) => {
         setTargetWidth(width / (width / targetWidth + diff))
       },
       [width, targetWidth]
-    )
+    ),
+    handleSetSelected = useCallback((position: Types.Position) => {
+      dispatch(Actions.setSelectedPosition(position))
+    }, [])
 
   return (
     <ControlsH>
@@ -171,17 +175,17 @@ function ControlsGrid() {
           onMouseMove={handleMouseMove}
         >
           <GridInner inRef={container}>
-            {_.range(rowCount).map(y => {
+            {_.range(rowCount).map((y) => {
               return (
                 <GridRow key={y}>
-                  {_.range(count).map(x => {
+                  {_.range(count).map((x) => {
                     return (
                       <CellWrapper
                         key={x}
                         x={x}
                         y={y}
                         selected={selected}
-                        setSelected={setSelected}
+                        setSelected={handleSetSelected}
                         exited={exited}
                         setExited={setExited}
                         mouseDown={mouseDown}

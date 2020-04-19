@@ -41,10 +41,10 @@ const PresetInput = ctyled.input.class(inline).styles({
   bg: true,
   height: 2,
   padd: 1,
-}).extend`
+}).extendSheet`
   outline-color: #f59797;
   outline-width: 2px;
-  font-color:${({ color }) => color.fg};
+  color:${({ color }) => color.fg} !important;
 `
 
 const PresetItemName = ctyled.div.styles({
@@ -132,6 +132,7 @@ function Presets() {
     }, [newName]),
     handleKeyDown = useCallback(
       e => {
+        e.stopPropagation()
         if (e.key === 'Enter' || e.key === 'Tab') handleCreatePreset(newName)
         if (e.key === 'Escape') setAdding(false)
       },
