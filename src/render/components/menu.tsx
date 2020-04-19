@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 import electron from 'electron'
-import { Store } from 'redux'
 import pathUtils from 'path'
 import _ from 'lodash'
 import localShortcut from 'electron-localshortcut'
@@ -11,7 +10,7 @@ import * as Selectors from 'render/redux/selectors'
 import { defaultState } from 'render/redux/defaults'
 
 import { useSelection } from 'render/components/selection'
-import { useDispatch, useSelector, useStore } from 'render/redux/react'
+import { useDispatch, useStore } from 'render/redux/react'
 
 import { getPath, getAppPath } from 'render/loading/app-paths'
 import { loadBindings, saveBindings } from 'render/loading/bindings'
@@ -29,7 +28,8 @@ const { Menu, dialog, getCurrentWindow } = electron.remote,
   isMac = process.platform === 'darwin'
 
 export default function init() {
-  const store = useStore()
+  const store = useStore(),
+    dispatch = useDispatch()
 
   const { getSelection } = useSelection<Types.Control>('control')
 
@@ -50,480 +50,487 @@ export default function init() {
     })
 
     const commands: {
-      [name: string]: {
-        click: () => any
-        accelerator?: string
-      }
-    } = {
-      newProject: {
-        click: () => store.dispatch(Actions.reset()),
-        accelerator: 'CmdOrCtrl+Shift+N',
-      },
-      openProject: {
-        click: () => {
-          const path = dialog.showOpenDialog({
-            defaultPath: getPath('projects'),
-            filters: [{ name: 'repsyps project', extensions: ['syp'] }],
-            buttonLabel: 'Open Project',
-          })
-          if (path && path[0]) loadProject(path[0], store)
+        [name: string]: {
+          click: () => any
+          accelerator?: string
+        }
+      } = {
+        newProject: {
+          click: () => dispatch(Actions.reset()),
+          accelerator: 'CmdOrCtrl+Shift+N',
         },
-        accelerator: 'CmdOrCtrl+O',
-      },
-      saveProject: {
-        click: () => {
-          const savedPath = store.getState().save.path
-          if (savedPath) saveProject(savedPath, store)
-          else saveAs()
-        },
-        accelerator: 'CmdOrCtrl+S',
-      },
-      saveProjectAs: {
-        click: saveAs,
-        accelerator: 'CmdOrCtrl+Shift+S',
-      },
-      exportProject: {
-        click: () => {
-          const path = dialog.showSaveDialog({
-            nameFieldLabel: 'Project Name',
-            title: 'Export Project',
-            defaultPath: getPath('projects'),
-            buttonLabel: 'Export Project',
-          })
-          if (path) exportProject(path, store)
-        },
-        accelerator: 'CmdOrCtrl+E',
-      },
-      exportScene: {
-        click: () => {
-          const path = dialog.showSaveDialog({
-            nameFieldLabel: 'Project Name',
-            title: 'Save Project',
-            defaultPath: getPath('projects/untitled'),
-            buttonLabel: 'Export Scene',
-          })
-          if (path) exportCurrentScene(path + '.syp', store)
-        },
-        accelerator: 'CmdOrCtrl+Shift+E',
-      },
-      exportTrack: {
-        click: () => {
-          const state = store.getState(),
-            selectedTrackId = Selectors.getSelectedTrackId(state),
-            name = state.sources[selectedTrackId].name
-          if (!selectedTrackId) return
-          const path = dialog.showSaveDialog({
-            nameFieldLabel: 'Track Name',
-            defaultPath:
-              getAppPath('documents') + pathUtils.basename(name, pathUtils.extname(name)),
-            buttonLabel: 'Export Track',
-          })
-          if (path) audio.exportSource(path + '.m4a', selectedTrackId)
-        },
-        accelerator: 'CmdOrCtrl+Alt+E',
-      },
-      import: {
-        click: () => {
-          const paths = dialog.showOpenDialog({
-            properties: ['openFile'],
-            message: 'Import Audio or Scenes',
-            buttonLabel: 'Inmport',
-          })
-          if (paths)
-            paths.forEach((path) => {
-              if (pathUtils.extname(path) === '.syp') {
-                loadProjectScenes(path, menuState.sceneIndex + 1, store)
-              } else store.dispatch(Actions.addTrackAndSource(path))
+        openProject: {
+          click: () => {
+            const path = dialog.showOpenDialog({
+              defaultPath: getPath('projects'),
+              filters: [{ name: 'repsyps project', extensions: ['syp'] }],
+              buttonLabel: 'Open Project',
             })
+            if (path && path[0]) loadProject(path[0], store)
+          },
+          accelerator: 'CmdOrCtrl+O',
         },
-        accelerator: 'CmdOrCtrl+I',
-      },
-      record: {
-        click: () =>
-          store.dispatch(Actions.setRecording({ enabled: true, fromTrack: null })),
-        accelerator: 'CmdOrCtrl+Shift+R',
-      },
-      recordFromTrack: {
-        click: () => {
-          store.dispatch(
-            Actions.setRecording({
-              enabled: true,
-              fromTrack: Selectors.getSelectedTrackId(store.getState()),
-            })
-          )
+        saveProject: {
+          click: () => {
+            const savedPath = store.getState().save.path
+            if (savedPath) saveProject(savedPath, store)
+            else saveAs()
+          },
+          accelerator: 'CmdOrCtrl+S',
         },
-        accelerator: 'CmdOrCtrl+Alt+R',
-      },
-      findMissing: {
-        click: () => store.dispatch(Actions.setModalRoute('relink')),
-        accelerator: 'CmdOrCtrl+F',
-      },
-      undo: {
-        click: undo,
-        accelerator: 'CmdOrCtrl+Z',
-      },
-      redo: {
-        click: redo,
-        accelerator: 'CmdOrCtrl+Shift+Z',
-      },
-      editTrack: {
-        click: () =>
-          store.dispatch(
-            Actions.editTrack({
-              trackId: menuState.selectedTrackId,
-              edit: !menuState.editing,
-            })
-          ),
-        accelerator: 'E',
-      },
-      inferDivisions: {
-        click: () =>
-          store.dispatch(
-            Actions.inferBounds({
-              sourceId: menuState.selectedTrackId,
-              direction: 'both',
-              snap: true,
-            })
-          ),
-        accelerator: '\\',
-      },
-      inferLeft: {
-        click: () =>
-          store.dispatch(
-            Actions.inferBounds({
-              sourceId: menuState.selectedTrackId,
-              direction: 'left',
-              snap: true,
-            })
-          ),
-        accelerator: '[',
-      },
-      inferRight: {
-        click: () =>
-          store.dispatch(
-            Actions.inferBounds({
-              sourceId: menuState.selectedTrackId,
-              direction: 'right',
-              snap: true,
-            })
-          ),
-        accelerator: ']',
-      },
-      clearDivisions: {
-        click: () =>
-          store.dispatch(
-            Actions.setSourceBounds({
-              sourceId: menuState.selectedTrackId,
-              bounds: [],
-            })
-          ),
-        accelerator: 'K',
-      },
-      resetScene: {
-        click: () => store.dispatch(Actions.zeroInitValues()),
-        accelerator: 'CmdOrCtrl+R',
-      },
-      pauseAll: {
-        click: () =>
-          store.dispatch(
-            Actions.updatePlayback({
-              playing: !menuState.playing,
-            })
-          ),
-        accelerator: 'Shift+Space',
-      },
-      stopAll: {
-        click: () => store.dispatch(Actions.stopAll()),
-        accelerator: 'CmdOrCtrl+Shift+Space',
-      },
-      newScene: {
-        click: () => {
-          store.dispatch(Actions.selectTrackExclusive(null))
-          store.dispatch(Actions.createScene(menuState.sceneIndex + 1))
+        saveProjectAs: {
+          click: saveAs,
+          accelerator: 'CmdOrCtrl+Shift+S',
         },
-        accelerator: 'CmdOrCtrl+N',
-      },
-      newSceneBefore: {
-        click: () => {
-          store.dispatch(Actions.selectTrackExclusive(null))
-          store.dispatch(Actions.createScene(menuState.sceneIndex))
-        },
-        accelerator: 'CmdOrCtrl+Alt+N',
-      },
-      importSceneNext: {
-        click: () => {
-          const path = dialog.showOpenDialog({
-            defaultPath: getPath('projects'),
-            filters: [{ name: 'repsyps project', extensions: ['syp'] }],
-            buttonLabel: 'Import Next',
-          })
-          if (path && path[0]) loadProjectScenes(path[0], menuState.sceneIndex + 1, store)
-        },
-        accelerator: 'CmdOrCtrl+Shift+I',
-      },
-      importSceneEnd: {
-        click: () => {
-          const path = dialog.showOpenDialog({
-            defaultPath: getPath('projects'),
-            filters: [{ name: 'repsyps project', extensions: ['syp'] }],
-            buttonLabel: 'Import to End',
-          })
-          if (path && path[0]) loadProjectScenes(path[0], menuState.scenesCount, store)
-        },
-        accelerator: 'CmdOrCtrl+Alt+I',
-      },
-      prevTrack: {
-        click: () => store.dispatch(Actions.stepSelectedTrack(-1)),
-        accelerator: 'Up',
-      },
-      nextTrack: {
-        click: () => store.dispatch(Actions.stepSelectedTrack(1)),
-        accelerator: 'Down',
-      },
-      skipNextScene: {
-        click: () => store.dispatch(Actions.cycleScenes(menuState.sceneIndex + 1)),
-        accelerator: 'CmdOrCtrl+Shift+.',
-      },
-      delNextScene: {
-        click: () => store.dispatch(Actions.deleteScene(menuState.sceneIndex + 1)),
-        accelerator: 'CmdOrCtrl+Alt+.',
-      },
-      delFollowing: {
-        click: () => store.dispatch(Actions.deleteAfter(menuState.sceneIndex)),
-        accelerator: 'CmdOrCtrl+Alt+Shift+.',
-      },
-      delScene: {
-        click: () => store.dispatch(Actions.deleteScene(menuState.sceneIndex)),
-        accelerator: 'CmdOrCtrl+Shift+Backspace',
-      },
-      duplicateTrack: {
-        click: () => {
-          const selectedTrackId = Selectors.getSelectedTrackId(store.getState())
-          if (!selectedTrackId) return
-          store.dispatch(Actions.duplicateTrack(selectedTrackId))
-        },
-        accelerator: 'CmdOrCtrl+D',
-      },
-      playPauseTrack: {
-        click: () => store.dispatch(Actions.playPauseTrack(menuState.selectedTrackId)),
-        accelerator: 'Space',
-      },
-      playToEndTrack: {
-        click: () =>
-          store.dispatch(
-            Actions.loopTrack({ trackId: menuState.selectedTrackId, loop: -1 })
-          ),
-        accelerator: 'P',
-      },
-      muteTrack: {
-        click: () =>
-          store.dispatch(Actions.setTrackMuted({ trackId: menuState.selectedTrackId })),
-        accelerator: 'M',
-      },
-      soloTrack: {
-        click: () =>
-          store.dispatch(Actions.setTrackSolo({ trackId: menuState.selectedTrackId })),
-        accelerator: 'S',
-      },
-      syncOnTrack: {
-        click: () =>
-          store.dispatch(
-            Actions.setTrackSync({ trackId: menuState.selectedTrackId, sync: 'on' })
-          ),
-        accelerator: 'Tab',
-      },
-      syncOffTrack: {
-        click: () =>
-          store.dispatch(
-            Actions.setTrackSync({
-              trackId: menuState.selectedTrackId,
-              sync: 'off',
+        exportProject: {
+          click: () => {
+            const path = dialog.showSaveDialog({
+              nameFieldLabel: 'Project Name',
+              title: 'Export Project',
+              defaultPath: getPath('projects'),
+              buttonLabel: 'Export Project',
             })
-          ),
-        accelerator: '`',
-      },
-      syncLockTrack: {
-        click: () =>
-          store.dispatch(
-            Actions.setTrackSync({
-              trackId: menuState.selectedTrackId,
-              sync: 'lock',
-            })
-          ),
-        accelerator: 'Alt+Tab',
-      },
-      nextCue: {
-        click: () =>
-          store.dispatch(
-            Actions.stepTrackCue({
-              trackId: menuState.selectedTrackId,
-              cueStep: 1,
-            })
-          ),
-        accelerator: 'Right',
-      },
-      prevCue: {
-        click: () => {
-          store.dispatch(
-            Actions.stepTrackCue({
-              trackId: menuState.selectedTrackId,
-              cueStep: -1,
-            })
-          )
+            if (path) exportProject(path, store)
+          },
+          accelerator: 'CmdOrCtrl+E',
         },
-        accelerator: 'Left',
-      },
-      newCue: {
-        click: () => {
-          store.dispatch(
-            Actions.addCue({
-              trackId: menuState.selectedTrackId,
-              cue: {
-                playback: {
-                  chunkIndex: -1,
-                  playing: true,
+        exportScene: {
+          click: () => {
+            const path = dialog.showSaveDialog({
+              nameFieldLabel: 'Project Name',
+              title: 'Save Project',
+              defaultPath: getPath('projects/untitled'),
+              buttonLabel: 'Export Scene',
+            })
+            if (path) exportCurrentScene(path + '.syp', store)
+          },
+          accelerator: 'CmdOrCtrl+Shift+E',
+        },
+        exportTrack: {
+          click: () => {
+            const state = store.getState(),
+              selectedTrackId = Selectors.getSelectedTrackId(state),
+              name = state.sources[selectedTrackId].name
+            if (!selectedTrackId) return
+            const path = dialog.showSaveDialog({
+              nameFieldLabel: 'Track Name',
+              defaultPath:
+                getAppPath('documents') +
+                pathUtils.basename(name, pathUtils.extname(name)),
+              buttonLabel: 'Export Track',
+            })
+            if (path) audio.exportSource(path + '.m4a', selectedTrackId)
+          },
+          accelerator: 'CmdOrCtrl+Alt+E',
+        },
+        import: {
+          click: () => {
+            const paths = dialog.showOpenDialog({
+              properties: ['openFile'],
+              message: 'Import Audio or Scenes',
+              buttonLabel: 'Inmport',
+            })
+            if (paths)
+              paths.forEach((path) => {
+                if (pathUtils.extname(path) === '.syp') {
+                  loadProjectScenes(path, menuState.sceneIndex + 1, store)
+                } else dispatch(Actions.addTrackAndSource(path))
+              })
+          },
+          accelerator: 'CmdOrCtrl+I',
+        },
+        record: {
+          click: () => dispatch(Actions.setRecording({ enabled: true, fromTrack: null })),
+          accelerator: 'CmdOrCtrl+Shift+R',
+        },
+        recordFromTrack: {
+          click: () => {
+            dispatch(
+              Actions.setRecording({
+                enabled: true,
+                fromTrack: Selectors.getSelectedTrackId(store.getState()),
+              })
+            )
+          },
+          accelerator: 'CmdOrCtrl+Alt+R',
+        },
+        findMissing: {
+          click: () => dispatch(Actions.setModalRoute('relink')),
+          accelerator: 'CmdOrCtrl+F',
+        },
+        undo: {
+          click: undo,
+          accelerator: 'CmdOrCtrl+Z',
+        },
+        redo: {
+          click: redo,
+          accelerator: 'CmdOrCtrl+Shift+Z',
+        },
+        editTrack: {
+          click: () =>
+            dispatch(
+              Actions.editTrack({
+                trackId: menuState.selectedTrackId,
+                edit: !menuState.editing,
+              })
+            ),
+          accelerator: 'E',
+        },
+        inferDivisions: {
+          click: () =>
+            dispatch(
+              Actions.inferBounds({
+                sourceId: menuState.selectedTrackId,
+                direction: 'both',
+                snap: true,
+              })
+            ),
+          accelerator: '\\',
+        },
+        inferLeft: {
+          click: () =>
+            dispatch(
+              Actions.inferBounds({
+                sourceId: menuState.selectedTrackId,
+                direction: 'left',
+                snap: true,
+              })
+            ),
+          accelerator: '[',
+        },
+        inferRight: {
+          click: () =>
+            dispatch(
+              Actions.inferBounds({
+                sourceId: menuState.selectedTrackId,
+                direction: 'right',
+                snap: true,
+              })
+            ),
+          accelerator: ']',
+        },
+        clearDivisions: {
+          click: () =>
+            dispatch(
+              Actions.setSourceBounds({
+                sourceId: menuState.selectedTrackId,
+                bounds: [],
+              })
+            ),
+          accelerator: 'K',
+        },
+        resetScene: {
+          click: () => dispatch(Actions.zeroInitValues()),
+          accelerator: 'CmdOrCtrl+R',
+        },
+        pauseAll: {
+          click: () =>
+            dispatch(
+              Actions.updatePlayback({
+                playing: !menuState.playing,
+              })
+            ),
+          accelerator: 'Shift+Space',
+        },
+        stopAll: {
+          click: () => dispatch(Actions.stopAll()),
+          accelerator: 'CmdOrCtrl+Shift+Space',
+        },
+        newScene: {
+          click: () => {
+            dispatch(Actions.selectTrackExclusive(null))
+            dispatch(Actions.createScene(menuState.sceneIndex + 1))
+          },
+          accelerator: 'CmdOrCtrl+N',
+        },
+        newSceneBefore: {
+          click: () => {
+            dispatch(Actions.selectTrackExclusive(null))
+            dispatch(Actions.createScene(menuState.sceneIndex))
+          },
+          accelerator: 'CmdOrCtrl+Alt+N',
+        },
+        importSceneNext: {
+          click: () => {
+            const path = dialog.showOpenDialog({
+              defaultPath: getPath('projects'),
+              filters: [{ name: 'repsyps project', extensions: ['syp'] }],
+              buttonLabel: 'Import Next',
+            })
+            if (path && path[0])
+              loadProjectScenes(path[0], menuState.sceneIndex + 1, store)
+          },
+          accelerator: 'CmdOrCtrl+Shift+I',
+        },
+        importSceneEnd: {
+          click: () => {
+            const path = dialog.showOpenDialog({
+              defaultPath: getPath('projects'),
+              filters: [{ name: 'repsyps project', extensions: ['syp'] }],
+              buttonLabel: 'Import to End',
+            })
+            if (path && path[0]) loadProjectScenes(path[0], menuState.scenesCount, store)
+          },
+          accelerator: 'CmdOrCtrl+Alt+I',
+        },
+        prevTrack: {
+          click: () => dispatch(Actions.stepSelectedTrack(-1)),
+          accelerator: 'Up',
+        },
+        nextTrack: {
+          click: () => dispatch(Actions.stepSelectedTrack(1)),
+          accelerator: 'Down',
+        },
+        skipNextScene: {
+          click: () => dispatch(Actions.cycleScenes(menuState.sceneIndex + 1)),
+          accelerator: 'CmdOrCtrl+Shift+.',
+        },
+        delNextScene: {
+          click: () => dispatch(Actions.deleteScene(menuState.sceneIndex + 1)),
+          accelerator: 'CmdOrCtrl+Alt+.',
+        },
+        delFollowing: {
+          click: () => dispatch(Actions.deleteAfter(menuState.sceneIndex)),
+          accelerator: 'CmdOrCtrl+Alt+Shift+.',
+        },
+        delScene: {
+          click: () => dispatch(Actions.deleteScene(menuState.sceneIndex)),
+          accelerator: 'CmdOrCtrl+Backspace',
+        },
+        duplicateTrack: {
+          click: () => {
+            const selectedTrackId = Selectors.getSelectedTrackId(store.getState())
+            if (!selectedTrackId) return
+            dispatch(Actions.duplicateTrack(selectedTrackId))
+          },
+          accelerator: 'CmdOrCtrl+D',
+        },
+        playPauseTrack: {
+          click: () => dispatch(Actions.playPauseTrack(menuState.selectedTrackId)),
+          accelerator: 'Space',
+        },
+        playToEndTrack: {
+          click: () =>
+            dispatch(Actions.loopTrack({ trackId: menuState.selectedTrackId, loop: -1 })),
+          accelerator: 'P',
+        },
+        muteTrack: {
+          click: () =>
+            dispatch(Actions.setTrackMuted({ trackId: menuState.selectedTrackId })),
+          accelerator: 'M',
+        },
+        soloTrack: {
+          click: () =>
+            dispatch(Actions.setTrackSolo({ trackId: menuState.selectedTrackId })),
+          accelerator: 'S',
+        },
+        syncOnTrack: {
+          click: () =>
+            dispatch(
+              Actions.setTrackSync({ trackId: menuState.selectedTrackId, sync: 'on' })
+            ),
+          accelerator: 'Tab',
+        },
+        syncOffTrack: {
+          click: () =>
+            dispatch(
+              Actions.setTrackSync({
+                trackId: menuState.selectedTrackId,
+                sync: 'off',
+              })
+            ),
+          accelerator: '`',
+        },
+        syncLockTrack: {
+          click: () =>
+            dispatch(
+              Actions.setTrackSync({
+                trackId: menuState.selectedTrackId,
+                sync: 'lock',
+              })
+            ),
+          accelerator: 'Alt+Tab',
+        },
+        nextCue: {
+          click: () =>
+            dispatch(
+              Actions.stepTrackCue({
+                trackId: menuState.selectedTrackId,
+                cueStep: 1,
+              })
+            ),
+          accelerator: 'Right',
+        },
+        prevCue: {
+          click: () => {
+            dispatch(
+              Actions.stepTrackCue({
+                trackId: menuState.selectedTrackId,
+                cueStep: -1,
+              })
+            )
+          },
+          accelerator: 'Left',
+        },
+        newCue: {
+          click: () => {
+            dispatch(
+              Actions.addCue({
+                trackId: menuState.selectedTrackId,
+                cue: {
+                  playback: {
+                    chunkIndex: -1,
+                    playing: true,
+                  },
+                  startBehavior: 'immediate',
                 },
-                startBehavior: 'immediate',
-              },
+              })
+            )
+          },
+          accelerator: 'CmdOrCtrl+Enter',
+        },
+        delTrack: {
+          click: () => {
+            const selectedTrackId = Selectors.getSelectedTrackId(store.getState())
+            if (selectedTrackId) dispatch(Actions.rmTrack(selectedTrackId))
+          },
+          accelerator: 'Backspace',
+        },
+        addControl: {
+          click: async () => {
+            const control = await getSelection()
+            if (!control) return
+            dispatch(Actions.addControlToGroup({ control }))
+          },
+          accelerator: 'CmdOrCtrl+B',
+        },
+        setMidi: {
+          click: () =>
+            dispatch(
+              Actions.setBinding({
+                binding: {
+                  waiting: true,
+                },
+              })
+            ),
+          accelerator: 'CmdOrCtrl+M',
+        },
+        removeControl: {
+          click: () => dispatch(Actions.deleteControlGroup()),
+          accelerator: 'Alt+B',
+        },
+        clearControls: {
+          click: () => dispatch(Actions.clearControls()),
+          accelerator: 'Alt+Shift+B',
+        },
+        disableControls: {
+          click: () => dispatch(Actions.setControlsEnabled(null)),
+          accelerator: 'B',
+        },
+        openBindings: {
+          click: () => {
+            const path = dialog.showOpenDialog({
+              defaultPath: getPath('bindings'),
+              filters: [{ name: 'repsyps binding', extensions: ['rbind'] }],
+              buttonLabel: 'Load Bindings',
             })
-          )
+            if (path && path[0]) loadBindings(path[0], store)
+          },
         },
-        accelerator: 'CmdOrCtrl+Enter',
-      },
-      delTrack: {
-        click: () => {
-          const selectedTrackId = Selectors.getSelectedTrackId(store.getState())
-          if (selectedTrackId) store.dispatch(Actions.rmTrack(selectedTrackId))
-        },
-        accelerator: 'CmdOrCtrl+Backspace',
-      },
-      addControl: {
-        click: async () => {
-          const control = await getSelection()
-          if (!control) return
-          store.dispatch(Actions.addControlToGroup({ control }))
-        },
-        accelerator: 'CmdOrCtrl+B',
-      },
-      setMidi: {
-        click: () =>
-          store.dispatch(
-            Actions.setBinding({
-              binding: {
-                waiting: true,
-              },
+        saveBindings: {
+          click: () => {
+            const path = dialog.showSaveDialog({
+              title: 'Save Contol Bindings',
+              nameFieldLabel: 'Config Name',
+              defaultPath: getPath('bindings/untitled'),
+              buttonLabel: 'Save Bindings',
             })
-          ),
-        accelerator: 'CmdOrCtrl+M',
-      },
-      clearControls: {
-        click: () => store.dispatch(Actions.clearControls()),
-        accelerator: 'Alt+Shift+B',
-      },
-      disableControls: {
-        click: () => store.dispatch(Actions.setControlsEnabled(null)),
-        accelerator: 'Alt+B',
-      }, 
-      openBindings: {
-        click: () => {
-          const path = dialog.showOpenDialog({
-            defaultPath: getPath('bindings'),
-            filters: [{ name: 'repsyps binding', extensions: ['rbind'] }],
-            buttonLabel: 'Load Bindings',
-          })
-          if (path && path[0]) loadBindings(path[0], store)
+            if (path) saveBindings(path + '.rbind', store)
+          },
+        },
+        clearBindings: {
+          click: () => dispatch(Actions.resetBindings()),
+        },
+        trackScroll: {
+          click: () => {
+            const currentScroll = store.getState().settings.trackScroll
+            dispatch(
+              Actions.setSettings({
+                trackScroll: !currentScroll,
+              })
+            )
+          },
+          accelerator: 'CmdOrCtrl+Shift+T',
+        },
+        darkMode: {
+          click: () => {
+            const currentDark = store.getState().settings.darkMode
+            dispatch(
+              Actions.setSettings({
+                darkMode: !currentDark,
+              })
+            )
+          },
+          accelerator: 'CmdOrCtrl+Shift+D',
+        },
+        highRate: {
+          click: () => dispatch(Actions.setSettings({ updateRate: 'high' })),
+        },
+        medRate: {
+          click: () => dispatch(Actions.setSettings({ updateRate: 'medium' })),
+        },
+        lowRate: {
+          click: () => dispatch(Actions.setSettings({ updateRate: 'low' })),
+        },
+        resetZoom: {
+          click: () =>
+            dispatch(
+              Actions.setSettings({
+                size: 11,
+              })
+            ),
+          accelerator: 'CmdOrCtrl+0',
+        },
+        zoomIn: {
+          click: () => {
+            const currentSize = store.getState().settings.size
+            dispatch(
+              Actions.setSettings({
+                size: currentSize + 1,
+              })
+            )
+          },
+          accelerator: 'CmdOrCtrl+Shift+Plus',
+        },
+        zoomOut: {
+          click: () => {
+            const currentSize = store.getState().settings.size
+            dispatch(
+              Actions.setSettings({
+                size: currentSize - 1,
+              })
+            )
+          },
+          accelerator: 'CmdOrCtrl+Shift+-',
+        },
+        exitModal: {
+          click: () => dispatch(Actions.setModalRoute(null)),
+          accelerator: 'Escape',
         },
       },
-      saveBindings: {
+      menuCommands = _.mapValues(commands, (command) => ({
+        ...command,
         click: () => {
-          const path = dialog.showSaveDialog({
-            title: 'Save Contol Bindings',
-            nameFieldLabel: 'Config Name',
-            defaultPath: getPath('bindings/untitled'),
-            buttonLabel: 'Save Bindings',
-          })
-          if (path) saveBindings(path + '.rbind', store)
+          if (!inWrapper || !document.hasFocus()) command.click()
         },
-      },
-      clearBindings: {
-        click: () => store.dispatch(Actions.resetBindings()),
-      },
-      trackScroll: {
-        click: () => {
-          const currentScroll = store.getState().settings.trackScroll
-          store.dispatch(
-            Actions.setSettings({
-              trackScroll: !currentScroll,
-            })
-          )
-        },
-        accelerator: 'CmdOrCtrl+Shift+T',
-      },
-      darkMode: {
-        click: () => {
-          const currentDark = store.getState().settings.darkMode
-          store.dispatch(
-            Actions.setSettings({
-              darkMode: !currentDark,
-            })
-          )
-        },
-        accelerator: 'CmdOrCtrl+Shift+D',
-      },
-      highRate: {
-        click: () => store.dispatch(Actions.setSettings({ updateRate: 'high' })),
-      },
-      medRate: {
-        click: () => store.dispatch(Actions.setSettings({ updateRate: 'medium' })),
-      },
-      lowRate: {
-        click: () => store.dispatch(Actions.setSettings({ updateRate: 'low' })),
-      },
-      resetZoom: {
-        click: () =>
-          store.dispatch(
-            Actions.setSettings({
-              size: 11,
-            })
-          ),
-        accelerator: 'CmdOrCtrl+0',
-      },
-      zoomIn: {
-        click: () => {
-          const currentSize = store.getState().settings.size
-          store.dispatch(
-            Actions.setSettings({
-              size: currentSize + 1,
-            })
-          )
-        },
-        accelerator: 'CmdOrCtrl+Shift+Plus',
-      },
-      zoomOut: {
-        click: () => {
-          const currentSize = store.getState().settings.size
-          store.dispatch(
-            Actions.setSettings({
-              size: currentSize - 1,
-            })
-          )
-        },
-        accelerator: 'CmdOrCtrl+Shift+-',
-      },
-      exitModal: {
-        click: () => store.dispatch(Actions.setModalRoute(null)),
-        accelerator: 'Escape',
-      },
-    }
+      }))
 
     const bwindow = getCurrentWindow()
     _.each(commands, (command) => {
       if (command.accelerator)
-        localShortcut.register(
-          bwindow,
-          command.accelerator,
-          () => !inInput && inWrapper && document.hasFocus() && command.click()
-        )
+        localShortcut.register(bwindow, command.accelerator, () => {
+          if (!inInput && inWrapper && document.hasFocus()) command.click()
+        })
     })
 
     function handleUpdate() {
@@ -534,16 +541,16 @@ export default function init() {
           submenu: [
             {
               label: 'New Project',
-              ...commands.newProject,
+              ...menuCommands.newProject,
             },
             {
               label: 'Open Project',
-              ...commands.openProject,
+              ...menuCommands.openProject,
             },
             { type: 'separator' },
             {
               label: 'Save Project',
-              ...commands.saveProject,
+              ...menuCommands.saveProject,
             },
             {
               label: 'Save Project As',
@@ -552,20 +559,20 @@ export default function init() {
             { type: 'separator' },
             {
               label: 'Export Project',
-              ...commands.exportProject,
+              ...menuCommands.exportProject,
             },
             {
               label: 'Export Scene',
-              ...commands.exportScene,
+              ...menuCommands.exportScene,
             },
             {
               label: 'Export Track',
-              ...commands.exportTrack,
+              ...menuCommands.exportTrack,
             },
             { type: 'separator' },
             {
               label: 'Import',
-              ...commands.import,
+              ...menuCommands.import,
             },
             { type: 'separator' },
             {
@@ -574,12 +581,12 @@ export default function init() {
             },
             {
               label: 'Record From Track',
-              ...commands.recordFromTrack,
+              ...menuCommands.recordFromTrack,
             },
             { type: 'separator' },
             {
               label: 'Find Missing Media',
-              ...commands.findMissing,
+              ...menuCommands.findMissing,
             },
             { type: 'separator' },
             { role: 'quit' },
@@ -588,8 +595,8 @@ export default function init() {
         {
           label: 'Edit',
           submenu: [
-            { label: 'Undo', ...commands.undo },
-            { label: 'Redo', ...commands.redo },
+            { label: 'Undo', ...menuCommands.undo },
+            { label: 'Redo', ...menuCommands.redo },
             { type: 'separator' },
             { role: 'copy' },
             { role: 'paste' },
@@ -597,27 +604,27 @@ export default function init() {
             {
               label: menuState.editing ? 'Save Track' : 'Edit Track',
               enabled: !inInput,
-              ...commands.editTrack,
+              ...menuCommands.editTrack,
             },
             {
               label: 'Infer Divisions',
               enabled: !inInput && menuState.editing,
-              ...commands.inferDivisions,
+              ...menuCommands.inferDivisions,
             },
             {
               label: 'Infer Left',
               enabled: !inInput && menuState.editing,
-              ...commands.inferLeft,
+              ...menuCommands.inferLeft,
             },
             {
               label: 'Infer Right',
               enabled: !inInput && menuState.editing,
-              ...commands.inferRight,
+              ...menuCommands.inferRight,
             },
             {
               label: 'Clear Divisions',
               enabled: !inInput && menuState.editing,
-              ...commands.clearDivisions,
+              ...menuCommands.clearDivisions,
             },
           ],
         },
@@ -626,63 +633,63 @@ export default function init() {
           submenu: [
             {
               label: 'Reset Scene',
-              ...commands.resetScene,
+              ...menuCommands.resetScene,
             },
             {
               label: 'Pause All',
-              ...commands.pauseAll,
+              ...menuCommands.pauseAll,
             },
             {
               label: 'Stop All',
               enabled: menuState.playing,
-              ...commands.stopAll,
+              ...menuCommands.stopAll,
             },
             { type: 'separator' },
             {
               label: 'New Scene After',
-              ...commands.newScene,
+              ...menuCommands.newScene,
             },
             {
               label: 'New Scene Before',
-              ...commands.newSceneBefore,
+              ...menuCommands.newSceneBefore,
             },
             { type: 'separator' },
             {
               label: 'Import Scene Next',
-              ...commands.importSceneNext,
+              ...menuCommands.importSceneNext,
             },
             {
               label: 'Import Scene to End',
-              ...commands.importSceneEnd,
+              ...menuCommands.importSceneEnd,
             },
             { type: 'separator' },
             {
               label: 'Previous Track',
-              ...commands.prevTrack,
+              ...menuCommands.prevTrack,
             },
             {
               label: 'Next Track',
-              ...commands.nextTrack,
+              ...menuCommands.nextTrack,
             },
             {
               label: 'Skip Next',
               enabled: menuState.sceneIndex < menuState.scenesCount - 2,
-              ...commands.skipNextScene,
+              ...menuCommands.skipNextScene,
             },
             {
               label: 'Delete Next',
               enabled: menuState.sceneIndex < menuState.scenesCount - 1,
-              ...commands.delNextScene,
+              ...menuCommands.delNextScene,
             },
             {
               label: 'Delete Following',
               enabled: menuState.sceneIndex < menuState.scenesCount - 1,
-              ...commands.delFollowing,
+              ...menuCommands.delFollowing,
             },
             { type: 'separator' },
             {
               label: 'Delete Scene',
-              ...commands.delScene,
+              ...menuCommands.delScene,
             },
           ],
         },
@@ -692,63 +699,63 @@ export default function init() {
           submenu: [
             {
               label: 'Duplicate Track',
-              ...commands.duplicateTrack,
+              ...menuCommands.duplicateTrack,
             },
             { type: 'separator' },
             {
               label: menuState.trackPlaying && menuState.playing ? 'Stop' : 'Play',
               enabled: !inInput,
-              ...commands.playPauseTrack,
+              ...menuCommands.playPauseTrack,
             },
             {
               label: 'Play To End',
               enabled: !inInput,
-              ...commands.playToEndTrack,
+              ...menuCommands.playToEndTrack,
             },
             {
               label: 'Mute',
               enabled: !inInput,
-              ...commands.muteTrack,
+              ...menuCommands.muteTrack,
             },
             {
               label: 'Solo',
               enabled: !inInput,
-              ...commands.soloTrack,
+              ...menuCommands.soloTrack,
             },
             { type: 'separator' },
             {
               label: 'Sync On',
               enabled: !inInput,
-              ...commands.syncOnTrack,
+              ...menuCommands.syncOnTrack,
             },
             {
               label: 'Sync Off',
               enabled: !inInput,
-              ...commands.syncOffTrack,
+              ...menuCommands.syncOffTrack,
             },
             {
               label: 'Lock Sync',
-              ...commands.syncLockTrack,
+              ...menuCommands.syncLockTrack,
             },
             { type: 'separator' },
             {
               label: 'Next Cue',
               enabled: !inInput,
-              ...commands.nextCue,
+              ...menuCommands.nextCue,
             },
             {
               label: 'Previous Cue',
               enabled: !inInput,
-              ...commands.prevCue,
+              ...menuCommands.prevCue,
             },
             {
               label: 'Create Cue',
-              ...commands.newCue,
+              ...menuCommands.newCue,
             },
             { type: 'separator' },
             {
               label: 'Delete Track',
-              ...commands.delTrack,
+              ...menuCommands.delTrack,
             },
           ],
         },
@@ -757,33 +764,37 @@ export default function init() {
           submenu: [
             {
               label: 'Add Control',
-              ...commands.addControl,
+              ...menuCommands.addControl,
             },
             {
               label: 'Set Midi',
-              ...commands.setMidi,
+              ...menuCommands.setMidi,
+            },
+            {
+              label: 'Remove Control',
+              ...menuCommands.removeControl,
             },
             { type: 'separator' },
             {
               label: 'Clear Controls',
-              ...commands.clearControls,
+              ...menuCommands.clearControls,
             },
             {
               label: 'Disable Controls',
-              ...commands.disableControls,
+              ...menuCommands.disableControls,
             },
             { type: 'separator' },
             {
               label: 'Open Binding Confing',
-              ...commands.openBindings,
+              ...menuCommands.openBindings,
             },
             {
               label: 'Save Binding Config',
-              ...commands.saveBindings,
+              ...menuCommands.saveBindings,
             },
             {
               label: 'Clear Bindings',
-              ...commands.clearBindings,
+              ...menuCommands.clearBindings,
             },
           ],
         },
@@ -795,7 +806,7 @@ export default function init() {
               type: 'checkbox',
               checked: device.index === menuState.output.current,
               click: () =>
-                store.dispatch(
+                dispatch(
                   Actions.setOutputs({
                     current: device.index,
                   })
@@ -810,13 +821,13 @@ export default function init() {
               label: 'Track Scroll',
               type: 'checkbox',
               checked: menuState.trackScroll,
-              ...commands.trackScroll,
+              ...menuCommands.trackScroll,
             },
             {
               label: 'Dark Mode',
               type: 'checkbox',
               checked: menuState.darkMode,
-              ...commands.darkMode,
+              ...menuCommands.darkMode,
             },
             {
               label: 'Update Rate',
@@ -825,38 +836,38 @@ export default function init() {
                   label: 'High',
                   type: 'checkbox',
                   checked: menuState.updateRate === 'high',
-                  ...commands.highRate,
+                  ...menuCommands.highRate,
                 },
                 {
                   label: 'Medium',
                   type: 'checkbox',
                   checked: menuState.updateRate === 'medium',
-                  ...commands.medRate,
+                  ...menuCommands.medRate,
                 },
                 {
                   label: 'Low',
                   type: 'checkbox',
                   checked: menuState.updateRate === 'low',
-                  ...commands.lowRate,
+                  ...menuCommands.lowRate,
                 },
               ],
             },
             { type: 'separator' },
             { role: 'reload', accelerator: 'Alt+R' },
             { role: 'toggledevtools' },
-            { label: 'Escape', ...commands.exitModal },
+            { label: 'Escape', ...menuCommands.exitModal },
             { type: 'separator' },
             {
               label: 'Reset Zoom',
-              ...commands.resetZoom,
+              ...menuCommands.resetZoom,
             },
             {
               label: 'Zoom In',
-              ...commands.zoomIn,
+              ...menuCommands.zoomIn,
             },
             {
               label: 'Zoom Out',
-              ...commands.zoomOut,
+              ...menuCommands.zoomOut,
             },
             { type: 'separator' },
             { role: 'togglefullscreen' },

@@ -124,32 +124,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       }
     }, [isSelecting, getSelection, props.trackId]),
     handleSetOpen = useCallback(
-      (open) => {
-        dispatch(Actions.editTrack({ trackId: props.trackId, edit: open }))
-
-        if (!open) {
-          dispatch(
-            Actions.editSourceTrack({ trackId: props.trackId, sourceTrackEditing: null })
-          )
-          if (bounds && bounds.length)
-            dispatch(
-              Actions.setTrackPlayback({
-                trackId: props.trackId,
-                playback: {
-                  aperiodic: false,
-                },
-              })
-            )
-        } else
-          dispatch(
-            Actions.setTrackPlayback({
-              trackId: props.trackId,
-              playback: {
-                aperiodic: true,
-              },
-            })
-          )
-      },
+      (open) => dispatch(Actions.editTrack({ trackId: props.trackId, edit: open })),
       [props.trackId, bounds]
     ),
     handleClearBounds = useCallback(

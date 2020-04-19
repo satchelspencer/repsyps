@@ -47,6 +47,7 @@ const GridCellWrapper = ctyled.div
     justify: 'center',
     column: true,
     gutter: 0.5,
+    size: (size, { cellSize }) => cellSize / 8,
   }).extendSheet`
   cursor:pointer;
   border-bottom:1px dashed ${({ color }) => color.bq};

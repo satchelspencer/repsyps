@@ -69,13 +69,6 @@ const TrackCanvas = ctyled.canvas.attrs({ selected: false }).extend`
   transition:0.15s all;
 `
 
-export interface TrackContainerProps {
-  trackId: string
-  index: number
-  vBounds: number[]
-  listRef: MutableRefObject<HTMLDivElement>
-}
-
 export interface TrackProps {
   trackId: string
   track: Types.Track
@@ -336,6 +329,13 @@ const Track = memo(
 
 const OFFSCREEN_THRESH = 250
 
+export interface TrackContainerProps {
+  trackId: string
+  index: number
+  vBounds: number[]
+  listRef: MutableRefObject<HTMLDivElement>
+}
+
 export default function TrackContainer(props: TrackContainerProps) {
   const track = useSelector((state) => state.live.tracks[props.trackId]),
     source = useSelector((state) => state.sources[props.trackId]),
@@ -371,7 +371,7 @@ export default function TrackContainer(props: TrackContainerProps) {
     }, [track.editing, track.playback.playing, track.playLock, props.trackId])
 
   useEffect(() => {
-    if (track.selected && props.listRef.current && wrapperRef.current) {
+    if (track.selected && props.listRef.current && vstart !== null && start !== null) {
       if (offTop)
         props.listRef.current.scrollTo({
           top: start,

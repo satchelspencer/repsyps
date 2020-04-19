@@ -8,7 +8,7 @@ const PadWrapper = ctyled.div.attrs({ active: false }).styles({
   border: 2,
   rounded: 2,
   bg: true,
-  borderColor: (c) => c.contrast(0.1),
+  borderColor: (c) => c.contrast(0.15),
   bgColor: (c, { active }) => c.nudge(active ? 0.1 : 0.025),
 })
 

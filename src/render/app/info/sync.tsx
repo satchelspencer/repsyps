@@ -49,6 +49,7 @@ const Sync = memo((props: SyncProps) => {
       </HeaderContent>
       <SyncButton
         selected
+        disabled={!canSync}
         params={{
           trackIndex,
           sync: 'lock',

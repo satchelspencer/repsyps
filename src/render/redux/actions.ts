@@ -274,9 +274,9 @@ export const zeroInitValues = createAction<void>('ZERO_INIT_VALUES')
 
 export const clearControls = createAction<void>('CLEAR_CONTROLS')
 
-export const deleteControlGroup = createAction<{
-  position: Types.Position
-}>('DELETE_CONTROL_GROUP')
+export const deleteControlGroup = createAction<Types.Position | void>(
+  'DELETE_CONTROL_GROUP'
+)
 
 export const addControlPreset = createAction<{
   presetId: string

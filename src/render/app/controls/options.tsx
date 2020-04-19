@@ -50,10 +50,7 @@ function ControlsOptions(props: OptionsProps) {
       enabled,
     ]),
     handleReplay = useCallback(() => dispatch(Actions.zeroInitValues()), []),
-    handleClear = useCallback(
-      () => dispatch(Actions.deleteControlGroup({ position: props.position })),
-      [props.position]
-    ),
+    handleClear = useCallback(() => dispatch(Actions.deleteControlGroup()), []),
     handleZoomIn = useCallback(() => props.onIncZoom(-1), [props.onIncZoom]),
     handleZoomOut = useCallback(() => props.onIncZoom(+1), [props.onIncZoom])
 

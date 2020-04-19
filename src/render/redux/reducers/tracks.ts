@@ -34,6 +34,7 @@ export function applyTrackPlayback(
   let newLive = state.live,
     newTracks = newLive.tracks
 
+  if (!track) return state
   if (!state.playback.playing)
     newTracks = _.mapValues(newTracks, (track) =>
       track.playback.playing
@@ -191,15 +192,16 @@ export default createReducer(defaultState, (handle) => [
   handle(Actions.playPauseTrack, (state, { payload: trackId }) => {
     const track = state.live.tracks[trackId],
       isPlaying = state.playback.playing
-    return applyTrackPlayback(state, trackId, {
-      playing: isPlaying ? !track.playback.playing : true,
-      chunkIndex: -1,
-    })
+    if (!track) return state
+    else
+      return applyTrackPlayback(state, trackId, {
+        playing: isPlaying ? !track.playback.playing : true,
+        chunkIndex: -1,
+      })
   }),
   handle(Actions.setTrackPlayback, (state, { payload }) => {
     const trackId =
       payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex)
-
     return applyTrackPlayback(state, trackId, payload.playback)
   }),
   handle(Actions.stopAll, (state) => {
@@ -248,7 +250,7 @@ export default createReducer(defaultState, (handle) => [
           return b > sample
         }),
         boundIndex = nextBoundIndex - 1
-      console.log(nextBoundIndex, boundIndex)
+
       if (nextBoundIndex !== -1 && boundIndex !== -1) {
         if (playback.aperiodic)
           audio.syncToTrack(trackId, bounds[boundIndex], bounds[nextBoundIndex])
@@ -290,19 +292,27 @@ export default createReducer(defaultState, (handle) => [
     )
   }),
   handle(Actions.editTrack, (state, { payload }) => {
-    return {
-      ...state,
-      live: {
-        ...state.live,
-        tracks: {
-          ...state.live.tracks,
-          [payload.trackId]: {
-            ...state.live.tracks[payload.trackId],
-            editing: payload.edit,
+    const track = state.live.tracks[payload.trackId]
+    return applyTrackPlayback(
+      {
+        ...state,
+        live: {
+          ...state.live,
+          tracks: {
+            ...state.live.tracks,
+            [payload.trackId]: {
+              ...track,
+              editing: payload.edit,
+              sourceTrackEditing: payload.edit ? track.sourceTrackEditing : null,
+            },
           },
         },
       },
-    }
+      payload.trackId,
+      {
+        aperiodic: payload.edit,
+      }
+    )
   }),
   handle(Actions.setTrackPlayLock, (state, { payload }) => {
     return {

@@ -333,8 +333,8 @@ const Control = memo((props: ControlProps) => {
             },
           })
         )
-      } else dispatch(Actions.deleteControlGroup({ position: props.position }))
-    }, [props.group.controls, props.index, props.position])
+      } else dispatch(Actions.deleteControlGroup())
+    }, [props.group.controls, props.index])
 
   return (
     <ControlWrapper ignored={isIgnored}>

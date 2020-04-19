@@ -168,6 +168,8 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.deleteControlGroup, (state, { payload }) => {
+    const position = payload || state.live.selectedPosition,
+      posStr = Selectors.pos2str(position)
     return {
       ...state,
       live: {
@@ -177,7 +179,7 @@ export default createReducer(defaultState, (handle) => [
           else
             return {
               ...scene,
-              controls: _.omit(scene.controls, Selectors.pos2str(payload.position)),
+              controls: _.omit(scene.controls, posStr),
             }
         }),
       },

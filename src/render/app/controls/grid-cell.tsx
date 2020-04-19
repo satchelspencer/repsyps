@@ -15,7 +15,7 @@ const CellMidi = ctyled.div.class(inline).styles({
   padd: 1,
   color: (c) => c.contrast(-0.2),
   bg: false,
-  size: (s) => s * 0.85,
+  size: (s) => s * 0.75,
 }).extendSheet`
   position:absolute;
   top:0;
