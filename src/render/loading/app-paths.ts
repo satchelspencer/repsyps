@@ -7,7 +7,7 @@ export default function initPaths() {
     ensurePaths = [
       'repsyps',
       'repsyps/bindings',
-      'repsyps/projects',
+      'repsyps/library',
       'repsyps/cache',
       'repsyps/recordings',
     ]

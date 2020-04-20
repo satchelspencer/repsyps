@@ -192,13 +192,10 @@ function PositionDetail(props: ControlDetailProps) {
       {props.position && (
         <>
           <MidiWrapper>
-            <HeaderContent>
-              <Icon name="midi" />
-            </HeaderContent>
             <FillButton onClick={addMidiBinding}>
               {shouldStartWaiting ? (
                 <>
-                  <Icon name="eyedropper" />
+                  <Icon name="midi" scale={0.9} />
                   &nbsp;Set Midi
                 </>
               ) : (

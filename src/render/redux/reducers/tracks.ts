@@ -296,8 +296,18 @@ export default createReducer(defaultState, (handle) => [
 
     return selectTrack(
       state,
-      trackIds[Math.max(trackIds.indexOf(selectedTrackId) + step, 0)]
+      trackIds[
+        Math.min(
+          Math.max(trackIds.indexOf(selectedTrackId) + step, 0),
+          trackIds.length - 1
+        )
+      ]
     )
+  }),
+  handle(Actions.selectTrackByIndex, (state, { payload: trackIndex }) => {
+    const trackIds = Selectors.getActiveTrackIds(state)
+    if (!trackIds[trackIndex]) return state
+    else return selectTrack(state, trackIds[trackIndex])
   }),
   handle(Actions.editTrack, (state, { payload }) => {
     const track = state.live.tracks[payload.trackId]

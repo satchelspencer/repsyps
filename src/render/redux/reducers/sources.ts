@@ -320,10 +320,11 @@ export default createReducer(defaultState, (handle) => [
   handle(Actions.inferBounds, (state, { payload }) => {
     const track = state.live.tracks[payload.sourceId],
       [cstart, clength] = track.playback.chunks,
-      impulses = getImpulses(payload.sourceId)
+      impulses = getImpulses(payload.sourceId),
+      snap = state.settings.snap
     if (!clength || !impulses) return state
     else {
-      const inferred = inferTimeBase(track.playback.chunks, impulses, payload.snap),
+      const inferred = inferTimeBase(track.playback.chunks, impulses, snap),
         existingBounds = state.sources[payload.sourceId].bounds,
         cend = cstart + clength
 

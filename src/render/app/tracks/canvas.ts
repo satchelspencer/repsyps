@@ -7,6 +7,7 @@ import { findNearest } from 'render/util/impulse-detect'
 import audio from 'render/util/audio'
 import { DrawViewContext } from './track'
 import { canvasScale } from 'render/util/env'
+import { getTimeFromPosition } from './utils'
 
 const lineWidth = canvasScale === 1 ? 1 : 3,
   thickLine = canvasScale === 1 ? 3 : 5
@@ -93,6 +94,7 @@ export default function useWaveformCanvas(
           canvasScale === 1 ? ctyledContext.theme.size / 1.5 : ctyledContext.theme.size,
         playLocked,
         scroll,
+        view,
       }
 
     ctx.clearRect(0, 0, pwidth, pheight)
@@ -142,6 +144,7 @@ export interface DrawingContext {
   mouseDown: boolean
   playLocked: boolean
   scroll: boolean
+  view: DrawViewContext
 }
 
 const GUTTER_SIZE = 1.5
@@ -231,10 +234,15 @@ export function drawImpulses(context: DrawingContext, impulses: number[]) {
 }
 
 export function drawDrag(context: DrawingContext) {
-  const { ctx, mouseDown, clickX, center, pheight } = context
+  const { ctx, mouseDown, clickX, center, pheight, view, start, scale } = context
+
   if (mouseDown) {
+    const centerSnap =
+        (getTimeFromPosition(center / canvasScale, view.snap, view) - start) / scale,
+      clickXSnap =
+        (getTimeFromPosition(clickX / canvasScale, view.snap, view) - start) / scale
     ctx.fillStyle = 'rgba(255,0,0,0.1)'
-    ctx.fillRect(clickX, 0, center - clickX, pheight)
+    ctx.fillRect(clickXSnap, 0, centerSnap - clickXSnap, pheight)
   }
 }
 

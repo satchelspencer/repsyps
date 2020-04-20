@@ -32,10 +32,10 @@ export const Value = ctyled.div
   })
 
 export const WideButton = Button.styles({
-  color: c => c.nudge(0.05),
+  color: (c) => c.nudge(0.05),
   justify: 'center',
   gutter: 1,
-  alignSelf: 'stretch'
+  alignSelf: 'stretch',
 })
 
 export const FillButton = WideButton.styles({
@@ -48,7 +48,7 @@ export const SelectableButton = WideButton.attrs<{
 }>({ selected: false, compact: false }).styles({
   color: (c, { selected }) => (selected ? c.nudge(0.1).contrast(0.1) : c),
   flex: (_, { compact }) => (compact ? 'none' : 1),
-  alignSelf: 'stretch'
+  alignSelf: 'stretch',
 })
 
 export const SidebarValue = Value.class(inline).styles({ height: 1.8 })
@@ -60,6 +60,19 @@ export const Horizontal = ctyled.div.styles({
 })
 
 export const HeaderContent = Horizontal.styles({
-  size: s => s * 1.1,
+  size: (s) => s * 1.1,
   gutter: 0.5,
 })
+
+export const FillMessage = ctyled.div.styles({
+  justify: 'center',
+  align: 'center',
+  size: (s) => s * 1.1,
+  color: (c) => c.contrast(-0.3),
+}).extendSheet`
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+`

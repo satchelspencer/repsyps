@@ -40,7 +40,7 @@ export function useResizeBounds(trackId: string) {
       ) {
         if (!ctxt.editing) return false
         if (boundIndex !== -1) {
-          const sample = getTimeFromPosition(pos.x, true, view),
+          const sample = getTimeFromPosition(pos.x, view.snap, view),
             newBounds = [...bounds]
           newBounds[boundIndex] = sample
           dispatch(Actions.setSourceBounds({ sourceId: trackId, bounds: newBounds }))
@@ -113,7 +113,7 @@ export function useResizePlayback(trackId: string) {
         chunks: Types.Chunks
       ) {
         if (!ctxt.aperiodic) return false
-        const sample = getTimeFromPosition(pos.x, false, view),
+        const sample = getTimeFromPosition(pos.x, view.snap, view),
           nearChunkIndex = _.findIndex(chunks, (chunk, i) => {
             const csample = i % 2 === 0 ? chunk : chunk + chunks[i - 1]
             return Math.abs(csample - sample) < 9 * view.scale
@@ -129,7 +129,7 @@ export function useResizePlayback(trackId: string) {
       ) {
         if (!ctxt.aperiodic) return false
         if (chunkIndex !== -1) {
-          const sample = getTimeFromPosition(pos.x, true, view),
+          const sample = getTimeFromPosition(pos.x, view.snap, view),
             newChunks = [...chunks],
             isStart = chunkIndex % 2 === 0
 
@@ -176,7 +176,7 @@ export function useSelectPlayback(trackId: string) {
       mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
         if (!ctxt.aperiodic) return false
         const dx = Math.abs(pos.x - ctxt.clickX),
-          xPos = getTimeFromPosition(pos.x, true, view)
+          xPos = getTimeFromPosition(pos.x, view.snap, view)
         if (dx < 3) {
           //click to play
           dispatch(
@@ -191,7 +191,7 @@ export function useSelectPlayback(trackId: string) {
           )
         } else {
           //dragged selection
-          const start = getTimeFromPosition(ctxt.clickX, true, view),
+          const start = getTimeFromPosition(ctxt.clickX, view.snap, view),
             len = Math.abs(xPos - start)
 
           dispatch(

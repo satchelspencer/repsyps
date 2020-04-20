@@ -88,6 +88,7 @@ export interface ViewContext {
   center: number
   impulses: number[]
   mouseDown: boolean
+  snap: boolean
 }
 
 export interface DrawViewContext extends ViewContext {
@@ -124,7 +125,8 @@ const Track = memo(
     trackScroll,
   }: TrackProps) {
     /* computed data */
-    const impulses = useMemo(() => loaded && getImpulses(trackId), [loaded, trackId])
+    const impulses = useMemo(() => loaded && getImpulses(trackId), [loaded, trackId]),
+      snap = useSelector((state) => state.settings.snap)
 
     /* react state */
     const [center, setCenter] = useState(0),
@@ -162,6 +164,7 @@ const Track = memo(
         center,
         impulses,
         mouseDown,
+        snap,
       },
       viewValues = _.values(view),
       drawView: DrawViewContext = {
@@ -273,16 +276,15 @@ const Track = memo(
       }, [])
 
     const cursor = useMemo(() => {
-      if (!track.editing) return 'crosshair'
-      else {
-        const boundIndex = getBoundIndex(center, view, source.bounds),
-          sample = getTimeFromPosition(center, false, view),
-          nearChunkIndex = _.findIndex(track.playback.chunks, (chunk, i) => {
-            const csample = i % 2 === 0 ? chunk : chunk + track.playback.chunks[i - 1]
-            return Math.abs(csample - sample) < 9 * view.scale
-          })
-        return boundIndex !== -1 || nearChunkIndex !== -1 ? 'col-resize' : 'crosshair'
-      }
+      const boundIndex = getBoundIndex(center, view, source.bounds),
+        sample = getTimeFromPosition(center, view.snap, view),
+        nearChunkIndex = _.findIndex(track.playback.chunks, (chunk, i) => {
+          const csample = i % 2 === 0 ? chunk : chunk + track.playback.chunks[i - 1]
+          return Math.abs(csample - sample) < 9 * view.scale
+        })
+      return (track.editing && boundIndex !== -1) || nearChunkIndex !== -1
+        ? 'col-resize'
+        : 'crosshair'
     }, [
       center,
       track.editing,

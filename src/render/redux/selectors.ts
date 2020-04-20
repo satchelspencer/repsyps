@@ -500,6 +500,7 @@ export const getMenuState = createSelector(
       editing,
       trackPlaying,
       playing,
+      snap: settings.snap,
     }
   }
 )

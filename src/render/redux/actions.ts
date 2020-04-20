@@ -61,7 +61,7 @@ export const duplicateTrack = createAction<string>('DUPLICATE_TRACK')
 
 export function addTrackAndSource(path: string) {
   const id = getId(path),
-    name = pathUtils.basename(path)
+    name = pathUtils.basename(path, pathUtils.extname(path))
   return batchActions(
     [
       createSource({
@@ -99,6 +99,8 @@ export const toggleTrackLoop = createAction<string>('TOGGLE_TRACK_LOOP')
 export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
 
 export const stepSelectedTrack = createAction<number>('STEP_SELECTED_TRACK')
+
+export const selectTrackByIndex = createAction<number>('SELECT_TRACK_INDEX')
 
 export const editTrack = createAction<{ trackId: string; edit: boolean }>(
   'SET_TRACK_EDIT'
@@ -197,7 +199,6 @@ export const copyTrackBounds = createAction<{
 
 export const inferBounds = createAction<{
   sourceId: string
-  snap: boolean
   direction: 'left' | 'right' | 'both'
 }>('INFER_BOUNDS')
 

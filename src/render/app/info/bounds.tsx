@@ -86,13 +86,10 @@ const BoundsControl = memo((props: BoundsControlProps) => {
     { bounds, sourceTracks } = useSelector((state) => state.sources[props.trackId]),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection<string>('track'),
-    [snap, setSnap] = useState(true),
+    snap = useSelector((state) => state.settings.snap),
     hasTimeBase = !!bounds.length,
     clength = playback.chunks[1],
-    inferPayload = useMemo(() => ({ sourceId: props.trackId, snap }), [
-      props.trackId,
-      snap,
-    ]),
+    inferPayload = useMemo(() => ({ sourceId: props.trackId }), [props.trackId]),
     inferLR = useCallback(() => {
       dispatch(Actions.inferBounds({ ...inferPayload, direction: 'both' }))
     }, [inferPayload]),
@@ -137,7 +134,15 @@ const BoundsControl = memo((props: BoundsControlProps) => {
         ),
       [props.trackId]
     ),
-    handleToggleSnap = useCallback(() => setSnap(!snap), [snap])
+    handleToggleSnap = useCallback(
+      () =>
+        dispatch(
+          Actions.setSettings({
+            snap: !snap,
+          })
+        ),
+      [snap]
+    )
 
   return (
     <SidebarItem

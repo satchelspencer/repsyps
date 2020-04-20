@@ -15,6 +15,7 @@ import Loop from './loop'
 import Sync from './sync'
 import TrackVolume from './volume'
 import ResizableBorder from 'render/components/rborder'
+import { FillMessage } from 'render/components/misc'
 
 const SidebarWrapper = ctyled.div.attrs({ widthp: 25 }).styles({
   column: true,

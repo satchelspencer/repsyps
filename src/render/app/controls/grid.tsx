@@ -129,7 +129,8 @@ function ControlsGrid() {
 
   const size = useContext(CtyledContext).theme.size,
     selected = useSelector((state) => state.live.selectedPosition),
-    [targetWidth, setTargetWidth] = useState(size * 8),
+    gridSize = useSelector((state) => state.settings.gridSize),
+    targetWidth = size * gridSize,
     enabled = useSelector((state) => state.live.controlsEnabled)
 
   const count = Math.ceil(width / targetWidth),
@@ -156,9 +157,13 @@ function ControlsGrid() {
     handleMouseMove = useCallback((e) => e.preventDefault(), []),
     handleIncZoom = useCallback(
       (diff) => {
-        setTargetWidth(width / (width / targetWidth + diff))
+        dispatch(
+          Actions.setSettings({
+            gridSize: width / (width / targetWidth + diff) / size,
+          })
+        )
       },
-      [width, targetWidth]
+      [width, targetWidth, size]
     ),
     handleSetSelected = useCallback((position: Types.Position) => {
       dispatch(Actions.setSelectedPosition(position))

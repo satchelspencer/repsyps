@@ -314,6 +314,8 @@ export interface Settings {
   updateRate: UpdateRate
   controlsSize: number
   sidebarSize: number
+  gridSize: number
+  snap: boolean
 }
 
 export interface Recording {
@@ -361,6 +363,7 @@ export interface MenuState {
   editing: boolean
   trackPlaying: boolean
   playing: boolean
+  snap: boolean
 }
 
 export interface State {

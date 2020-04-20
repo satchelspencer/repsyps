@@ -24,7 +24,7 @@ import {
 import { undo, redo } from 'render/redux/history'
 import audio from 'render/util/audio'
 
-const { Menu, dialog, getCurrentWindow } = electron.remote,
+const { Menu, dialog, getCurrentWindow, app } = electron.remote,
   isMac = process.platform === 'darwin'
 
 export default function init() {
@@ -55,6 +55,10 @@ export default function init() {
           accelerator?: string
         }
       } = {
+        quit: {
+          click: () => app.quit(),
+          accelerator: 'CmdOrCtrl+Q',
+        },
         newProject: {
           click: () => dispatch(Actions.reset()),
           accelerator: 'CmdOrCtrl+Shift+N',
@@ -62,7 +66,7 @@ export default function init() {
         openProject: {
           click: () => {
             const path = dialog.showOpenDialog({
-              defaultPath: getPath('projects'),
+              defaultPath: getPath('library'),
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Open Project',
             })
@@ -87,7 +91,7 @@ export default function init() {
             const path = dialog.showSaveDialog({
               nameFieldLabel: 'Project Name',
               title: 'Export Project',
-              defaultPath: getPath('projects'),
+              defaultPath: getPath('library'),
               buttonLabel: 'Export Project',
             })
             if (path) exportProject(path, store)
@@ -99,7 +103,7 @@ export default function init() {
             const path = dialog.showSaveDialog({
               nameFieldLabel: 'Project Name',
               title: 'Save Project',
-              defaultPath: getPath('projects/untitled'),
+              defaultPath: getPath('library/untitled'),
               buttonLabel: 'Export Scene',
             })
             if (path) exportCurrentScene(path + '.syp', store)
@@ -128,7 +132,7 @@ export default function init() {
             const paths = dialog.showOpenDialog({
               properties: ['openFile'],
               message: 'Import Audio or Scenes',
-              buttonLabel: 'Inmport',
+              buttonLabel: 'Import',
             })
             if (paths)
               paths.forEach((path) => {
@@ -182,7 +186,6 @@ export default function init() {
               Actions.inferBounds({
                 sourceId: menuState.selectedTrackId,
                 direction: 'both',
-                snap: true,
               })
             ),
           accelerator: '\\',
@@ -193,7 +196,6 @@ export default function init() {
               Actions.inferBounds({
                 sourceId: menuState.selectedTrackId,
                 direction: 'left',
-                snap: true,
               })
             ),
           accelerator: '[',
@@ -204,7 +206,6 @@ export default function init() {
               Actions.inferBounds({
                 sourceId: menuState.selectedTrackId,
                 direction: 'right',
-                snap: true,
               })
             ),
           accelerator: ']',
@@ -253,7 +254,7 @@ export default function init() {
         importSceneNext: {
           click: () => {
             const path = dialog.showOpenDialog({
-              defaultPath: getPath('projects'),
+              defaultPath: getPath('library'),
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Import Next',
             })
@@ -265,7 +266,7 @@ export default function init() {
         importSceneEnd: {
           click: () => {
             const path = dialog.showOpenDialog({
-              defaultPath: getPath('projects'),
+              defaultPath: getPath('library'),
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Import to End',
             })
@@ -406,7 +407,7 @@ export default function init() {
             if (!control) return
             dispatch(Actions.addControlToGroup({ control }))
           },
-          accelerator: 'CmdOrCtrl+B',
+          accelerator: 'B',
         },
         setMidi: {
           click: () =>
@@ -477,6 +478,10 @@ export default function init() {
           },
           accelerator: 'CmdOrCtrl+Shift+D',
         },
+        snapping: {
+          click: () => dispatch(Actions.setSettings({ snap: !menuState.snap })),
+          accelerator: 'Alt+S',
+        },
         highRate: {
           click: () => dispatch(Actions.setSettings({ updateRate: 'high' })),
         },
@@ -517,6 +522,10 @@ export default function init() {
           },
           accelerator: 'CmdOrCtrl+Shift+-',
         },
+        reload: {
+          click: () => window.location.reload(),
+          accelerator: 'Alt+R',
+        },
         exitModal: {
           click: () => dispatch(Actions.setModalRoute(null)),
           accelerator: 'Escape',
@@ -529,6 +538,25 @@ export default function init() {
           command.click()
         },
       }))
+
+    const loops = [1, 2, 4, 8]
+    _.range(10).forEach((i) => {
+      commands['track' + i] = {
+        click: () => dispatch(Actions.selectTrackByIndex(i)),
+        accelerator: i + '',
+      }
+      if (loops.includes(i))
+        commands['loop' + i] = {
+          click: () =>
+            dispatch(
+              Actions.loopTrack({
+                trackId: menuState.selectedTrackId,
+                loop: i,
+              })
+            ),
+          accelerator: 'CmdOrCtrl+' + i,
+        }
+    })
 
     const bwindow = getCurrentWindow()
     _.each(commands, (command) => {
@@ -843,6 +871,12 @@ export default function init() {
               ...menuCommands.darkMode,
             },
             {
+              label: 'Snapping',
+              type: 'checkbox',
+              checked: menuState.snap,
+              ...menuCommands.snapping,
+            },
+            {
               label: 'Update Rate',
               submenu: [
                 {
@@ -866,7 +900,7 @@ export default function init() {
               ],
             },
             { type: 'separator' },
-            { role: 'reload', accelerator: 'Alt+R' },
+            { label: 'Reload', ...menuCommands.reload },
             { role: 'toggledevtools' },
             { label: 'Escape', ...menuCommands.exitModal },
             { type: 'separator' },
@@ -921,7 +955,7 @@ export default function init() {
       const path = dialog.showSaveDialog({
         title: 'Save Project',
         nameFieldLabel: 'Project Name',
-        defaultPath: getPath('projects/untitled'),
+        defaultPath: getPath('library/untitled'),
         buttonLabel: 'Save As',
       })
       if (path) saveProject(path + '.syp', store)

@@ -10,7 +10,7 @@ export function getRelativePos(e, left: number, top: number) {
 
 export function getTimeFromPosition(x: number, snap: boolean, view: ViewContext) {
   let raw = x * canvasScale * view.scale + view.start
-  return snap ? snapSampleToImpulses(raw, view.scale, view.impulses) : raw
+  return snapSampleToImpulses(raw, view.scale, view.impulses, snap)
 }
 
 export function getBoundIndex(x: number, view: ViewContext, bounds: number[]) {
