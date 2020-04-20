@@ -14,6 +14,7 @@ export interface ClickPos {
   y: number
 }
 
+/* click and drag to move a boundary */
 export function useResizeBounds(trackId: string) {
   const dispatch = useDispatch(),
     [boundIndex, setBoundIndex] = useState(-1)
@@ -56,6 +57,7 @@ export function useResizeBounds(trackId: string) {
   )
 }
 
+/* shift click and drag to slide tracks relative to each other */
 export function useOffsetTrack(trackId: string) {
   const dispatch = useDispatch(),
     [startX, setStartX] = useState(-1),
@@ -97,6 +99,7 @@ export function useOffsetTrack(trackId: string) {
   )
 }
 
+/* click and drag the edges of chunk */
 export function useResizePlayback(trackId: string) {
   const dispatch = useDispatch(),
     [chunkIndex, setChunkIndex] = useState(-1)
@@ -198,6 +201,7 @@ export function useSelectPlayback(trackId: string) {
                 chunks: [Math.min(start, xPos), len],
                 aperiodic: true,
                 chunkIndex: -1,
+                loop: true,
               },
             })
           )
@@ -209,6 +213,8 @@ export function useSelectPlayback(trackId: string) {
   )
 }
 
+/* while not synced, double click in measure to select whole measure or click on 
+bound to start from there */
 export function useSelectBound(trackId: string) {
   const dispatch = useDispatch()
 
@@ -256,6 +262,7 @@ export function useSelectBound(trackId: string) {
                 chunks: [start, next - start],
                 aperiodic: true,
                 chunkIndex: -1,
+                loop: true,
               },
             })
           )
@@ -267,6 +274,7 @@ export function useSelectBound(trackId: string) {
   )
 }
 
+/* selection while synced, using nearest bounds */
 export function usePlaybackBound(trackId: string) {
   const dispatch = useDispatch()
 
@@ -317,6 +325,7 @@ export function usePlaybackBound(trackId: string) {
                 chunks,
                 aperiodic: false,
                 chunkIndex: -1,
+                loop: true,
               },
             })
           )

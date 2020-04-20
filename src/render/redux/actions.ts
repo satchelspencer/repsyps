@@ -94,6 +94,8 @@ export const setTrackPlayback = createAction<{
 
 export const playPauseTrack = createAction<string>('PLAY_PAUSE_TRACK')
 
+export const toggleTrackLoop = createAction<string>('TOGGLE_TRACK_LOOP')
+
 export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
 
 export const stepSelectedTrack = createAction<number>('STEP_SELECTED_TRACK')

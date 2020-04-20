@@ -314,6 +314,10 @@ export default function init() {
             dispatch(Actions.loopTrack({ trackId: menuState.selectedTrackId, loop: -1 })),
           accelerator: 'P',
         },
+        toggleLoopTrack: {
+          click: () => dispatch(Actions.toggleTrackLoop(menuState.selectedTrackId)),
+          accelerator: 'L',
+        },
         muteTrack: {
           click: () =>
             dispatch(Actions.setTrackMuted({ trackId: menuState.selectedTrackId })),
@@ -521,7 +525,8 @@ export default function init() {
       menuCommands = _.mapValues(commands, (command) => ({
         ...command,
         click: () => {
-          if (!inWrapper || !document.hasFocus()) command.click()
+          //console.log('menu')
+          command.click()
         },
       }))
 
@@ -529,7 +534,10 @@ export default function init() {
     _.each(commands, (command) => {
       if (command.accelerator)
         localShortcut.register(bwindow, command.accelerator, () => {
-          if (!inInput && inWrapper && document.hasFocus()) command.click()
+          if (!inInput && inWrapper && document.hasFocus()) {
+            //console.log('windo')
+            command.click()
+          }
         })
     })
 
@@ -711,6 +719,11 @@ export default function init() {
               label: 'Play To End',
               enabled: !inInput,
               ...menuCommands.playToEndTrack,
+            },
+            {
+              label: 'Toggle Loop',
+              enabled: !inInput,
+              ...menuCommands.toggleLoopTrack,
             },
             {
               label: 'Mute',

@@ -199,6 +199,14 @@ export default createReducer(defaultState, (handle) => [
         chunkIndex: -1,
       })
   }),
+  handle(Actions.toggleTrackLoop, (state, { payload: trackId }) => {
+    const track = state.live.tracks[trackId]
+    if (!track) return state
+    else
+      return applyTrackPlayback(state, trackId, {
+        loop: !track.playback.loop,
+      })
+  }),
   handle(Actions.setTrackPlayback, (state, { payload }) => {
     const trackId =
       payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex)
