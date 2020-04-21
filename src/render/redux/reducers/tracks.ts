@@ -493,4 +493,32 @@ export default createReducer(defaultState, (handle) => [
       },
     }
   }),
+  handle(Actions.stopPrevTracks, (state) => {
+    const sceneIndex = state.live.sceneIndex
+    if (sceneIndex === 0) return state
+    else {
+      const prevTracks = state.live.scenes[sceneIndex - 1].trackIds
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          tracks: _.mapValues(state.live.tracks, (track, trackId) => {
+            if (prevTracks.includes(trackId)) {
+              return {
+                ...track,
+                playback: {
+                  ...track.playback,
+                  playing: false,
+                  unpause: false,
+                },
+                nextPlayback: null,
+                cueIndex: -1,
+                nextCueIndex: -1,
+              }
+            } else return track
+          }),
+        },
+      }
+    }
+  }),
 ])

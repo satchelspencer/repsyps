@@ -58,6 +58,8 @@ const BodyInner = ctyled.div.styles({
   height: '100%',
 })
 
+const preventKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ']
+
 function App() {
   const { darkMode, size } = useSelector((state) => state.settings),
     dispatch = useDispatch(),
@@ -68,19 +70,7 @@ function App() {
       dispatch(Actions.addTrackAndSource(file))
     }, []),
     handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-      const controlOrCommand = e.metaKey || e.ctrlKey
-      const isNativeRole =
-        (e.key === 'q' && controlOrCommand) ||
-        (e.key === 'h' && controlOrCommand) ||
-        (e.key === 'c' && controlOrCommand) ||
-        (e.key === 'v' && controlOrCommand) ||
-        (e.key === 'i' && controlOrCommand && e.altKey) ||
-        (e.key === 'f' && controlOrCommand && e.ctrlKey)
-      
-      if (!isNativeRole){
-        e.preventDefault()
-        //console.log('prevented')
-      }
+      if (preventKeys.includes(e.key)) e.preventDefault()
     }, [])
 
   useEffect(() => {

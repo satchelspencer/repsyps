@@ -68,7 +68,7 @@ export function addTrackAndSource(path: string) {
         name,
         source: path,
         loaded: false,
-        bounds: []
+        bounds: [],
       }),
       addTrack({
         trackId: id,
@@ -125,6 +125,8 @@ export const setTrackSync = createAction<{
   trackIndex?: number
   sync?: Types.SyncControlState
 }>('SET_TRACK_SYNC')
+
+export const stopPrevTracks = createAction<void>('STOP_PREV_TRACKS')
 
 /* source actions */
 

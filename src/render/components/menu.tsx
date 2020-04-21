@@ -240,6 +240,10 @@ export default function init() {
           click: () => dispatch(Actions.zeroInitValues()),
           accelerator: 'CmdOrCtrl+R',
         },
+        commitScene: {
+          click: () => dispatch(Actions.stopPrevTracks()),
+          accelerator: 'Enter',
+        },
         pauseAll: {
           click: () =>
             dispatch(
@@ -562,9 +566,18 @@ export default function init() {
         return (
           accelerator &&
           (accelerator.length === 1 ||
-            ['Escape', 'Space', 'Backspace', 'Up', 'Down', 'Left', 'Right'].includes(
-              accelerator
-            ))
+            [
+              'Escape',
+              'Space',
+              'Backspace',
+              'Up',
+              'Down',
+              'Left',
+              'Right',
+              'Enter',
+              'Alt+Tab',
+              'Tab'
+            ].includes(accelerator))
         )
       },
       menuCommands = _.mapValues(commands, (command) => {
@@ -606,7 +619,7 @@ export default function init() {
 
     const bwindow = getCurrentWindow()
     _.each(commands, (command) => {
-      if (command.accelerator)
+      if (command.accelerator && isSingleKey(command.accelerator))
         localShortcut.register(bwindow, command.accelerator, () => {
           if (!inInput && document.hasFocus()) {
             //console.log('windo', command.accelerator)
@@ -717,6 +730,11 @@ export default function init() {
             {
               label: 'Reset Scene',
               ...menuCommands.resetScene,
+            },
+            {
+              label: 'Commit Scene',
+              enabled: menuState.sceneIndex > 0,
+              ...menuCommands.commitScene,
             },
             {
               label: 'Pause All',
