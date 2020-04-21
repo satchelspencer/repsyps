@@ -17,22 +17,25 @@ import { getCuePlayback } from './cues'
 export function updateSourcesPaths(
   sources: Types.Sources,
   lastPath: string,
-  nextPath: string
+  nextPath: string,
+  force?: boolean
 ): Types.Sources {
-  if (lastPath === nextPath) return sources
+  if (lastPath === nextPath && !force) return sources
   else
     return _.mapValues(sources, (source) => {
       return {
         ...source,
         sourceTracks: _.mapValues(source.sourceTracks, (sourceTrack) => {
-          const absSource =
-            sourceTrack.source &&
-            (pathUtils.isAbsolute(sourceTrack.source)
-              ? sourceTrack.source
-              : pathUtils.resolve(lastPath, sourceTrack.source))
+          const lastBase = sourceTrack.base || lastPath,
+            absSource =
+              sourceTrack.source &&
+              (pathUtils.isAbsolute(sourceTrack.source) || !lastBase
+                ? sourceTrack.source
+                : pathUtils.resolve(lastBase, sourceTrack.source))
           return {
             ...sourceTrack,
             source: nextPath ? pathUtils.relative(nextPath, absSource) : absSource,
+            base: nextPath,
           }
         }),
       }
@@ -55,36 +58,41 @@ export default createReducer(defaultState, (handle) => [
   handle(Actions.loadPersisted, (state, { payload }) => {
     const pLive = payload.state.live,
       firstScene = payload.state.live.scenes[0],
-      firstTrackId = firstScene && firstScene.trackIds[0]
+      firstTrackId = firstScene && firstScene.trackIds[0],
+      newSources = _.mapValues(payload.state.sources, (psource, sourceId) => {
+        const existingSource = state.sources[sourceId]
+        return {
+          ...defaultSource,
+          ...psource,
+          sourceTracks: _.mapValues(
+            psource.sourceTracks,
+            (psourceTrack, sourceTrackId) => {
+              const existingSourceTrack =
+                existingSource && existingSource.sourceTracks[sourceTrackId]
+              return {
+                ...psourceTrack,
+                loaded:
+                  payload.reset || !existingSourceTrack
+                    ? false
+                    : existingSourceTrack.loaded,
+                missing:
+                  payload.reset || !existingSourceTrack
+                    ? false
+                    : existingSourceTrack.missing,
+              }
+            }
+          ),
+        }
+      }),
+      savePath = state.save.path && pathUtils.dirname(state.save.path),
+      newPathUpdatedSources = payload.reset
+        ? updateSourcesPaths(newSources, savePath, savePath, true)
+        : newSources
 
     return updateSceneIndex(
       {
         ...state,
-        sources: _.mapValues(payload.state.sources, (psource, sourceId) => {
-          const existingSource = state.sources[sourceId]
-          return {
-            ...defaultSource,
-            ...psource,
-            sourceTracks: _.mapValues(
-              psource.sourceTracks,
-              (psourceTrack, sourceTrackId) => {
-                const existingSourceTrack =
-                  existingSource && existingSource.sourceTracks[sourceTrackId]
-                return {
-                  ...psourceTrack,
-                  loaded:
-                    payload.reset || !existingSourceTrack
-                      ? false
-                      : existingSourceTrack.loaded,
-                  missing:
-                    payload.reset || !existingSourceTrack
-                      ? false
-                      : existingSourceTrack.missing,
-                }
-              }
-            ),
-          }
-        }),
+        sources: newPathUpdatedSources,
         live: {
           ...state.live,
           ...pLive,
@@ -210,7 +218,10 @@ export default createReducer(defaultState, (handle) => [
 
     return {
       ...state,
-      save: saveStatus,
+      save: {
+        ...state.save,
+        ...saveStatus,
+      },
       sources: updateSourcesPaths(state.sources, lastPath, nextPath),
     }
   }),

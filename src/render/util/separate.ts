@@ -42,6 +42,7 @@ export default async function separate(
             loaded: true,
             missing: false,
             streamIndex: 0,
+            base: null
           },
         }),
         Actions.setTrackSourceParams({
@@ -61,6 +62,7 @@ export default async function separate(
             loaded: true,
             missing: false,
             streamIndex: 0,
+            base: null
           },
         }),
         Actions.setTrackSourceParams({

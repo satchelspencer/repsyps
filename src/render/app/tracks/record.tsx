@@ -154,11 +154,11 @@ const Recording = memo(
               : [],
             path = dialog.showSaveDialog({
               nameFieldLabel: 'Recording Name',
-              defaultPath: getPath('recordings/untitled'),
+              defaultPath: getPath('recordings/untitled.m4a'),
               buttonLabel: 'Save Recording',
             })
           if (path) {
-            const outPath = path + '.m4a',
+            const outPath = path,
               srcName = pathUtils.basename(path)
             audio.exportSource(outPath, sourceId)
             dispatch(
@@ -166,20 +166,10 @@ const Recording = memo(
                 [
                   Actions.createSource({
                     sourceId,
-                    source: {
-                      name: srcName,
-                      bounds: [...prefixBounds, ...bounds],
-                      boundsAlpha: 1,
-                      sourceTracks: {
-                        [sourceId]: {
-                          name: srcName,
-                          source: outPath,
-                          loaded: true,
-                          missing: false,
-                          streamIndex: 0,
-                        },
-                      },
-                    },
+                    name: srcName,
+                    bounds: [],
+                    source: outPath,
+                    loaded: true,
                   }),
                   Actions.addTrack({
                     trackId: sourceId,

@@ -6,7 +6,6 @@ import pathUtils from 'path'
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
 import { getId } from 'render/util/uid'
-import { create } from 'domain'
 
 function createAction<Payload>(name) {
   return createActionCreator(name, (res) => (payload: Payload) => res(payload))
@@ -29,7 +28,7 @@ export const updateTime = createAction<{
   commit: boolean
 }>('UPDATE_TIMES')
 
-export const setSaveStatus = createAction<Types.SaveStatus>('SET_SAVESTATUS')
+export const setSaveStatus = createAction<Partial<Types.SaveStatus>>('SET_SAVESTATUS')
 
 export const setSettings = createAction<Partial<Types.Settings>>('SET_SETTINGS')
 
@@ -66,14 +65,10 @@ export function addTrackAndSource(path: string) {
     [
       createSource({
         sourceId: id,
-        source: {
-          name,
-          bounds: [],
-          boundsAlpha: 1,
-          sourceTracks: {
-            [id]: { name, source: path, loaded: false, missing: false, streamIndex: 0 },
-          },
-        },
+        name,
+        source: path,
+        loaded: false,
+        bounds: []
       }),
       addTrack({
         trackId: id,
@@ -160,7 +155,10 @@ export const setVisibleSourceTrack = createAction<{
 
 export const createSource = createAction<{
   sourceId: string
-  source: Types.Source
+  name: string
+  source: string
+  loaded: boolean
+  bounds: number[]
 }>('CREATE_SOURCE')
 
 export const createTrackSource = createAction<{

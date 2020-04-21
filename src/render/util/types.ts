@@ -16,12 +16,14 @@ export interface TrackSourcesParams {
 export interface PersistentTrackSource {
   name: string
   source: string
+  base: string
   streamIndex: number
 }
 
 export interface TrackSource {
   name: string
   source: string
+  base: string
   streamIndex: number
   loaded: boolean
   missing: boolean

@@ -117,6 +117,7 @@ export default function syncAudio(store: Store<Types.State>) {
                       loaded: true,
                       missing: false,
                       streamIndex: index, //only first source is primary
+                      base: null
                     },
                   })
                 )

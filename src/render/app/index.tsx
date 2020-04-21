@@ -76,7 +76,11 @@ function App() {
         (e.key === 'v' && controlOrCommand) ||
         (e.key === 'i' && controlOrCommand && e.altKey) ||
         (e.key === 'f' && controlOrCommand && e.ctrlKey)
-      if (!isNativeRole) e.preventDefault()
+      
+      if (!isNativeRole){
+        e.preventDefault()
+        //console.log('prevented')
+      }
     }, [])
 
   useEffect(() => {

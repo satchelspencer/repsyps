@@ -36,13 +36,25 @@ export default function init() {
   useEffect(() => {
     let menuState: Types.MenuState = Selectors.getMenuState(defaultState),
       inInput = false,
-      inWrapper = false
+      inDialog = 0,
+      inWrapper = 0
+
+    const showOpenDialog = (options: electron.OpenDialogOptions) => {
+      const path = dialog.showOpenDialog(options)
+      inDialog = new Date().getTime()
+      return path
+    }
+
+    const showSaveDialog = (options: electron.SaveDialogOptions) => {
+      const path = dialog.showSaveDialog(options)
+      inDialog = new Date().getTime()
+      return path
+    }
 
     document.addEventListener('focusin', () => {
       const nodeName = document.activeElement.nodeName,
         newInInput = nodeName === 'INPUT'
 
-      inWrapper = nodeName !== 'BODY'
       if (inInput !== newInInput) {
         inInput = newInInput
         handleUpdate()
@@ -65,7 +77,7 @@ export default function init() {
         },
         openProject: {
           click: () => {
-            const path = dialog.showOpenDialog({
+            const path = showOpenDialog({
               defaultPath: getPath('library'),
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Open Project',
@@ -88,7 +100,7 @@ export default function init() {
         },
         exportProject: {
           click: () => {
-            const path = dialog.showSaveDialog({
+            const path = showSaveDialog({
               nameFieldLabel: 'Project Name',
               title: 'Export Project',
               defaultPath: getPath('library'),
@@ -100,13 +112,16 @@ export default function init() {
         },
         exportScene: {
           click: () => {
-            const path = dialog.showSaveDialog({
+            const path = showSaveDialog({
               nameFieldLabel: 'Project Name',
               title: 'Save Project',
-              defaultPath: getPath('library/untitled'),
+              defaultPath: getPath(
+                `library/${getDefaultSaveName(menuState.sceneIndex)}.syp`
+              ),
               buttonLabel: 'Export Scene',
             })
-            if (path) exportCurrentScene(path + '.syp', store)
+            console.log('es', path)
+            if (path) exportCurrentScene(path, store)
           },
           accelerator: 'CmdOrCtrl+Shift+E',
         },
@@ -116,20 +131,21 @@ export default function init() {
               selectedTrackId = Selectors.getSelectedTrackId(state),
               name = state.sources[selectedTrackId].name
             if (!selectedTrackId) return
-            const path = dialog.showSaveDialog({
+            const path = showSaveDialog({
               nameFieldLabel: 'Track Name',
               defaultPath:
                 getAppPath('documents') +
-                pathUtils.basename(name, pathUtils.extname(name)),
+                pathUtils.basename(name, pathUtils.extname(name)) +
+                '.m4a',
               buttonLabel: 'Export Track',
             })
-            if (path) audio.exportSource(path + '.m4a', selectedTrackId)
+            if (path) audio.exportSource(path, selectedTrackId)
           },
           accelerator: 'CmdOrCtrl+Alt+E',
         },
         import: {
           click: () => {
-            const paths = dialog.showOpenDialog({
+            const paths = showOpenDialog({
               properties: ['openFile'],
               message: 'Import Audio or Scenes',
               buttonLabel: 'Import',
@@ -253,7 +269,7 @@ export default function init() {
         },
         importSceneNext: {
           click: () => {
-            const path = dialog.showOpenDialog({
+            const path = showOpenDialog({
               defaultPath: getPath('library'),
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Import Next',
@@ -263,16 +279,27 @@ export default function init() {
           },
           accelerator: 'CmdOrCtrl+Shift+I',
         },
+        importSceneBefore: {
+          click: () => {
+            const path = showOpenDialog({
+              defaultPath: getPath('library'),
+              filters: [{ name: 'repsyps project', extensions: ['syp'] }],
+              buttonLabel: 'Import Before',
+            })
+            if (path && path[0]) loadProjectScenes(path[0], menuState.sceneIndex, store)
+          },
+          accelerator: 'CmdOrCtrl+Alt+I',
+        },
         importSceneEnd: {
           click: () => {
-            const path = dialog.showOpenDialog({
+            const path = showOpenDialog({
               defaultPath: getPath('library'),
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Import to End',
             })
             if (path && path[0]) loadProjectScenes(path[0], menuState.scenesCount, store)
           },
-          accelerator: 'CmdOrCtrl+Alt+I',
+          accelerator: 'CmdOrCtrl+Shift+Alt+I',
         },
         prevTrack: {
           click: () => dispatch(Actions.stepSelectedTrack(-1)),
@@ -430,11 +457,11 @@ export default function init() {
         },
         disableControls: {
           click: () => dispatch(Actions.setControlsEnabled(null)),
-          accelerator: 'B',
+          accelerator: 'CmdOrCtrl+B',
         },
         openBindings: {
           click: () => {
-            const path = dialog.showOpenDialog({
+            const path = showOpenDialog({
               defaultPath: getPath('bindings'),
               filters: [{ name: 'repsyps binding', extensions: ['rbind'] }],
               buttonLabel: 'Load Bindings',
@@ -444,13 +471,13 @@ export default function init() {
         },
         saveBindings: {
           click: () => {
-            const path = dialog.showSaveDialog({
+            const path = showSaveDialog({
               title: 'Save Contol Bindings',
               nameFieldLabel: 'Config Name',
-              defaultPath: getPath('bindings/untitled'),
+              defaultPath: getPath('bindings/untitled.rbind'),
               buttonLabel: 'Save Bindings',
             })
-            if (path) saveBindings(path + '.rbind', store)
+            if (path) saveBindings(path, store)
           },
         },
         clearBindings: {
@@ -531,13 +558,32 @@ export default function init() {
           accelerator: 'Escape',
         },
       },
-      menuCommands = _.mapValues(commands, (command) => ({
-        ...command,
-        click: () => {
-          //console.log('menu')
-          command.click()
-        },
-      }))
+      isSingleKey = (accelerator: string) => {
+        return (
+          accelerator &&
+          (accelerator.length === 1 ||
+            ['Escape', 'Space', 'Backspace', 'Up', 'Down', 'Left', 'Right'].includes(
+              accelerator
+            ))
+        )
+      },
+      menuCommands = _.mapValues(commands, (command) => {
+        const singleKey = isSingleKey(command.accelerator)
+        return {
+          ...command,
+          click: () => {
+            const now = new Date().getTime()
+            if (
+              now - inDialog > 500 &&
+              now - inWrapper > 500 &&
+              (document.hasFocus() || !singleKey)
+            ) {
+              //console.log('menu', command.accelerator)
+              command.click()
+            }
+          },
+        }
+      })
 
     const loops = [1, 2, 4, 8]
     _.range(10).forEach((i) => {
@@ -562,9 +608,10 @@ export default function init() {
     _.each(commands, (command) => {
       if (command.accelerator)
         localShortcut.register(bwindow, command.accelerator, () => {
-          if (!inInput && inWrapper) {
-            //console.log('windo')
+          if (!inInput && document.hasFocus()) {
+            //console.log('windo', command.accelerator)
             command.click()
+            inWrapper = new Date().getTime()
           }
         })
     })
@@ -693,6 +740,10 @@ export default function init() {
             {
               label: 'Import Scene Next',
               ...menuCommands.importSceneNext,
+            },
+            {
+              label: 'Import Scene Before',
+              ...menuCommands.importSceneBefore,
             },
             {
               label: 'Import Scene to End',
@@ -951,14 +1002,28 @@ export default function init() {
     })
     handleUpdate()
 
+    function getDefaultSaveName(sceneIndex?: number) {
+      const state = store.getState()
+      if (sceneIndex === undefined) {
+        const currentName =
+          state.save.path &&
+          pathUtils.basename(state.save.path, pathUtils.extname(state.save.path))
+        return currentName || 'untitled'
+      } else {
+        const firstTrack = state.live.scenes[sceneIndex].trackIds[0],
+          firstTrackName = firstTrack && state.sources[firstTrack].name
+        return firstTrackName || 'untitled'
+      }
+    }
+
     function saveAs() {
       const path = dialog.showSaveDialog({
         title: 'Save Project',
         nameFieldLabel: 'Project Name',
-        defaultPath: getPath('library/untitled'),
+        defaultPath: getPath(`library/${getDefaultSaveName()}.syp`),
         buttonLabel: 'Save As',
       })
-      if (path) saveProject(path + '.syp', store)
+      if (path) saveProject(path, store)
     }
   }, [])
 

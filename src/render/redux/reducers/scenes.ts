@@ -267,7 +267,7 @@ export default createReducer(defaultState, (handle) => [
         ...updateSourcesPaths(
           mappedState.sources,
           payload.fromPath,
-          pathUtils.dirname(state.save.path || '')
+          state.save.path && pathUtils.dirname(state.save.path)
         ),
       },
       live: {

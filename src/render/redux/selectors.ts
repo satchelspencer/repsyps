@@ -504,7 +504,7 @@ export const getPersistentSources = createSelector(
       return {
         ...source,
         sourceTracks: _.mapValues(source.sourceTracks, (t) =>
-          _.pick(t, ['name', 'source', 'streamIndex'])
+          _.pick(t, ['name', 'source', 'streamIndex', 'base'])
         ),
       }
     })

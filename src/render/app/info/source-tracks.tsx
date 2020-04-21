@@ -211,6 +211,7 @@ const SourceTracks = (props: TrackVolumeProps) => {
             loaded: false,
             missing: false,
             streamIndex: 0,
+            base: null
           },
         })
       )

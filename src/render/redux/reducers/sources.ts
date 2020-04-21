@@ -21,6 +21,7 @@ export function makeSourceTracksRelative(
         return {
           ...sourceTrack,
           source: pathUtils.relative(pathUtils.dirname(path), sourceTrack.source),
+          base: path,
         }
       else return sourceTrack
     }),
@@ -133,11 +134,26 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.createSource, (state, { payload }) => {
+    const newSource: Types.Source = {
+      name: payload.name,
+      bounds: payload.bounds,
+      boundsAlpha: 1,
+      sourceTracks: {
+        [payload.sourceId]: {
+          name: payload.name,
+          source: payload.source,
+          loaded: payload.loaded,
+          missing: false,
+          streamIndex: 0,
+          base: null,
+        },
+      },
+    }
     return {
       ...state,
       sources: {
         ...state.sources,
-        [payload.sourceId]: makeSourceTracksRelative(payload.source, state.save.path),
+        [payload.sourceId]: makeSourceTracksRelative(newSource, state.save.path),
       },
     }
   }),
