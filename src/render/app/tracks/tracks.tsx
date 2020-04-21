@@ -6,6 +6,7 @@ import arrayMove from 'array-move'
 
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import { adder } from 'render/components/control-adder'
 
 import Track from './track'
 import Recording from './record'
@@ -29,7 +30,7 @@ const TracksList = SortableContainer(
   })
 )
 
-const SceneDivider = ctyled.div
+const SceneDivider = adder(ctyled.div
   .class(active)
   .attrs({ selected: false })
   .styles({
@@ -45,7 +46,7 @@ const SceneDivider = ctyled.div
   font-weight:200;
   font-size:${({ size }) => size * 1.8}px !important;
   ${(_, { selected }) => selected && `text-decoration:underline;`}
-`
+`)
 
 const SortableSceneDivider = SortableElement(SceneDivider)
 
@@ -59,7 +60,7 @@ function getSceneIndex(items: any[], sceneCount: number, itemIndex: number): num
 }
 
 interface SceneHeaderProps {
-  selected: boolean
+  relativeSceneIndex: number
   index: number
   item: number
   onSelectScene: (sceneIndex: number) => any
@@ -67,14 +68,24 @@ interface SceneHeaderProps {
 
 const SceneHeader = memo((props: SceneHeaderProps) => {
   const handleClick = useCallback(() => props.onSelectScene(props.item), [
-    props.item,
-    props.onSelectScene,
-  ])
+      props.item,
+      props.onSelectScene,
+    ]),
+    selected = !props.relativeSceneIndex,
+    params = useMemo(
+      () => ({
+        relativeSceneIndex: props.relativeSceneIndex,
+      }),
+      [props.relativeSceneIndex]
+    )
+
   return (
     <SortableSceneDivider
-      selected={props.selected}
+      selected={selected}
       index={props.index}
       onClick={handleClick}
+      params={params}
+      noSelect={props.relativeSceneIndex > 0 || props.relativeSceneIndex < -1}
     >
       {props.item + 1}
     </SortableSceneDivider>
@@ -160,7 +171,14 @@ function Tracks() {
           onScroll={handleScroll}
           inRef={wrapperRef}
         >
-          <SceneDivider onClick={handleSelectFirst} selected={currentSceneIndex === 0}>
+          <SceneDivider
+            params={{
+              relativeSceneIndex: -currentSceneIndex,
+            }}
+            onClick={handleSelectFirst}
+            selected={currentSceneIndex === 0}
+            noSelect={currentSceneIndex > 1}
+          >
             1
           </SceneDivider>
           {scenesItems.map((item, index) => {
@@ -180,8 +198,8 @@ function Tracks() {
                   key={item}
                   index={index}
                   item={item}
+                  relativeSceneIndex={item - currentSceneIndex}
                   onSelectScene={handleSelectScene}
-                  selected={currentSceneIndex === item}
                 />
               )
           })}

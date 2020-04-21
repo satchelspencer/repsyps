@@ -43,14 +43,14 @@ export const defaultPlayback: Types.Playback = {
   defaultScene: Types.Scene = {
     controls: {},
     trackIds: [],
+    controlValues: {},
+    initValues: {},
   },
   defaultControlPresets: Types.ControlPresets = {},
   defaultLive: Types.Live = {
     sceneIndex: 0,
     scenes: [defaultScene],
     tracks: {},
-    controlValues: {},
-    initValues: {},
     bindings: defaultBindings,
     controlPresets: defaultControlPresets,
     defaultPresetId: null,

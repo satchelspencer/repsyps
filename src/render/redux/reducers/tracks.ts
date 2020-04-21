@@ -102,12 +102,7 @@ export function selectTrack(state: Types.State, trackId: string) {
       scene.trackIds.includes(trackId)
     ),
     inScene = containingIndex !== -1,
-    isLastOfScene =
-      inScene &&
-      state.live.scenes[containingIndex].trackIds.indexOf(trackId) ===
-        state.live.scenes[containingIndex].trackIds.length - 1,
-    shouldNotJump =
-      (isLastOfScene && state.live.sceneIndex === containingIndex + 1) || !inScene,
+    shouldNotJump = state.live.sceneIndex === containingIndex + 1 || !inScene,
     newSceneIndex = shouldNotJump ? state.live.sceneIndex : containingIndex
 
   return updateSceneIndex(

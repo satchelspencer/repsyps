@@ -26,6 +26,7 @@ export function updateSceneIndex(
       nextActive = Selectors.getActiveTrackIdsFromLive(state.live, sceneIndex),
       noLongerActive = _.difference(prevActive, nextActive),
       controls = scene.controls,
+      controlValues = Selectors.getCurrentControlValues(state),
       prevScene = state.live.scenes[sceneIndex - 1],
       lastOfPrevId = prevScene && _.last(prevScene.trackIds),
       lastIsPlaying = lastOfPrevId && state.live.tracks[lastOfPrevId].playback.playing,
@@ -77,19 +78,26 @@ export function updateSceneIndex(
             }
           }
         }),
-        initValues: _.mapValues(controls, (control, pos) => {
-          const binding = state.live.bindings[pos],
-            value = state.live.controlValues[pos]
-          if (binding && !binding.twoway && value !== undefined) return value
-          else return 1
-        }),
-        controlValues: _.mapValues(controls, (control, pos) => {
-          const binding = state.live.bindings[pos],
-            rvalue = state.live.controlValues[pos],
-            value = rvalue === undefined ? 1 : rvalue
-          if (control && !control.absolute)
-            return !binding || binding.twoway ? 1 : value > 0.5 ? 1 : 0
-          else return value
+        scenes: state.live.scenes.map((scene, i) => {
+          if (sceneIndex !== i) return scene
+          else
+            return {
+              ...scene,
+              controlValues: _.mapValues(controls, (control, pos) => {
+                const binding = state.live.bindings[pos],
+                  rvalue = controlValues[pos],
+                  value = rvalue === undefined ? 1 : rvalue
+                if (control && !control.absolute)
+                  return !binding || binding.twoway ? 1 : value > 0.5 ? 1 : 0
+                else return value
+              }),
+              initValues: _.mapValues(controls, (control, pos) => {
+                const binding = state.live.bindings[pos],
+                  value = controlValues[pos]
+                if (binding && !binding.twoway && value !== undefined) return value
+                else return 1
+              }),
+            }
         }),
         sceneIndex,
       },

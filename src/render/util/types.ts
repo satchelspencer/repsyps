@@ -204,6 +204,10 @@ export interface TrackValueControl extends ControlMapping {
   trackProp: TrackValueProp
 }
 
+export interface SceneVolumeControl extends ControlMapping {
+  relativeSceneIndex: number
+}
+
 export interface GlobalValueControl extends ControlMapping {
   globalProp: GlobalValueProp
 }
@@ -216,6 +220,7 @@ export type Control =
   | SourceTrackValueControl
   | TrackValueControl
   | GlobalValueControl
+  | SceneVolumeControl
 
 export interface ControlGroup {
   name?: string
@@ -255,6 +260,13 @@ export type Controls = Grid<ControlGroup>
 
 export interface Scene {
   controls: Controls
+  controlValues: ControlValues
+  initValues: ControlValues
+  trackIds: string[]
+}
+
+export interface PersistentScene {
+  controls: Controls
   trackIds: string[]
 }
 
@@ -274,7 +286,7 @@ export interface ControlPresets {
 }
 
 export interface PersistentLive {
-  scenes: Scene[]
+  scenes: PersistentScene[]
   bindings: PersistentBindings
   controlPresets: ControlPresets
   defaultPresetId: string
@@ -284,8 +296,6 @@ export interface PersistentLive {
 export interface Live {
   sceneIndex: number
   scenes: Scene[]
-  controlValues: ControlValues
-  initValues: ControlValues
   tracks: Tracks
   bindings: Bindings
   controlPresets: ControlPresets

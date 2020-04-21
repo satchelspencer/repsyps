@@ -96,12 +96,12 @@ export default createReducer(defaultState, (handle) => [
       newCues = [...track.cues]
     newCues[payload.index === undefined ? newCues.length : payload.index] = {
       ...payload.cue,
-      used: _.uniq([...defaultUsed, ...(payload.cue.used||[])]),
+      used: _.uniq([...defaultUsed, ...(payload.cue.used || [])]),
       playback: {
         ...track.playback,
         ...payload.cue.playback,
       },
-      endBehavior: payload.cue.endBehavior || track.playback.loop ? 'loop' : 'stop',
+      endBehavior: payload.cue.endBehavior || (track.playback.loop ? 'loop' : 'stop'),
     }
     return {
       ...state,

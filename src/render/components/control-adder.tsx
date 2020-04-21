@@ -5,6 +5,12 @@ import * as Types from 'render/util/types'
 import { useSelectable } from 'render/components/selection'
 import { CtyledComponent } from 'ctyled/dist/types'
 
+export interface AdderProps {
+  params: Partial<Types.Control>
+  onClick?: any
+  noSelect?: boolean
+}
+
 export function adder<P>(Component: CtyledComponent<any, P>) {
   const Mod = Component.attrs({ selecting: false }).extendSheet`
     ${(_, { selecting }) =>
@@ -15,30 +21,32 @@ export function adder<P>(Component: CtyledComponent<any, P>) {
       }
     `}
   `
-  return (props: P & { params: Partial<Types.Control>; onClick?: any }) => {
-    const { isSelecting, onSelect } = useSelectable<Partial<Types.Control>>('control'),
+  return (props: P & AdderProps) => {
+    const { params, noSelect, ...childProps } = props,
+      { isSelecting, onSelect } = useSelectable<Partial<Types.Control>>('control'),
       ctyle = useContext(CtyledContext),
       childCtyle = useMemo(() => {
         return {
           ...ctyle,
           theme: {
             ...ctyle.theme,
-            color: !isSelecting
-              ? ctyle.theme.color
-              : ctyle.theme.color.as(['black', 'rgba(255, 0, 0,0.5)', 'white']),
+            color:
+              !isSelecting || props.noSelect
+                ? ctyle.theme.color
+                : ctyle.theme.color.as(['black', 'rgba(255, 0, 0,0.5)', 'white']),
           },
         }
       }, [isSelecting, ctyle]),
       handleClick = useCallback(
-        e => {
-          if (isSelecting) onSelect(props.params)
+        (e) => {
+          if (isSelecting && !props.noSelect) onSelect(params)
           else props.onClick && props.onClick(e)
         },
         [props.params, isSelecting, props.onClick]
       )
     return (
       <CtyledContext.Provider value={childCtyle}>
-        <Mod {...props} selecting={isSelecting} onClick={handleClick} />
+        <Mod {...(childProps as P)} selecting={isSelecting} onClick={handleClick} />
       </CtyledContext.Provider>
     )
   }

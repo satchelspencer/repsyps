@@ -88,6 +88,11 @@ export default createReducer(defaultState, (handle) => [
         live: {
           ...state.live,
           ...pLive,
+          scenes: pLive.scenes.map((pscene) => ({
+            ...pscene,
+            controlValues: {},
+            initValues: {},
+          })),
           bindings: {
             ...state.live.bindings,
             ..._.mapValues(

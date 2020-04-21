@@ -29,10 +29,6 @@ function setControlGroup(
     ...state,
     live: {
       ...state.live,
-      controlValues: {
-        ...state.live.controlValues,
-        [posStr]: controlGroup.absolute ? state.live.controlValues[posStr] : 1,
-      },
       scenes: state.live.scenes.map((scene, sceneIndex) => {
         if (sceneIndex !== state.live.sceneIndex) return scene
         else {
@@ -45,6 +41,10 @@ function setControlGroup(
             controls: {
               ...scene.controls,
               [posStr]: newControlGroup,
+            },
+            controlValues: {
+              ...scene.controlValues,
+              [posStr]: controlGroup.absolute ? scene.controlValues[posStr] : 1,
             },
           }
         }
@@ -90,10 +90,17 @@ export default createReducer(defaultState, (handle) => [
       ...state,
       live: {
         ...state.live,
-        controlValues: {
-          ...state.live.controlValues,
-          [Selectors.pos2str(payload.position)]: payload.value,
-        },
+        scenes: state.live.scenes.map((scene, sceneIndex) => {
+          if (sceneIndex !== state.live.sceneIndex) return scene
+          else
+            return {
+              ...scene,
+              controlValues: {
+                ...scene.controlValues,
+                [Selectors.pos2str(payload.position)]: payload.value,
+              },
+            }
+        }),
       },
     }
   }),
@@ -128,10 +135,17 @@ export default createReducer(defaultState, (handle) => [
       ...state,
       live: {
         ...state.live,
-        initValues: {
-          ...state.live.initValues,
-          [Selectors.pos2str(payload.position)]: payload.value,
-        },
+        scenes: state.live.scenes.map((scene, sceneIndex) => {
+          if (sceneIndex !== state.live.sceneIndex) return scene
+          else
+            return {
+              ...scene,
+              initValues: {
+                ...scene.initValues,
+                [Selectors.pos2str(payload.position)]: payload.value,
+              },
+            }
+        }),
       },
     }
   }),

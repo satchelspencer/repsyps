@@ -562,7 +562,7 @@ export default function init() {
     _.each(commands, (command) => {
       if (command.accelerator)
         localShortcut.register(bwindow, command.accelerator, () => {
-          if (!inInput && inWrapper && document.hasFocus()) {
+          if (!inInput && inWrapper) {
             //console.log('windo')
             command.click()
           }

@@ -49,6 +49,12 @@ export function getControlName(control: Types.Control) {
       : `Loop ${control.loop} Track ${normIndex(control.trackIndex)}`
   else if ('sync' in control)
     return `Sync ${_.startCase(control.sync)} Track ${normIndex(control.trackIndex)}`
+  else if ('relativeSceneIndex' in control)
+    return !control.relativeSceneIndex
+      ? 'Current Scene'
+      : control.relativeSceneIndex === -1
+      ? 'Prev Scene'
+      : `Scene ${control.relativeSceneIndex < 0 ? '-' : ''}${control.relativeSceneIndex}`
   else return '???'
 }
 
@@ -60,6 +66,7 @@ export function getIcon(control: Types.Control): string {
   else if ('cueStep' in control) return control.cueStep > 0 ? 'next' : 'prev'
   else if ('cueIndex' in control) return 'cue'
   else if ('loop' in control) return 'loop'
-  else if ('sync') return 'av-timer'
+  else if ('sync' in control) return 'av-timer'
+  else if ('relativeSceneIndex' in control) return 'volume'
   else return null
 }

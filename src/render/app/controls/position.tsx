@@ -107,7 +107,7 @@ export interface ControlDetailProps {
 
 function PositionDetail(props: ControlDetailProps) {
   const selectedControlGroup = useSelector((state) =>
-      Selectors.getByPos(Selectors.getControls(state.live), props.position)
+      Selectors.getByPos(Selectors.getControls(state), props.position)
     ),
     selectedBinding = useSelector((state) =>
       Selectors.getByPos(state.live.bindings, props.position)

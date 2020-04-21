@@ -18,7 +18,7 @@ export default function useZoom(
   scroll: boolean,
   loaded: boolean
 ) {
-  const [scale, setScale] = useState(1200),
+  const [scale, setScale] = useState(1000),
     [start, setStart] = useState(-200 * 24 * canvasScale),
     handleWheel = useRef(null),
     pwidth = width * canvasScale

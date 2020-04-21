@@ -31,7 +31,8 @@ let lastControlIds = [],
 export default async function init(store: Store<Types.State>) {
   const handleMessage = (portName) => {
       const state = store.getState(),
-        controls = Selectors.getControls(state.live)
+        controls = Selectors.getControls(state),
+        controlValues = Selectors.getCurrentControlValues(state)
 
       if (!state.live.controlsEnabled) return
 
@@ -87,14 +88,14 @@ export default async function init(store: Store<Types.State>) {
           break
         } else if (normValue !== undefined) {
           const control = controls[posStr],
-            lastValue = state.live.controlValues[posStr] || 0
+            lastValue = controlValues[posStr] || 0
           midiValues[portName][posStr] = normValue
 
           if (control) {
             const absValue =
               control && control.absolute
                 ? absValueSelectors[posStr](state, control.controls[0])
-                : state.live.controlValues[posStr]
+                : controlValues[posStr]
 
             if (
               binding.twoway ||
@@ -166,7 +167,8 @@ export default async function init(store: Store<Types.State>) {
   const handleStoreUpdate = _.throttle(
     () => {
       const state = store.getState(),
-        currentControls = Selectors.getControls(state.live),
+        currentControls = Selectors.getControls(state),
+        controlValues = Selectors.getCurrentControlValues(state),
         currentControlIds = _.keys(currentControls),
         addedControlsIds = _.difference(currentControlIds, lastControlIds),
         removedControlsIds = _.difference(lastControlIds, currentControlIds)
@@ -182,18 +184,22 @@ export default async function init(store: Store<Types.State>) {
         const control = currentControls[controlPos],
           binding = state.live.bindings[controlPos]
         if (binding && binding.midi) {
-          const absValue =
-            control && control.absolute
-              ? absValueSelectors[controlPos](state, control.controls[0])
-              : state.live.controlValues[controlPos]
+          const fn = binding.midi >> 8,
+            absValue =
+              control && control.absolute
+                ? absValueSelectors[controlPos](state, control.controls[0])
+                : controlValues[controlPos]
+
           if (absValue !== null) {
+            const normedValue = instantFunctions.includes(midiFunctions[fn & midiFnMask])
+              ? 1 - absValue
+              : absValue
             for (let outputId in outputs) {
               const midiValue = midiValues[outputId][controlPos]
-              if (midiValue === undefined || Math.abs(absValue - midiValue) > 0.02) {
+              if (midiValue === undefined || Math.abs(normedValue - midiValue) > 0.02) {
                 if (binding.twoway) {
-                  const note = binding.midi & 127,
-                    fn = binding.midi >> 8
-                  outputs[outputId].send([fn, note, Math.floor(absValue * 127)])
+                  const note = binding.midi & 127
+                  outputs[outputId].send([fn, note, Math.floor(normedValue * 127)])
                 } else if (!binding.badMidiValue) {
                   store.dispatch(
                     Actions.setBadMidiValue({
@@ -202,7 +208,7 @@ export default async function init(store: Store<Types.State>) {
                     })
                   )
                 }
-                midiValues[outputId][controlPos] = absValue
+                midiValues[outputId][controlPos] = normedValue
               }
             }
           }

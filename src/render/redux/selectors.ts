@@ -19,6 +19,8 @@ export const getSelectedTrack = createSelector(
   }
 )
 
+export const getLive = (state: Types.State) => state.live
+
 export const getCurrentScene = (state: Types.State) =>
   state.live.scenes[state.live.sceneIndex]
 
@@ -31,12 +33,11 @@ export const getNextScene = (state: Types.State) =>
 export function getActiveTrackIdsFromLive(live: Types.Live, sceneIndex?: number) {
   if (sceneIndex === undefined) sceneIndex = live.sceneIndex
   const currentScene = live.scenes[sceneIndex],
-    prevScene = live.scenes[sceneIndex - 1],
-    lastOfPrev = prevScene && _.last(prevScene.trackIds)
+    prevScene = live.scenes[sceneIndex - 1]
 
   return currentScene
-    ? lastOfPrev
-      ? [lastOfPrev, ...currentScene.trackIds]
+    ? prevScene
+      ? [...prevScene.trackIds, ...currentScene.trackIds]
       : currentScene.trackIds
     : []
 }
@@ -45,9 +46,17 @@ export function getActiveTrackIds(state: Types.State, sceneIndex?: number): stri
   return getActiveTrackIdsFromLive(state.live, sceneIndex)
 }
 
-export function getControls(live: Types.Live): Types.Controls {
-  return (live.scenes[live.sceneIndex] && live.scenes[live.sceneIndex].controls) || {}
+export function getControlsFromSceneIndex(live: Types.Live, sceneIndex: number) {
+  return (live.scenes[sceneIndex] && live.scenes[sceneIndex].controls) || {}
 }
+
+export const getControls = createSelector([getLive], (live) => {
+  return getControlsFromSceneIndex(live, live.sceneIndex)
+})
+
+export const getPrevControls = createSelector([getLive], (live) => {
+  return getControlsFromSceneIndex(live, live.sceneIndex - 1)
+})
 
 export const makeGetTrackIndex = () =>
   createSelector(
@@ -59,6 +68,15 @@ export const makeGetTrackIndex = () =>
           ? prevScene.trackIds.indexOf(trackId) - prevScene.trackIds.length
           : -1
         : currentSceneIndex
+    }
+  )
+
+export const makeGetTrackPrevIndex = () =>
+  createSelector(
+    [getPrevScene, (_, trackId: string) => trackId],
+    (prevScene, trackId) => {
+      if (!prevScene) return -1
+      else return prevScene.trackIds.indexOf(trackId)
     }
   )
 
@@ -82,13 +100,25 @@ export function getByPos<T>(grid: Types.Grid<T>, pos: Types.Position): T {
   return grid[pos2str(pos)]
 }
 
+export const getCurrentControlValues = createSelector([getCurrentScene], (scene) =>
+  scene ? scene.controlValues : {}
+)
+
+export const getPrevControlValues = createSelector([getPrevScene], (scene) =>
+  scene ? scene.controlValues : {}
+)
+
+export const getCurrentInitValues = createSelector([getCurrentScene], (scene) =>
+  scene ? scene.initValues : {}
+)
+
+export const getPrevInitValues = createSelector([getPrevScene], (scene) =>
+  scene ? scene.initValues : {}
+)
+
 export const makeGetControlAtPos = () =>
   createSelector(
-    [
-      (state: Types.State) => getControls(state.live),
-      (state: Types.State) => state.live.controlValues,
-      (_, pos: Types.Position) => pos,
-    ],
+    [getControls, getCurrentControlValues, (_, pos: Types.Position) => pos],
     (controls, values, pos): [Types.ControlGroup, number] => {
       return [getByPos(controls, pos), defaultValue(getByPos(values, pos))]
     }
@@ -111,16 +141,11 @@ export const getTrackIdByIndex = (live: Types.Live, index: number) => {
 }
 
 export const makeGetControlTrackId = () =>
-  createSelector(
-    [
-      (state: Types.State) => getCurrentScene(state).trackIds,
-      (_, control: Types.Control) => control,
-    ],
-    (trackIds, control) => {
-      if (control && 'trackIndex' in control) return trackIds[control.trackIndex]
-      else return undefined
-    }
-  )
+  createSelector([getLive, (_, control: Types.Control) => control], (live, control) => {
+    if (control && 'trackIndex' in control) {
+      return getTrackIdByIndex(live, control.trackIndex)
+    } else return undefined
+  })
 
 export const makeGetControlAbsValue = () => {
   const getControlTrackId = makeGetControlTrackId()
@@ -167,7 +192,8 @@ function applyControlsToPlayback(
   values: Types.ControlValues,
   initValues: Types.ControlValues,
   enabled: boolean,
-  boundsAlpha: number
+  boundsAlpha: number,
+  relativeSceneIndex: number
 ) {
   let outPlayback: Types.TrackPlayback = {
     ...playback,
@@ -208,6 +234,16 @@ function applyControlsToPlayback(
               }
             }
           }
+        } else if (
+          'relativeSceneIndex' in control &&
+          control.relativeSceneIndex === relativeSceneIndex
+        ) {
+          outPlayback = {
+            ...outPlayback,
+            sourceTracksParams: _.mapValues(outPlayback.sourceTracksParams, (params) => {
+              return { ...params, volume: defaultValue(params.volume) * controlValue }
+            }),
+          }
         }
       })
   })
@@ -215,39 +251,49 @@ function applyControlsToPlayback(
 }
 
 export const makeGetTrackPlayback = () => {
-  const getTrackIndex = makeGetTrackIndex()
+  const getTrackIndex = makeGetTrackIndex(),
+    getTrackPrevIndex = makeGetTrackPrevIndex()
   return createSelector(
     [
       getTrackIndex,
+      getTrackPrevIndex,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].playback,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].nextPlayback,
       (state: Types.State, trackId: string) => state.sources[trackId].boundsAlpha,
-      (state: Types.State) => getControls(state.live),
-      (state: Types.State) => state.live.controlValues,
-      (state: Types.State) => state.live.initValues,
+      getControls,
+      getPrevControls,
+      getCurrentControlValues,
+      getPrevControlValues,
+      getCurrentInitValues,
+      getPrevInitValues,
       (state: Types.State) => state.live.controlsEnabled,
     ],
     (
       trackIndex,
+      trackPrevIndex,
       playback,
       nextPlayback,
       boundsAlpha,
       controls,
+      prevControls,
       values,
+      prevValues,
       initValues,
+      prevInitValues,
       enabled
     ) => {
-      return {
-        playback: applyControlsToPlayback(
+      const relativeSceneIndex = trackIndex < 0 ? -1 : 0
+      let newPlayback = applyControlsToPlayback(
           trackIndex,
           playback,
           controls,
           values,
           initValues,
           enabled,
-          boundsAlpha
+          boundsAlpha,
+          relativeSceneIndex
         ),
-        nextPlayback:
+        newNextPlayback =
           nextPlayback &&
           applyControlsToPlayback(
             trackIndex,
@@ -256,8 +302,39 @@ export const makeGetTrackPlayback = () => {
             values,
             initValues,
             enabled,
-            boundsAlpha
-          ),
+            boundsAlpha,
+            relativeSceneIndex
+          )
+
+      if (trackIndex < 0) {
+        //in previous scene
+        newPlayback = applyControlsToPlayback(
+          trackPrevIndex,
+          newPlayback,
+          prevControls,
+          prevValues,
+          prevInitValues,
+          enabled,
+          boundsAlpha,
+          relativeSceneIndex + 1
+        )
+        newNextPlayback =
+          newNextPlayback &&
+          applyControlsToPlayback(
+            trackPrevIndex,
+            newNextPlayback,
+            prevControls,
+            prevValues,
+            prevInitValues,
+            enabled,
+            boundsAlpha,
+            relativeSceneIndex + 1
+          )
+      }
+
+      return {
+        playback: newPlayback,
+        nextPlayback: newNextPlayback,
       }
     }
   )
@@ -266,9 +343,9 @@ export const makeGetTrackPlayback = () => {
 export const getGlobalPlayback = createSelector(
   [
     (state: Types.State) => state.playback,
-    (state: Types.State) => getControls(state.live),
-    (state: Types.State) => state.live.controlValues,
-    (state: Types.State) => state.live.initValues,
+    getControls,
+    getCurrentControlValues,
+    getCurrentInitValues,
     (state: Types.State) => state.live.controlsEnabled,
   ],
   (playback, controls, values, initValues, enabled) => {
@@ -392,9 +469,18 @@ export const getPersistentLiveBindings = createSelector(
   }
 )
 
+export const getPersistentScenes = createSelector(
+  [(live: Types.Live) => live.scenes],
+  (scenes): Types.PersistentScene[] => {
+    return scenes.map((scene) => {
+      return _.omit(scene, 'controlValues')
+    })
+  }
+)
+
 export const getPersistentLive = createShallowSelector(
   [
-    (live: Types.Live) => live.scenes,
+    getPersistentScenes,
     getPersistentLiveBindings,
     (live: Types.Live) => live.controlPresets,
     (live: Types.Live) => live.defaultPresetId,
