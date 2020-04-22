@@ -70,7 +70,8 @@ function App() {
       dispatch(Actions.addTrackAndSource(file))
     }, []),
     handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-      if (preventKeys.includes(e.key)) e.preventDefault()
+      if (preventKeys.includes(e.key) || document.activeElement.nodeName === 'INPUT')
+        e.preventDefault()
     }, [])
 
   useEffect(() => {

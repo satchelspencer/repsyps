@@ -65,6 +65,7 @@ export default function init() {
         [name: string]: {
           click: () => any
           accelerator?: string
+          noMenu?: boolean
         }
       } = {
         quit: {
@@ -79,7 +80,6 @@ export default function init() {
           click: () => {
             const path = showOpenDialog({
               defaultPath: getPath('library'),
-              filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Open Project',
             })
             if (path && path[0]) loadProject(path[0], store)
@@ -105,6 +105,12 @@ export default function init() {
               title: 'Export Project',
               defaultPath: getPath('library'),
               buttonLabel: 'Export Project',
+              filters: [
+                {
+                  name: 'Repsyps Project',
+                  extensions: ['syp'],
+                },
+              ],
             })
             if (path) exportProject(path, store)
           },
@@ -116,11 +122,16 @@ export default function init() {
               nameFieldLabel: 'Project Name',
               title: 'Save Project',
               defaultPath: getPath(
-                `library/${getDefaultSaveName(menuState.sceneIndex)}.syp`
+                `library/${getDefaultSaveName(menuState.sceneIndex)}`
               ),
               buttonLabel: 'Export Scene',
+              filters: [
+                {
+                  name: 'Repsyps Project',
+                  extensions: ['syp'],
+                },
+              ],
             })
-            console.log('es', path)
             if (path) exportCurrentScene(path, store)
           },
           accelerator: 'CmdOrCtrl+Shift+E',
@@ -135,9 +146,14 @@ export default function init() {
               nameFieldLabel: 'Track Name',
               defaultPath:
                 getAppPath('documents') +
-                pathUtils.basename(name, pathUtils.extname(name)) +
-                '.m4a',
+                pathUtils.basename(name, pathUtils.extname(name)),
               buttonLabel: 'Export Track',
+              filters: [
+                {
+                  name: 'AAC Audio',
+                  extensions: ['m4a'],
+                },
+              ],
             })
             if (path) audio.exportSource(path, selectedTrackId)
           },
@@ -478,8 +494,14 @@ export default function init() {
             const path = showSaveDialog({
               title: 'Save Contol Bindings',
               nameFieldLabel: 'Config Name',
-              defaultPath: getPath('bindings/untitled.rbind'),
+              defaultPath: getPath('bindings/untitled'),
               buttonLabel: 'Save Bindings',
+              filters: [
+                {
+                  name: 'Repsyps Binding Config',
+                  extensions: ['rbind'],
+                },
+              ],
             })
             if (path) saveBindings(path, store)
           },
@@ -576,7 +598,7 @@ export default function init() {
               'Right',
               'Enter',
               'Alt+Tab',
-              'Tab'
+              'Tab',
             ].includes(accelerator))
         )
       },
@@ -599,10 +621,11 @@ export default function init() {
       })
 
     const loops = [1, 2, 4, 8]
-    _.range(10).forEach((i) => {
+    _.range(9).forEach((i) => {
       commands['track' + i] = {
         click: () => dispatch(Actions.selectTrackByIndex(i)),
-        accelerator: i + '',
+        accelerator: i + 1 + '',
+        noMenu: true,
       }
       if (loops.includes(i))
         commands['loop' + i] = {
@@ -614,12 +637,13 @@ export default function init() {
               })
             ),
           accelerator: 'CmdOrCtrl+' + i,
+          noMenu: true,
         }
     })
 
     const bwindow = getCurrentWindow()
     _.each(commands, (command) => {
-      if (command.accelerator && isSingleKey(command.accelerator))
+      if (command.accelerator && (isSingleKey(command.accelerator) || command.noMenu))
         localShortcut.register(bwindow, command.accelerator, () => {
           if (!inInput && document.hasFocus()) {
             //console.log('windo', command.accelerator)
@@ -1035,11 +1059,17 @@ export default function init() {
     }
 
     function saveAs() {
-      const path = dialog.showSaveDialog({
+      const path = showSaveDialog({
         title: 'Save Project',
         nameFieldLabel: 'Project Name',
-        defaultPath: getPath(`library/${getDefaultSaveName()}.syp`),
+        defaultPath: getPath(`library/${getDefaultSaveName()}`),
         buttonLabel: 'Save As',
+        filters: [
+          {
+            name: 'Repsyps Project',
+            extensions: ['syp'],
+          },
+        ],
       })
       if (path) saveProject(path, store)
     }

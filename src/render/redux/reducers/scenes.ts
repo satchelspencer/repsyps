@@ -257,8 +257,13 @@ export default createReducer(defaultState, (handle) => [
     })
 
     const mappedState = remap(newState, idMap),
-      newScenes = [...state.live.scenes]
-    newScenes.splice(payload.insertIndex, 0, ...mappedState.live.scenes)
+      newScenes = [...state.live.scenes],
+      prevScene = state.live.scenes[payload.insertIndex - 1]
+
+    /* if prev scene is empty replace it */
+    if (prevScene && !prevScene.trackIds.length)
+      newScenes.splice(payload.insertIndex - 1, 1, ...mappedState.live.scenes)
+    else newScenes.splice(payload.insertIndex, 0, ...mappedState.live.scenes)
 
     return {
       ...state,

@@ -159,7 +159,21 @@ export function useResizePlayback(trackId: string) {
       },
       mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
         if (!ctxt.aperiodic) return false
-        if (chunkIndex !== -1) setChunkIndex(-1)
+        if (chunkIndex !== -1) {
+          if (ctxt.clickX === pos.x) { //if no drag
+            const sample = getTimeFromPosition(pos.x, view.snap, view)
+            dispatch(
+              Actions.setTrackPlayback({
+                trackId,
+                playback: {
+                  chunks: [sample, 0],
+                },
+              })
+            )
+          }
+
+          setChunkIndex(-1)
+        }
         return chunkIndex !== -1
       },
     }),

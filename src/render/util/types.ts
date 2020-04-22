@@ -290,8 +290,6 @@ export interface ControlPresets {
 export interface PersistentLive {
   scenes: PersistentScene[]
   bindings: PersistentBindings
-  controlPresets: ControlPresets
-  defaultPresetId: string
   tracks: PersistentTracks
 }
 
@@ -304,6 +302,12 @@ export interface Live {
   defaultPresetId: string
   controlsEnabled: boolean
   selectedPosition: Position
+}
+
+export interface LocalPersistentLive {
+  bindings: Bindings
+  controlPresets: ControlPresets
+  defaultPresetId: string
 }
 
 export interface BindingsFile {
@@ -345,6 +349,7 @@ export interface LocalPersistentState {
   save: SaveStatus
   settings: Settings
   output: LocalPersistentOutputState
+  live: LocalPersistentLive
 }
 
 export interface Output {

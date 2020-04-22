@@ -111,10 +111,6 @@ export default createReducer(defaultState, (handle) => [
               })
             ),
           },
-          controlPresets: {
-            ...state.live.controlPresets,
-            ...pLive.controlPresets,
-          },
           tracks: _.mapValues(pLive.tracks, (ptrack, trackId) => {
             const existingTrack = state.live.tracks[trackId],
               shouldReset = payload.reset || !existingTrack,
@@ -149,6 +145,14 @@ export default createReducer(defaultState, (handle) => [
       output: {
         ...state.output,
         ...localPersisted.output,
+      },
+      live: {
+        ...state.live,
+        ...localPersisted.live,
+        controlPresets: {
+          ...state.live.controlPresets,
+          ...localPersisted.live.controlPresets,
+        },
       },
     }
   }),

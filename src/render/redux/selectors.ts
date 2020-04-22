@@ -479,20 +479,12 @@ export const getPersistentScenes = createSelector(
 )
 
 export const getPersistentLive = createShallowSelector(
-  [
-    getPersistentScenes,
-    getPersistentLiveBindings,
-    (live: Types.Live) => live.controlPresets,
-    (live: Types.Live) => live.defaultPresetId,
-    getPersistentLiveTracks,
-  ],
-  (scenes, bindings, controlPresets, defaultPresetId, tracks): Types.PersistentLive => {
+  [getPersistentScenes, getPersistentLiveBindings, getPersistentLiveTracks],
+  (scenes, bindings, tracks): Types.PersistentLive => {
     return {
       tracks,
       scenes,
       bindings,
-      controlPresets,
-      defaultPresetId,
     }
   }
 )
@@ -530,19 +522,36 @@ export const getPersistentState = createShallowSelector(
   }
 )
 
+export const getLocalPersistentLive = createSelector(
+  [
+    (state: Types.State) => state.live.bindings,
+    (state: Types.State) => state.live.controlPresets,
+    (state: Types.State) => state.live.defaultPresetId,
+  ],
+  (bindings, controlPresets, defaultPresetId): Types.LocalPersistentLive => {
+    return {
+      bindings,
+      controlPresets,
+      defaultPresetId,
+    }
+  }
+)
+
 export const getLocalPersistentState = createSelector(
   [
     (state: Types.State) => state.save,
     (state: Types.State) => state.settings,
     (state: Types.State) => state.output,
+    getLocalPersistentLive,
   ],
-  (save, settings, output): Types.LocalPersistentState => {
+  (save, settings, output, live): Types.LocalPersistentState => {
     return {
       save,
       settings,
       output: {
         current: output.current,
       },
+      live,
     }
   }
 )
@@ -620,7 +629,7 @@ export function getSceneExport(
       ...state,
       sources: updateSourcesPaths(
         state.sources,
-        pathUtils.dirname(state.save.path),
+        state.save.path && pathUtils.dirname(state.save.path),
         pathUtils.dirname(destPath)
       ),
     }),
@@ -633,7 +642,6 @@ export function getSceneExport(
       tracks: _.pickBy(pstate.live.tracks, (_, trackId) =>
         currentScene.trackIds.includes(trackId)
       ),
-      controlPresets: {},
       bindings: {},
     },
     sources: _.pickBy(pstate.sources, (_, sourceId) =>
