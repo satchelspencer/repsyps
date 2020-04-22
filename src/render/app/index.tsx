@@ -58,7 +58,7 @@ const BodyInner = ctyled.div.styles({
   height: '100%',
 })
 
-const preventKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ']
+const preventKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab']
 
 function App() {
   const { darkMode, size } = useSelector((state) => state.settings),
@@ -70,7 +70,10 @@ function App() {
       dispatch(Actions.addTrackAndSource(file))
     }, []),
     handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-      if (preventKeys.includes(e.key) || document.activeElement.nodeName === 'INPUT')
+      if (
+        (preventKeys.includes(e.key) && !e.metaKey && !e.altKey) ||
+        document.activeElement.nodeName === 'INPUT'
+      )
         e.preventDefault()
     }, [])
 

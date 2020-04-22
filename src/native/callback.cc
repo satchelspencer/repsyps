@@ -158,7 +158,8 @@ int paCallbackMethod(
           }
         }else{
           samplePosition = getSamplePosition(mixTrackPlayback,tempMixTrackChunkIndex, mixTrackPhase);
-          if( samplePosition < tempMixTrackSample) {  /* check if we looped around */
+          if( samplePosition < tempMixTrackSample && mixTrack->phase >= 1.) {  /* check if we looped around */
+            //std::cout << mixTrack->phase << " -> " << mixTrackPhase << std::endl;
             didPassBound = true;
             tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount; //increment the chunk
             if(mixTrack->hasNext && (tempMixTrackChunkIndex == 0 || mixTrackPlayback->nextAtChunk)){ //chunks looped and we have next
@@ -243,6 +244,7 @@ int paCallbackMethod(
           }
         }
         bufferHead = (bufferHead+1)%state->buffer->size;
+        mixTrack->phase = mixTrackPhase;
         mixTrackPhase += phaseStep * alpha; 
       }/* end compute window */
     }

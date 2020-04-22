@@ -204,7 +204,7 @@ function applyControlsToPlayback(
     const controlGroup = controls[posStr],
       initValue = defaultValue(initValues[posStr]),
       defValue = defaultValue(values[posStr]),
-      value = initValue > 0.5 ? defValue : 1 - defValue
+      value = Math.pow(initValue > 0.5 ? defValue : 1 - defValue, 1 / 2)
 
     if (!controlGroup.absolute)
       controlGroup.controls.forEach((control) => {

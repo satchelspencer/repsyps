@@ -154,8 +154,14 @@ const Recording = memo(
               : [],
             path = dialog.showSaveDialog({
               nameFieldLabel: 'Recording Name',
-              defaultPath: getPath('recordings/untitled.m4a'),
+              defaultPath: getPath('recordings/untitled'),
               buttonLabel: 'Save Recording',
+              filters: [
+                {
+                  name: 'AAC Audio',
+                  extensions: ['m4a'],
+                },
+              ],
             })
           if (path) {
             const outPath = path,
@@ -167,7 +173,7 @@ const Recording = memo(
                   Actions.createSource({
                     sourceId,
                     name: srcName,
-                    bounds: [],
+                    bounds: [...prefixBounds, ...bounds],
                     source: outPath,
                     loaded: true,
                   }),
@@ -180,6 +186,10 @@ const Recording = memo(
                       },
                     },
                     editing: false,
+                  }),
+                  Actions.setTrackSync({
+                    trackId: sourceId,
+                    sync: 'off',
                   }),
                 ],
                 'ADD_RECORDED_SOURCE'

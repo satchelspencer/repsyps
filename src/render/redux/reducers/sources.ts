@@ -14,14 +14,15 @@ export function makeSourceTracksRelative(
   source: Types.Source,
   path: string
 ): Types.Source {
+  const base = pathUtils.dirname(path)
   return {
     ...source,
     sourceTracks: _.mapValues(source.sourceTracks, (sourceTrack) => {
       if (sourceTrack.source && pathUtils.isAbsolute(sourceTrack.source) && path)
         return {
           ...sourceTrack,
-          source: pathUtils.relative(pathUtils.dirname(path), sourceTrack.source),
-          base: path,
+          source: pathUtils.relative(base, sourceTrack.source),
+          base,
         }
       else return sourceTrack
     }),

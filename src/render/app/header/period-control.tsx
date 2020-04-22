@@ -18,22 +18,27 @@ const PeriodWrapper = adder(
     align: 'center',
     gutter: 2,
     padd: 2,
-    flex: 1,
+    flex: 1.5,
   })
 )
 
 const PhaseDisplayContainer = () => {
-  const time = useSelector(state => state.timing.time)
+  const time = useSelector((state) => state.timing.time)
   return <PhaseDisplay time={time} />
 }
+
+const PeriodValue = Value.styles({
+  width: 6,
+})
 
 const periodParams = { globalProp: 'period' }
 
 const PeriodControl = memo(() => {
-  const period = useSelector(state => state.playback.period),
+  const period = useSelector((state) => state.playback.period),
     dispatch = useDispatch(),
     handleChange = useCallback(
-      v => dispatch(Actions.updatePlayback({ period: mappings.period.fromStandard(v) })),
+      (v) =>
+        dispatch(Actions.updatePlayback({ period: mappings.period.fromStandard(v) })),
       []
     )
   return (
@@ -42,7 +47,7 @@ const PeriodControl = memo(() => {
       <SliderWrapper>
         <Slider value={mappings.period.toStandard(period)} onChange={handleChange} />
       </SliderWrapper>
-      <Value>{_.round(60 / (period / RATE), 0) + '/m'}</Value>
+      <PeriodValue>{_.round(60 / (period / RATE), 2) + '/m'}</PeriodValue>
       <PhaseDisplayContainer />
     </PeriodWrapper>
   )

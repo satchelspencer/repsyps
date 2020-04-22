@@ -45,6 +45,7 @@ typedef struct{
   mixTrackPlayback* nextPlayback;
   bool hasNext;
   double sample;
+  double phase;
   int windowIndex;
   std::vector<firfilt_rrrf> filters;
   bool hasFilter;

@@ -265,6 +265,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->hasNext = false;
     newMixTrack->hasFilter = false;
     newMixTrack->sample = 0;
+    newMixTrack->phase = 0.;
     newMixTrack->windowIndex = 0;
     newMixTrack->removed = false;
     newMixTrack->safe = false;
