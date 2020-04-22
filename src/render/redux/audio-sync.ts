@@ -11,6 +11,7 @@ import * as Selectors from './selectors'
 import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
 import isEqual from 'render/util/is-equal'
+import { updateTiming, removeTrackTimings } from 'render/components/timing'
 
 export const UPDATE_PERIODS = {
     high: 17,
@@ -117,7 +118,7 @@ export default function syncAudio(store: Store<Types.State>) {
                       loaded: true,
                       missing: false,
                       streamIndex: index, //only first source is primary
-                      base: null
+                      base: null,
                     },
                   })
                 )
@@ -171,7 +172,8 @@ export default function syncAudio(store: Store<Types.State>) {
     })
 
     if (lastState) {
-      const unloadActions: Action<any>[] = []
+      const unloadActions: Action<any>[] = [],
+        removedIds: string[] = []
       lastTrackIds.forEach((trackId) => {
         if (!trackIds.includes(trackId)) {
           //track should be unloaded
@@ -195,6 +197,7 @@ export default function syncAudio(store: Store<Types.State>) {
             })
         }
       })
+      if (removedIds.length) removeTrackTimings(removedIds)
       if (unloadActions.length)
         store.dispatch(batchActions(unloadActions, 'UNLOAD_TRACKS'))
     }
@@ -213,12 +216,25 @@ export default function syncAudio(store: Store<Types.State>) {
     lastState = store.getState()
     if (lastState && lastState.playback.playing) {
       const currentTiming = audio.getTiming()
-      /* override last state so this change won't be sent back to where it came from */
-      lastState = reducer(
-        lastState,
-        Actions.updateTime({ timing: currentTiming, commit: false })
-      )
-      store.dispatch(Actions.updateTime({ timing: currentTiming, commit: true }))
+      let needsUpdate = _.some(lastState.live.tracks, (track, trackId) => {
+        const trackTiming = currentTiming.tracks[trackId]
+        if (!trackTiming) return false
+        const didAdvanceChunk =
+            track.playback.chunkIndex !== trackTiming.playback.chunkIndex ||
+            track.playback.playing !== track.playback.playing,
+          didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback
+
+        return didAdvanceChunk || (didAdvancePlayback && track.nextCueIndex !== -1)
+      })
+      if (needsUpdate) {
+        /* override last state so this change won't be sent back to where it came from */
+        lastState = reducer(
+          lastState,
+          Actions.updateTime({ timing: currentTiming, commit: false })
+        )
+        store.dispatch(Actions.updateTime({ timing: currentTiming, commit: true }))
+      }
+      updateTiming(currentTiming)
     }
     setTimeout(
       update,

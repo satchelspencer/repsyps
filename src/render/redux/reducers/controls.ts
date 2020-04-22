@@ -8,13 +8,12 @@ import * as Selectors from '../selectors'
 import {
   defaultState,
   defaultControlGroup,
-  defaultTiming,
   defaultBinding,
   defaultBindings,
   defaultControlPresets,
 } from '../defaults'
 import { updateSceneIndex } from './scenes'
-import { stat } from 'fs'
+
 
 function setControlGroup(
   state: Types.State,
@@ -158,7 +157,6 @@ export default createReducer(defaultState, (handle) => [
           ...state.playback,
           playing: false,
         },
-        timing: defaultTiming,
       },
       state.live.sceneIndex,
       true

@@ -8,6 +8,7 @@ import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import { defaultState } from 'render/redux/defaults'
+import { resetTiming } from 'render/components/timing'
 
 import { useSelection } from 'render/components/selection'
 import { useDispatch, useStore } from 'render/redux/react'
@@ -253,7 +254,10 @@ export default function init() {
           accelerator: 'K',
         },
         resetScene: {
-          click: () => dispatch(Actions.zeroInitValues()),
+          click: () => {
+            dispatch(Actions.zeroInitValues())
+            resetTiming()
+          },
           accelerator: 'CmdOrCtrl+R',
         },
         commitScene: {

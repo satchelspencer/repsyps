@@ -64,11 +64,6 @@ export const defaultPlayback: Types.Playback = {
     sourceTracks: {},
   },
   defaultSources: Types.Sources = {},
-  defaultTiming: Types.Times = {
-    time: 0,
-    tracks: {},
-    recTime: 0,
-  },
   defaultTrackSourceParams: Types.TrackSourceParams = { volume: 0, offset: 0 },
   defaultControlGroup: Types.ControlGroup = {
     absolute: true,
@@ -101,7 +96,6 @@ export const defaultPlayback: Types.Playback = {
   },
   defaultState: Types.State = {
     save: defaultSave,
-    timing: defaultTiming,
     playback: defaultPlayback,
     live: defaultLive,
     sources: defaultSources,

@@ -45,10 +45,6 @@ export function updateSceneIndex(
         ...state.playback,
         period: resetPeriod ? firstTrack.lastPeriod : state.playback.period,
       },
-      timing: {
-        ...state.timing,
-        tracks: _.omit(state.timing.tracks, noLongerActive),
-      },
       live: {
         ...state.live,
         tracks: _.mapValues(state.live.tracks, (track, trackId) => {

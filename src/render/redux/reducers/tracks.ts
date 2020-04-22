@@ -9,6 +9,7 @@ import { updateSceneIndex } from './scenes'
 import audio from 'render/util/audio'
 import uid from 'src/render/util/uid'
 import { IdMap, applyIdMap } from 'render/util/remap'
+import { getTiming } from 'render/components/timing'
 
 export function getChunksFromBounds(startSample: number, bounds: number[]) {
   const aboveBounds = _.filter(bounds, (b, bi) => {
@@ -238,7 +239,7 @@ export default createReducer(defaultState, (handle) => [
       aperiodic = sync === 'off',
       isLoop = !!playback.chunks[playback.chunkIndex * 2 + 1],
       { bounds, boundsAlpha } = state.sources[trackId],
-      sample = state.timing.tracks[trackId] || 0,
+      sample = (getTiming().tracks[trackId] || { sample: 0 }).sample,
       newPlayback = {
         ...playback,
         aperiodic,

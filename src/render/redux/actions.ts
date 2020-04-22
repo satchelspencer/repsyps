@@ -38,10 +38,6 @@ export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAY
 
 export const stopAll = createAction<void>('STOP_ALL')
 
-export const updatePlaybackTime = createAction<number>('UPDATE_PLAYBACK_TIME')
-
-export const resetPlaybackTime = createAction<void>('RESET_PLAYBACK_TIME')
-
 export const setOutputs = createAction<Partial<Types.OutputState>>('SET_OUTPUTS')
 
 export const setModalRoute = createAction<string>('SET_MODAL_ROUTE')

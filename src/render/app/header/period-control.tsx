@@ -12,6 +12,7 @@ import { RATE } from 'render/util/audio'
 import { Value, SliderWrapper } from 'render/components/misc'
 import { adder } from 'render/components/control-adder'
 import PhaseDisplay from './phase-display'
+import { useTiming } from 'render/components/timing'
 
 const PeriodWrapper = adder(
   ctyled.div.styles({
@@ -23,7 +24,7 @@ const PeriodWrapper = adder(
 )
 
 const PhaseDisplayContainer = () => {
-  const time = useSelector((state) => state.timing.time)
+  const time = useTiming().time
   return <PhaseDisplay time={time} />
 }
 

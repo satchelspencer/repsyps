@@ -387,7 +387,6 @@ export interface State {
   playback: Playback
   live: Live
   sources: Sources
-  timing: Times
   save: SaveStatus
   settings: Settings
   recording: Recording

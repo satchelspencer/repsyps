@@ -22,6 +22,7 @@ import getImpulses from 'render/util/impulse-detect'
 import { getRelativePos, getBoundIndex, getTimeFromPosition } from './utils'
 import { useSelectable } from 'render/components/selection'
 import useMeasure from 'render/components/measure'
+import { useTrackTiming } from 'render/components/timing'
 
 import useZoom from './zoom'
 import useWaveformCanvas from './canvas'
@@ -341,7 +342,7 @@ export interface TrackContainerProps {
 export default function TrackContainer(props: TrackContainerProps) {
   const track = useSelector((state) => state.live.tracks[props.trackId]),
     source = useSelector((state) => state.sources[props.trackId]),
-    sample = useSelector((state) => state.timing.tracks[props.trackId]),
+    sample = useTrackTiming(props.trackId),
     dispatch = useDispatch(),
     wrapperRef = useRef(null),
     [vstart, vend] = props.vBounds,

@@ -9,6 +9,8 @@ import audio from 'render/util/audio'
 import Icon from 'render/components/icon'
 import { Value } from 'render/components/misc'
 import { isMac } from 'render/util/env'
+import { useTiming } from 'render/components/timing'
+import { resetTiming } from 'render/components/timing'
 
 const ControlsWrapper = ctyled.div.styles({
   gutter: 2,
@@ -21,7 +23,7 @@ const ControlsWrapper = ctyled.div.styles({
 
 const Playback = memo(() => {
   const playing = useSelector((state) => state.playback.playing),
-    time = useSelector((state) => Math.floor(state.timing.time)),
+    time = Math.floor(useTiming().time),
     dispatch = useDispatch()
 
   return (
@@ -38,7 +40,10 @@ const Playback = memo(() => {
         scale={2}
         asButton
         name="replay"
-        onClick={() => dispatch(Actions.zeroInitValues())}
+        onClick={() => {
+          dispatch(Actions.zeroInitValues())
+          resetTiming()
+        }}
       />
       <Value>{time}</Value>
     </ControlsWrapper>

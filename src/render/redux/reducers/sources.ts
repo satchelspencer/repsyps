@@ -14,7 +14,7 @@ export function makeSourceTracksRelative(
   source: Types.Source,
   path: string
 ): Types.Source {
-  const base = pathUtils.dirname(path)
+  const base = path && pathUtils.dirname(path)
   return {
     ...source,
     sourceTracks: _.mapValues(source.sourceTracks, (sourceTrack) => {

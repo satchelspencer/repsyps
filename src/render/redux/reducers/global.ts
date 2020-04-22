@@ -194,27 +194,15 @@ export default createReducer(defaultState, (handle) => [
       } else return track
     })
 
-    return {
-      ...state,
-      timing: {
-        time: payload.timing.time,
-        tracks: {
-          ...state.timing.tracks,
-          ..._.mapValues(payload.timing.tracks, (t, trackId) => {
-            const track = state.live.tracks[trackId],
-              isPlaying = track && track.playback.playing
-            return isPlaying ? t.sample : state.timing.tracks[trackId]
-          }),
-        },
-        recTime: payload.timing.recTime,
-      },
-      live: needsUpdate
-        ? {
+    return needsUpdate
+      ? {
+          ...state,
+          live: {
             ...state.live,
             tracks: newTracks,
-          }
-        : state.live,
-    }
+          },
+        }
+      : state
   }),
   handle(Actions.setSaveStatus, (state, { payload: saveStatus }) => {
     const lastPath = state.save.path ? pathUtils.dirname(state.save.path) : '',
@@ -253,24 +241,6 @@ export default createReducer(defaultState, (handle) => [
       playback: {
         ...state.playback,
         ...newPlayback,
-      },
-    }
-  }),
-  handle(Actions.updatePlaybackTime, (state, { payload: time }) => {
-    return {
-      ...state,
-      timing: {
-        ...state.timing,
-        time: state.timing.time + time,
-      },
-    }
-  }),
-  handle(Actions.resetPlaybackTime, (state) => {
-    return {
-      ...state,
-      timing: {
-        ...state.timing,
-        time: 0,
       },
     }
   }),

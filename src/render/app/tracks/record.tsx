@@ -15,6 +15,7 @@ import extend from 'render/util/extend'
 import uid from 'render/util/uid'
 import { waveformLine } from 'render/app/tracks/canvas'
 import * as Actions from 'render/redux/actions'
+import { useTiming } from 'render/components/timing'
 
 import Icon from 'render/components/icon'
 import useMeasure from 'render/components/measure'
@@ -247,14 +248,10 @@ const Recording = memo(
 )
 
 export default function RecordingContainer() {
-  const recLength = useSelector(
-      (state) => state.timing.recTime,
-      (a, b) => Math.abs(a - b) < UPDATE_THRESH
-    ),
-    time = useSelector(
-      (state) => state.timing.time,
-      (a, b) => Math.abs(a - b) < 0.01
-    ),
+  const { recTime, time } = useTiming(),
     enabled = useSelector((state) => state.recording.enabled)
-  return <Recording recLength={recLength} time={time} enabled={enabled} />
+
+  return useMemo(() => {
+    return <Recording recLength={recTime} time={time} enabled={enabled} />
+  }, [Math.floor(recTime / UPDATE_THRESH), Math.floor(time / UPDATE_THRESH), enabled])
 }
