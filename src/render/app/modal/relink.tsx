@@ -76,11 +76,12 @@ function MissingIcon(props: { stillMissing: boolean }) {
 
 interface MissingSourceProps {
   index: number
+  source: Types.SourceInfo
   missing: Types.SourceInfo[]
 }
 
 function MissingSource(props: MissingSourceProps) {
-  const source = props.missing[props.index],
+  const { source } = props,
     stillMissing = props.missing.find(
       (s) => s.sourceTrackId === source.sourceTrackId && s.sourceId === source.sourceId
     ),
@@ -103,7 +104,7 @@ function Relink() {
   useEffect(() => {
     setInitialMissing(
       _.uniqBy(
-        [...missing, ...initialMissing],
+        [...initialMissing, ...missing],
         (src) => src.sourceId + '-' + src.sourceTrackId
       )
     )
@@ -114,7 +115,12 @@ function Relink() {
       {missing.length ? (
         <MissingList>
           {initialMissing.map((_, index) => (
-            <MissingSource key={index} index={index} missing={initialMissing} />
+            <MissingSource
+              key={index}
+              index={index}
+              source={initialMissing[index]}
+              missing={missing}
+            />
           ))}
         </MissingList>
       ) : (

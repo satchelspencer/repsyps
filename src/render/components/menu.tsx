@@ -110,12 +110,6 @@ export default function init() {
               title: 'Export Project',
               defaultPath: getPath('library'),
               buttonLabel: 'Export Project',
-              filters: [
-                {
-                  name: 'Repsyps Project',
-                  extensions: ['syp'],
-                },
-              ],
             })
             if (path) exportProject(path, store)
           },

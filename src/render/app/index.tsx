@@ -18,7 +18,10 @@ const Wrapper = ctyled.div.attrs({ invert: false }).styles({
   color: (c, { invert }) =>
     invert
       ? c.as(palette.gray).absLum(0.3).contrast(0.2).invert()
-      : c.as(palette.gray).absLum(0.8).contrast(0.2),
+      : c
+          .as(palette.gray)
+          .absLum(0.8)
+          .contrast(0.2),
   size: 11,
   bg: true,
   lined: true,
