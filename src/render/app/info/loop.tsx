@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react'
+import React, { memo, useMemo, useCallback } from 'react'
 import * as _ from 'lodash'
 
 import { useDispatch, useSelector } from 'render/redux/react'
@@ -18,10 +18,35 @@ export interface LoopProps {
 
 const options = [1, 2, 4, 8]
 
-const Loop = memo((props: LoopProps) => {
-  const { chunks, chunkIndex } = useSelector(
-      (state) => state.live.tracks[props.trackId].playback
+interface LoopButtonProps {
+  n: number
+  trackIndex: number
+  trackId: string
+}
+
+function LoopButton(props: LoopButtonProps) {
+  const dispatch = useDispatch(),
+    styles = useMemo(() => ({ fontWeight: 'bold' }), []),
+    params = useMemo(
+      () => ({
+        trackIndex: props.trackIndex,
+        loop: props.n,
+      }),
+      [props.n, props.trackIndex]
     ),
+    handleClick = useCallback(
+      () => dispatch(Actions.loopTrack({ trackId: props.trackId, loop: props.n })),
+      [props.trackId, props.n]
+    )
+  return (
+    <WideLoopButton style={styles} params={params} onClick={handleClick}>
+      {props.n}
+    </WideLoopButton>
+  )
+}
+
+const Loop = memo((props: LoopProps) => {
+  const { chunks } = useSelector((state) => state.live.tracks[props.trackId].playback),
     bounds = useSelector((state) => state.sources[props.trackId].bounds),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
@@ -30,7 +55,18 @@ const Loop = memo((props: LoopProps) => {
     wrapperStyles = useMemo(() => ({ disabled: !chunkLength || !bounds.length }), [
       chunkLength,
       bounds,
-    ])
+    ]),
+    toEndParams = useMemo(
+      () => ({
+        trackIndex,
+        loop: -1,
+      }),
+      [trackIndex]
+    ),
+    playToEnd = useCallback(
+      () => dispatch(Actions.loopTrack({ trackId: props.trackId, loop: -1 })),
+      [props.trackId]
+    )
 
   return (
     <Horizontal styles={wrapperStyles}>
@@ -39,25 +75,9 @@ const Loop = memo((props: LoopProps) => {
         <span>&nbsp;Loop</span>
       </HeaderContent>
       {options.map((n) => (
-        <WideLoopButton
-          key={n}
-          style={{ fontWeight: 'bold' }}
-          params={{
-            trackIndex,
-            loop: n,
-          }}
-          onClick={() => dispatch(Actions.loopTrack({ trackId: props.trackId, loop: n }))}
-        >
-          {n}
-        </WideLoopButton>
+        <LoopButton key={n} n={n} trackIndex={trackIndex} trackId={props.trackId} />
       ))}
-      <FillLoopButton
-        params={{
-          trackIndex,
-          loop: -1,
-        }}
-        onClick={() => dispatch(Actions.loopTrack({ trackId: props.trackId, loop: -1 }))}
-      >
+      <FillLoopButton params={toEndParams} onClick={playToEnd}>
         <Icon name="next" />
         &nbsp;to end
       </FillLoopButton>

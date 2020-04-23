@@ -276,16 +276,18 @@ const Track = memo(
         setMouseDown(false)
       }, [])
 
-    const cursor = useMemo(() => {
+    const cursorStyles = useMemo(() => {
       const boundIndex = getBoundIndex(center, view, source.bounds),
         sample = getTimeFromPosition(center, view.snap, view),
         nearChunkIndex = _.findIndex(track.playback.chunks, (chunk, i) => {
           const csample = i % 2 === 0 ? chunk : chunk + track.playback.chunks[i - 1]
           return Math.abs(csample - sample) < 9 * view.scale
-        })
-      return (track.editing && boundIndex !== -1) || nearChunkIndex !== -1
-        ? 'col-resize'
-        : 'crosshair'
+        }),
+        cursor =
+          (track.editing && boundIndex !== -1) || nearChunkIndex !== -1
+            ? 'col-resize'
+            : 'crosshair'
+      return { cursor }
     }, [
       center,
       track.editing,
@@ -298,7 +300,7 @@ const Track = memo(
     return (
       <>
         <TrackCanvasWrapper
-          style={{ cursor }}
+          style={cursorStyles}
           inRef={container}
           onMouseMove={handleMouseMove}
           onMouseDown={handleMouseDown}
@@ -320,7 +322,7 @@ const Track = memo(
   },
   (prevProps, nextProps) => {
     return (
-      !nextProps.visible || //if not visible never update
+      (!nextProps.visible && prevProps.loaded === nextProps.loaded) || //if not visible never update
       (prevProps.track === nextProps.track &&
         prevProps.trackId === nextProps.trackId &&
         prevProps.sample === nextProps.sample &&
@@ -371,7 +373,17 @@ export default function TrackContainer(props: TrackContainerProps) {
             playlock: true,
           })
         )
-    }, [track.editing, track.playback.playing, track.playLock, props.trackId])
+    }, [track.editing, track.playback.playing, track.playLock, props.trackId]),
+    setPlayLock = useCallback(
+      (locked) =>
+        dispatch(
+          Actions.setTrackPlayLock({
+            trackId: props.trackId,
+            playlock: locked,
+          })
+        ),
+      [props.trackId]
+    )
 
   useEffect(() => {
     if (track.selected && props.listRef.current && vstart !== null && start !== null) {
@@ -410,14 +422,7 @@ export default function TrackContainer(props: TrackContainerProps) {
             source={source}
             sample={inferredSample}
             playLock={track.playLock}
-            setPlayLock={(locked) =>
-              dispatch(
-                Actions.setTrackPlayLock({
-                  trackId: props.trackId,
-                  playlock: locked,
-                })
-              )
-            }
+            setPlayLock={setPlayLock}
             trackScroll={trackScroll}
           />
         </>

@@ -14,12 +14,12 @@ export default async function separate(
   dispatch: Dispatch<any>
 ) {
   const cacheDir = getPath('cache'),
-    cacheDirExists = !!(await fs.promises.stat(cacheDir).catch(e => false))
+    cacheDirExists = !!(await fs.promises.stat(cacheDir).catch((e) => false))
   if (!cacheDirExists) await fs.promises.mkdir(cacheDir)
 
   const vocalCachePath = pathUtils.join(cacheDir, trackName + '_vocal.m4a'),
     instruCachePath = pathUtils.join(cacheDir, trackName + '_instru.m4a'),
-    cacheHit = !!(await fs.promises.stat(vocalCachePath).catch(e => false))
+    cacheHit = !!(await fs.promises.stat(vocalCachePath).catch((e) => false))
 
   if (cacheHit) {
     await audio.loadSource(vocalCachePath, trackId + '_vocal')
@@ -42,15 +42,7 @@ export default async function separate(
             loaded: true,
             missing: false,
             streamIndex: 0,
-            base: null
-          },
-        }),
-        Actions.setTrackSourceParams({
-          trackId: trackId,
-          sourceTrackId: trackId + '_vocal',
-          sourceTrackParams: {
-            volume: 0,
-            offset: 0, //cacheHit ? 1024 : 0,
+            base: null,
           },
         }),
         Actions.createTrackSource({
@@ -62,15 +54,7 @@ export default async function separate(
             loaded: true,
             missing: false,
             streamIndex: 0,
-            base: null
-          },
-        }),
-        Actions.setTrackSourceParams({
-          trackId: trackId,
-          sourceTrackId: trackId + '_instru',
-          sourceTrackParams: {
-            volume: 0,
-            offset: 0,
+            base: null,
           },
         }),
       ],

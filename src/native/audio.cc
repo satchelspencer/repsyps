@@ -358,7 +358,7 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
         }
       }
       delete mixTrack;
-    }else{
+    }else if(mixTrack->playback->playing){
       Napi::Object mixTrackState = Napi::Object::New(env);
       mixTrackState.Set("sample", mixTrack->sample);
 

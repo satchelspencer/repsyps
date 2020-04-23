@@ -11,13 +11,17 @@ import uid from 'src/render/util/uid'
 import { IdMap, applyIdMap } from 'render/util/remap'
 import { getTiming } from 'render/components/timing'
 
-export function getChunksFromBounds(startSample: number, bounds: number[]) {
+export function getChunksFromBounds(
+  startSample: number,
+  bounds: number[],
+  limit?: number
+) {
   const aboveBounds = _.filter(bounds, (b, bi) => {
     const next = bounds[bi + 1]
     return next >= startSample
   })
   return _.flatten(
-    aboveBounds
+    _.take(aboveBounds, limit || aboveBounds.length)
       .map((bound, boundIndex) => {
         const nextBound = aboveBounds[boundIndex + 1]
         return nextBound && [bound, nextBound - bound]
@@ -247,7 +251,7 @@ export default createReducer(defaultState, (handle) => [
     let newPeriod = null
 
     if (!aperiodic && !isLoop && bounds.length && sample)
-      newPlayback.chunks = getChunksFromBounds(sample, bounds)
+      newPlayback.chunks = getChunksFromBounds(sample, bounds, 1)
 
     if (sync === 'lock') {
       const nextBoundIndex = _.findIndex(bounds, (b) => {

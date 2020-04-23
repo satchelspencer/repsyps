@@ -13,20 +13,32 @@ const defaultTimes: Types.TimingState = {
 let currentTiming: Types.TimingState = defaultTimes,
   listeners: { [id: string]: () => void } = {}
 
-export function updateTiming(timing: Types.TimingState) {
-  currentTiming = timing
+function updateListeners() {
   _.each(listeners, (cb) => cb && cb())
 }
 
+export function updateTiming(timing: Types.TimingState) {
+  currentTiming = {
+    ...currentTiming,
+    ...timing,
+    tracks: {
+      ...currentTiming.tracks,
+      ...timing.tracks,
+    },
+  }
+  updateListeners()
+}
+
 export function resetTiming() {
-  updateTiming(defaultTimes)
+  currentTiming = defaultTimes
+  updateListeners()
 }
 
 export function removeTrackTimings(trackIds: string[]) {
-  updateTiming({
+  currentTiming = {
     ...currentTiming,
     tracks: _.omit(currentTiming.tracks, trackIds),
-  })
+  }
 }
 
 export function getTiming() {

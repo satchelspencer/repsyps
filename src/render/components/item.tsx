@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled, { active } from 'ctyled'
 
@@ -36,9 +36,13 @@ interface SidebarItemProps {
 }
 
 export default function SidebarItem(props: SidebarItemProps) {
+  const handleClick = useCallback(() => props.onSetOpen && props.onSetOpen(!props.open), [
+    props.onSetOpen,
+    props.open,
+  ])
   return (
     <TrackItem>
-      <Horizontal onClick={() => props.onSetOpen && props.onSetOpen(!props.open)}>
+      <Horizontal onClick={handleClick}>
         {props.title}
         {props.children && props.caret && (
           <Icon name={props.open ? 'caret-down' : 'caret-right'} scale={1.8} />

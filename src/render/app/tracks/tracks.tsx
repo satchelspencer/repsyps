@@ -155,7 +155,13 @@ function Tracks() {
       },
       [scenesItems, scenes.length]
     ),
-    handleSelectFirst = useCallback(() => handleSelectScene(0), [handleSelectScene])
+    handleSelectFirst = useCallback(() => handleSelectScene(0), [handleSelectScene]),
+    firstParams = useMemo(
+      () => ({
+        relativeSceneIndex: -currentSceneIndex,
+      }),
+      [currentSceneIndex]
+    )
 
   return (
     <TrackWrapper>
@@ -172,9 +178,7 @@ function Tracks() {
           inRef={wrapperRef}
         >
           <SceneDivider
-            params={{
-              relativeSceneIndex: -currentSceneIndex,
-            }}
+            params={firstParams}
             onClick={handleSelectFirst}
             selected={currentSceneIndex === 0}
             noSelect={currentSceneIndex > 1}

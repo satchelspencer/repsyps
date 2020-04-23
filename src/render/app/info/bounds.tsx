@@ -4,6 +4,7 @@ import ctyled from 'ctyled'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import * as Types from 'render/util/types'
 
 import { RATE } from 'render/util/audio'
 
@@ -79,6 +80,40 @@ export interface BoundsControlProps {
   trackId: string
 }
 
+interface SourceTrackOffsetProps {
+  trackId: string
+  sourceTrackId: string
+  sourceTrack: Types.TrackSource
+  sourceTrackEditing: string
+  sourceTrackParams: Types.TrackSourceParams
+}
+
+const SourceTrackOffset = memo((props: SourceTrackOffsetProps) => {
+  const dispatch = useDispatch(),
+    isSelected = props.sourceTrackEditing === props.sourceTrackId,
+    toggleEditing = useCallback(
+      () =>
+        dispatch(
+          Actions.editSourceTrack({
+            trackId: props.trackId,
+            sourceTrackEditing: isSelected ? null : props.sourceTrackId,
+          })
+        ),
+      [isSelected, props.sourceTrackId]
+    )
+  return (
+    <SourceTrack>
+      <Icon name="shift" scale={1.5} />
+      <TrackName selected={false}>
+        <TrackNameInner>{props.sourceTrack.name}</TrackNameInner>
+      </TrackName>
+      <OffsetValue onClick={toggleEditing} active={isSelected}>
+        {getOffsetStr(props.sourceTrackParams.offset) + 's'}
+      </OffsetValue>
+    </SourceTrack>
+  )
+})
+
 const BoundsControl = memo((props: BoundsControlProps) => {
   const { playback, editing, sourceTrackEditing } = useSelector(
       (state) => state.live.tracks[props.trackId]
@@ -109,7 +144,6 @@ const BoundsControl = memo((props: BoundsControlProps) => {
     }, [bounds]),
     handleSelect = useCallback(async () => {
       if (!isSelecting) {
-        console.log()
         const id = await getSelection()
         if (id)
           dispatch(
@@ -191,31 +225,16 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       </Horizontal>
       <Alpha trackId={props.trackId} />
       <SourceTracks>
-        {Object.keys(playback.sourceTracksParams).map((sourceTrackId) => {
-          const sourceTrackParams = playback.sourceTracksParams[sourceTrackId]
-          return (
-            <SourceTrack key={sourceTrackId}>
-              <Icon name="shift" scale={1.5} />
-              <TrackName selected={false}>
-                <TrackNameInner>{sourceTracks[sourceTrackId].name}</TrackNameInner>
-              </TrackName>
-              <OffsetValue
-                onClick={() =>
-                  dispatch(
-                    Actions.editSourceTrack({
-                      trackId: props.trackId,
-                      sourceTrackEditing:
-                        sourceTrackEditing === sourceTrackId ? null : sourceTrackId,
-                    })
-                  )
-                }
-                active={sourceTrackEditing === sourceTrackId}
-              >
-                {getOffsetStr(sourceTrackParams.offset) + 's'}
-              </OffsetValue>
-            </SourceTrack>
-          )
-        })}
+        {Object.keys(playback.sourceTracksParams).map((sourceTrackId) => (
+          <SourceTrackOffset
+            key={sourceTrackId}
+            trackId={props.trackId}
+            sourceTrackId={sourceTrackId}
+            sourceTrackParams={playback.sourceTracksParams[sourceTrackId]}
+            sourceTrack={sourceTracks[sourceTrackId]}
+            sourceTrackEditing={sourceTrackEditing}
+          />
+        ))}
       </SourceTracks>
     </SidebarItem>
   )

@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react'
+import React, { memo, useMemo, useCallback } from 'react'
 import ctyled, { active } from 'ctyled'
 import _ from 'lodash'
 import { SortableHandle } from 'react-sortable-hoc'
@@ -157,6 +157,55 @@ function TrackControls(props: TrackControlsProps) {
     pausedOnCue = !track.playback.playing && activeCueIndex !== -1,
     boundsAlpha = track.playback.aperiodic ? 1 : source.boundsAlpha
 
+  const handlePrevCue = useCallback(
+      () =>
+        dispatch(
+          Actions.stepTrackCue({
+            trackId: props.trackId,
+            cueStep: -1,
+          })
+        ),
+      [props.trackId]
+    ),
+    handleForward = useCallback(() => {
+      if (hasCues)
+        dispatch(
+          Actions.stepTrackCue({
+            trackId: props.trackId,
+            cueStep: 1,
+          })
+        )
+      else
+        dispatch(
+          Actions.setTrackPlayback({
+            trackId: props.trackId,
+            playback: {
+              playing: !track.playback.playing,
+            },
+          })
+        )
+    }, [props.trackId, track.playback.playing]),
+    handleMute = useCallback(
+      () =>
+        dispatch(
+          Actions.setTrackMuted({
+            trackId: props.trackId,
+            muted: !track.playback.muted,
+          })
+        ),
+      [props.trackId]
+    ),
+    handleSolo = useCallback(
+      () =>
+        dispatch(
+          Actions.setTrackSolo({
+            trackId: props.trackId,
+            solo: !isSolo,
+          })
+        ),
+      [props.trackId]
+    )
+
   return (
     <TrackControlsWrapper>
       <TrackHandle selected={track.selected} />
@@ -172,42 +221,13 @@ function TrackControls(props: TrackControlsProps) {
               </span>
             </SpeedWrapper>
             <CuesWrapper>
-              <ControlsButton
-                disabled={!canPrev}
-                onClick={() =>
-                  dispatch(
-                    Actions.stepTrackCue({
-                      trackId: props.trackId,
-                      cueStep: -1,
-                    })
-                  )
-                }
-              >
+              <ControlsButton disabled={!canPrev} onClick={handlePrevCue}>
                 <Icon name="prev" scale={1.2} />
               </ControlsButton>
               <CueLabel disabled={!hasCues}>
                 <b>{activeCueIndex === -1 ? 'n/a' : activeCueIndex + 1}</b>
               </CueLabel>
-              <ControlsButton
-                onClick={() => {
-                  if (hasCues)
-                    dispatch(
-                      Actions.stepTrackCue({
-                        trackId: props.trackId,
-                        cueStep: 1,
-                      })
-                    )
-                  else
-                    dispatch(
-                      Actions.setTrackPlayback({
-                        trackId: props.trackId,
-                        playback: {
-                          playing: !track.playback.playing,
-                        },
-                      })
-                    )
-                }}
-              >
+              <ControlsButton onClick={handleForward}>
                 <Icon
                   name={
                     hasCues
@@ -228,30 +248,10 @@ function TrackControls(props: TrackControlsProps) {
             </CuesWrapper>
           </InnerV>
           <MSContainer>
-            <ControlsButton
-              onClick={() =>
-                dispatch(
-                  Actions.setTrackMuted({
-                    trackId: props.trackId,
-                    muted: !track.playback.muted,
-                  })
-                )
-              }
-              active={track.playback.muted}
-            >
+            <ControlsButton onClick={handleMute} active={track.playback.muted}>
               M
             </ControlsButton>
-            <ControlsButton
-              onClick={() =>
-                dispatch(
-                  Actions.setTrackSolo({
-                    trackId: props.trackId,
-                    solo: !isSolo,
-                  })
-                )
-              }
-              active={isSolo}
-            >
+            <ControlsButton onClick={handleSolo} active={isSolo}>
               S
             </ControlsButton>
           </MSContainer>

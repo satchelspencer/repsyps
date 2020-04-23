@@ -1,20 +1,18 @@
-import React, { memo, useMemo, useRef, useEffect, useCallback } from 'react'
+import React, { memo, useMemo, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled, { active } from 'ctyled'
-import pathUtils from 'path'
 
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import * as Types from 'render/util/types'
-import { getId } from 'render/util/uid'
+import useAddSource from 'render/util/add-source'
 
 import { adder } from 'render/components/control-adder'
 import Volume from 'render/components/volume'
 import Icon from 'render/components/icon'
 import { WideButton } from 'render/components/misc'
 import SidebarItem from 'render/components/item'
-import volume from './volume'
 
 const TracksWrapper = ctyled.div.styles({
   gutter: 1,
@@ -191,46 +189,12 @@ const SourceTracks = (props: TrackVolumeProps) => {
     ),
     source = useSelector((state) => state.sources[props.trackId]),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
-    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
-    dispatch = useDispatch()
-
-  const input = useRef(null)
-  useEffect(() => {
-    input.current = document.createElement('input')
-    input.current.type = 'file'
-    input.current.onchange = (e) => {
-      const { files } = input.current
-      const id = getId(files[0].path)
-      dispatch(
-        Actions.createTrackSource({
-          sourceId: props.trackId,
-          sourceTrackId: id,
-          sourceTrack: {
-            name: pathUtils.basename(files[0].path),
-            source: files[0].path,
-            loaded: false,
-            missing: false,
-            streamIndex: 0,
-            base: null
-          },
-        })
-      )
-      dispatch(
-        Actions.setTrackSourceParams({
-          trackId: props.trackId,
-          sourceTrackId: id,
-          sourceTrackParams: {
-            volume: 0,
-            offset: 0,
-          },
-        })
-      )
-      input.current.value = ''
-    }
-  }, [props.trackId])
+    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId))
 
   const sourceTrackIds = _.keys(source.sourceTracks),
-    many = sourceTrackIds.length > 1
+    many = sourceTrackIds.length > 1,
+    addSource = useAddSource(),
+    handleClick = useCallback(() => addSource(props.trackId), [props.trackId])
 
   return (
     <TracksWrapper>
@@ -249,7 +213,7 @@ const SourceTracks = (props: TrackVolumeProps) => {
           />
         )
       })}
-      <WideButton onClick={() => input.current.click()}>+ add source</WideButton>
+      <WideButton onClick={handleClick}>+ add source</WideButton>
     </TracksWrapper>
   )
 }

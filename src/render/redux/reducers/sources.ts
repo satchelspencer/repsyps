@@ -184,7 +184,7 @@ export default createReducer(defaultState, (handle) => [
               ...state.live.tracks[payload.sourceId].playback,
               sourceTracksParams: {
                 ...state.live.tracks[payload.sourceId].playback.sourceTracksParams,
-                [payload.sourceTrackId]: defaultTrackSourceParams,
+                [payload.sourceTrackId]: defaultTrackSourceParams, //start at zeroes
               },
             },
           },

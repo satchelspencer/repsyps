@@ -149,7 +149,6 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.zeroInitValues, (state) => {
-    audio.updateTime(0, false)
     return updateSceneIndex(
       {
         ...state,

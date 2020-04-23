@@ -4,10 +4,7 @@ import * as _ from 'lodash'
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 
-import Icon from 'render/components/icon'
-import { HeaderContent, SelectableButton, Horizontal } from 'render/components/misc'
-
-import SidebarItem from 'render/components/item'
+import { SelectableButton, Horizontal } from 'render/components/misc'
 
 export interface AlphaProps {
   trackId: string
@@ -21,11 +18,9 @@ interface SetterProps {
 }
 
 const Setter = (props: SetterProps) => {
+  const handleClick = useCallback(() => props.setAlpha(props.alpha), [props.alpha])
   return (
-    <SelectableButton
-      selected={props.alpha === props.currentAlpha}
-      onClick={() => props.setAlpha(props.alpha)}
-    >
+    <SelectableButton selected={props.alpha === props.currentAlpha} onClick={handleClick}>
       {props.text}
     </SelectableButton>
   )

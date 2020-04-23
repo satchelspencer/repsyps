@@ -39,7 +39,24 @@ const Sync = memo((props: SyncProps) => {
     ),
     handleLock = useCallback(() => {
       dispatch(Actions.setTrackSync({ trackId: props.trackId, sync: 'lock' }))
-    }, [bounds, aperiodic, alpha, boundsAlpha])
+    }, [bounds, aperiodic, alpha, boundsAlpha]),
+    handleSyncOff = useCallback(() => setAperiodic(false), [setAperiodic]),
+    handleSyncOn = useCallback(() => setAperiodic(true), [setAperiodic]),
+    lockParams = useMemo(() => ({ trackIndex, sync: 'lock' }), [trackIndex]),
+    onParams = useMemo(() => ({ trackIndex, sync: 'on' }), [trackIndex]),
+    offParams = useMemo(() => ({ trackIndex, sync: 'off' }), [trackIndex]),
+    toggleLoop = useCallback(
+      () =>
+        dispatch(
+          Actions.setTrackPlayback({
+            trackId: props.trackId,
+            playback: {
+              loop: !loop,
+            },
+          })
+        ),
+      [props.trackId, loop]
+    )
 
   return (
     <Horizontal>
@@ -47,56 +64,24 @@ const Sync = memo((props: SyncProps) => {
         <Icon scale={1.4} name="av-timer" />
         <span>&nbsp;Sync</span>
       </HeaderContent>
-      <SyncButton
-        selected
-        disabled={!canSync}
-        params={{
-          trackIndex,
-          sync: 'lock',
-        }}
-        onClick={handleLock}
-      >
+      <SyncButton selected disabled={!canSync} params={lockParams} onClick={handleLock}>
         <Icon scale={1} name="crosshairs" />
         &nbsp;lock
       </SyncButton>
       <SyncButton
         disabled={!canSync}
-        onClick={() => setAperiodic(false)}
+        onClick={handleSyncOff}
         selected={!aperiodic}
-        params={{
-          trackIndex,
-          sync: 'on',
-        }}
+        params={onParams}
       >
         <Icon name="check" />
         &nbsp;on
       </SyncButton>
-      <SyncButton
-        onClick={() => setAperiodic(true)}
-        selected={aperiodic}
-        params={{
-          trackIndex,
-          sync: 'off',
-        }}
-      >
+      <SyncButton onClick={handleSyncOn} selected={aperiodic} params={offParams}>
         <Icon name="close-thin" />
         &nbsp;off
       </SyncButton>
-      <SelectableButton
-        compact
-        disabled={!isLoop}
-        onClick={() =>
-          dispatch(
-            Actions.setTrackPlayback({
-              trackId: props.trackId,
-              playback: {
-                loop: !loop,
-              },
-            })
-          )
-        }
-        selected={loop}
-      >
+      <SelectableButton compact disabled={!isLoop} onClick={toggleLoop} selected={loop}>
         <Icon scale={1.1} name={loop ? 'loop' : 'stop'} />
       </SelectableButton>
     </Horizontal>

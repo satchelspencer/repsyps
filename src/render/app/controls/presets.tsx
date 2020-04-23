@@ -3,6 +3,7 @@ import * as _ from 'lodash'
 import ctyled, { active, inline } from 'ctyled'
 
 import * as Actions from 'render/redux/actions'
+import * as Types from 'render/util/types'
 import uid from 'render/util/uid'
 
 import { useSelector, useDispatch } from 'render/redux/react'
@@ -19,9 +20,9 @@ const PresetsHead = ctyled.div.styles({
   align: 'center',
   justify: 'space-between',
   padd: 0.5,
-  size: s => s * 1.3,
+  size: (s) => s * 1.3,
   bg: true,
-  color: c => c.nudge(0.1),
+  color: (c) => c.nudge(0.1),
 })
 
 const PresetItem = ctyled.div
@@ -71,7 +72,7 @@ const PresetsBody = ctyled.div.styles({
   column: true,
   lined: true,
   scroll: true,
-  borderColor: c => c.contrast(-0.1),
+  borderColor: (c) => c.contrast(-0.1),
   endLine: true,
 })
 
@@ -96,9 +97,35 @@ const DotWrapper = ctyled.div.styles({
   }
 `
 
+interface PresetProps {
+  presetId: string
+  preset: Types.ControlPreset
+  onSelect: (presetId: string) => void
+  selected: boolean
+}
+
+const Preset = memo((props: PresetProps) => {
+  const defaultId = useSelector((state) => state.live.defaultPresetId),
+    dispatch = useDispatch(),
+    handleClick = useCallback(() => props.onSelect(props.presetId), [props.presetId]),
+    handleSetDefault = useCallback(
+      () => dispatch(Actions.setDefaultControlPreset(props.presetId)),
+      [props.presetId]
+    )
+  return (
+    <PresetItem onClick={handleClick} selected={props.selected}>
+      <PresetItemName>
+        <PresetItemNameInner>{props.preset.name}</PresetItemNameInner>
+      </PresetItemName>
+      <DotWrapper onClick={handleSetDefault}>
+        <Dot selected={defaultId === props.presetId} />
+      </DotWrapper>
+    </PresetItem>
+  )
+})
+
 function Presets() {
-  const presets = useSelector(state => state.live.controlPresets),
-    defaultId = useSelector(state => state.live.defaultPresetId),
+  const presets = useSelector((state) => state.live.controlPresets),
     dispatch = useDispatch(),
     [adding, setAdding] = useState(false),
     [newName, setNewName] = useState(''),
@@ -131,13 +158,15 @@ function Presets() {
       handleCreatePreset(newName)
     }, [newName]),
     handleKeyDown = useCallback(
-      e => {
+      (e) => {
         e.stopPropagation()
         if (e.key === 'Enter' || e.key === 'Tab') handleCreatePreset(newName)
         if (e.key === 'Escape') setAdding(false)
       },
       [newName]
-    )
+    ),
+    inputRef = useCallback((r) => r && r.focus(), []),
+    handleChange = useCallback((e) => setNewName(e.target.value), [])
 
   return (
     <PresetsWrapper>
@@ -158,29 +187,21 @@ function Presets() {
           <PresetInput
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            inRef={r => r && r.focus()}
+            inRef={inputRef}
             value={newName}
-            onChange={e => setNewName(e.target.value)}
+            onChange={handleChange}
             placeholder="enter preset name"
           />
         )}
-        {_.keys(presets).map(presetId => {
-          const preset = presets[presetId]
+        {_.keys(presets).map((presetId) => {
           return (
-            <PresetItem
-              onClick={() => setSelected(presetId)}
+            <Preset
               key={presetId}
-              selected={selectedDef === presetId}
-            >
-              <PresetItemName>
-                <PresetItemNameInner>{preset.name}</PresetItemNameInner>
-              </PresetItemName>
-              <DotWrapper
-                onClick={() => dispatch(Actions.setDefaultControlPreset(presetId))}
-              >
-                <Dot selected={defaultId === presetId} />
-              </DotWrapper>
-            </PresetItem>
+              presetId={presetId}
+              preset={presets[presetId]}
+              selected={selected === presetId}
+              onSelect={setSelected}
+            />
           )
         })}
       </PresetsBody>

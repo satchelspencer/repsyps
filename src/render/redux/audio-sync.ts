@@ -122,16 +122,6 @@ export default function syncAudio(store: Store<Types.State>) {
                     },
                   })
                 )
-                newTrackActions.push(
-                  Actions.setTrackSourceParams({
-                    trackId: trackId,
-                    sourceTrackId,
-                    sourceTrackParams: {
-                      volume: 0,
-                      offset: 0,
-                    },
-                  })
-                )
               }
             })
             store.dispatch(batchActions(newTrackActions, 'LOAD_TRACK'))
@@ -178,6 +168,7 @@ export default function syncAudio(store: Store<Types.State>) {
         if (!trackIds.includes(trackId)) {
           //track should be unloaded
           audio.removeMixTrack(trackId) //remove mixTrack
+          removedIds.push(trackId)
 
           const source = currentState.sources[trackId],
             track = currentState.live.tracks[trackId]
@@ -197,9 +188,10 @@ export default function syncAudio(store: Store<Types.State>) {
             })
         }
       })
-      if (removedIds.length) removeTrackTimings(removedIds)
       if (unloadActions.length)
         store.dispatch(batchActions(unloadActions, 'UNLOAD_TRACKS'))
+
+      if (removedIds.length) removeTrackTimings(removedIds)
     }
 
     /* change audio output */

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import electron from 'electron'
 import pathUtils from 'path'
 import _ from 'lodash'
@@ -9,6 +9,7 @@ import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import { defaultState } from 'render/redux/defaults'
 import { resetTiming } from 'render/components/timing'
+import useAddSource from 'render/util/add-source'
 
 import { useSelection } from 'render/components/selection'
 import { useDispatch, useStore } from 'render/redux/react'
@@ -24,6 +25,7 @@ import {
 } from 'render/loading/project'
 import { undo, redo } from 'render/redux/history'
 import audio from 'render/util/audio'
+import useResetScene from 'render/util/reset-scene'
 
 const { Menu, dialog, getCurrentWindow, app } = electron.remote,
   isMac = process.platform === 'darwin'
@@ -32,7 +34,9 @@ export default function init() {
   const store = useStore(),
     dispatch = useDispatch()
 
-  const { getSelection } = useSelection<Types.Control>('control')
+  const { getSelection } = useSelection<Types.Control>('control'),
+    addSource = useAddSource(),
+    resetScene = useResetScene()
 
   useEffect(() => {
     let menuState: Types.MenuState = Selectors.getMenuState(defaultState),
@@ -122,9 +126,7 @@ export default function init() {
             const path = showSaveDialog({
               nameFieldLabel: 'Project Name',
               title: 'Save Project',
-              defaultPath: getPath(
-                `library/${getDefaultSaveName(menuState.sceneIndex)}`
-              ),
+              defaultPath: getPath(`library/${getDefaultSaveName(menuState.sceneIndex)}`),
               buttonLabel: 'Export Scene',
               filters: [
                 {
@@ -254,10 +256,7 @@ export default function init() {
           accelerator: 'K',
         },
         resetScene: {
-          click: () => {
-            dispatch(Actions.zeroInitValues())
-            resetTiming()
-          },
+          click: resetScene,
           accelerator: 'CmdOrCtrl+R',
         },
         commitScene: {
@@ -356,6 +355,10 @@ export default function init() {
             dispatch(Actions.duplicateTrack(selectedTrackId))
           },
           accelerator: 'CmdOrCtrl+D',
+        },
+        addTrackSource: {
+          click: () => addSource(menuState.selectedTrackId),
+          accelerator: 'CmdOrCtrl+A',
         },
         playPauseTrack: {
           click: () => dispatch(Actions.playPauseTrack(menuState.selectedTrackId)),
@@ -678,7 +681,7 @@ export default function init() {
             },
             {
               label: 'Save Project As',
-              click: saveAs,
+              ...menuCommands.saveProjectAs,
             },
             { type: 'separator' },
             {
@@ -831,11 +834,6 @@ export default function init() {
           enabled: !!menuState.selectedTrackId,
           submenu: [
             {
-              label: 'Duplicate Track',
-              ...menuCommands.duplicateTrack,
-            },
-            { type: 'separator' },
-            {
               label: menuState.trackPlaying && menuState.playing ? 'Stop' : 'Play',
               enabled: !inInput,
               ...menuCommands.playPauseTrack,
@@ -859,6 +857,15 @@ export default function init() {
               label: 'Solo',
               enabled: !inInput,
               ...menuCommands.soloTrack,
+            },
+            { type: 'separator' },
+            {
+              label: 'Duplicate Track',
+              ...menuCommands.duplicateTrack,
+            },
+            {
+              label: 'Add Track Source',
+              ...menuCommands.addTrackSource,
             },
             { type: 'separator' },
             {

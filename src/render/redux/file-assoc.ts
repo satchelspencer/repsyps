@@ -15,7 +15,6 @@ export default function initFileAssoc(store: Store<Types.State>) {
     if (extention === '.syp') loadProject(path, store)
     else if (extention === '.rbind') loadBindings(path, store)
     else store.dispatch(Actions.addTrackAndSource(path))
-    console.log('OPEN', path)
   })
   ipcRenderer.send('connect')
 }

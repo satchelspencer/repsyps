@@ -239,7 +239,7 @@ const Cue = SortableElement((xprops: any) => {
       </BehaviorWrapper>
       <BehaviorWrapper onClick={updateCue}>
         <CueBehavior>
-          <Icon name="eyedropper" />
+          <Icon name="crosshairs" />
         </CueBehavior>
       </BehaviorWrapper>
       <Icon asButton name="close-thin" onClick={removeCue} />

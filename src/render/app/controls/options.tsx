@@ -9,6 +9,7 @@ import * as Types from 'render/util/types'
 import Icon from 'render/components/icon'
 import extend from 'render/util/extend'
 import { resetTiming } from 'render/components/timing'
+import useResetScene from 'render/util/reset-scene'
 
 const ControlsOptionsWrapper = ctyled.div.styles({
   width: 1.5,
@@ -50,10 +51,7 @@ function ControlsOptions(props: OptionsProps) {
     handleDisable = useCallback(() => dispatch(Actions.setControlsEnabled(null)), [
       enabled,
     ]),
-    handleReplay = useCallback(() => {
-      dispatch(Actions.zeroInitValues())
-      resetTiming()
-    }, []),
+    handleReplay = useResetScene(),
     handleClear = useCallback(() => dispatch(Actions.deleteControlGroup()), []),
     handleZoomIn = useCallback(() => props.onIncZoom(-1), [props.onIncZoom]),
     handleZoomOut = useCallback(() => props.onIncZoom(+1), [props.onIncZoom])

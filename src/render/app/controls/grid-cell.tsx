@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react'
+import React, { memo, useMemo, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled, { inline } from 'ctyled'
 
@@ -54,7 +54,12 @@ const GridCell = memo((props: GridCellProps) => {
       )
     ),
     dispatch = useDispatch(),
-    displayValue = (control && control.absolute ? absValue : value) || 0
+    displayValue = (control && control.absolute ? absValue : value) || 0,
+    handleChange = useCallback(
+      (value) =>
+        dispatch(Actions.applyControlGroup(position, control, displayValue, value)),
+      [position, control, displayValue, value]
+    )
   return (
     <>
       {binding && binding.midi !== null && <CellMidi>{midiName(binding.midi)}</CellMidi>}
@@ -70,9 +75,7 @@ const GridCell = memo((props: GridCellProps) => {
             }
             badMidiValue={binding && binding.badMidiValue ? binding.lastMidiValue : null}
             value={displayValue}
-            onChange={(value) =>
-              dispatch(Actions.applyControlGroup(position, control, displayValue, value))
-            }
+            onChange={handleChange}
           />
           <CellLabel>
             {control.name || control.controls.map((c) => getControlName(c)).join(', ')}
@@ -81,12 +84,7 @@ const GridCell = memo((props: GridCellProps) => {
       )}
       {control && control.bindingType === 'note' && (
         <>
-          <Pad
-            value={displayValue}
-            onChange={(value) =>
-              dispatch(Actions.applyControlGroup(position, control, displayValue, value))
-            }
-          />
+          <Pad value={displayValue} onChange={handleChange} />
           <CellLabel>
             {control.name || control.controls.map((c) => getControlName(c)).join(', ')}
           </CellLabel>
