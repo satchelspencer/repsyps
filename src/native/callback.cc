@@ -1,15 +1,6 @@
 #include "callback.h"
 #include <iostream>
 
-double getSamplePosition(
-  mixTrackPlayback* playback,
-  int chunkIndex,
-  double phase
-){
-  return playback->chunks[chunkIndex*2] +
-  ( playback->chunks[chunkIndex*2+1] * phase );
-}
-
 double getMixTrackPhase(
   playback* playback,
   float alpha
@@ -34,7 +25,7 @@ void copyToOut(
   while(buffer->head != buffer->tail && outputFrameIndex < framesPerBuffer){
     for(int channelIndex=0;channelIndex<bufferChannelCount;channelIndex++){
       sampleValue = buffer->channels[channelIndex][buffer->tail];
-      *out++ += sampleValue;
+      *out++ = sampleValue;
       if(chunk) chunk->channels[channelIndex][chunk->used] += sampleValue;
       buffer->channels[channelIndex][buffer->tail] = 0; //reset buffer value to 0
     }
@@ -58,6 +49,39 @@ void applyNextPlayback(mixTrack * mixTrack){
   mixTrack->hasNext = false;
 }
 
+double getSamplePosition(
+  mixTrackPlayback* playback,
+  double phase
+){
+  return playback->chunks[playback->chunkIndex*2] +
+  ( playback->chunks[playback->chunkIndex*2+1] * phase );
+}
+
+void applyFilter(
+  float& sampleValue,
+  mixTrackPlayback* playback,
+  mixTrack* mixTrack,
+  mixTrackSourceConfig* params,
+  streamState *state,
+  int outBufferHead,
+  int channelIndex
+){
+  sampleValue *= params->volume;
+  sampleValue *= mixTrack->playback->volume;
+  sampleValue *= state->playback->volume;
+  if(mixTrack->hasFilter && mixTrack->filters[mixTrack->overlapIndex] != NULL){
+    firfilt_rrrf_push(mixTrack->filters[mixTrack->overlapIndex], sampleValue);   
+    firfilt_rrrf_execute(mixTrack->filters[mixTrack->overlapIndex], &sampleValue);
+  }
+  state->buffer->channels[channelIndex][outBufferHead] += sampleValue;
+}
+
+static liquid_float_complex * x = new liquid_float_complex[PV_WINDOW_SIZE];
+static liquid_float_complex * y = new liquid_float_complex[PV_WINDOW_SIZE];
+static liquid_float_complex * z = new liquid_float_complex[PV_WINDOW_SIZE];
+static fftplan pf = fft_create_plan(PV_WINDOW_SIZE, x, y, LIQUID_FFT_FORWARD,  0);
+static fftplan pr = fft_create_plan(PV_WINDOW_SIZE, y, z, LIQUID_FFT_BACKWARD,  0);
+
 int paCallbackMethod(
   const void *inputBuffer, 
   void *outputBuffer,
@@ -68,200 +92,142 @@ int paCallbackMethod(
 ){
   streamState *state = (streamState*)userData;
   float *out = (float*)outputBuffer;
-  unsigned long frameIndex;
-  unsigned int outputFrameIndex = 0;
-  double startTime = state->playback->time;
   recording* rec = state->recording;
-  recordChunk* currentChunk;
+  double time = state->playback->time;
+  unsigned int outputFrameIndex = 0;
 
-  double mixTrackPhase;
-  double phaseStep = 1/(double)state->playback->period;
+  copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, rec);
 
-  source* mixTrackSource;
-  mixTrack* mixTrack;
-  mixTrackSourceConfig* mixTrackSourceConfig;
-  unsigned int mixTrackLength;
-  unsigned int channelCount;
-  unsigned int channelIndex;
-  unsigned int chunkCount;
-  int tempMixTrackChunkIndex;
-  double tempMixTrackSample;
-  bool didAdvancePlayback;
-  bool didPassBound;
-  mixTrackPlayback* mixTrackPlayback;
-
-  unsigned int sampledFrameIndex;
-  unsigned int sourceTrackSampledFrameIndex;
-  double samplePosition;
-  double samplePositionFrac;
-  float sampleValue;
-  float sampleValueNext;
-  float alpha;
-
-  int bufferHead;
-
-  /* fill the output buffer with zeros */
-  for( frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *out++ = 0;
-  if(!state->playback->playing) return paContinue;
-
-  /* empty the ringbuffer into the output, if available */
-  out = (float*)outputBuffer;
-  copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, state->recording);
-
-  /* keep computing new windows until we fill the output buffer */
   while(outputFrameIndex < framesPerBuffer){
-    /* compute a new window by summing each track' output */
     for(auto mixTrackPair: state->mixTracks){
-      mixTrack = mixTrackPair.second;
+      mixTrack* mixTrack = mixTrackPair.second;
       if(!mixTrack || mixTrack->removed) continue;
-      bufferHead = state->buffer->head;
+
+      mixTrackPlayback* playback = mixTrack->playback;
+      float trackAlpha = playback->alpha;
+      double mixTrackPhase = trackAlpha * time;
+      mixTrackPhase -= floor(mixTrackPhase);
+      int chunkIndex = playback->chunkIndex;
+      int chunkCount = playback->chunks.size()/2;
       
-      mixTrackPlayback = mixTrack->playback;
-      alpha = mixTrack->playback->aperiodic ? 1 : mixTrackPlayback->alpha;
-      mixTrackPhase = getMixTrackPhase(state->playback, alpha);
-      chunkCount = mixTrackPlayback->chunks.size()/2;
+      if(chunkCount == 0 || !playback->playing) continue;
+      if(chunkIndex == -1){
+        mixTrack->playback->chunkIndex = 0;
+        chunkIndex = 0;
+        mixTrack->sample = getSamplePosition(playback, 0);
+      }
 
-      if(chunkCount == 0 || !mixTrackPlayback->playing) continue;
-      tempMixTrackChunkIndex = mixTrackPlayback->chunkIndex;
-      tempMixTrackSample = mixTrack->sample;
-      didAdvancePlayback = false;
-      didPassBound = false;
+      double trackStartPosition = playback->aperiodic ? mixTrack->sample : getSamplePosition(playback, mixTrackPhase);
+      double chunkEndPosition = getSamplePosition(playback, 1);
+      int chunkLength = playback->chunks[(chunkIndex * 2) + 1];
+      bool hasEnd = chunkLength != 0;
+      int nextChunkIndex = (chunkIndex + 1) % chunkCount;
+      bool hasNext = mixTrack->hasNext && (chunkIndex == 0 || playback->nextAtChunk);
+      double nextChunkStart = hasNext ?
+        mixTrack->nextPlayback->chunks[0] : 
+        playback->chunks[nextChunkIndex * 2];
+      bool committedStep = false;
+      float alpha = (hasEnd && !playback->aperiodic) ?
+        chunkLength / (float)state->playback->period * trackAlpha :
+        trackAlpha;
 
-      /* add this computed track into the buffer */
-      for( frameIndex=0; frameIndex<state->windowSize; frameIndex++ ){
-        /* figure out which sample we're gonna fetch */
-        if(tempMixTrackChunkIndex == -1 && mixTrackPhase >= 0){
-          tempMixTrackChunkIndex = 0;
-          tempMixTrackSample = getSamplePosition(mixTrackPlayback, tempMixTrackChunkIndex, 0); //reset the sample to the start
-        } //on first
-        if(tempMixTrackChunkIndex == -1) break; //before we should be playing
+      for(auto sourcePair: playback->sourceTracksParams){
+        if(
+          state->sources.find(sourcePair.first) != state->sources.end() 
+          && state->sources[sourcePair.first] != NULL
+        ){
+          mixTrackSourceConfig* params = sourcePair.second;
+          source* source = state->sources[sourcePair.first];
+          int length = source->length;
 
-        if(mixTrackPlayback->aperiodic){
-          samplePosition = tempMixTrackSample + alpha;
-          if(mixTrackPlayback->chunks[tempMixTrackChunkIndex*2+1] > 0){ //chunk has end
-            if(samplePosition > getSamplePosition(mixTrackPlayback, tempMixTrackChunkIndex, 1)){ /* check if we looped around */
-              didPassBound = true;
-              tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount;
-              if(mixTrack->hasNext && (tempMixTrackChunkIndex == 0 || mixTrackPlayback->nextAtChunk)){ //chunks looped and we have next
-                didAdvancePlayback = true;
-                mixTrackPlayback = mixTrack->nextPlayback;
-                mixTrackPhase = getMixTrackPhase(state->playback, alpha);
-                chunkCount = mixTrackPlayback->chunks.size()/2;
+          for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
+            double trackPosition = trackStartPosition - params->offset;
+            int outBufferHead = state->buffer->head;
+            playback = mixTrack->playback;
+            double positionFrac = trackPosition-floor(trackPosition);
+
+            /* PV */
+            // int pvOverlap = 4;
+            // int pvSubwindows = pvOverlap/OVERLAP_COUNT;
+            // float analysisStep = WINDOW_STEP / pvSubwindows;
+            // for(int pvWindow=0;pvWindow < pvSubwindows;pvWindow++){
+            //   outBufferHead = state->buffer->head + (pvWindow * analysisStep);
+            //   for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
+            //     x[pvWinIndex] = source->channels[channelIndex][(int)trackPosition + pvWinIndex];
+            //   }
+            //   fft_execute(pf);
+            //   //process... maaaagic
+            //   fft_execute(pr);
+            //   for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
+            //     float sampleValue = z[pvWinIndex].real() * state->pvWindow[pvWinIndex] / pvSubwindows;
+            //     applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
+            //     outBufferHead = (outBufferHead + 1) % state->buffer->size;
+            //   }
+            //   trackPosition += (WINDOW_STEP / pvSubwindows) * alpha;
+            // }
+            // mixTrack->sample = trackPosition;
+            /* END PV */
+
+            /* resampling */
+            for(int windowIndex=0;windowIndex < WINDOW_SIZE;windowIndex++){
+              if(hasEnd && trackPosition > chunkEndPosition){
+                //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
+                if(hasNext) playback = mixTrack->nextPlayback;
+                if(windowIndex <= WINDOW_STEP) committedStep = true;
               }
-              if(!didAdvancePlayback && tempMixTrackChunkIndex == 0 && !mixTrackPlayback->loop){
-                mixTrackPlayback->playing = false;
-                mixTrackPlayback->chunkIndex = -1;
-                break;
-              }
-              samplePosition = getSamplePosition(mixTrackPlayback,tempMixTrackChunkIndex, 0);
-            }
-          }
-        }else{
-          samplePosition = getSamplePosition(mixTrackPlayback,tempMixTrackChunkIndex, mixTrackPhase);
-          if( samplePosition < tempMixTrackSample && mixTrack->phase >= 1.) {  /* check if we looped around */
-            //std::cout << mixTrack->phase << " -> " << mixTrackPhase << std::endl;
-            didPassBound = true;
-            tempMixTrackChunkIndex = (tempMixTrackChunkIndex + 1) % chunkCount; //increment the chunk
-            if(mixTrack->hasNext && (tempMixTrackChunkIndex == 0 || mixTrackPlayback->nextAtChunk)){ //chunks looped and we have next
-              didAdvancePlayback = true;
-              tempMixTrackChunkIndex = 0;
-              mixTrackPlayback = mixTrack->nextPlayback;
-              mixTrackPhase = getMixTrackPhase(state->playback, alpha);
-              chunkCount = mixTrackPlayback->chunks.size()/2;
-            }
-            if(!didAdvancePlayback && tempMixTrackChunkIndex == 0 && !mixTrackPlayback->loop){
-              mixTrackPlayback->playing = false;
-              mixTrackPlayback->chunkIndex = -1;
-              break;
-            }
-            samplePosition = getSamplePosition(mixTrackPlayback, tempMixTrackChunkIndex, mixTrackPhase);
-          }
-        }
+              if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition;
 
-        tempMixTrackSample = samplePosition; //casting back to int
-        samplePositionFrac = samplePosition-floor(samplePosition);
-        sampledFrameIndex = samplePosition;
-
-        /* at the step point commit the mutated index and sample */
-        if(frameIndex == state->windowSize/2 - 1){
-          mixTrack->playback->chunkIndex = tempMixTrackChunkIndex;
-          mixTrack->sample = tempMixTrackSample;
-          if(didAdvancePlayback){
-            applyNextPlayback(mixTrack);
-            didAdvancePlayback = false;
-          }
-          /* start a synced trak from source on the boundary */
-          if(
-            rec != NULL 
-            && (didPassBound || mixTrackPlayback->aperiodic)
-            && rec->fromSource 
-            && !rec->started
-            && rec->fromSourceId == mixTrackPair.first
-          ){
-            rec->started = true;
-            rec->fromSourceOffset = tempMixTrackSample;
-          }
-        }
-                
-        /* add sample to filterbuffer */ 
-        for(auto sourcePair: mixTrackPlayback->sourceTracksParams){
-          if(
-            state->sources.find(sourcePair.first) != state->sources.end() 
-            && state->sources[sourcePair.first] != NULL
-          ){
-            mixTrackSource = state->sources[sourcePair.first]; //key is sourceid
-            mixTrackSourceConfig = sourcePair.second;
-            mixTrackLength = mixTrackSource->length;
-            channelCount = mixTrackSource->channels.size();
-            sourceTrackSampledFrameIndex = sampledFrameIndex - mixTrackSourceConfig->offset;
-
-            /* add the sample to the buffer */
-            for(channelIndex=0;channelIndex<channelCount;channelIndex++){
-              sampleValue = 0;
+              float sampleValue = 0;
               if(
-                sourceTrackSampledFrameIndex >= 0 &&
-                sourceTrackSampledFrameIndex < mixTrackLength-1 &&
-                mixTrackSourceConfig->volume > 0 && 
-                !mixTrackPlayback->muted
+                trackPosition > 0 &&  
+                trackPosition < length - 1 &&
+                params->volume > 0 && 
+                !playback->muted
               ){
-                sampleValue = 
-                  mixTrackSource->channels[channelIndex][sourceTrackSampledFrameIndex];
-                sampleValueNext = 
-                  mixTrackSource->channels[channelIndex][sourceTrackSampledFrameIndex + 1];
-                sampleValue += (sampleValueNext-sampleValue)*samplePositionFrac; //linear interp
-                sampleValue *= state->playback->volume;
-                sampleValue *= mixTrackSourceConfig->volume;
-
-                sampleValue *= mixTrackPlayback->volume;
-                if(mixTrack->hasFilter && mixTrack->filters[mixTrack->windowIndex] != NULL){
-                  firfilt_rrrf_push(mixTrack->filters[mixTrack->windowIndex], sampleValue);   
-                  firfilt_rrrf_execute(mixTrack->filters[mixTrack->windowIndex], &sampleValue);
-                }
-                sampleValue *= state->window[frameIndex];                
+                int sourceIndex = trackPosition;
+                sampleValue = source->channels[channelIndex][sourceIndex];
+                float nextValue = source->channels[channelIndex][sourceIndex + 1];
+                sampleValue += (nextValue - sampleValue) * positionFrac;
+                sampleValue *= state->window[windowIndex];
+                applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
               }
-              state->buffer->channels[channelIndex][bufferHead] += sampleValue;
-            }   
+              
+              outBufferHead = (outBufferHead + 1) % state->buffer->size;
+              trackPosition += alpha;
+            }
+            /* end resampling */
           }
         }
-        bufferHead = (bufferHead+1)%state->buffer->size;
-        mixTrack->phase = mixTrackPhase;
-        mixTrackPhase += phaseStep * alpha; 
-      }/* end compute window */
+      }
+
+      mixTrack->overlapIndex = (mixTrack->overlapIndex + 1) % OVERLAP_COUNT;
+      if(committedStep){
+        mixTrack->playback->chunkIndex = 
+          (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
+        if(mixTrack->hasNext && (mixTrack->playback->chunkIndex == 0 || mixTrack->playback->nextAtChunk)){
+          applyNextPlayback(mixTrack);
+          mixTrack->playback->chunkIndex = 0;
+        } 
+        if(rec != NULL && rec->fromSourceId == mixTrackPair.first &&  !rec->started){
+          rec->started = true;
+          rec->fromSourceOffset = chunkEndPosition;
+        }
+      }
     }
 
-    //head only moves forward by half the window size
-    state->buffer->head = (state->buffer->head + (state->windowSize/2)) % state->buffer->size;
-    if(mixTrack) mixTrack->windowIndex = (mixTrack->windowIndex + 1) % OVERLAP_COUNT;
-    /* empty the ringbuffer into the output... again */
+    state->buffer->head = (state->buffer->head + WINDOW_STEP) % state->buffer->size;
     out = (float*)outputBuffer;
-    copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, state->recording);
+    copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, rec);
   }
-  
-  state->playback->time += (double)framesPerBuffer/state->playback->period;
+
+  /* update time and misc */
+  state->playback->time = time + ((double)framesPerBuffer / state->playback->period);
+
   /* phase wrapped drung this callback */
-  if(startTime-floor(startTime) > state->playback->time-floor(state->playback->time)){
+  if(time-floor(time) > state->playback->time-floor(state->playback->time)){
+    /* unpause any tracks as needed */
     for(auto mixTrackPair: state->mixTracks){
-      mixTrack = mixTrackPair.second;
+      mixTrack* mixTrack = mixTrackPair.second;
       if(
         mixTrack && 
         !mixTrack->removed &&
@@ -270,16 +236,17 @@ int paCallbackMethod(
         mixTrack->playback->unpause
       ) applyNextPlayback(mixTrack);
     }
-    if(state->recording != NULL){
-      if(!state->recording->started && !rec->fromSource) state->recording->started = true;
-      currentChunk = state->recording->chunks[state->recording->chunkIndex];
-      currentChunk->bounds[currentChunk->boundsCount] = state->recording->length;
+    /* add bounds to recording */
+    if(rec != NULL){
+      if(!rec->started && !rec->fromSource) rec->started = true;
+      recordChunk* currentChunk = rec->chunks[rec->chunkIndex];
+      currentChunk->bounds[currentChunk->boundsCount] = rec->length;
       currentChunk->boundsCount++;
     }
   }
 
   for(auto sourcesPair: state->sources){
-    mixTrackSource = sourcesPair.second;
+    source* mixTrackSource = sourcesPair.second;
     if(mixTrackSource && mixTrackSource->removed && !mixTrackSource->safe){
       if(REPSYS_LOG) std::cout << "safe source " << sourcesPair.first << std::endl;
       mixTrackSource->safe = true;
@@ -287,7 +254,7 @@ int paCallbackMethod(
   }
 
   for(auto mixTrackPair: state->mixTracks){
-    mixTrack = mixTrackPair.second;
+    mixTrack* mixTrack = mixTrackPair.second;
     if(mixTrack && mixTrack->removed && !mixTrack->safe){
       if(REPSYS_LOG) std::cout << "safe track" << mixTrackPair.first << std::endl;
       mixTrack->safe = true;

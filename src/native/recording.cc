@@ -1,6 +1,7 @@
 #include "recording.h"
 
 void allocateChunk(recording* recording){
+  if(REPSYS_LOG) std::cout << "alloc recording chunk" << std::endl;
   recordChunk* newChunk = new recordChunk{};
   for(int channelIndex=0;channelIndex<2;channelIndex++){
     float* channel = new float[REC_CHUNK_SAMPLES];

@@ -5,16 +5,11 @@ extern "C"{
   #include <libavcodec/avcodec.h>
   #include <libavformat/avformat.h>
 }
+#include <complex.h>
 #include <liquid.h>
 
 #include "state.h"
 #include "filter.h"
-
-double getSamplePosition(
-  std::vector<int> * chunks,
-  int chunkIndex,
-  double phase
-);
 
 double getMixTrackPhase(
   playback* playback,

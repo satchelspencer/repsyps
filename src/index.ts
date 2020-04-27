@@ -5,6 +5,8 @@ import contextMenu from 'electron-context-menu'
 import * as imp from 'electron-devtools-installer'
 import * as Splashscreen from '@trodi/electron-splashscreen'
 
+import audio from 'render/util/audio'
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 let mainWindow: any = null
 

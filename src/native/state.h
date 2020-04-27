@@ -8,9 +8,12 @@
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H
 
-static bool REPSYS_LOG = false;
-
+static bool REPSYS_LOG = true;
+static int CHANNEL_COUNT = 2;
 static int OVERLAP_COUNT = 2;
+static int WINDOW_STEP = 256;
+static int WINDOW_SIZE =  OVERLAP_COUNT * WINDOW_STEP;
+static int PV_WINDOW_SIZE = 1024;
 
 typedef struct{
   float volume;
@@ -41,12 +44,19 @@ typedef struct{
 } mixTrackPlayback;
 
 typedef struct{
+  std::vector<float*>  channels;
+  int size;
+  int head;
+  int tail;
+} ringbuffer;
+
+typedef struct{
   mixTrackPlayback* playback;
   mixTrackPlayback* nextPlayback;
   bool hasNext;
   double sample;
   double phase;
-  int windowIndex;
+  int overlapIndex;
   std::vector<firfilt_rrrf> filters;
   bool hasFilter;
   bool removed;
@@ -60,13 +70,6 @@ typedef struct{
   bool removed;
   bool safe;
 } source;
-
-typedef struct{
-  std::vector<float*>  channels;
-  int size;
-  int head;
-  int tail;
-} ringbuffer;
 
 typedef struct{
   std::vector<float*>  channels;
@@ -88,7 +91,8 @@ typedef struct{
 
 typedef struct{
   ringbuffer *buffer;
-  float *window;
+  float* window;
+  float* pvWindow;
   unsigned int windowSize;
   playback *playback;
   std::unordered_map<std::string, mixTrack*> mixTracks;

@@ -21,7 +21,12 @@ Napi::Value init(const Napi::CallbackInfo &info){
   state.windowSize = windowSize;
   for(int i=0;i<windowSize;i++)
     window[i] = (cos(M_PI*2*(float(i)/(windowSize-1) + 0.5)) + 1)/2;
+
   
+  float* pvWindow = new float[PV_WINDOW_SIZE];
+  for(int i=0;i<PV_WINDOW_SIZE;i++)
+    pvWindow[i] = (cos(M_PI*2*(float(i)/(PV_WINDOW_SIZE-1) + 0.5)) + 1)/2;
+  state.pvWindow = pvWindow;
 
   ringbuffer * newBuffer = new ringbuffer{};
   newBuffer->size = windowSize*2;
@@ -266,7 +271,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->hasFilter = false;
     newMixTrack->sample = 0;
     newMixTrack->phase = 0.;
-    newMixTrack->windowIndex = 0;
+    newMixTrack->overlapIndex = 0;
     newMixTrack->removed = false;
     newMixTrack->safe = false;
     state.mixTracks[mixTrackId] = newMixTrack;

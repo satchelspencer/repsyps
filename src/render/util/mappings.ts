@@ -9,7 +9,7 @@ function ease(x1, y1, x2, y2) {
   }
 }
 
-const filterEase = ease(0.54, 1, 1, 0.06)
+const filterEase = ease(0.49, 0.01, 1, 0.56)
 
 export interface Mapping {
   toStandard(number): number
@@ -43,12 +43,12 @@ const global: NamedMappings = {
   },
   filter: {
     toStandard(input) {
-      return filterEase.reverse(input)
+      if (input < 0.5) return Math.pow(2 * input, 1 / 6) / 2
+      else return (Math.pow(2 * input - 1, 1 / 8) + 1) / 2
     },
     fromStandard(input) {
-      let val = filterEase.apply(input)
-      if (Math.abs(val - 0.5) < 0.0001) val = 0.5
-      return val
+      if (input < 0.5) return Math.pow(2 * input, 6) / 2
+      else return (Math.pow(2 * input - 1, 8) + 1) / 2
     },
   },
 }

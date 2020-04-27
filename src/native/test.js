@@ -82,7 +82,7 @@ async function init() {
 
   audio.start(defaultIndex)
 
-  setTimeout(() => audio.start(7), 3000)
+  ///setTimeout(() => audio.start(7), 3000)
 
   let i = 0
   setInterval(() => {
