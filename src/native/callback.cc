@@ -79,8 +79,8 @@ void applyFilter(
 static std::complex<float> * x = new std::complex<float>[PV_WINDOW_SIZE];
 static std::complex<float> * y = new std::complex<float>[PV_WINDOW_SIZE];
 static std::complex<float> * z = new std::complex<float>[PV_WINDOW_SIZE];
-static fftplan pf = fft_create_plan(PV_WINDOW_SIZE, x, y, LIQUID_FFT_FORWARD,  0);
-static fftplan pr = fft_create_plan(PV_WINDOW_SIZE, y, z, LIQUID_FFT_BACKWARD,  0);
+static fftplan pf = fft_create_plan(PV_WINDOW_SIZE, (liquid_float_complex*)x, (liquid_float_complex*)y, LIQUID_FFT_FORWARD,  0);
+static fftplan pr = fft_create_plan(PV_WINDOW_SIZE, (liquid_float_complex*)y, (liquid_float_complex*)z, LIQUID_FFT_BACKWARD,  0);
 
 int paCallbackMethod(
   const void *inputBuffer, 

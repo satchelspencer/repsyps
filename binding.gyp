@@ -20,6 +20,12 @@
       'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ],
       "conditions": [
         [ "OS==\"win\"", {
+          'msvs_settings': {
+              'VCCLCompilerTool': {
+              'AdditionalOptions': [ '-std:c++17', "-stdlib=libc++", "-fpermissive" ],
+            },
+          },
+          "cflags": [ "-fpermissive"],
           "include_dirs": [
             "src/native",
             "<@(libsdir)/portaudio/include",
