@@ -1,9 +1,11 @@
 #include <napi.h>
 #include "portaudio.h"
+#include <complex.h>
 #include <liquid.h>
 #include <unordered_map> 
 #include <vector>
 #include <iostream>
+#include <list>
 
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H
@@ -51,6 +53,13 @@ typedef struct{
 } ringbuffer;
 
 typedef struct{
+  float* lastPhaseTimeDelta;
+  float* lastPFFT;
+  float* currentPFFT;
+  float* nextPFFT;
+} pvState;
+
+typedef struct{
   mixTrackPlayback* playback;
   mixTrackPlayback* nextPlayback;
   bool hasNext;
@@ -58,6 +67,7 @@ typedef struct{
   double phase;
   int overlapIndex;
   std::vector<firfilt_rrrf> filters;
+  std::vector<pvState *> pvStates;
   bool hasFilter;
   bool removed;
   bool safe;

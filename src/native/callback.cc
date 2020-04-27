@@ -81,6 +81,7 @@ static std::complex<float> * y = new std::complex<float>[PV_WINDOW_SIZE];
 static std::complex<float> * z = new std::complex<float>[PV_WINDOW_SIZE];
 static fftplan pf = fft_create_plan(PV_WINDOW_SIZE, (liquid_float_complex*)x, (liquid_float_complex*)y, LIQUID_FFT_FORWARD,  0);
 static fftplan pr = fft_create_plan(PV_WINDOW_SIZE, (liquid_float_complex*)y, (liquid_float_complex*)z, LIQUID_FFT_BACKWARD,  0);
+static std::vector<float> mheap;
 
 int paCallbackMethod(
   const void *inputBuffer, 
@@ -148,6 +149,13 @@ int paCallbackMethod(
 
             /* PV */
             int pvOverlap = 4;
+            pvState* pv = mixTrack->pvStates[channelIndex];
+            /* shift down the prev, current and next */
+            float* swap = pv->lastPFFT;
+            pv->lastPFFT = pv->currentPFFT;
+            pv->currentPFFT = pv->nextPFFT;
+            pv->nextPFFT = swap;
+            
             int pvSubwindows = pvOverlap/OVERLAP_COUNT;
             float analysisStep = WINDOW_STEP / pvSubwindows;
             for(int pvWindow=0;pvWindow < pvSubwindows;pvWindow++){
@@ -156,14 +164,27 @@ int paCallbackMethod(
                 x[pvWinIndex] = source->channels[channelIndex][(int)trackPosition + pvWinIndex];
               }
               fft_execute(pf);
+
+              /* convert to polar form PFFT is [mag, phase, mag, phase] */
+              for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
+                pv->nextPFFT[pvWinIndex * 2] = std::abs(y[pvWinIndex]);
+                pv->nextPFFT[pvWinIndex * 2 + 1] = std::arg(y[pvWinIndex]);
+              }
               //process... maaaagic
+              mheap.clear();
+              std::make_heap(mheap.begin(), mheap.end());
+
+              /* convert back from polar */
+              for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++)
+                y[pvWinIndex] = std::polar(pv->currentPFFT[pvWinIndex*2], pv->currentPFFT[pvWinIndex*2+1]);
+              /* invert synthesis */
               fft_execute(pr);
               for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                float sampleValue = z[pvWinIndex].real() * state->pvWindow[pvWinIndex] / pvOverlap;
+                float sampleValue = z[pvWinIndex].real() / PV_WINDOW_SIZE * state->pvWindow[pvWinIndex] / pvOverlap;
                 applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
                 outBufferHead = (outBufferHead + 1) % state->buffer->size;
               }
-              trackPosition += (WINDOW_STEP / pvSubwindows) * alpha;
+              trackPosition += analysisStep * alpha;
             }
             mixTrack->sample = trackPosition;
             /* END PV */

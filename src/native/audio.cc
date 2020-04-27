@@ -274,6 +274,23 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->overlapIndex = 0;
     newMixTrack->removed = false;
     newMixTrack->safe = false;
+
+    for(int channelIndex=0;channelIndex<CHANNEL_COUNT;channelIndex++){
+      pvState* newPvState = new pvState{};
+      newPvState->lastPhaseTimeDelta = new float[PV_WINDOW_SIZE];
+      newPvState->lastPFFT = new float[PV_WINDOW_SIZE*2];
+      newPvState->currentPFFT = new float[PV_WINDOW_SIZE*2];
+      newPvState->nextPFFT = new float[PV_WINDOW_SIZE*2];
+
+      for(int i=0;i<PV_WINDOW_SIZE;i++) newPvState->lastPhaseTimeDelta[i] = 0;
+      for(int i=0;i<PV_WINDOW_SIZE * 2;i++){
+         newPvState->lastPFFT[i] = 0;
+         newPvState->currentPFFT[i] = 0;
+         newPvState->nextPFFT[i] = 0;
+      }
+      newMixTrack->pvStates.push_back(newPvState);
+    }
+
     state.mixTracks[mixTrackId] = newMixTrack;
   }
 
@@ -361,6 +378,12 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
         for(unsigned int filterIndex = 0;filterIndex<mixTrack->filters.size();filterIndex++){
           firfilt_rrrf_destroy(mixTrack->filters[filterIndex]);
         }
+      }
+      for(pvState* pv : mixTrack->pvStates){
+        delete [] pv->lastPhaseTimeDelta;
+        delete [] pv->lastPFFT;
+        delete [] pv->currentPFFT;
+        delete [] pv->nextPFFT;
       }
       delete mixTrack;
     }else if(mixTrack->playback->playing){
