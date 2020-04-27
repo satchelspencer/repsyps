@@ -76,9 +76,9 @@ void applyFilter(
   state->buffer->channels[channelIndex][outBufferHead] += sampleValue;
 }
 
-static liquid_float_complex * x = new liquid_float_complex[PV_WINDOW_SIZE];
-static liquid_float_complex * y = new liquid_float_complex[PV_WINDOW_SIZE];
-static liquid_float_complex * z = new liquid_float_complex[PV_WINDOW_SIZE];
+static std::complex<float> * x = new std::complex<float>[PV_WINDOW_SIZE];
+static std::complex<float> * y = new std::complex<float>[PV_WINDOW_SIZE];
+static std::complex<float> * z = new std::complex<float>[PV_WINDOW_SIZE];
 static fftplan pf = fft_create_plan(PV_WINDOW_SIZE, x, y, LIQUID_FFT_FORWARD,  0);
 static fftplan pr = fft_create_plan(PV_WINDOW_SIZE, y, z, LIQUID_FFT_BACKWARD,  0);
 
@@ -147,54 +147,54 @@ int paCallbackMethod(
             double positionFrac = trackPosition-floor(trackPosition);
 
             /* PV */
-            // int pvOverlap = 4;
-            // int pvSubwindows = pvOverlap/OVERLAP_COUNT;
-            // float analysisStep = WINDOW_STEP / pvSubwindows;
-            // for(int pvWindow=0;pvWindow < pvSubwindows;pvWindow++){
-            //   outBufferHead = state->buffer->head + (pvWindow * analysisStep);
-            //   for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-            //     x[pvWinIndex] = source->channels[channelIndex][(int)trackPosition + pvWinIndex];
-            //   }
-            //   fft_execute(pf);
-            //   //process... maaaagic
-            //   fft_execute(pr);
-            //   for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-            //     float sampleValue = z[pvWinIndex].real() * state->pvWindow[pvWinIndex] / pvSubwindows;
-            //     applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
-            //     outBufferHead = (outBufferHead + 1) % state->buffer->size;
-            //   }
-            //   trackPosition += (WINDOW_STEP / pvSubwindows) * alpha;
-            // }
-            // mixTrack->sample = trackPosition;
+            int pvOverlap = 4;
+            int pvSubwindows = pvOverlap/OVERLAP_COUNT;
+            float analysisStep = WINDOW_STEP / pvSubwindows;
+            for(int pvWindow=0;pvWindow < pvSubwindows;pvWindow++){
+              outBufferHead = state->buffer->head + (pvWindow * analysisStep);
+              for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
+                x[pvWinIndex] = source->channels[channelIndex][(int)trackPosition + pvWinIndex];
+              }
+              fft_execute(pf);
+              //process... maaaagic
+              fft_execute(pr);
+              for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
+                float sampleValue = z[pvWinIndex].real() * state->pvWindow[pvWinIndex] / pvOverlap;
+                applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
+                outBufferHead = (outBufferHead + 1) % state->buffer->size;
+              }
+              trackPosition += (WINDOW_STEP / pvSubwindows) * alpha;
+            }
+            mixTrack->sample = trackPosition;
             /* END PV */
 
             /* resampling */
-            for(int windowIndex=0;windowIndex < WINDOW_SIZE;windowIndex++){
-              if(hasEnd && trackPosition > chunkEndPosition){
-                //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
-                if(hasNext) playback = mixTrack->nextPlayback;
-                if(windowIndex <= WINDOW_STEP) committedStep = true;
-              }
-              if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition;
+            // for(int windowIndex=0;windowIndex < WINDOW_SIZE;windowIndex++){
+            //   if(hasEnd && trackPosition > chunkEndPosition){
+            //     //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
+            //     if(hasNext) playback = mixTrack->nextPlayback;
+            //     if(windowIndex <= WINDOW_STEP) committedStep = true;
+            //   }
+            //   if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition;
 
-              float sampleValue = 0;
-              if(
-                trackPosition > 0 &&  
-                trackPosition < length - 1 &&
-                params->volume > 0 && 
-                !playback->muted
-              ){
-                int sourceIndex = trackPosition;
-                sampleValue = source->channels[channelIndex][sourceIndex];
-                float nextValue = source->channels[channelIndex][sourceIndex + 1];
-                sampleValue += (nextValue - sampleValue) * positionFrac;
-                sampleValue *= state->window[windowIndex];
-                applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
-              }
+            //   float sampleValue = 0;
+            //   if(
+            //     trackPosition > 0 &&  
+            //     trackPosition < length - 1 &&
+            //     params->volume > 0 && 
+            //     !playback->muted
+            //   ){
+            //     int sourceIndex = trackPosition;
+            //     sampleValue = source->channels[channelIndex][sourceIndex];
+            //     float nextValue = source->channels[channelIndex][sourceIndex + 1];
+            //     sampleValue += (nextValue - sampleValue) * positionFrac;
+            //     sampleValue *= state->window[windowIndex];
+            //     applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
+            //   }
               
-              outBufferHead = (outBufferHead + 1) % state->buffer->size;
-              trackPosition += alpha;
-            }
+            //   outBufferHead = (outBufferHead + 1) % state->buffer->size;
+            //   trackPosition += alpha;
+            // }
             /* end resampling */
           }
         }

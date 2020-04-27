@@ -7,6 +7,8 @@ extern "C"{
 }
 #include <complex.h>
 #include <liquid.h>
+#undef  LIQUID_DEFINE_COMPLEX
+#define LIQUID_DEFINE_COMPLEX(R,C) typedef std::complex<R> C
 
 #include "state.h"
 #include "filter.h"
