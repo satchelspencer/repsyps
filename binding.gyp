@@ -83,7 +83,8 @@
 		        "OTHER_CFLAGS": [
 		          "-std=c++17",
 		          "-stdlib=libc++",
-              "-Wno-return-type-c-linkage"
+              "-Wno-return-type-c-linkage",
+              "-O3"
 		        ],
 		        "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
 		        "MACOSX_DEPLOYMENT_TARGET": "10.12",
@@ -96,12 +97,14 @@
             "<@(libsdir)/ffmpeg-4.2.2/libavcodec/libavcodec.a",
             "<@(libsdir)/ffmpeg-4.2.2/libavformat/libavformat.a",
             "<@(libsdir)/ffmpeg-4.2.2/libswresample/libswresample.a",
+            "<@(libsdir)/fftw-3.3.8/.libs/libfftw3.a",
 		        "-L../lib/libtensorflow/lib -ltensorflow -Wl,-rpath,@loader_path/../../lib/libtensorflow/lib"
 		      ],
           "include_dirs": [
             "src/native",
             "<@(libsdir)/portaudio/include",
             "<@(libsdir)/libtensorflow/include",
+            "<@(libsdir)/fftw-3.3.8/api",
             "<@(libsdir)/liquid-dsp/include",
             "<@(libsdir)/ffmpeg-4.2.2",
             "<!@(node -p \"require('node-addon-api').include\")"

@@ -61,7 +61,7 @@ const Sync = memo((props: SyncProps) => {
   return (
     <Horizontal>
       <HeaderContent>
-        <Icon scale={1.4} name="av-timer" />
+        <Icon scale={1.1} name="av-timer" />
         <span>&nbsp;Sync</span>
       </HeaderContent>
       <SyncButton selected disabled={!canSync} params={lockParams} onClick={handleLock}>

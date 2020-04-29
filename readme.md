@@ -109,5 +109,16 @@ repsyps depends on native libraries that must be installed manually for developm
  - `cd ffmpeg-4.2.2`
  - `./configure --disable-autodetect --enable-pic --enable-shared`
  - `make`
+ - `cd ../` back to libs
+ - `brew cask install gfortran`
+
+   ~~~
+      wget http://www.fftw.org/fftw-3.3.8.tar.gz
+      tar xf fftw-3.3.8.tar.gz
+      rm fftw-3.3.8.tar.gz
+   ~~~
+ - `cd fftw-3.3.8`
+ - `./configure`
+ - `make`
  - `cd ../../` back to repsyps root folder
  - `yarn` install node dependencies and build native modules

@@ -15,12 +15,11 @@ Napi::Value init(const Napi::CallbackInfo &info){
   newPlayback->period = 0;
   state.playback = newPlayback;
 
-  int windowSize = 512;
-  float* window = new float[windowSize];
+  float* window = new float[WINDOW_SIZE];
   state.window = window;
-  state.windowSize = windowSize;
-  for(int i=0;i<windowSize;i++)
-    window[i] = (cos(M_PI*2*(float(i)/(windowSize-1) + 0.5)) + 1)/2;
+  state.windowSize = WINDOW_SIZE;
+  for(int i=0;i<WINDOW_SIZE;i++)
+    window[i] = (cos(M_PI*2*(float(i)/(WINDOW_SIZE-1) + 0.5)) + 1)/2;
 
   
   float* pvWindow = new float[PV_WINDOW_SIZE];
@@ -28,13 +27,17 @@ Napi::Value init(const Napi::CallbackInfo &info){
     pvWindow[i] = (cos(M_PI*2*(float(i)/(PV_WINDOW_SIZE-1) + 0.5)) + 1)/2;
   state.pvWindow = pvWindow;
 
+  float* omega = new float[PV_WINDOW_SIZE / 2 + 1];
+  for(int i=0;i<PV_WINDOW_SIZE / 2 + 1;i++) omega[i] = (M_PI * 2 * i) / PV_WINDOW_SIZE;
+  state.omega = omega;
+
   ringbuffer * newBuffer = new ringbuffer{};
-  newBuffer->size = windowSize*2;
+  newBuffer->size = WINDOW_SIZE*16;
   newBuffer->head = 0;
   newBuffer->tail = 0;
   for(int i=0;i<2;i++){
-    float* buff = new float[windowSize*2];
-    for(int j=0;j<windowSize*2;j++) buff[j] = 0;
+    float* buff = new float[newBuffer->size];
+    for(int j=0;j<newBuffer->size;j++) buff[j] = 0;
     newBuffer->channels.push_back(buff);
   }
   state.buffer = newBuffer;
@@ -43,6 +46,22 @@ Napi::Value init(const Napi::CallbackInfo &info){
 
   Napi::Env env = info.Env();
   return Napi::Number::New(env, 666);
+}
+
+pvState* allocatePvState(){
+  pvState* newPvState = new pvState{};
+  newPvState->lastPhaseTimeDelta = new float[PV_WINDOW_SIZE];
+  newPvState->lastPFFT = new float[PV_WINDOW_SIZE];
+  newPvState->currentPFFT = new float[PV_WINDOW_SIZE];
+  newPvState->nextPFFT = new float[PV_WINDOW_SIZE];
+
+  for(int i=0;i<PV_WINDOW_SIZE;i++){
+    newPvState->lastPhaseTimeDelta[i] = 0;
+    newPvState->lastPFFT[i] = 0;
+    newPvState->currentPFFT[i] = 0;
+    newPvState->nextPFFT[i] = 0;
+  }
+  return newPvState;
 }
 
 Napi::Value getOutputs(const Napi::CallbackInfo &info){
@@ -101,7 +120,7 @@ Napi::Value start(const Napi::CallbackInfo &info){
   Pa_StartStream(gstream);
 
   return Napi::Number::New(env, 1);
-}
+} 
 
 void stop(const Napi::CallbackInfo &info){
   Pa_StopStream(gstream);
@@ -179,6 +198,7 @@ mixTrackPlayback * initMixTrackPlayback(){
   playback->muted = false;
   playback->filter = 0.5;
   playback->aperiodic = false;
+  playback->preservePitch = false;
   playback->nextAtChunk = false;
   playback->unpause = false;
   return playback;
@@ -248,6 +268,8 @@ void setMixTrackPlayback(mixTrackPlayback * playback, Napi::Value value){
       playback->filter = value.As<Napi::Number>().FloatValue();
     }else if(propNameStr == "aperiodic"){
       playback->aperiodic = value.As<Napi::Boolean>().Value();
+    }else if(propNameStr == "preservePitch"){
+      playback->preservePitch = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "nextAtChunk"){
       playback->nextAtChunk = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "unpause"){
@@ -274,23 +296,6 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->overlapIndex = 0;
     newMixTrack->removed = false;
     newMixTrack->safe = false;
-
-    for(int channelIndex=0;channelIndex<CHANNEL_COUNT;channelIndex++){
-      pvState* newPvState = new pvState{};
-      newPvState->lastPhaseTimeDelta = new float[PV_WINDOW_SIZE];
-      newPvState->lastPFFT = new float[PV_WINDOW_SIZE*2];
-      newPvState->currentPFFT = new float[PV_WINDOW_SIZE*2];
-      newPvState->nextPFFT = new float[PV_WINDOW_SIZE*2];
-
-      for(int i=0;i<PV_WINDOW_SIZE;i++) newPvState->lastPhaseTimeDelta[i] = 0;
-      for(int i=0;i<PV_WINDOW_SIZE * 2;i++){
-         newPvState->lastPFFT[i] = 0;
-         newPvState->currentPFFT[i] = 0;
-         newPvState->nextPFFT[i] = 0;
-      }
-      newMixTrack->pvStates.push_back(newPvState);
-    }
-
     state.mixTracks[mixTrackId] = newMixTrack;
   }
 
@@ -362,6 +367,12 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
           delete [] mixTrackSource->channels[channelIndex];
         }
       }
+      for(pvState* pv : mixTrackSource->pvStates){
+        delete [] pv->lastPhaseTimeDelta;
+        delete [] pv->lastPFFT;
+        delete [] pv->currentPFFT;
+        delete [] pv->nextPFFT;
+      }
       state.sources[sourcesPair.first] = NULL;
       delete mixTrackSource;
     }
@@ -378,12 +389,6 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
         for(unsigned int filterIndex = 0;filterIndex<mixTrack->filters.size();filterIndex++){
           firfilt_rrrf_destroy(mixTrack->filters[filterIndex]);
         }
-      }
-      for(pvState* pv : mixTrack->pvStates){
-        delete [] pv->lastPhaseTimeDelta;
-        delete [] pv->lastPFFT;
-        delete [] pv->currentPFFT;
-        delete [] pv->nextPFFT;
       }
       delete mixTrack;
     }else if(mixTrack->playback->playing){
@@ -427,8 +432,10 @@ void separateSource(const Napi::CallbackInfo &info){
     newSource->removed = false;
     newSource->safe = false;
     newSource->data = NULL;
+
     for(unsigned int i=0;i<channelCount;i++){
       newSource->channels.push_back(outChannels[j*sepCount + i]);
+      newSource->pvStates.push_back(allocatePvState());
     }
     state.sources[sourceTrackId] = newSource;
   }
@@ -516,6 +523,7 @@ class LoadWorker : public Napi::AsyncWorker {
         newSource->data = res->data;
         for(unsigned int i=0;i<res->channels.size();i++){
           newSource->channels.push_back(res->channels[i]);
+          newSource->pvStates.push_back(allocatePvState());
         }
         state.sources[res->sourceId] = newSource;
         loadedSources.Set(i, res->sourceId);
@@ -628,6 +636,7 @@ Napi::Value stopRecording(const Napi::CallbackInfo &info){
         delete [] chunk->channels[channelIndex];
       }
       newSource->channels.push_back(channel);
+      newSource->pvStates.push_back(allocatePvState());
     }
     state.sources[sourceId] = newSource;
     

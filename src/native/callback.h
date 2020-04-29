@@ -1,6 +1,7 @@
 #include "portaudio.h"
 #include <math.h>
 #include <algorithm>
+#include <unordered_map> 
 extern "C"{
   #include <libavcodec/avcodec.h>
   #include <libavformat/avformat.h>

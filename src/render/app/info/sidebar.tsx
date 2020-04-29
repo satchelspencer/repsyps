@@ -13,9 +13,9 @@ import Cues from './cues'
 import Filter from './filter'
 import Loop from './loop'
 import Sync from './sync'
+import Stretch from './stretch'
 import TrackVolume from './volume'
 import ResizableBorder from 'render/components/rborder'
-import { FillMessage } from 'render/components/misc'
 
 const SidebarWrapper = ctyled.div.attrs({ widthp: 25 }).styles({
   column: true,
@@ -81,6 +81,7 @@ function Sidebar() {
                 <Filter trackId={trackId} />
                 <BoundsControl trackId={trackId} />
                 <Sync trackId={trackId} />
+                <Stretch trackId={trackId} />
                 <Loop trackId={trackId} />
                 <Separate trackId={trackId} />
                 <Cues trackId={trackId} />

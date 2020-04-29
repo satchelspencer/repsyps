@@ -10,12 +10,16 @@
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H
 
-static bool REPSYS_LOG = true;
+static bool REPSYS_LOG = false;
 static int CHANNEL_COUNT = 2;
 static int OVERLAP_COUNT = 2;
 static int WINDOW_STEP = 256;
 static int WINDOW_SIZE =  OVERLAP_COUNT * WINDOW_STEP;
-static int PV_WINDOW_SIZE = 1024;
+#define PV_WINDOW_SIZE 1024
+static int PV_MAX_FREQ = (PV_WINDOW_SIZE / 2) - 1;
+static int PV_RATE = 44100;
+static float PV_ABSTOL = 1e-6;
+static float PV_FREQ_STEP = PV_RATE / (float)PV_WINDOW_SIZE;
 
 typedef struct{
   float volume;
@@ -40,6 +44,7 @@ typedef struct{
   bool muted;
   float filter;
   bool aperiodic;
+  bool preservePitch;
   bool nextAtChunk;
   int chunkIndex;
   bool unpause;
@@ -67,7 +72,6 @@ typedef struct{
   double phase;
   int overlapIndex;
   std::vector<firfilt_rrrf> filters;
-  std::vector<pvState *> pvStates;
   bool hasFilter;
   bool removed;
   bool safe;
@@ -75,6 +79,7 @@ typedef struct{
 
 typedef struct{
   std::vector<float*>  channels;
+  std::vector<pvState *> pvStates;
   int length;
   uint8_t ** data;
   bool removed;
@@ -103,6 +108,7 @@ typedef struct{
   ringbuffer *buffer;
   float* window;
   float* pvWindow;
+  float* omega;
   unsigned int windowSize;
   playback *playback;
   std::unordered_map<std::string, mixTrack*> mixTracks;

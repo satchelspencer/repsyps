@@ -19,6 +19,7 @@ export const defaultPlayback: Types.Playback = {
     muted: false,
     sourceTracksParams: {},
     unpause: false,
+    preservePitch: false,
   },
   defaultTrack: Types.Track = {
     visibleSourceTrack: null,

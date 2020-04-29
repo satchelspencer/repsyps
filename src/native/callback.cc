@@ -38,7 +38,7 @@ void copyToOut(
       } 
     }
     outputFrameIndex++;
-    buffer->tail = (buffer->tail+1)%buffer->size;
+    buffer->tail = (buffer->tail + 1)%buffer->size;
   }
 }
 
@@ -66,6 +66,7 @@ void applyFilter(
   int outBufferHead,
   int channelIndex
 ){
+  if(playback->muted) return;
   sampleValue *= params->volume;
   sampleValue *= mixTrack->playback->volume;
   sampleValue *= state->playback->volume;
@@ -81,7 +82,27 @@ static std::complex<float> * y = new std::complex<float>[PV_WINDOW_SIZE];
 static std::complex<float> * z = new std::complex<float>[PV_WINDOW_SIZE];
 static fftplan pf = fft_create_plan(PV_WINDOW_SIZE, (liquid_float_complex*)x, (liquid_float_complex*)y, LIQUID_FFT_FORWARD,  0);
 static fftplan pr = fft_create_plan(PV_WINDOW_SIZE, (liquid_float_complex*)y, (liquid_float_complex*)z, LIQUID_FFT_BACKWARD,  0);
-static std::vector<float> mheap;
+
+typedef struct{
+  bool isPrev;
+  float magnitude;
+  int freq;
+} heapItem;
+
+bool lt(const heapItem& a,const heapItem& b){ 
+  return a.magnitude < b.magnitude; 
+} 
+
+static float pi = M_PI;
+static float tau = pi*2;
+
+float unwrapPhase(const float & theta){
+  return theta - (tau * round(theta / tau));
+}
+
+static std::vector<heapItem> mheap;
+
+bool completed[PV_WINDOW_SIZE / 2];
 
 int paCallbackMethod(
   const void *inputBuffer, 
@@ -128,9 +149,10 @@ int paCallbackMethod(
         mixTrack->nextPlayback->chunks[0] : 
         playback->chunks[nextChunkIndex * 2];
       bool committedStep = false;
-      float alpha = (hasEnd && !playback->aperiodic) ?
+      float invAlpha = (hasEnd && !playback->aperiodic) ?
         chunkLength / (float)state->playback->period * trackAlpha :
         trackAlpha;
+      float alpha = 1 / invAlpha;
 
       for(auto sourcePair: playback->sourceTracksParams){
         if(
@@ -145,78 +167,183 @@ int paCallbackMethod(
             double trackPosition = trackStartPosition - params->offset;
             int outBufferHead = state->buffer->head;
             playback = mixTrack->playback;
-            double positionFrac = trackPosition-floor(trackPosition);
 
-            /* PV */
-            int pvOverlap = 4;
-            pvState* pv = mixTrack->pvStates[channelIndex];
-            /* shift down the prev, current and next */
-            float* swap = pv->lastPFFT;
-            pv->lastPFFT = pv->currentPFFT;
-            pv->currentPFFT = pv->nextPFFT;
-            pv->nextPFFT = swap;
-            
-            int pvSubwindows = pvOverlap/OVERLAP_COUNT;
-            float analysisStep = WINDOW_STEP / pvSubwindows;
-            for(int pvWindow=0;pvWindow < pvSubwindows;pvWindow++){
-              outBufferHead = state->buffer->head + (pvWindow * analysisStep);
-              for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                x[pvWinIndex] = source->channels[channelIndex][(int)trackPosition + pvWinIndex];
-              }
-              fft_execute(pf);
-
-              /* convert to polar form PFFT is [mag, phase, mag, phase] */
-              for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                pv->nextPFFT[pvWinIndex * 2] = std::abs(y[pvWinIndex]);
-                pv->nextPFFT[pvWinIndex * 2 + 1] = std::arg(y[pvWinIndex]);
-              }
-              //process... maaaagic
-              mheap.clear();
-              std::make_heap(mheap.begin(), mheap.end());
-
-              /* convert back from polar */
-              for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++)
-                y[pvWinIndex] = std::polar(pv->currentPFFT[pvWinIndex*2], pv->currentPFFT[pvWinIndex*2+1]);
-              /* invert synthesis */
-              fft_execute(pr);
-              for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                float sampleValue = z[pvWinIndex].real() / PV_WINDOW_SIZE * state->pvWindow[pvWinIndex] / pvOverlap;
-                applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
-                outBufferHead = (outBufferHead + 1) % state->buffer->size;
-              }
-              trackPosition += analysisStep * alpha;
-            }
-            mixTrack->sample = trackPosition;
-            /* END PV */
-
-            /* resampling */
-            // for(int windowIndex=0;windowIndex < WINDOW_SIZE;windowIndex++){
-            //   if(hasEnd && trackPosition > chunkEndPosition){
-            //     //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
-            //     if(hasNext) playback = mixTrack->nextPlayback;
-            //     if(windowIndex <= WINDOW_STEP) committedStep = true;
-            //   }
-            //   if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition;
-
-            //   float sampleValue = 0;
-            //   if(
-            //     trackPosition > 0 &&  
-            //     trackPosition < length - 1 &&
-            //     params->volume > 0 && 
-            //     !playback->muted
-            //   ){
-            //     int sourceIndex = trackPosition;
-            //     sampleValue = source->channels[channelIndex][sourceIndex];
-            //     float nextValue = source->channels[channelIndex][sourceIndex + 1];
-            //     sampleValue += (nextValue - sampleValue) * positionFrac;
-            //     sampleValue *= state->window[windowIndex];
-            //     applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
-            //   }
+            if(playback->preservePitch){
+              /* PV */
+              int pvOverlap;
+              if(alpha < 0.8) pvOverlap = 2;
+              else pvOverlap = 4;
               
-            //   outBufferHead = (outBufferHead + 1) % state->buffer->size;
-            //   trackPosition += alpha;
-            // }
-            /* end resampling */
+              pvState* pv = source->pvStates[channelIndex];
+              int pvSubwindows = pvOverlap / OVERLAP_COUNT;
+              float synthesisStep = WINDOW_STEP / pvSubwindows;
+              float analysisStep = synthesisStep / alpha;
+              float synthesisFreqStep = PV_FREQ_STEP * alpha;
+              for(int pvWindow=0;pvWindow < pvSubwindows;pvWindow++){
+                /* shift down the prev, current and next */
+                float* swap = pv->lastPFFT;
+                pv->lastPFFT = pv->currentPFFT;
+                pv->currentPFFT = pv->nextPFFT;
+                pv->nextPFFT = swap;
+
+
+                outBufferHead = (int)(state->buffer->head + (pvWindow * synthesisStep)) % state->buffer->size;
+                for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
+                  int pos = trackPosition + pvWinIndex;
+                  x[pvWinIndex] = (pos < length && pos >= 0) ? source->channels[channelIndex][pos] : 0;
+                }
+
+                fft_execute(pf);
+
+                /* convert to polar form PFFT is [mag, phase, mag, phase] */
+                for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE / 2;pvWinIndex++){
+                  pv->nextPFFT[pvWinIndex * 2] = std::abs(y[pvWinIndex]);
+                  pv->nextPFFT[pvWinIndex * 2 + 1] = std::arg(y[pvWinIndex]);
+                }
+
+                if(false){ //classical PV
+                  for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE / 2;pvWinIndex++){
+                    float mag = pv->lastPFFT[pvWinIndex * 2];
+                    if(mag > PV_ABSTOL){
+                      float expectedPhaseAdv = state->omega[pvWinIndex] * analysisStep;
+                      float forwardPhaseTimeDelta = 
+                        unwrapPhase(
+                          pv->nextPFFT[pvWinIndex * 2 + 1] - pv->currentPFFT[pvWinIndex * 2 + 1] - expectedPhaseAdv
+                        ) / analysisStep + state->omega[pvWinIndex];
+                      float centeredPhaseTimeDelta = (pv->lastPhaseTimeDelta[pvWinIndex] + forwardPhaseTimeDelta) / 2;
+                      float phaseAdvance = centeredPhaseTimeDelta * synthesisStep;
+                      pv->currentPFFT[pvWinIndex * 2 + 1] = pv->lastPFFT[pvWinIndex * 2 + 1] + phaseAdvance;
+                      pv->lastPhaseTimeDelta[pvWinIndex] = forwardPhaseTimeDelta;
+                    }else pv->currentPFFT[pvWinIndex * 2 + 1] = 0;
+                  }
+                }else{ //phase gradient heap integration
+                  std::make_heap(mheap.begin(), mheap.end(), lt);
+                  for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE / 2;pvWinIndex++){
+                    float mag = pv->lastPFFT[pvWinIndex * 2];
+                    if(mag > PV_ABSTOL){
+                        mheap.push_back({true, mag, pvWinIndex});
+                        std::push_heap(mheap.begin(), mheap.end(), lt);
+                    }
+                    completed[pvWinIndex] = false;
+                  }
+                                
+                  while(mheap.size() > 0){
+                    std::pop_heap(mheap.begin(), mheap.end(), lt);
+                    heapItem top = mheap.back();
+                    mheap.pop_back();
+
+                    if(
+                      top.isPrev &&
+                      pv->currentPFFT[top.freq * 2] > PV_ABSTOL &&
+                      !completed[top.freq]
+                    ){
+                      float expectedPhaseAdv = state->omega[top.freq] * analysisStep;
+                      float forwardPhaseTimeDelta = 
+                        unwrapPhase(
+                          pv->nextPFFT[top.freq * 2 + 1] - pv->currentPFFT[top.freq * 2 + 1] - expectedPhaseAdv
+                        ) / analysisStep + state->omega[top.freq];
+                      float centeredPhaseTimeDelta = (pv->lastPhaseTimeDelta[top.freq] + forwardPhaseTimeDelta) / 2;
+                      float phaseAdvance = centeredPhaseTimeDelta * synthesisStep;
+                      pv->currentPFFT[top.freq * 2 + 1] = pv->lastPFFT[top.freq * 2 + 1] + phaseAdvance;
+                      pv->lastPhaseTimeDelta[top.freq] = forwardPhaseTimeDelta;
+
+                      mheap.push_back({false, pv->currentPFFT[top.freq * 2], top.freq});
+                      std::push_heap(mheap.begin(), mheap.end(), lt);
+                      completed[top.freq] = true; 
+                    }else if(!top.isPrev){
+                      if(
+                        top.freq < PV_MAX_FREQ &&
+                        pv->currentPFFT[(top.freq + 1) * 2] > PV_ABSTOL &&
+                        !completed[top.freq + 1]
+                      ){
+                        float forwardPhaseFreqDelta = 
+                          unwrapPhase(pv->currentPFFT[(top.freq + 1) * 2 + 1] - pv->currentPFFT[top.freq * 2 + 1]) / PV_FREQ_STEP;
+                        float backwardPhaseFreqDelta = 
+                          top.freq > 0 ? 
+                            unwrapPhase(pv->currentPFFT[top.freq * 2 + 1] - pv->currentPFFT[(top.freq - 1) * 2 + 1]) / PV_FREQ_STEP :
+                            forwardPhaseFreqDelta;
+                        float centeredPhaseFreqDelta = (forwardPhaseFreqDelta + backwardPhaseFreqDelta) / 2;
+                        float phaseAdvance = centeredPhaseFreqDelta * synthesisFreqStep;
+                        pv->currentPFFT[(top.freq + 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] + phaseAdvance;
+
+                        mheap.push_back({false, pv->currentPFFT[(top.freq + 1) * 2], top.freq + 1});
+                        std::push_heap(mheap.begin(), mheap.end(), lt);
+                        completed[top.freq + 1] = true;
+                      }
+                      if(
+                        top.freq > 0 &&
+                        pv->currentPFFT[(top.freq - 1) * 2] > PV_ABSTOL &&
+                        !completed[top.freq - 1]
+                      ){                   
+                        float backwardPhaseFreqDelta = 
+                          unwrapPhase(pv->currentPFFT[top.freq * 2 + 1] - pv->currentPFFT[(top.freq - 1) * 2 + 1]) / PV_FREQ_STEP ;
+                        float forwardPhaseFreqDelta = 
+                          top.freq < PV_MAX_FREQ ? 
+                            unwrapPhase(pv->currentPFFT[(top.freq + 1) * 2 + 1] - pv->currentPFFT[top.freq * 2 + 1]) / PV_FREQ_STEP :
+                            backwardPhaseFreqDelta;
+
+                        float centeredPhaseFreqDelta = (forwardPhaseFreqDelta + backwardPhaseFreqDelta) / 2;
+                        float phaseAdvance = centeredPhaseFreqDelta * synthesisFreqStep;
+                        pv->currentPFFT[(top.freq - 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] - phaseAdvance;
+
+                        mheap.push_back({false, pv->currentPFFT[(top.freq - 1) * 2], top.freq - 1});
+                        std::push_heap(mheap.begin(), mheap.end(), lt);
+                        completed[top.freq - 1] = true;
+                      }
+                    }
+                  }
+                }
+                
+                /* convert back from polar */
+                for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
+                  if(pvWinIndex < PV_WINDOW_SIZE / 2)
+                    y[pvWinIndex] = std::polar(pv->currentPFFT[pvWinIndex*2], pv->currentPFFT[pvWinIndex*2+1]);
+                  else y[pvWinIndex] = 0;
+                }
+                  
+                /* invert synthesis */
+                fft_execute(pr);
+                for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
+                  float sampleValue = z[pvWinIndex].real() / (PV_WINDOW_SIZE / 2) / pvOverlap * state->pvWindow[pvWinIndex];
+                  applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
+                  outBufferHead = (outBufferHead + 1) % state->buffer->size;
+                }
+                trackPosition += analysisStep;
+              }
+              if(trackPosition > chunkEndPosition && hasEnd) committedStep = true;
+              mixTrack->sample = trackPosition;
+              /* END PV */
+            }else{
+              /* resampling */
+              for(int windowIndex=0;windowIndex < WINDOW_SIZE;windowIndex++){
+                double positionFrac = trackPosition-floor(trackPosition);
+                if(hasEnd && trackPosition > chunkEndPosition){
+                  //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
+                  if(hasNext) playback = mixTrack->nextPlayback;
+                  if(windowIndex <= WINDOW_STEP) committedStep = true;
+                }
+                if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition;
+
+                float sampleValue = 0;
+                if(
+                  trackPosition > 0 &&  
+                  trackPosition < length - 1 &&
+                  params->volume > 0 && 
+                  !playback->muted
+                ){
+                  int sourceIndex = trackPosition;
+                  sampleValue = source->channels[channelIndex][sourceIndex];
+                  float nextValue = source->channels[channelIndex][sourceIndex + 1];
+                  sampleValue += (nextValue - sampleValue) * positionFrac;
+                  sampleValue *= state->window[windowIndex];
+                  applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
+                }
+                
+                outBufferHead = (outBufferHead + 1) % state->buffer->size;
+                trackPosition += invAlpha;
+              }
+              /* end resampling */
+            }
           }
         }
       }
@@ -225,6 +352,7 @@ int paCallbackMethod(
       if(committedStep){
         mixTrack->playback->chunkIndex = 
           (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
+        if(mixTrack->playback->aperiodic) mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
         if(mixTrack->hasNext && (mixTrack->playback->chunkIndex == 0 || mixTrack->playback->nextAtChunk)){
           applyNextPlayback(mixTrack);
           mixTrack->playback->chunkIndex = 0;

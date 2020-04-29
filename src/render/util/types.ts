@@ -67,6 +67,7 @@ export type Chunks = number[] //[start0,end0,start1,end1]
 export interface PersitentTrackPlayback {
   alpha: number
   aperiodic: boolean
+  preservePitch: boolean
   loop: boolean
   nextAtChunk: boolean
   volume: number

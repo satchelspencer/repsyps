@@ -54,28 +54,29 @@ async function init() {
         },
       },
     },
-    nextPlayback: {
-      chunks: [ssize * 2, ssize],
-      nextAtChunk: false,
-      playing: true,
-      muted: false,
-      filter: 0.1,
-      volume: 1,
-      sourceTracksParams: {
-        mysource_vocal: {
-          volume: 0.8,
-          offset: 0,
-        },
-        mysource_instru: {
-          volume: 0.1,
-          offset: 0,
-        },
-      },
-    },
+    nextPlayback: null
+    // {
+    //   chunks: [ssize * 2, ssize],
+    //   nextAtChunk: false,
+    //   playing: true,
+    //   muted: false,
+    //   filter: 0.1,
+    //   volume: 1,
+    //   sourceTracksParams: {
+    //     mysource_vocal: {
+    //       volume: 0.8,
+    //       offset: 0,
+    //     },
+    //     mysource_instru: {
+    //       volume: 0.1,
+    //       offset: 0,
+    //     },
+    //   },
+    // },
   })
 
   audio.updatePlayback({
-    period: (RATE * 5.5) / 2,
+    period: ssize * 1.2,
     volume: 0.5,
     playing: true,
   })
