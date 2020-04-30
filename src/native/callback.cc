@@ -95,6 +95,7 @@ bool lt(const heapItem& a,const heapItem& b){
 
 static float pi = M_PI;
 static float tau = pi*2;
+static bool PV_CLASSIC = false;
 
 float unwrapPhase(const float & theta){
   return theta - (tau * round(theta / tau));
@@ -210,7 +211,7 @@ int paCallbackMethod(
                   pv->nextPFFT[pvWinIndex * 2 + 1] = std::arg(y[pvWinIndex]);
                 }
 
-                if(true){ //classical PV
+                if(PV_CLASSIC){ //classical PV
                   for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE / 2;pvWinIndex++){
                     float mag = pv->lastPFFT[pvWinIndex * 2];
                     if(mag > PV_ABSTOL){
@@ -225,7 +226,7 @@ int paCallbackMethod(
                       pv->lastPhaseTimeDelta[pvWinIndex] = forwardPhaseTimeDelta;
                     }//else pv->currentPFFT[pvWinIndex * 2 + 1] = 0;
                   }
-                }else if(true){ //phase gradient heap integration
+                }else{ //phase gradient heap integration
                   std::make_heap(mheap.begin(), mheap.end(), lt);
                   for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE / 2;pvWinIndex++){
                     float mag = pv->lastPFFT[pvWinIndex * 2];
@@ -252,32 +253,35 @@ int paCallbackMethod(
                           pv->nextPFFT[top.freq * 2 + 1] - pv->currentPFFT[top.freq * 2 + 1] - expectedPhaseAdv
                         ) / analysisStep + state->omega[top.freq];
                       float centeredPhaseTimeDelta = (pv->lastPhaseTimeDelta[top.freq] + forwardPhaseTimeDelta) / 2;
-                      pv->phaseAdvance[top.freq] = centeredPhaseTimeDelta * synthesisStep;
-                      pv->currentPFFT[top.freq * 2 + 1] = pv->lastPFFT[top.freq * 2 + 1] + pv->phaseAdvance[top.freq];
+                      float phaseAdvance = centeredPhaseTimeDelta * synthesisStep;
+                      pv->currentPFFT[top.freq * 2 + 1] = pv->lastPFFT[top.freq * 2 + 1] + phaseAdvance;
                       pv->lastPhaseTimeDelta[top.freq] = forwardPhaseTimeDelta;
+                      pv->phaseAdvance[top.freq] = phaseAdvance;
 
-                      // mheap.push_back({false, pv->currentPFFT[top.freq * 2], top.freq});
-                      // std::push_heap(mheap.begin(), mheap.end(), lt);
-                      // completed[top.freq] = true; 
+                      mheap.push_back({false, pv->currentPFFT[top.freq * 2], top.freq});
+                      std::push_heap(mheap.begin(), mheap.end(), lt);
+                      completed[top.freq] = true; 
                     }else if(!top.isPrev){
                       if(
                         top.freq < PV_MAX_FREQ &&
                         pv->currentPFFT[(top.freq + 1) * 2] > PV_ABSTOL &&
                         !completed[top.freq + 1]
                       ){
+                        float originalPhase = pv->currentPFFT[top.freq * 2 + 1] - pv->phaseAdvance[top.freq];
                         float forwardPhaseFreqDelta = 
-                          unwrapPhase(pv->currentPFFT[(top.freq + 1) * 2 + 1] - pv->currentPFFT[top.freq * 2 + 1]) / PV_FREQ_STEP;
+                          unwrapPhase(pv->currentPFFT[(top.freq + 1) * 2 + 1] - originalPhase) / PV_FREQ_STEP;
                         float backwardPhaseFreqDelta = 
                           top.freq > 0 ? 
-                            unwrapPhase(pv->currentPFFT[top.freq * 2 + 1] - pv->currentPFFT[(top.freq - 1) * 2 + 1]) / PV_FREQ_STEP :
+                            unwrapPhase(originalPhase - pv->currentPFFT[(top.freq - 1) * 2 + 1]) / PV_FREQ_STEP :
                             forwardPhaseFreqDelta;
                         float centeredPhaseFreqDelta = (forwardPhaseFreqDelta + backwardPhaseFreqDelta) / 2;
                         float phaseAdvance = centeredPhaseFreqDelta * synthesisFreqStep;
 
                         //if(channelIndex == 0) std::cout << pv->currentPFFT[(top.freq + 1) * 2 + 1] << " -> " << unwrapPhase(pv->currentPFFT[top.freq * 2 + 1] + phaseAdvance) << std::endl;
-                        //pv->currentPFFT[(top.freq + 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] + phaseAdvance;
-                        pv->currentPFFT[(top.freq + 1) * 2 + 1] = pv->lastPFFT[(top.freq + 1) * 2 + 1] + pv->phaseAdvance[top.freq];
-                        pv->phaseAdvance[top.freq + 1] = pv->phaseAdvance[top.freq];
+                        pv->currentPFFT[(top.freq + 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] + phaseAdvance;
+                        pv->phaseAdvance[top.freq + 1] = phaseAdvance;
+                        // pv->currentPFFT[(top.freq + 1) * 2 + 1] = pv->lastPFFT[(top.freq + 1) * 2 + 1] + pv->phaseAdvance[top.freq] + state->omega[top.freq + 1] * synthesisStep;
+                        // pv->phaseAdvance[top.freq + 1] = pv->phaseAdvance[top.freq];
 
                         mheap.push_back({false, pv->currentPFFT[(top.freq + 1) * 2], top.freq + 1});
                         std::push_heap(mheap.begin(), mheap.end(), lt);
@@ -287,19 +291,22 @@ int paCallbackMethod(
                         top.freq > 0 &&
                         pv->currentPFFT[(top.freq - 1) * 2] > PV_ABSTOL &&
                         !completed[top.freq - 1]
-                      ){                   
+                      ){    
+                        float originalPhase = pv->currentPFFT[top.freq * 2 + 1] - pv->phaseAdvance[top.freq];               
                         float backwardPhaseFreqDelta = 
-                          unwrapPhase(pv->currentPFFT[top.freq * 2 + 1] - pv->currentPFFT[(top.freq - 1) * 2 + 1]) / PV_FREQ_STEP ;
+                          unwrapPhase(originalPhase - pv->currentPFFT[(top.freq - 1) * 2 + 1]) / PV_FREQ_STEP ;
                         float forwardPhaseFreqDelta = 
                           top.freq < PV_MAX_FREQ ? 
-                            unwrapPhase(pv->currentPFFT[(top.freq + 1) * 2 + 1] - pv->currentPFFT[top.freq * 2 + 1]) / PV_FREQ_STEP :
+                            unwrapPhase(pv->currentPFFT[(top.freq + 1) * 2 + 1] - originalPhase) / PV_FREQ_STEP :
                             backwardPhaseFreqDelta;
                         float centeredPhaseFreqDelta = (forwardPhaseFreqDelta + backwardPhaseFreqDelta) / 2;
                         float phaseAdvance = centeredPhaseFreqDelta * synthesisFreqStep;
 
-                        //pv->currentPFFT[(top.freq - 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] - phaseAdvance;
-                        pv->currentPFFT[(top.freq - 1) * 2 + 1] = pv->lastPFFT[(top.freq - 1) * 2 + 1] + pv->phaseAdvance[top.freq];
-                        pv->phaseAdvance[top.freq - 1] = pv->phaseAdvance[top.freq];
+                        pv->currentPFFT[(top.freq - 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] - phaseAdvance;
+                        pv->phaseAdvance[top.freq - 1] = phaseAdvance;
+
+                        // pv->currentPFFT[(top.freq - 1) * 2 + 1] = pv->lastPFFT[(top.freq - 1) * 2 + 1] + pv->phaseAdvance[top.freq] + state->omega[top.freq - 1] * synthesisStep;
+                        // pv->phaseAdvance[top.freq - 1] = pv->phaseAdvance[top.freq];
 
                         mheap.push_back({false, pv->currentPFFT[(top.freq - 1) * 2], top.freq - 1});
                         std::push_heap(mheap.begin(), mheap.end(), lt);
