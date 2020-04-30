@@ -308,9 +308,8 @@ void setMixTrack(const Napi::CallbackInfo &info){
 
   setMixTrackPlayback(state.mixTracks[mixTrackId]->playback, playback);
 
-  if(playback.As<Napi::Object>().Has("filter")) 
-    setMixTrackFilter(state.mixTracks[mixTrackId], state.mixTracks[mixTrackId]->playback->filter);
-
+  if(playback.As<Napi::Object>().Has("filter")) setMixTrackFilter(mixTrackId, &state);
+    
   if(!nextPlayback.IsUndefined()){
     if(nextPlayback.IsNull()){
       state.mixTracks[mixTrackId]->hasNext = false;
@@ -380,6 +379,7 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
         delete [] pv->currentPFFT;
         delete [] pv->nextPFFT;
       }
+      for(firfilt_rrrf filter: mixTrackSource->filters) firfilt_rrrf_destroy(filter);
       state.sources[sourcesPair.first] = NULL;
       delete mixTrackSource;
     }
@@ -392,11 +392,6 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
     if(mixTrack->safe){
       if(REPSYS_LOG) std::cout << "free track " << mixTrackPair.first << std::endl;
       state.mixTracks[mixTrackPair.first] = NULL;
-      if(mixTrack->hasFilter){
-        for(unsigned int filterIndex = 0;filterIndex<mixTrack->filters.size();filterIndex++){
-          firfilt_rrrf_destroy(mixTrack->filters[filterIndex]);
-        }
-      }
       delete mixTrack;
     }else if(mixTrack->playback->playing){
       Napi::Object mixTrackState = Napi::Object::New(env);

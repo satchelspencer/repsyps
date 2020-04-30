@@ -71,7 +71,6 @@ typedef struct{
   double sample;
   double phase;
   int overlapIndex;
-  std::vector<firfilt_rrrf> filters;
   bool hasFilter;
   bool removed;
   bool safe;
@@ -80,6 +79,7 @@ typedef struct{
 typedef struct{
   std::vector<float*>  channels;
   std::vector<pvState *> pvStates;
+  std::vector<firfilt_rrrf> filters;
   int length;
   uint8_t ** data;
   bool removed;

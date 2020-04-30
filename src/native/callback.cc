@@ -42,9 +42,10 @@ void copyToOut(
   }
 }
 
-void applyNextPlayback(mixTrack * mixTrack){
+void applyNextPlayback(std::string mixTrackId, streamState* state){
+  mixTrack* mixTrack = state->mixTracks[mixTrackId];
   mixTrack->playback = mixTrack->nextPlayback;
-  setMixTrackFilter(mixTrack, mixTrack->playback->filter);
+  setMixTrackFilter(mixTrackId, state);
   mixTrack->nextPlayback = NULL;
   mixTrack->hasNext = false;
 }
@@ -61,20 +62,23 @@ void applyFilter(
   float& sampleValue,
   mixTrackPlayback* playback,
   mixTrack* mixTrack,
+  source* source,
   mixTrackSourceConfig* params,
   streamState *state,
   int outBufferHead,
-  int channelIndex
+  int channelIndex,
+  float window
 ){
   if(playback->muted) return;
   sampleValue *= params->volume;
   sampleValue *= mixTrack->playback->volume;
   sampleValue *= state->playback->volume;
-  if(mixTrack->hasFilter && mixTrack->filters[mixTrack->overlapIndex] != NULL){
-    firfilt_rrrf_push(mixTrack->filters[mixTrack->overlapIndex], sampleValue);   
-    firfilt_rrrf_execute(mixTrack->filters[mixTrack->overlapIndex], &sampleValue);
+  int filterIndex = mixTrack->overlapIndex * OVERLAP_COUNT + channelIndex;
+  if(mixTrack->hasFilter && source->filters[filterIndex] != NULL){
+    firfilt_rrrf_push(source->filters[filterIndex], sampleValue);   
+    firfilt_rrrf_execute(source->filters[filterIndex], &sampleValue);
   }
-  state->buffer->channels[channelIndex][outBufferHead] += sampleValue;
+  state->buffer->channels[channelIndex][outBufferHead] += sampleValue * window;
 }
 
 static std::complex<float> * x = new std::complex<float>[PV_WINDOW_SIZE];
@@ -219,8 +223,8 @@ int paCallbackMethod(
                 /* invert fft */
                 fft_execute(pr);
                 for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                  float sampleValue = z[pvWinIndex].real() / (PV_WINDOW_SIZE / 4) / pvOverlap * state->pvWindow[pvWinIndex];
-                  applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
+                  float sampleValue = z[pvWinIndex].real() / (PV_WINDOW_SIZE / 4) / pvOverlap;
+                  applyFilter(sampleValue, playback, mixTrack, source, params, state, outBufferHead, channelIndex, state->pvWindow[pvWinIndex]);
                   outBufferHead = (outBufferHead + 1) % state->buffer->size;
                 }
                 trackPosition += analysisStep;
@@ -250,8 +254,7 @@ int paCallbackMethod(
                   sampleValue = source->channels[channelIndex][sourceIndex];
                   float nextValue = source->channels[channelIndex][sourceIndex + 1];
                   sampleValue += (nextValue - sampleValue) * positionFrac;
-                  sampleValue *= state->window[windowIndex];
-                  applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
+                  applyFilter(sampleValue, playback, mixTrack, source, params, state, outBufferHead, channelIndex, state->window[windowIndex]);
                 }
                 
                 outBufferHead = (outBufferHead + 1) % state->buffer->size;
@@ -269,7 +272,7 @@ int paCallbackMethod(
           (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
         if(mixTrack->playback->aperiodic) mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
         if(mixTrack->hasNext && (mixTrack->playback->chunkIndex == 0 || mixTrack->playback->nextAtChunk)){
-          applyNextPlayback(mixTrack);
+          applyNextPlayback(mixTrackPair.first, state);
           mixTrack->playback->chunkIndex = 0;
         } 
         if(rec != NULL && rec->fromSourceId == mixTrackPair.first &&  !rec->started){
@@ -298,7 +301,7 @@ int paCallbackMethod(
         mixTrack->hasNext && 
         (!mixTrack->playback->playing || mixTrack->playback->aperiodic) && 
         mixTrack->playback->unpause
-      ) applyNextPlayback(mixTrack);
+      ) applyNextPlayback(mixTrackPair.first, state);
     }
     /* add bounds to recording */
     if(rec != NULL){

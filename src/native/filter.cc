@@ -1,7 +1,10 @@
 #include "filter.h" 
 
+static int FILTER_COUNT = OVERLAP_COUNT * CHANNEL_COUNT;
 
-void setMixTrackFilter(mixTrack * mixTrack, float filter){
+void setMixTrackFilter(std::string mixTrackId, streamState* state){
+  mixTrack* mixTrack = state->mixTracks[mixTrackId];
+  float filter = mixTrack->playback->filter;
   if(filter == 0.5){
     mixTrack->hasFilter = false;
   }else{
@@ -26,15 +29,18 @@ void setMixTrackFilter(mixTrack * mixTrack, float filter){
 
     firdespm_run(num_taps,num_bands,bands,des,weights,wtype,LIQUID_FIRDESPM_BANDPASS,h);
 
-    int startingSize = mixTrack->filters.size();
-    mixTrack->filters.reserve(OVERLAP_COUNT);
-    for(int filterIndex=0;filterIndex<OVERLAP_COUNT;filterIndex++){
-      firfilt_rrrf q = firfilt_rrrf_create(h,num_taps);
-      if(filterIndex < startingSize){
-        firfilt_rrrf oldFilter = mixTrack->filters[filterIndex];
-        if(oldFilter != NULL) firfilt_rrrf_destroy(oldFilter);
+    for(auto sourcePair: mixTrack->playback->sourceTracksParams){
+      source* source = state->sources[sourcePair.first];
+      int startingSize = source->filters.size();
+      source->filters.reserve(FILTER_COUNT);
+      for(int filterIndex=0;filterIndex<FILTER_COUNT;filterIndex++){
+        firfilt_rrrf q = firfilt_rrrf_create(h,num_taps);
+        if(filterIndex < startingSize){
+          firfilt_rrrf oldFilter = source->filters[filterIndex];
+          if(oldFilter != NULL) firfilt_rrrf_destroy(oldFilter);
+        }
+        source->filters[filterIndex] = q;
       }
-      mixTrack->filters[filterIndex] = q;
     }
     mixTrack->hasFilter = true;
   }
