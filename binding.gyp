@@ -25,11 +25,12 @@
               'AdditionalOptions': [ '-std:c++17', "-stdlib=libc++", "-fpermissive" ],
             },
           },
-          "cflags": [ "-fpermissive"],
+          "cflags": [ "-fpermissive", "-O3"],
           "include_dirs": [
             "src/native",
             "<@(libsdir)/portaudio/include",
             "<@(libsdir)/libtensorflow/include",
+            "<@(libsdir)/fftw-3.3.5",
             "<@(libsdir)/liquid-dsp/include/liquid",
             "<@(libsdir)/ffmpeg/include",
             "<!@(node -p \"require('node-addon-api').include\")"
@@ -39,6 +40,7 @@
               "<@(libsdir)/libtensorflow/lib/tensorflow.lib",
               "<@(libsdir)/portaudio/portaudio_x64.lib",
               "<@(libsdir)/liquid-dsp/libliquid.lib",
+              "<@(libsdir)/fftw-3.3.5/libfftw3-3.lib",
               "<@(libsdir)/ffmpeg/lib/avutil.lib",
               "<@(libsdir)/ffmpeg/lib/avcodec.lib",
               "<@(libsdir)/ffmpeg/lib/avformat.lib",
