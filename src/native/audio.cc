@@ -23,12 +23,19 @@ Napi::Value init(const Napi::CallbackInfo &info){
 
   
   float* pvWindow = new float[PV_WINDOW_SIZE];
-  for(int i=0;i<PV_WINDOW_SIZE;i++)
+  for(int i=0;i<PV_WINDOW_SIZE;i++){
     pvWindow[i] = (cos(M_PI*2*(float(i)/(PV_WINDOW_SIZE-1) + 0.5)) + 1)/2;
+  }
   state.pvWindow = pvWindow;
 
-  float* omega = new float[PV_WINDOW_SIZE / 2 + 1];
-  for(int i=0;i<PV_WINDOW_SIZE / 2 + 1;i++) omega[i] = (M_PI * 2 * i) / PV_WINDOW_SIZE;
+  float* fftWindow = new float[PV_WINDOW_SIZE];
+  for(int i=0;i<PV_WINDOW_SIZE;i++){
+    fftWindow[i] = 0.53836 - 0.46164 * cos((float)(M_PI * 2 * i) / (PV_WINDOW_SIZE-1));
+  }
+  state.fftWindow = fftWindow;
+
+  double* omega = new double[PV_WINDOW_SIZE / 2];
+  for(int i=0;i<PV_WINDOW_SIZE / 2;i++) omega[i] = (M_PI * 2 * i) / PV_WINDOW_SIZE ;
   state.omega = omega;
 
   ringbuffer * newBuffer = new ringbuffer{};
@@ -51,12 +58,14 @@ Napi::Value init(const Napi::CallbackInfo &info){
 pvState* allocatePvState(){
   pvState* newPvState = new pvState{};
   newPvState->lastPhaseTimeDelta = new float[PV_WINDOW_SIZE];
+  newPvState->phaseAdvance = new float[PV_WINDOW_SIZE];
   newPvState->lastPFFT = new float[PV_WINDOW_SIZE];
   newPvState->currentPFFT = new float[PV_WINDOW_SIZE];
   newPvState->nextPFFT = new float[PV_WINDOW_SIZE];
 
   for(int i=0;i<PV_WINDOW_SIZE;i++){
     newPvState->lastPhaseTimeDelta[i] = 0;
+    newPvState->phaseAdvance[i] = 0;
     newPvState->lastPFFT[i] = 0;
     newPvState->currentPFFT[i] = 0;
     newPvState->nextPFFT[i] = 0;

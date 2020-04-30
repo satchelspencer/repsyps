@@ -7,6 +7,7 @@ extern "C"{
   #include <libavformat/avformat.h>
 }
 #include <complex.h>
+#include <fftw3.h>
 #include <liquid.h>
 #undef  LIQUID_DEFINE_COMPLEX
 #define LIQUID_DEFINE_COMPLEX(R,C) typedef std::complex<R> C

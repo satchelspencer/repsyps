@@ -172,7 +172,7 @@ int paCallbackMethod(
               /* PV */
               int pvOverlap;
               if(alpha < 0.8) pvOverlap = 2;
-              else pvOverlap = 4;
+              else pvOverlap = 6;
               
               pvState* pv = source->pvStates[channelIndex];
               int pvSubwindows = pvOverlap / OVERLAP_COUNT;
@@ -190,7 +190,16 @@ int paCallbackMethod(
                 outBufferHead = (int)(state->buffer->head + (pvWindow * synthesisStep)) % state->buffer->size;
                 for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
                   int pos = trackPosition + pvWinIndex;
-                  x[pvWinIndex] = (pos < length && pos >= 0) ? source->channels[channelIndex][pos] : 0;
+                  x[pvWinIndex] = state->fftWindow[pvWinIndex] * ((pos < length && pos >= 0) ? source->channels[channelIndex][pos] : 0);
+                  // double samplePos = trackPosition + pvWinIndex;
+                  // double samplePosFrac = samplePos-floor(samplePos);
+                  // int pos = samplePos;
+                  // if(pos < length - 1 && pos >= 0){
+                  //   float sampleValue = source->channels[channelIndex][pos];
+                  //   float nextSampleValue = source->channels[channelIndex][pos+1];
+                  //   sampleValue += (nextSampleValue - sampleValue) * samplePosFrac;
+                  //   x[pvWinIndex] = state->pvWindow[pvWinIndex] * sampleValue;
+                  // }else x[pvWinIndex] = 0;
                 }
 
                 fft_execute(pf);
@@ -201,7 +210,7 @@ int paCallbackMethod(
                   pv->nextPFFT[pvWinIndex * 2 + 1] = std::arg(y[pvWinIndex]);
                 }
 
-                if(false){ //classical PV
+                if(true){ //classical PV
                   for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE / 2;pvWinIndex++){
                     float mag = pv->lastPFFT[pvWinIndex * 2];
                     if(mag > PV_ABSTOL){
@@ -214,9 +223,9 @@ int paCallbackMethod(
                       float phaseAdvance = centeredPhaseTimeDelta * synthesisStep;
                       pv->currentPFFT[pvWinIndex * 2 + 1] = pv->lastPFFT[pvWinIndex * 2 + 1] + phaseAdvance;
                       pv->lastPhaseTimeDelta[pvWinIndex] = forwardPhaseTimeDelta;
-                    }else pv->currentPFFT[pvWinIndex * 2 + 1] = 0;
+                    }//else pv->currentPFFT[pvWinIndex * 2 + 1] = 0;
                   }
-                }else{ //phase gradient heap integration
+                }else if(true){ //phase gradient heap integration
                   std::make_heap(mheap.begin(), mheap.end(), lt);
                   for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE / 2;pvWinIndex++){
                     float mag = pv->lastPFFT[pvWinIndex * 2];
@@ -243,13 +252,13 @@ int paCallbackMethod(
                           pv->nextPFFT[top.freq * 2 + 1] - pv->currentPFFT[top.freq * 2 + 1] - expectedPhaseAdv
                         ) / analysisStep + state->omega[top.freq];
                       float centeredPhaseTimeDelta = (pv->lastPhaseTimeDelta[top.freq] + forwardPhaseTimeDelta) / 2;
-                      float phaseAdvance = centeredPhaseTimeDelta * synthesisStep;
-                      pv->currentPFFT[top.freq * 2 + 1] = pv->lastPFFT[top.freq * 2 + 1] + phaseAdvance;
+                      pv->phaseAdvance[top.freq] = centeredPhaseTimeDelta * synthesisStep;
+                      pv->currentPFFT[top.freq * 2 + 1] = pv->lastPFFT[top.freq * 2 + 1] + pv->phaseAdvance[top.freq];
                       pv->lastPhaseTimeDelta[top.freq] = forwardPhaseTimeDelta;
 
-                      mheap.push_back({false, pv->currentPFFT[top.freq * 2], top.freq});
-                      std::push_heap(mheap.begin(), mheap.end(), lt);
-                      completed[top.freq] = true; 
+                      // mheap.push_back({false, pv->currentPFFT[top.freq * 2], top.freq});
+                      // std::push_heap(mheap.begin(), mheap.end(), lt);
+                      // completed[top.freq] = true; 
                     }else if(!top.isPrev){
                       if(
                         top.freq < PV_MAX_FREQ &&
@@ -264,7 +273,11 @@ int paCallbackMethod(
                             forwardPhaseFreqDelta;
                         float centeredPhaseFreqDelta = (forwardPhaseFreqDelta + backwardPhaseFreqDelta) / 2;
                         float phaseAdvance = centeredPhaseFreqDelta * synthesisFreqStep;
-                        pv->currentPFFT[(top.freq + 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] + phaseAdvance;
+
+                        //if(channelIndex == 0) std::cout << pv->currentPFFT[(top.freq + 1) * 2 + 1] << " -> " << unwrapPhase(pv->currentPFFT[top.freq * 2 + 1] + phaseAdvance) << std::endl;
+                        //pv->currentPFFT[(top.freq + 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] + phaseAdvance;
+                        pv->currentPFFT[(top.freq + 1) * 2 + 1] = pv->lastPFFT[(top.freq + 1) * 2 + 1] + pv->phaseAdvance[top.freq];
+                        pv->phaseAdvance[top.freq + 1] = pv->phaseAdvance[top.freq];
 
                         mheap.push_back({false, pv->currentPFFT[(top.freq + 1) * 2], top.freq + 1});
                         std::push_heap(mheap.begin(), mheap.end(), lt);
@@ -281,10 +294,12 @@ int paCallbackMethod(
                           top.freq < PV_MAX_FREQ ? 
                             unwrapPhase(pv->currentPFFT[(top.freq + 1) * 2 + 1] - pv->currentPFFT[top.freq * 2 + 1]) / PV_FREQ_STEP :
                             backwardPhaseFreqDelta;
-
                         float centeredPhaseFreqDelta = (forwardPhaseFreqDelta + backwardPhaseFreqDelta) / 2;
                         float phaseAdvance = centeredPhaseFreqDelta * synthesisFreqStep;
-                        pv->currentPFFT[(top.freq - 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] - phaseAdvance;
+
+                        //pv->currentPFFT[(top.freq - 1) * 2 + 1] = pv->currentPFFT[top.freq * 2 + 1] - phaseAdvance;
+                        pv->currentPFFT[(top.freq - 1) * 2 + 1] = pv->lastPFFT[(top.freq - 1) * 2 + 1] + pv->phaseAdvance[top.freq];
+                        pv->phaseAdvance[top.freq - 1] = pv->phaseAdvance[top.freq];
 
                         mheap.push_back({false, pv->currentPFFT[(top.freq - 1) * 2], top.freq - 1});
                         std::push_heap(mheap.begin(), mheap.end(), lt);
@@ -304,14 +319,14 @@ int paCallbackMethod(
                 /* invert synthesis */
                 fft_execute(pr);
                 for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                  float sampleValue = z[pvWinIndex].real() / (PV_WINDOW_SIZE / 2) / pvOverlap * state->pvWindow[pvWinIndex];
+                  float sampleValue = z[pvWinIndex].real() / (PV_WINDOW_SIZE / 4) / pvOverlap * state->pvWindow[pvWinIndex];
                   applyFilter(sampleValue, playback, mixTrack, params, state, outBufferHead, channelIndex);
                   outBufferHead = (outBufferHead + 1) % state->buffer->size;
                 }
                 trackPosition += analysisStep;
               }
               if(trackPosition > chunkEndPosition && hasEnd) committedStep = true;
-              mixTrack->sample = trackPosition;
+              mixTrack->sample = trackPosition + params->offset;
               /* END PV */
             }else{
               /* resampling */

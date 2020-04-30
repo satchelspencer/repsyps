@@ -20,19 +20,20 @@ async function init() {
     long = '/Users/satchel/Music/Bonobo/Mixes/BONOBO_BoilerRoomMix.mp3',
     wavd = '/Users/satchel/Downloads/bigl.wav',
     short = './lib/test/bench.wav',
+    tone = './lib/test/tone.wav',
     aac = './lib/test/test_out.aac',
     broken = './lib/test/invalid.mp3'
 
   const src = './lib/test/bench.wav'
   const ssize = (5.41 * RATE) / 2
 
-  const ids = await audio.loadSource(short, 'mysource')
+  const ids = await audio.loadSource(tone, 'mysource')
   console.log(ids)
   // console.log('exp', audio.exportSource('./lib/test/test_out.m4a', 'mysource'))
 
   // audio.loadSource('./lib/test/test_out.m4a', 'mysourceaac')
 
-  audio.separateSource('mysource')
+  //audio.separateSource('mysource')
 
   const dest = new Float32Array(256)
   audio.getWaveform('mysource', -2000, 200, dest)
@@ -47,6 +48,7 @@ async function init() {
       muted: false,
       filter: 0.5,
       volume: 1,
+      preservePitch: true,
       sourceTracksParams: {
         mysource: {
           volume: 1,
@@ -81,7 +83,8 @@ async function init() {
     playing: true,
   })
 
-  audio.start(defaultIndex)
+  //audio.start(defaultIndex)
+  audio.start(8)
 
   ///setTimeout(() => audio.start(7), 3000)
 
