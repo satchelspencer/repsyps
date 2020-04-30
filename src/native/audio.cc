@@ -58,14 +58,12 @@ Napi::Value init(const Napi::CallbackInfo &info){
 pvState* allocatePvState(){
   pvState* newPvState = new pvState{};
   newPvState->lastPhaseTimeDelta = new float[PV_WINDOW_SIZE];
-  newPvState->phaseAdvance = new float[PV_WINDOW_SIZE];
   newPvState->lastPFFT = new float[PV_WINDOW_SIZE];
   newPvState->currentPFFT = new float[PV_WINDOW_SIZE];
   newPvState->nextPFFT = new float[PV_WINDOW_SIZE];
 
   for(int i=0;i<PV_WINDOW_SIZE;i++){
     newPvState->lastPhaseTimeDelta[i] = 0;
-    newPvState->phaseAdvance[i] = 0;
     newPvState->lastPFFT[i] = 0;
     newPvState->currentPFFT[i] = 0;
     newPvState->nextPFFT[i] = 0;

@@ -59,7 +59,6 @@ typedef struct{
 
 typedef struct{
   float* lastPhaseTimeDelta;
-  float* phaseAdvance;
   float* lastPFFT;
   float* currentPFFT;
   float* nextPFFT;
