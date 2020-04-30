@@ -6,7 +6,7 @@
     "start": "electron-webpack dev",
     "build": "node-gyp configure build",
     "install": "node-gyp configure build",
-    "test-native": "node src/native/test.js",
+    "test-native": "node src/native/test",
     "clean": "node-gyp clean",
     "build-electron": "electron-webpack",
     "dist": "yarn build-electron && electron-builder -c.mac.identity=null",
@@ -171,7 +171,6 @@
     "electron-builder": "^20.44.4",
     "electron-webpack": "^2.7.1",
     "electron-webpack-ts": "^3.2.0",
-    "node-wav": "^0.0.2",
     "typescript": "^3.5.2",
     "webpack": "~4.35.0"
   }

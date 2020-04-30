@@ -77,7 +77,6 @@ Napi::Value getOutputs(const Napi::CallbackInfo &info){
 
   int deviceCount = Pa_GetDeviceCount();
   int outputIndex = 0;
-std::cout <<"DC " << deviceCount << std::endl;
   for(int deviceIndex=0;deviceIndex<deviceCount;deviceIndex++){
     const PaDeviceInfo* dinfo = Pa_GetDeviceInfo(deviceIndex);
     if(dinfo->maxOutputChannels >= 2){

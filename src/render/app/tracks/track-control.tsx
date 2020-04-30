@@ -193,7 +193,7 @@ function TrackControls(props: TrackControlsProps) {
             muted: !track.playback.muted,
           })
         ),
-      [props.trackId]
+      [props.trackId, track.playback.muted]
     ),
     handleSolo = useCallback(
       () =>
@@ -203,7 +203,7 @@ function TrackControls(props: TrackControlsProps) {
             solo: !isSolo,
           })
         ),
-      [props.trackId]
+      [props.trackId, isSolo]
     )
 
   return (

@@ -3,7 +3,7 @@
 
 double getMixTrackPhase(
   playback* playback,
-  float alpha
+  const float & alpha
 ){
   double mixTrackPhase = playback->time * alpha;
   mixTrackPhase -= floor(mixTrackPhase); 
@@ -14,7 +14,7 @@ void copyToOut(
   ringbuffer * buffer, 
   float * out, 
   unsigned int & outputFrameIndex,
-  unsigned long framesPerBuffer,
+  const unsigned long & framesPerBuffer,
   recording* rec 
 ){
   recordChunk* chunk = NULL;
@@ -52,7 +52,7 @@ void applyNextPlayback(std::string mixTrackId, streamState* state){
 
 double getSamplePosition(
   mixTrackPlayback* playback,
-  double phase
+  const double& phase
 ){
   return playback->chunks[playback->chunkIndex*2] +
   ( playback->chunks[playback->chunkIndex*2+1] * phase );
@@ -65,9 +65,9 @@ void applyFilter(
   source* source,
   mixTrackSourceConfig* params,
   streamState *state,
-  int outBufferHead,
-  int channelIndex,
-  float window
+  const int& outBufferHead,
+  const int& channelIndex,
+  const float& window
 ){
   if(playback->muted) return;
   sampleValue *= params->volume;
@@ -111,6 +111,9 @@ int paCallbackMethod(
   recording* rec = state->recording;
   double time = state->playback->time;
   unsigned int outputFrameIndex = 0;
+
+  for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *(out+frameIndex) = 0;
+  if(!state->playback->playing) return paContinue;
 
   copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, rec);
 
