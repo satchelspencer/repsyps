@@ -1,6 +1,8 @@
 #include <napi.h>
 #include <math.h>
 #include <iostream>
+#include <thread>
+#include <chrono>
 #include "portaudio.h"
 
 #include "state.h"

@@ -3,6 +3,23 @@
 static streamState state;
 static PaStream * gstream = NULL;
 
+void poller(){
+  while(true){
+    if(
+      state.recording != NULL 
+      && state.recording->chunkIndex == state.recording->chunks.size()-1
+    ){
+      recordChunk* currentChunk = state.recording->chunks[state.recording->chunkIndex];
+      if(currentChunk->used > currentChunk->size * REC_REALLOC_THRESH){ 
+        allocateChunk(state.recording);
+      }
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
+}
+std::thread pollThread (poller);
+
+
 Napi::Value init(const Napi::CallbackInfo &info){
   std::string rootPath = info[0].As<Napi::String>().Utf8Value();
   init_separator(rootPath);
@@ -347,15 +364,6 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
   Napi::Object timings = Napi::Object::New(env);
   Napi::Object tracktimings = Napi::Object::New(env);
 
-  if(
-    state.recording != NULL 
-    && state.recording->chunkIndex == state.recording->chunks.size()-1
-  ){
-    recordChunk* currentChunk = state.recording->chunks[state.recording->chunkIndex];
-    if(currentChunk->used > currentChunk->size * REC_REALLOC_THRESH){ 
-      allocateChunk(state.recording);
-    }
-  }
   timings.Set("recTime", state.recording ? state.recording->length : 0);
 
   source* mixTrackSource;
