@@ -20,6 +20,8 @@ Napi::Value getOutputs(const Napi::CallbackInfo &info);
 Napi::Value getDefaultOutput(const Napi::CallbackInfo &info);
 Napi::Value start(const Napi::CallbackInfo &info);
 void stop(const Napi::CallbackInfo &info);
+void startPreview(const Napi::CallbackInfo &info);
+void stopPreview(const Napi::CallbackInfo &info);
 void updatePlayback(const Napi::CallbackInfo &info);
 void updateTime(const Napi::CallbackInfo &info);
 Napi::Value removeSource(const Napi::CallbackInfo &info);

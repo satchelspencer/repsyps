@@ -61,7 +61,7 @@ const BodyInner = ctyled.div.styles({
   height: '100%',
 })
 
-const preventKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab']
+const preventKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'P', 'O']
 
 function App() {
   const { darkMode, size } = useSelector((state) => state.settings),

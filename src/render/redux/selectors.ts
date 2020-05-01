@@ -204,7 +204,7 @@ function applyControlsToPlayback(
     const controlGroup = controls[posStr],
       initValue = defaultValue(initValues[posStr]),
       defValue = defaultValue(values[posStr]),
-      value = Math.pow(initValue > 0.5 ? defValue : 1 - defValue, 1 / 2)
+      value = Math.pow(initValue > 0.5 ? defValue : 1 - defValue, 1 / 1.6)
 
     if (!controlGroup.absolute)
       controlGroup.controls.forEach((control) => {
@@ -422,7 +422,7 @@ export const makeGetPersistentTrackPlayback = () =>
   createSelector(
     [(track: Types.Track) => track.playback],
     (playback): Types.PersitentTrackPlayback => {
-      return _.omit(playback, ['chunkIndex', 'chunks', 'playing', 'muted'])
+      return _.omit(playback, ['chunkIndex', 'chunks', 'playing', 'muted', 'preview'])
     }
   )
 
@@ -550,6 +550,7 @@ export const getLocalPersistentState = createSelector(
       settings,
       output: {
         current: output.current,
+        preview: output.preview
       },
       live,
     }

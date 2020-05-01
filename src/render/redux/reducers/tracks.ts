@@ -387,6 +387,44 @@ export default createReducer(defaultState, (handle) => [
       },
     }
   }),
+  handle(Actions.togglePreviewTrack, (state, { payload: trackId }) => {
+    const track = state.live.tracks[trackId]
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        tracks: {
+          ...state.live.tracks,
+          [trackId]: {
+            ...track,
+            playback: {
+              ...track.playback,
+              preview: !track.playback.preview,
+            },
+          },
+        },
+      },
+    }
+  }),
+  handle(Actions.clearPreview, (state) => {
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        tracks: _.mapValues(state.live.tracks, (track) => {
+          if (track.playback.preview)
+            return {
+              ...track,
+              playback: {
+                ...track.playback,
+                preview: false,
+              },
+            }
+          else return track
+        }),
+      },
+    }
+  }),
   handle(Actions.loopTrack, (state, { payload }) => {
     const trackId =
         payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),

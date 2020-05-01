@@ -10,6 +10,8 @@ interface AudioAPI {
   getDefaultOutput(): number
   start(deviceIndex: number): void
   stop(): void
+  startPreview(deviceIndex: number): void
+  stopPreview()
   updatePlayback(playback: Partial<Types.Playback>): void
   updateTime(time: number, relative: boolean): void
   removeSource(sourceId: string): boolean

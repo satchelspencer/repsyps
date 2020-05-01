@@ -51,7 +51,6 @@ function createMainWindow() {
   // init things
   window.on('closed', () => {
     mainWindow = null
-    //destroy things here
   })
 
   return window

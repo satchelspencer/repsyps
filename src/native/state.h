@@ -15,7 +15,7 @@ static int CHANNEL_COUNT = 2;
 static int OVERLAP_COUNT = 2;
 static int WINDOW_STEP = 256;
 static int WINDOW_SIZE =  OVERLAP_COUNT * WINDOW_STEP;
-#define PV_WINDOW_SIZE 1024
+#define PV_WINDOW_SIZE 2048
 static int PV_MAX_FREQ = (PV_WINDOW_SIZE / 2) - 1;
 static int PV_RATE = 44100;
 static float PV_ABSTOL = 1e-6;
@@ -48,6 +48,7 @@ typedef struct{
   bool nextAtChunk;
   int chunkIndex;
   bool unpause;
+  bool preview;
 } mixTrackPlayback;
 
 typedef struct{
@@ -106,9 +107,10 @@ typedef struct{
 
 typedef struct{
   ringbuffer *buffer;
+  ringbuffer *previewBuffer;
+  bool previewing;
   float* window;
   float* pvWindow;
-  float* fftWindow;
   double* omega;
   unsigned int windowSize;
   playback *playback;

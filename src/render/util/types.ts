@@ -78,6 +78,7 @@ export interface PersitentTrackPlayback {
 export interface TrackPlayback extends PersitentTrackPlayback {
   muted: boolean
   unpause: boolean
+  preview: boolean
   /* timing info */
   chunkIndex: number
   chunks: Chunks
@@ -361,12 +362,14 @@ export interface Output {
 
 export interface LocalPersistentOutputState {
   current: number
+  preview: number
 }
 
 export interface OutputState {
   devices: Output[]
   default: number
   current: number
+  preview: number
 }
 
 export interface MenuState {

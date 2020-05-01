@@ -110,6 +110,10 @@ export const setTrackSolo = createAction<{ trackId: string; solo?: boolean }>(
   'SET_TRACK_SOLO'
 )
 
+export const togglePreviewTrack = createAction<string>('TOGGLE_TRACK_PREVIEW')
+
+export const clearPreview = createAction<void>('CLEAR_PREVIEW')
+
 export const loopTrack = createAction<{
   trackId?: string
   trackIndex?: number

@@ -69,6 +69,10 @@ void applyFilter(
   const int& channelIndex,
   const float& window
 ){
+  if(sampleValue < -1) sampleValue = -1;
+  else if(sampleValue > 1) sampleValue = 1;
+  if(playback->preview)
+    state->previewBuffer->channels[channelIndex][outBufferHead] += sampleValue * window;
   if(playback->muted) return;
   sampleValue *= params->volume;
   sampleValue *= mixTrack->playback->volume;
@@ -117,6 +121,7 @@ int paCallbackMethod(
 
   copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, rec);
 
+  int window = 0;
   while(outputFrameIndex < framesPerBuffer){
     for(auto mixTrackPair: state->mixTracks){
       mixTrack* mixTrack = mixTrackPair.second;
@@ -188,7 +193,7 @@ int paCallbackMethod(
                 for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
                   int pos = trackPosition + pvWinIndex;
                   x[pvWinIndex] = 
-                    state->fftWindow[pvWinIndex] *
+                    state->pvWindow[pvWinIndex] *
                     ((pos < length && pos >= 0) ? source->channels[channelIndex][pos] : 0);
                 }
 
@@ -226,33 +231,30 @@ int paCallbackMethod(
                 /* invert fft */
                 fft_execute(pr);
                 for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                  float sampleValue = z[pvWinIndex].real() / (PV_WINDOW_SIZE / 4) / pvOverlap;
+                  float sampleValue = z[pvWinIndex].real() / (PV_WINDOW_SIZE / 2) / pvOverlap;
                   applyFilter(sampleValue, playback, mixTrack, source, params, state, outBufferHead, channelIndex, state->pvWindow[pvWinIndex]);
                   outBufferHead = (outBufferHead + 1) % state->buffer->size;
                 }
                 trackPosition += analysisStep;
               }
-              if(trackPosition > chunkEndPosition && hasEnd) committedStep = true;
+              if(trackPosition + params->offset > chunkEndPosition && hasEnd) committedStep = true;
               mixTrack->sample = trackPosition + params->offset;
               /* END PV */
             }else{
               /* resampling */
               for(int windowIndex=0;windowIndex < WINDOW_SIZE;windowIndex++){
                 double positionFrac = trackPosition-floor(trackPosition);
-                if(hasEnd && trackPosition > chunkEndPosition){
+                if(hasEnd && trackPosition + params->offset > chunkEndPosition){
                   //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
                   if(hasNext) playback = mixTrack->nextPlayback;
-                  if(windowIndex <= WINDOW_STEP) committedStep = true;
+                  if(!committedStep && windowIndex < WINDOW_STEP){
+                    committedStep = true;
+                  }
                 }
-                if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition;
+                if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition + params->offset;
 
                 float sampleValue = 0;
-                if(
-                  trackPosition > 0 &&  
-                  trackPosition < length - 1 &&
-                  params->volume > 0 && 
-                  !playback->muted
-                ){
+                if( trackPosition > 0 && trackPosition < length - 1){
                   int sourceIndex = trackPosition;
                   sampleValue = source->channels[channelIndex][sourceIndex];
                   float nextValue = source->channels[channelIndex][sourceIndex + 1];
@@ -286,8 +288,10 @@ int paCallbackMethod(
     }
 
     state->buffer->head = (state->buffer->head + WINDOW_STEP) % state->buffer->size;
+    state->previewBuffer->head = state->buffer->head;
     out = (float*)outputBuffer;
     copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, rec);
+    window++;
   }
 
   /* update time and misc */
@@ -330,6 +334,26 @@ int paCallbackMethod(
       mixTrack->safe = true;
     }
   }
+
+  return paContinue;
+}
+
+int paPreviewCallbackMethod(
+  const void *inputBuffer, 
+  void *outputBuffer,
+  unsigned long framesPerBuffer,
+  const PaStreamCallbackTimeInfo* timeInfo,
+  PaStreamCallbackFlags statusFlags,
+  void *userData
+){
+  streamState *state = (streamState*)userData;
+  float *out = (float*)outputBuffer;
+  unsigned int outputFrameIndex = 0;
+
+  for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *(out+frameIndex) = 0;
+  if(!state->previewing) return paContinue;
+  
+  copyToOut(state->previewBuffer, out, outputFrameIndex, framesPerBuffer, NULL);
 
   return paContinue;
 }

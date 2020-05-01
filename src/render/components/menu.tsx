@@ -207,7 +207,7 @@ export default function init() {
                 edit: !menuState.editing,
               })
             ),
-          accelerator: 'E',
+          accelerator: 'CmdOrCtrl+E',
         },
         inferDivisions: {
           click: () =>
@@ -361,7 +361,7 @@ export default function init() {
         playToEndTrack: {
           click: () =>
             dispatch(Actions.loopTrack({ trackId: menuState.selectedTrackId, loop: -1 })),
-          accelerator: 'P',
+          accelerator: 'E',
         },
         toggleLoopTrack: {
           click: () => dispatch(Actions.toggleTrackLoop(menuState.selectedTrackId)),
@@ -376,6 +376,17 @@ export default function init() {
           click: () =>
             dispatch(Actions.setTrackSolo({ trackId: menuState.selectedTrackId })),
           accelerator: 'S',
+        },
+        previewTrack: {
+          click: () =>
+            menuState.output.preview !== null &&
+            dispatch(Actions.togglePreviewTrack(menuState.selectedTrackId)),
+          accelerator: 'P',
+        },
+        clearPreview: {
+          click: () =>
+            menuState.output.preview !== null && dispatch(Actions.clearPreview()),
+          accelerator: 'O',
         },
         syncOnTrack: {
           click: () =>
@@ -854,6 +865,17 @@ export default function init() {
             },
             { type: 'separator' },
             {
+              label: 'Toggle Preview',
+              enabled: !!menuState.output.preview,
+              ...menuCommands.previewTrack,
+            },
+            {
+              label: 'Clear Preview',
+              enabled: !!menuState.output.preview,
+              ...menuCommands.clearPreview,
+            },
+            { type: 'separator' },
+            {
               label: 'Duplicate Track',
               ...menuCommands.duplicateTrack,
             },
@@ -944,14 +966,32 @@ export default function init() {
               label: device.name,
               type: 'checkbox',
               checked: device.index === menuState.output.current,
-              click: () =>
-                dispatch(
-                  Actions.setOutputs({
-                    current: device.index,
-                  })
-                ),
+              click: () => dispatch(Actions.setOutputs({ current: device.index })),
             }
           }),
+        },
+        {
+          label: 'Preview',
+          submenu: [
+            {
+              label: 'No Preview',
+              type: 'checkbox',
+              checked: menuState.output.preview === null,
+              click: () => {
+                dispatch(Actions.setOutputs({ preview: null }))
+                dispatch(Actions.clearPreview())
+              },
+            },
+            { type: 'separator' },
+            ...menuState.output.devices.map((device) => {
+              return {
+                label: device.name,
+                type: 'checkbox',
+                checked: device.index === menuState.output.preview,
+                click: () => dispatch(Actions.setOutputs({ preview: device.index })),
+              }
+            }),
+          ],
         },
         {
           label: 'View',
@@ -1039,15 +1079,16 @@ export default function init() {
       Menu.setApplicationMenu(menu)
     }
 
-    store.subscribe(() => {
+    function storeCb() {
       const state = store.getState(),
         newMenuState = Selectors.getMenuState(state)
       if (menuState !== newMenuState) {
         menuState = newMenuState
         handleUpdate()
       }
-    })
-    handleUpdate()
+    }
+    store.subscribe(storeCb)
+    storeCb()
 
     function getDefaultSaveName(sceneIndex?: number) {
       const state = store.getState()

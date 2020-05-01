@@ -198,6 +198,11 @@ export default function syncAudio(store: Store<Types.State>) {
     if (!lastState || lastState.output.current !== currentState.output.current)
       audio.start(currentState.output.current)
 
+    if (!lastState || lastState.output.preview !== currentState.output.preview) {
+      if (currentState.output.preview === null) audio.stopPreview()
+      else audio.startPreview(currentState.output.preview)
+    }
+
     lastState = currentState
   }
   store.subscribe(handleUpdate)

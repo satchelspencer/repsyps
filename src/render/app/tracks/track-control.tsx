@@ -38,13 +38,29 @@ const TrackControlsBody = ctyled.div.styles({
   left:${({ size }) => size * 1}px;
 `
 
-const TrackTitle = ctyled.div.styles({
-  align: 'center',
+const TrackHeader = ctyled.div.styles({
   color: (c) => c.nudge(0.1),
-  bg: true,
   padd: 1,
   size: (s) => s * 0.9,
+  justify: 'space-between',
+  align: 'center',
+  gutter: 0.8,
+  bg: true,
 }).extend`
+  padding-right:${({ size }) => size / 1.8}px;
+`
+
+const TrackTitleWrapper = ctyled.div.styles({
+  flex: 1,
+  height: 1.3,
+})
+
+const TrackTitle = ctyled.div.styles({}).extend`  
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -126,6 +142,11 @@ const TrackIndex = ctyled.div.styles({
   font-weight:bold;
 `
 
+const PreviewButton = ControlsButton.styles({
+  padd: 0.25,
+  flex: 'none',
+})
+
 export interface TrackControlsProps {
   trackId: string
 }
@@ -136,6 +157,7 @@ function TrackControls(props: TrackControlsProps) {
     period = useSelector((state) => state.playback.period),
     isSolo = useSelector((state) => getTrackIsSolo(state, props.trackId)),
     source = useSelector((state) => state.sources[props.trackId]),
+    hasPreview = useSelector((state) => state.output.preview !== null),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch()
@@ -204,13 +226,34 @@ function TrackControls(props: TrackControlsProps) {
           })
         ),
       [props.trackId, isSolo]
-    )
+    ),
+    handlePreview = useCallback(() => {
+      dispatch(
+        Actions.setTrackPlayback({
+          trackId: props.trackId,
+          playback: {
+            preview: !track.playback.preview,
+          },
+        })
+      )
+    }, [props.trackId, track.playback.preview])
 
   return (
     <TrackControlsWrapper>
       <TrackHandle selected={track.selected} />
       <TrackControlsBody>
-        <TrackTitle>{source.name}</TrackTitle>
+        <TrackHeader>
+          <TrackTitleWrapper>
+            <TrackTitle>{source.name}</TrackTitle>
+          </TrackTitleWrapper>
+          <PreviewButton disabled={!hasPreview} onClick={handlePreview}>
+            <Icon
+              scale={1.2}
+              name={track.playback.preview ? 'headphones' : 'headphones-off'}
+              asButton
+            />
+          </PreviewButton>
+        </TrackHeader>
         <TrackControlsInner>
           <InnerV>
             <SpeedWrapper>

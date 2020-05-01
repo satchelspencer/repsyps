@@ -70,6 +70,7 @@ export function updateSceneIndex(
                 playing: false,
                 muted: false,
                 unpause: false,
+                preview: forceReset ? false : cuedTrack.playback.preview,
               },
             }
           }

@@ -2,6 +2,7 @@
 
 static streamState state;
 static PaStream * gstream = NULL;
+static PaStream * pstream = NULL;
 
 void poller(){
   while(true){
@@ -45,12 +46,6 @@ Napi::Value init(const Napi::CallbackInfo &info){
   }
   state.pvWindow = pvWindow;
 
-  float* fftWindow = new float[PV_WINDOW_SIZE];
-  for(int i=0;i<PV_WINDOW_SIZE;i++){
-    fftWindow[i] = 0.53836 - 0.46164 * cos((float)(M_PI * 2 * i) / (PV_WINDOW_SIZE-1));
-  }
-  state.fftWindow = fftWindow;
-
   double* omega = new double[PV_WINDOW_SIZE / 2];
   for(int i=0;i<PV_WINDOW_SIZE / 2;i++) omega[i] = (M_PI * 2 * i) / PV_WINDOW_SIZE ;
   state.omega = omega;
@@ -65,6 +60,18 @@ Napi::Value init(const Napi::CallbackInfo &info){
     newBuffer->channels.push_back(buff);
   }
   state.buffer = newBuffer;
+
+  ringbuffer * pBuffer = new ringbuffer{};
+  pBuffer->size = WINDOW_SIZE*16;
+  pBuffer->head = 0;
+  pBuffer->tail = 0;
+  for(int i=0;i<CHANNEL_COUNT;i++){
+    float* buff = new float[pBuffer->size];
+    for(int j=0;j<pBuffer->size;j++) buff[j] = 0;
+    pBuffer->channels.push_back(buff);
+  }
+  state.previewBuffer = pBuffer;
+  state.previewing = false;
 
   state.recording = NULL;
 
@@ -149,6 +156,50 @@ void stop(const Napi::CallbackInfo &info){
   Pa_StopStream(gstream);
 }
 
+void startPreview(const Napi::CallbackInfo &info){
+  int deviceIndex = info[0].As<Napi::Number>().Int32Value();
+  if(REPSYS_LOG) std::cout << "start preview " << deviceIndex << std::endl;
+
+  /* clear buffer */
+  for(int i=0;i<state.previewBuffer->size;i++){
+    for(int ci=0;ci<CHANNEL_COUNT;ci++) state.previewBuffer->channels[ci][i] = 0;
+  }
+  
+  state.previewBuffer->head = state.buffer->head;
+  state.previewBuffer->tail = state.buffer->tail;
+
+  PaStreamParameters outputParameters;
+  outputParameters.device = deviceIndex;
+  outputParameters.channelCount = 2; /* stereo output */
+  outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
+  outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
+  outputParameters.hostApiSpecificStreamInfo = NULL;
+
+  if(pstream != NULL){
+    if(REPSYS_LOG) std::cout << "stopping old preview stream" << std::endl;
+    Pa_StopStream(pstream);
+  }
+
+  Pa_OpenStream(
+    &pstream,
+    NULL, /* no input */
+    &outputParameters,
+    44100,
+    64,
+    paNoFlag,     
+    &paPreviewCallbackMethod,
+    &state      
+  );
+
+  state.previewing = true;
+  Pa_StartStream(pstream);
+}
+
+void stopPreview(const Napi::CallbackInfo &info){
+  state.previewing = false;
+  Pa_StopStream(pstream);
+}
+
 void updatePlayback(const Napi::CallbackInfo &info){
   if(REPSYS_LOG) std::cout << "playback" << std::endl;
   Napi::Object update = info[0].As<Napi::Object>();
@@ -222,6 +273,7 @@ mixTrackPlayback * initMixTrackPlayback(){
   playback->filter = 0.5;
   playback->aperiodic = false;
   playback->preservePitch = false;
+  playback->preview = false;
   playback->nextAtChunk = false;
   playback->unpause = false;
   return playback;
@@ -293,6 +345,8 @@ void setMixTrackPlayback(mixTrackPlayback * playback, Napi::Value value){
       playback->aperiodic = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "preservePitch"){
       playback->preservePitch = value.As<Napi::Boolean>().Value();
+    }else if(propNameStr == "preview"){
+      playback->preview = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "nextAtChunk"){
       playback->nextAtChunk = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "unpause"){
@@ -687,6 +741,8 @@ void InitAudio(Napi::Env env, Napi::Object exports){
   exports.Set("getDefaultOutput", Napi::Function::New(env, getDefaultOutput));
   exports.Set("start", Napi::Function::New(env, start));
   exports.Set("stop", Napi::Function::New(env, stop));
+  exports.Set("startPreview", Napi::Function::New(env, startPreview));
+  exports.Set("stopPreview", Napi::Function::New(env, stopPreview));
   exports.Set("updatePlayback", Napi::Function::New(env, updatePlayback));
   exports.Set("updateTime", Napi::Function::New(env, updateTime));
   exports.Set("removeSource", Napi::Function::New(env, removeSource));
