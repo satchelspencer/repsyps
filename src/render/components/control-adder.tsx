@@ -39,7 +39,10 @@ export function adder<P>(Component: CtyledComponent<any, P>) {
       }, [isSelecting, ctyle]),
       handleClick = useCallback(
         (e) => {
-          if (isSelecting && !props.noSelect) onSelect(params)
+          if (isSelecting && !props.noSelect) onSelect({
+            ...params,
+            invert: e.shiftKey
+          })
           else props.onClick && props.onClick(e)
         },
         [props.params, isSelecting, props.onClick]

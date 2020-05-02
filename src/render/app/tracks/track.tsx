@@ -243,7 +243,9 @@ const Track = memo(
             pos,
             view,
             source.bounds,
-            track.selected
+            track.selected,
+            e.shiftKey,
+            track.playback.chunks
           )
 
           const didSelectBound = selectBoundHandlers.mouseUp(
@@ -257,11 +259,11 @@ const Track = memo(
             didOffsetTrack = offsetTrackHandlers.mouseUp(clickCtxt, pos)
 
           if (!didSelectBound && !didResizeBound && !didResizePlayback && !didOffsetTrack)
-            selectPlaybackHandlers.mouseUp(clickCtxt, pos, view)
+            selectPlaybackHandlers.mouseUp(clickCtxt, pos, view, track.playback.chunks, e.shiftKey)
           setClickX(null)
           setMouseDown(false)
         },
-        [...clickCtxtValues, ...viewValues, source.bounds, track.selected]
+        [...clickCtxtValues, ...viewValues, source.bounds, track.selected, track.playback.chunks]
       ),
       handleDoubleClick = useCallback(
         (e) => {

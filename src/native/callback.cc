@@ -113,7 +113,7 @@ int paCallbackMethod(
   streamState *state = (streamState*)userData;
   float *out = (float*)outputBuffer;
   recording* rec = state->recording;
-  double time = state->playback->time;
+  double startTime = state->playback->time;
   unsigned int outputFrameIndex = 0;
 
   for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *(out+frameIndex) = 0;
@@ -123,6 +123,7 @@ int paCallbackMethod(
 
   int window = 0;
   while(outputFrameIndex < framesPerBuffer){
+    double time = startTime + (outputFrameIndex / state->playback->period);
     for(auto mixTrackPair: state->mixTracks){
       mixTrack* mixTrack = mixTrackPair.second;
       if(!mixTrack || mixTrack->removed) continue;
@@ -247,9 +248,7 @@ int paCallbackMethod(
                 if(hasEnd && trackPosition + params->offset > chunkEndPosition){
                   //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
                   if(hasNext) playback = mixTrack->nextPlayback;
-                  if(!committedStep && windowIndex < WINDOW_STEP){
-                    committedStep = true;
-                  }
+                  if(!committedStep && windowIndex <= WINDOW_STEP) committedStep = true;
                 }
                 if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition + params->offset;
 
@@ -272,7 +271,8 @@ int paCallbackMethod(
       }
 
       mixTrack->overlapIndex = (mixTrack->overlapIndex + 1) % OVERLAP_COUNT;
-      if(committedStep){
+      if(committedStep && time - mixTrack->lastCommit > 0.1){
+        mixTrack->lastCommit = time;
         mixTrack->playback->chunkIndex = 
           (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
         mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
@@ -295,10 +295,10 @@ int paCallbackMethod(
   }
 
   /* update time and misc */
-  state->playback->time = time + ((double)framesPerBuffer / state->playback->period);
+  state->playback->time = startTime + ((double)framesPerBuffer / state->playback->period);
 
   /* phase wrapped drung this callback */
-  if(time-floor(time) > state->playback->time-floor(state->playback->time)){
+  if(startTime-floor(startTime) > state->playback->time-floor(state->playback->time)){
     /* unpause any tracks as needed */
     for(auto mixTrackPair: state->mixTracks){
       mixTrack* mixTrack = mixTrackPair.second;

@@ -160,7 +160,8 @@ export function useResizePlayback(trackId: string) {
       mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
         if (!ctxt.aperiodic) return false
         if (chunkIndex !== -1) {
-          if (ctxt.clickX === pos.x) { //if no drag
+          if (ctxt.clickX === pos.x) {
+            //if no drag
             const sample = getTimeFromPosition(pos.x, view.snap, view)
             dispatch(
               Actions.setTrackPlayback({
@@ -187,22 +188,49 @@ export function useSelectPlayback(trackId: string) {
 
   return useMemo(
     () => ({
-      mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
+      mouseUp(
+        ctxt: ClickEventContext,
+        pos: ClickPos,
+        view: ViewContext,
+        chunks: number[],
+        shiftKey: boolean
+      ) {
         if (!ctxt.aperiodic) return false
         const dx = Math.abs(pos.x - ctxt.clickX),
           xPos = getTimeFromPosition(pos.x, view.snap, view)
         if (dx < 3) {
-          //click to play
-          dispatch(
-            Actions.setTrackPlayback({
-              trackId,
-              playback: {
-                chunks: [xPos, 0],
-                aperiodic: true,
-                chunkIndex: -1,
-              },
-            })
-          )
+          if (shiftKey) {
+            let start = chunks[0]
+            let end = chunks[0] + chunks[1]
+            if (Math.abs(start - xPos) < Math.abs(end - xPos)) start = xPos
+            else end = xPos
+            if (end < start) {
+              const t = start
+              start = end
+              end = t
+            }
+            dispatch(
+              Actions.setTrackPlayback({
+                trackId,
+                playback: {
+                  chunks: [start, end - start],
+                  aperiodic: true,
+                  chunkIndex: -1,
+                },
+              })
+            )
+          } else {
+            dispatch(
+              Actions.setTrackPlayback({
+                trackId,
+                playback: {
+                  chunks: [xPos, 0],
+                  aperiodic: true,
+                  chunkIndex: -1,
+                },
+              })
+            )
+          }
         } else {
           //dragged selection
           const start = getTimeFromPosition(ctxt.clickX, view.snap, view),
@@ -299,15 +327,34 @@ export function usePlaybackBound(trackId: string) {
         pos: ClickPos,
         view: ViewContext,
         bounds: number[],
-        selected: boolean
+        selected: boolean,
+        shiftKey: boolean,
+        chunks: number[]
       ) {
         if (ctxt.aperiodic || bounds.length < 2 || (!selected && ctxt.clickX === pos.x))
           return false
-        const firstBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
+
+        let firstBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
           secondBoundIndex = getNextBoundIndex(pos.x, view, bounds)
 
         let startBoundIndex = Math.min(firstBoundIndex, secondBoundIndex),
           endBoundIndex = Math.max(firstBoundIndex, secondBoundIndex)
+
+        if (shiftKey) {
+          const chunksStartBound = _.findIndex(bounds, (b) => b > chunks[0]),
+            chunksEndBound = _.findIndex(bounds, (b) => b > chunks[chunks.length - 2])
+          startBoundIndex = chunksStartBound
+          if (
+            Math.abs(secondBoundIndex - chunksEndBound) <
+            Math.abs(secondBoundIndex - chunksStartBound)
+          ) {
+            startBoundIndex = chunksStartBound
+            endBoundIndex = secondBoundIndex
+          } else {
+            startBoundIndex = secondBoundIndex
+            endBoundIndex = chunksEndBound
+          }
+        }
 
         if (startBoundIndex === endBoundIndex) {
           if (startBoundIndex === 0) {

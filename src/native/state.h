@@ -70,6 +70,7 @@ typedef struct{
   mixTrackPlayback* nextPlayback;
   bool hasNext;
   double sample;
+  double lastCommit;
   double phase;
   int overlapIndex;
   bool hasFilter;

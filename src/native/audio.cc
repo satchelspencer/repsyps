@@ -368,6 +368,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->nextPlayback = NULL;
     newMixTrack->hasNext = false;
     newMixTrack->hasFilter = false;
+    newMixTrack->lastCommit = 0.;
     newMixTrack->sample = 0;
     newMixTrack->phase = 0.;
     newMixTrack->overlapIndex = 0;

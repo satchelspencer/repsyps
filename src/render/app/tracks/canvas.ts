@@ -31,7 +31,8 @@ export default function useWaveformCanvas(
     isSTEditing = !!track.sourceTrackEditing,
     editTrackLoaded = isSTEditing && source.sourceTracks[track.sourceTrackEditing].loaded,
     editTrackOffset =
-      isSTEditing && track.playback.sourceTracksParams[track.sourceTrackEditing].offset
+      isSTEditing && track.playback.sourceTracksParams[track.sourceTrackEditing].offset,
+    chunks = useMemo(() => track.playback.chunks, [sample])
 
   useEffect(() => {
     ctxt.current = canvasRef.current.getContext('2d')
@@ -106,7 +107,7 @@ export default function useWaveformCanvas(
     if (impulses) drawImpulses(drawContext, impulses)
 
     drawGutter(drawContext)
-    drawPlayback(drawContext, track)
+    drawPlayback(drawContext, track, chunks)
     drawCues(drawContext, track)
     drawBounds(drawContext, source.bounds, track.editing)
     drawDrag(drawContext)
@@ -291,7 +292,7 @@ export function drawCues(context: DrawingContext, track: Types.Track) {
   }
 }
 
-export function drawPlayback(context: DrawingContext, track: Types.Track) {
+export function drawPlayback(context: DrawingContext, track: Types.Track, chunks: number[]) {
   const {
       pheight,
       scale,
@@ -305,7 +306,7 @@ export function drawPlayback(context: DrawingContext, track: Types.Track) {
       color,
     } = context,
     playing = track.playback.playing,
-    [chunksStartX, chunksEndX] = getChunkEdges(track.playback.chunks, context)
+    [chunksStartX, chunksEndX] = getChunkEdges(chunks, context)
 
   /* cursor shadow */
   let px = playLocked && scroll ? pwidth / 2 : (sample - start) / scale
