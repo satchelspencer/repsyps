@@ -275,7 +275,7 @@ int paCallbackMethod(
       if(committedStep){
         mixTrack->playback->chunkIndex = 
           (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
-        if(mixTrack->playback->aperiodic) mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
+        mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
         if(mixTrack->hasNext && (mixTrack->playback->chunkIndex == 0 || mixTrack->playback->nextAtChunk)){
           applyNextPlayback(mixTrackPair.first, state);
           mixTrack->playback->chunkIndex = 0;

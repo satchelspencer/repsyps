@@ -14,7 +14,6 @@ import {
 } from '../defaults'
 import { updateSceneIndex } from './scenes'
 
-
 function setControlGroup(
   state: Types.State,
   controlGroup: Partial<Types.ControlGroup>,
@@ -56,7 +55,8 @@ export function getDefaultBindingType(control: Types.Control): Types.BindingType
   return 'cueIndex' in control ||
     'cueStep' in control ||
     'loop' in control ||
-    'sync' in control
+    'sync' in control ||
+    'periodDelta' in control
     ? 'note'
     : 'value'
 }

@@ -36,6 +36,8 @@ export const setRecording = createAction<Partial<Types.Recording>>('SET_RECORDIN
 
 export const updatePlayback = createAction<Partial<Types.Playback>>('UPDATE_PLAYBACK')
 
+export const incrementPeriod = createAction<number>('INC_PERIOD')
+
 export const stopAll = createAction<void>('STOP_ALL')
 
 export const setOutputs = createAction<Partial<Types.OutputState>>('SET_OUTPUTS')
@@ -373,6 +375,8 @@ export function getApplyControlGroupActions(
       )
     } else if ('sync' in control && risingEdge) {
       actions.push(setTrackSync({ trackIndex: control.trackIndex, sync: control.sync }))
+    } else if ('periodDelta' in control && risingEdge) {
+      actions.push(incrementPeriod(control.periodDelta))
     }
   })
   return actions

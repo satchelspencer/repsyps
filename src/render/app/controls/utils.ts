@@ -55,6 +55,7 @@ export function getControlName(control: Types.Control) {
       : control.relativeSceneIndex === -1
       ? 'Prev Scene'
       : `Scene ${control.relativeSceneIndex < 0 ? '-' : ''}${control.relativeSceneIndex}`
+  else if ('periodDelta' in control) return `Speed ${control.periodDelta < 0 ? 'Up': 'Down'}`
   else return '???'
 }
 
@@ -68,5 +69,6 @@ export function getIcon(control: Types.Control): string {
   else if ('loop' in control) return 'loop'
   else if ('sync' in control) return 'av-timer'
   else if ('relativeSceneIndex' in control) return 'volume'
+  else if ('periodDelta' in control) return 'timer'
   else return null
 }

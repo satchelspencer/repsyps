@@ -244,6 +244,15 @@ export default createReducer(defaultState, (handle) => [
       },
     }
   }),
+  handle(Actions.incrementPeriod, (state, {payload: diff}) => {
+    return {
+      ...state,
+      playback: {
+        ...state.playback,
+        period: state.playback.period + diff,
+      },
+    }
+  }),
   handle(Actions.setOutputs, (state, { payload: newOutputs }) => {
     return {
       ...state,

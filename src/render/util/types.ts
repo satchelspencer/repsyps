@@ -212,6 +212,10 @@ export interface SceneVolumeControl extends ControlMapping {
   relativeSceneIndex: number
 }
 
+export interface IncrementPeriodControl extends ControlMapping{
+  periodDelta: number
+}
+
 export interface GlobalValueControl extends ControlMapping {
   globalProp: GlobalValueProp
 }
@@ -225,6 +229,7 @@ export type Control =
   | TrackValueControl
   | GlobalValueControl
   | SceneVolumeControl
+  | IncrementPeriodControl
 
 export interface ControlGroup {
   name?: string

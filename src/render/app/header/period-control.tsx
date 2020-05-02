@@ -1,6 +1,6 @@
 import React, { useCallback, memo } from 'react'
 import * as _ from 'lodash'
-import ctyled from 'ctyled'
+import ctyled, { active } from 'ctyled'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
@@ -14,14 +14,14 @@ import { adder } from 'render/components/control-adder'
 import PhaseDisplay from './phase-display'
 import { useTiming } from 'render/components/timing'
 
-const PeriodWrapper = adder(
-  ctyled.div.styles({
-    align: 'center',
-    gutter: 2,
-    padd: 2,
-    flex: 1.5,
-  })
-)
+const PeriodWrapper = ctyled.div.styles({
+  align: 'center',
+  gutter: 2,
+  padd: 2,
+  flex: 1.5,
+})
+
+const PeriodSliderWrapper = adder(SliderWrapper)
 
 const PhaseDisplayContainer = () => {
   const time = useTiming().time
@@ -29,10 +29,29 @@ const PhaseDisplayContainer = () => {
 }
 
 const PeriodValue = Value.styles({
-  width: 6,
-})
+  width: 9,
+  justify: 'space-between',
+  padd: 0,
+  height: 1.8,
+  align: 'center',
+}).extend`overflow:hidden;`
 
-const periodParams = { globalProp: 'period' }
+const IncButton = adder(ctyled.div.class(active).styles({
+  bg: true,
+  align: 'center',
+  hover: 0.5
+}).extend`
+  padding:${({ size }) => size / 8}px;
+  margin:-${({ size }) => size / 8}px;
+  cursor:pointer;
+  height:100%;
+`)
+
+const INC_SIZE = RATE * 0.01
+
+const periodParams = { globalProp: 'period' },
+  upIncParams = { periodDelta: -INC_SIZE },
+  downIncParams = { periodDelta: INC_SIZE }
 
 const PeriodControl = memo(() => {
   const period = useSelector((state) => state.playback.period),
@@ -41,14 +60,24 @@ const PeriodControl = memo(() => {
       (v) =>
         dispatch(Actions.updatePlayback({ period: mappings.period.fromStandard(v) })),
       []
-    )
+    ),
+    handleUp = useCallback(() => dispatch(Actions.incrementPeriod(-INC_SIZE)), []),
+    handleDown = useCallback(() => dispatch(Actions.incrementPeriod(INC_SIZE)), [])
   return (
-    <PeriodWrapper params={periodParams}>
+    <PeriodWrapper>
       <Icon scale={1.2} name="timer" />
-      <SliderWrapper>
+      <PeriodSliderWrapper params={periodParams}>
         <Slider value={mappings.period.toStandard(period)} onChange={handleChange} />
-      </SliderWrapper>
-      <PeriodValue>{_.round(60 / (period / RATE), 2) + '/m'}</PeriodValue>
+      </PeriodSliderWrapper>
+      <PeriodValue>
+        <IncButton params={downIncParams} onClick={handleDown}>
+          <Icon scale={1.2} asButton name="caret-left" />
+        </IncButton>
+        {_.round(60 / (period / RATE), 2) + '/m'}
+        <IncButton params={upIncParams} onClick={handleUp}>
+          <Icon scale={1.2} asButton name="caret-right" />
+        </IncButton>
+      </PeriodValue>
       <PhaseDisplayContainer />
     </PeriodWrapper>
   )
