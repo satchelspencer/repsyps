@@ -212,7 +212,7 @@ export interface SceneVolumeControl extends ControlMapping {
   relativeSceneIndex: number
 }
 
-export interface IncrementPeriodControl extends ControlMapping{
+export interface IncrementPeriodControl extends ControlMapping {
   periodDelta: number
 }
 
@@ -306,6 +306,7 @@ export interface Live {
   tracks: Tracks
   bindings: Bindings
   controlPresets: ControlPresets
+  globalControls: Controls
   defaultPresetId: string
   controlsEnabled: boolean
   selectedPosition: Position
@@ -314,12 +315,14 @@ export interface Live {
 export interface LocalPersistentLive {
   bindings: Bindings
   controlPresets: ControlPresets
+  globalControls: Controls
   defaultPresetId: string
 }
 
 export interface BindingsFile {
   bindings: Bindings
   controlPresets: ControlPresets
+  globalControls: Controls
   defaultPresetId: string
 }
 

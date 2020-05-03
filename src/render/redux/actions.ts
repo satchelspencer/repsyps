@@ -6,6 +6,7 @@ import pathUtils from 'path'
 import * as Types from 'render/util/types'
 import mappings from 'render/util/mappings'
 import { getId } from 'render/util/uid'
+import { bool } from 'prop-types'
 
 function createAction<Payload>(name) {
   return createActionCreator(name, (res) => (payload: Payload) => res(payload))
@@ -269,6 +270,11 @@ export const moveControlGroup = createAction<{
   src: Types.Position
   dest: Types.Position
 }>('MOVE_CONTROL_GROUP')
+
+export const setControlPosGlobal = createAction<{
+  position?: Types.Position
+  global: boolean
+}>('SET_CONTROL_POS_GLOBAL')
 
 export const setInitValue = createAction<{
   position: Types.Position

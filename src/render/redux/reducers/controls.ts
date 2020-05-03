@@ -14,6 +14,22 @@ import {
 } from '../defaults'
 import { updateSceneIndex } from './scenes'
 
+function setGroup(
+  grid: Types.Grid<Types.ControlGroup>,
+  group: Partial<Types.ControlGroup>,
+  posStr: string
+) {
+  return group
+    ? {
+        ...grid,
+        [posStr]: {
+          ...(grid[posStr] || defaultControlGroup),
+          ...group,
+        },
+      }
+    : _.omit(grid, posStr)
+}
+
 function setControlGroup(
   state: Types.State,
   controlGroup: Partial<Types.ControlGroup>,
@@ -22,27 +38,28 @@ function setControlGroup(
   const position = pposition || state.live.selectedPosition
   if (!position) return state
 
-  const posStr = Selectors.pos2str(position)
+  const posStr = Selectors.pos2str(position),
+    isGlobal = !!state.live.globalControls[posStr]
+
   return {
     ...state,
     live: {
       ...state.live,
+      globalControls: isGlobal
+        ? setGroup(state.live.globalControls, controlGroup, posStr)
+        : state.live.globalControls,
       scenes: state.live.scenes.map((scene, sceneIndex) => {
         if (sceneIndex !== state.live.sceneIndex) return scene
         else {
-          const newControlGroup = {
-            ...(scene.controls[posStr] || defaultControlGroup),
-            ...controlGroup,
-          }
           return {
             ...scene,
-            controls: {
-              ...scene.controls,
-              [posStr]: newControlGroup,
-            },
+            controls: isGlobal
+              ? scene.controls
+              : setGroup(scene.controls, controlGroup, posStr),
             controlValues: {
               ...scene.controlValues,
-              [posStr]: controlGroup.absolute ? scene.controlValues[posStr] : 1,
+              [posStr]:
+                controlGroup && controlGroup.absolute ? scene.controlValues[posStr] : 1,
             },
           }
         }
@@ -68,7 +85,8 @@ export default createReducer(defaultState, (handle) => [
   handle(Actions.addControlToGroup, (state, { payload }) => {
     const position = payload.position || state.live.selectedPosition,
       posStr = Selectors.pos2str(position),
-      selectedControlGroup = state.live.scenes[state.live.sceneIndex].controls[posStr],
+      controls = Selectors.getControls(state),
+      selectedControlGroup = controls[posStr],
       currentControls = selectedControlGroup ? selectedControlGroup.controls : [],
       currentType = selectedControlGroup && selectedControlGroup.bindingType,
       type = currentType || getDefaultBindingType(payload.control)
@@ -104,30 +122,14 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.moveControlGroup, (state, { payload }) => {
-    return {
-      ...state,
-      live: {
-        ...state.live,
-        scenes: state.live.scenes.map((scene, sceneIndex) => {
-          if (sceneIndex !== state.live.sceneIndex) return scene
-          else {
-            const srcStr = Selectors.pos2str(payload.src),
-              destStr = Selectors.pos2str(payload.dest)
-            return {
-              ...scene,
-              controls: _.pickBy(
-                {
-                  ...scene.controls,
-                  [srcStr]: scene.controls[destStr],
-                  [destStr]: scene.controls[srcStr],
-                },
-                (a) => a
-              ),
-            }
-          }
-        }),
-      },
-    }
+    const controls = Selectors.getControls(state),
+      srcStr = Selectors.pos2str(payload.src),
+      destStr = Selectors.pos2str(payload.dest)
+
+    let newState = state
+    newState = setControlGroup(newState, controls[srcStr], payload.dest)
+    newState = setControlGroup(newState, controls[destStr], payload.src)
+    return newState
   }),
   handle(Actions.setInitValue, (state, { payload }) => {
     return {
@@ -146,6 +148,42 @@ export default createReducer(defaultState, (handle) => [
             }
         }),
       },
+    }
+  }),
+  handle(Actions.setControlPosGlobal, (state, { payload }) => {
+    const position = payload.position || state.live.selectedPosition,
+      posStr = Selectors.pos2str(position),
+      isGlobal = !!state.live.globalControls[posStr],
+      controls = Selectors.getControls(state),
+      control = controls[posStr]
+
+    if (isGlobal === payload.global) return state
+    else {
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          globalControls: payload.global
+            ? {
+                ...state.live.globalControls,
+                [posStr]: control,
+              }
+            : _.omit(state.live.globalControls, posStr),
+          scenes: state.live.scenes.map((scene, sceneIndex) => {
+            if (sceneIndex !== state.live.sceneIndex) return scene
+            else
+              return {
+                ...scene,
+                controls: payload.global
+                  ? _.omit(scene.controls, posStr)
+                  : {
+                      ...scene.controls,
+                      [posStr]: control,
+                    },
+              }
+          }),
+        },
+      }
     }
   }),
   handle(Actions.zeroInitValues, (state) => {
@@ -179,24 +217,11 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.deleteControlGroup, (state, { payload }) => {
-    const position = payload || state.live.selectedPosition,
-      posStr = Selectors.pos2str(position)
-    return {
-      ...state,
-      live: {
-        ...state.live,
-        scenes: state.live.scenes.map((scene, sceneIndex) => {
-          if (sceneIndex !== state.live.sceneIndex) return scene
-          else
-            return {
-              ...scene,
-              controls: _.omit(scene.controls, posStr),
-            }
-        }),
-      },
-    }
+    const position = payload || state.live.selectedPosition
+    return setControlGroup(state, null, position)
   }),
   handle(Actions.addControlPreset, (state, { payload }) => {
+    //only uses per-scene controls
     return {
       ...state,
       live: {
@@ -307,6 +332,7 @@ export default createReducer(defaultState, (handle) => [
         ...state.live,
         bindings: defaultBindings,
         controlPresets: defaultControlPresets,
+        globalControls: {},
       },
     }
   }),

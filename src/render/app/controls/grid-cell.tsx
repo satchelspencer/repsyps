@@ -7,6 +7,7 @@ import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 import * as Types from 'render/util/types'
 
+import Icon from 'render/components/icon'
 import { midiName, getControlName } from './utils'
 import Knob from './knob'
 import Pad from './pad'
@@ -20,6 +21,11 @@ const CellMidi = ctyled.div.class(inline).styles({
   position:absolute;
   top:0;
   right:0;
+`
+
+const CellTL = CellMidi.extend`
+  left: 0;
+  right: initial;
 `
 
 const CellLabel = ctyled.div.styles({
@@ -44,6 +50,9 @@ const GridCell = memo((props: GridCellProps) => {
     getControlAbsValue = useMemo(() => Selectors.makeGetControlAbsValue(), []),
     getBindingAtPos = useMemo(() => Selectors.makeGetBindingAtPos(), []),
     [control, value] = useSelector((state) => getControlAtPos(state, position)),
+    isGlobal = useSelector(
+      (state) => !!Selectors.getByPos(state.live.globalControls, position)
+    ),
     absValue = useSelector((state) =>
       getControlAbsValue(state, control && control.controls[0])
     ),
@@ -63,6 +72,11 @@ const GridCell = memo((props: GridCellProps) => {
   return (
     <>
       {binding && binding.midi !== null && <CellMidi>{midiName(binding.midi)}</CellMidi>}
+      {isGlobal && (
+        <CellTL>
+          <Icon name="lock" />
+        </CellTL>
+      )}
       {control && control.bindingType === 'value' && (
         <>
           <Knob

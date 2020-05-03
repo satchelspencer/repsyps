@@ -25,11 +25,15 @@ export function updateSceneIndex(
       prevActive = Selectors.getActiveTrackIdsFromLive(state.live, state.live.sceneIndex),
       nextActive = Selectors.getActiveTrackIdsFromLive(state.live, sceneIndex),
       noLongerActive = _.difference(prevActive, nextActive),
-      controls = scene.controls,
+      controls = Selectors.getControlsFromSceneIndex(state.live, sceneIndex),
       controlValues = Selectors.getCurrentControlValues(state),
       prevScene = state.live.scenes[sceneIndex - 1],
-      lastOfPrevId = prevScene && _.last(prevScene.trackIds),
-      lastIsPlaying = lastOfPrevId && state.live.tracks[lastOfPrevId].playback.playing,
+      lastIsPlaying =
+        prevScene &&
+        _.some(
+          prevScene.trackIds,
+          (trackId) => state.live.tracks[trackId].playback.playing
+        ),
       firstTrack = scene.trackIds[0] && state.live.tracks[scene.trackIds[0]],
       resetPeriod =
         firstTrack &&

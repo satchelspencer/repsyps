@@ -47,7 +47,10 @@ export function getActiveTrackIds(state: Types.State, sceneIndex?: number): stri
 }
 
 export function getControlsFromSceneIndex(live: Types.Live, sceneIndex: number) {
-  return (live.scenes[sceneIndex] && live.scenes[sceneIndex].controls) || {}
+  return {
+    ...((live.scenes[sceneIndex] && live.scenes[sceneIndex].controls) || {}),
+    ...live.globalControls,
+  }
 }
 
 export const getControls = createSelector([getLive], (live) => {
@@ -206,7 +209,7 @@ function applyControlsToPlayback(
       defValue = defaultValue(values[posStr]),
       value = Math.pow(initValue > 0.5 ? defValue : 1 - defValue, 1 / 1.6)
 
-    if (!controlGroup.absolute)
+    if (controlGroup && !controlGroup.absolute)
       controlGroup.controls.forEach((control) => {
         const controlValue = control.invert ? 1 - value : value
         if ('trackIndex' in control && control.trackIndex === trackIndex) {
@@ -358,7 +361,7 @@ export const getGlobalPlayback = createSelector(
         defValue = defaultValue(values[posStr]),
         value = initValue > 0.5 ? defValue : 1 - defValue
 
-      if (!controlGroup.absolute)
+      if (controlGroup && !controlGroup.absolute)
         controlGroup.controls.forEach((control) => {
           const controlValue = control.invert ? 1 - value : value
           if ('globalProp' in control) {
@@ -397,12 +400,14 @@ export const getBindings = createSelector(
     (state: Types.State) => state.live.bindings,
     (state: Types.State) => state.live.controlPresets,
     (state: Types.State) => state.live.defaultPresetId,
+    (state: Types.State) => state.live.globalControls,
   ],
-  (bindings, controlPresets, defaultPresetId) => {
+  (bindings, controlPresets, defaultPresetId, globalControls): Types.BindingsFile => {
     return {
       bindings,
       controlPresets,
       defaultPresetId,
+      globalControls,
     }
   }
 )
@@ -527,12 +532,19 @@ export const getLocalPersistentLive = createSelector(
     (state: Types.State) => state.live.bindings,
     (state: Types.State) => state.live.controlPresets,
     (state: Types.State) => state.live.defaultPresetId,
+    (state: Types.State) => state.live.globalControls,
   ],
-  (bindings, controlPresets, defaultPresetId): Types.LocalPersistentLive => {
+  (
+    bindings,
+    controlPresets,
+    defaultPresetId,
+    globalControls
+  ): Types.LocalPersistentLive => {
     return {
       bindings,
       controlPresets,
       defaultPresetId,
+      globalControls,
     }
   }
 )
@@ -550,7 +562,7 @@ export const getLocalPersistentState = createSelector(
       settings,
       output: {
         current: output.current,
-        preview: output.preview
+        preview: output.preview,
       },
       live,
     }

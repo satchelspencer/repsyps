@@ -112,6 +112,9 @@ function PositionDetail(props: ControlDetailProps) {
     selectedBinding = useSelector((state) =>
       Selectors.getByPos(state.live.bindings, props.position)
     ),
+    isGlobal = useSelector(
+      (state) => !!Selectors.getByPos(state.live.globalControls, props.position)
+    ),
     dispatch = useDispatch()
 
   const { getSelection, isSelecting } = useSelection<Types.Control>('control'),
@@ -185,13 +188,24 @@ function PositionDetail(props: ControlDetailProps) {
       const control = await getSelection()
       if (!control) return
       dispatch(Actions.addControlToGroup({ control }))
-    }, [])
+    }, []),
+    toggleGlobal = useCallback(() => {
+      dispatch(
+        Actions.setControlPosGlobal({
+          position: props.position,
+          global: !isGlobal,
+        })
+      )
+    }, [isGlobal, props.position])
 
   return (
     <ControlInspector>
       {props.position && (
         <>
           <MidiWrapper>
+            <ControlBloc compact onClick={toggleGlobal}>
+              <Icon scale={1.1} name={isGlobal ? 'lock' : 'lock-open'} />
+            </ControlBloc>
             <FillButton onClick={addMidiBinding}>
               {shouldStartWaiting ? (
                 <>

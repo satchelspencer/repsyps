@@ -20,7 +20,7 @@ export const defaultPlayback: Types.Playback = {
     sourceTracksParams: {},
     unpause: false,
     preservePitch: false,
-    preview: false
+    preview: false,
   },
   defaultTrack: Types.Track = {
     visibleSourceTrack: null,
@@ -58,6 +58,7 @@ export const defaultPlayback: Types.Playback = {
     defaultPresetId: null,
     controlsEnabled: true,
     selectedPosition: { x: 0, y: 0 },
+    globalControls: {},
   },
   defaultSource: Types.Source = {
     name: '',
@@ -95,7 +96,7 @@ export const defaultPlayback: Types.Playback = {
     default: 1,
     current: 1,
     devices: [],
-    preview: null
+    preview: null,
   },
   defaultState: Types.State = {
     save: defaultSave,

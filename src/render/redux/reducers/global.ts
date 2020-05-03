@@ -50,6 +50,7 @@ export default createReducer(defaultState, (handle) => [
         ...defaultState.live,
         bindings: state.live.bindings,
         controlPresets: state.live.controlPresets,
+        globalControls: state.live.globalControls,
       },
       settings: state.settings,
       output: state.output,
@@ -244,7 +245,7 @@ export default createReducer(defaultState, (handle) => [
       },
     }
   }),
-  handle(Actions.incrementPeriod, (state, {payload: diff}) => {
+  handle(Actions.incrementPeriod, (state, { payload: diff }) => {
     return {
       ...state,
       playback: {

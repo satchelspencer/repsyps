@@ -13,6 +13,7 @@ import ctyled, { CtyledContext } from 'ctyled'
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
+import * as Selectors from 'render/redux/selectors'
 
 import useMeasure from 'render/components/measure'
 import GridCell from './grid-cell'
@@ -41,7 +42,7 @@ const GridInner = ctyled.div.styles({
 const GridRow = ctyled.div.styles({})
 
 const GridCellWrapper = ctyled.div
-  .attrs({ selected: false, exited: false, cellSize: 0 })
+  .attrs({ selected: false, exited: false, cellSize: 0, isGlobal: false })
   .styles({
     align: 'center',
     justify: 'center',
@@ -54,7 +55,9 @@ const GridCellWrapper = ctyled.div
   &:not(:last-child){
     border-right:1px dashed ${({ color }) => color.bq};
   }
-  ${(_, { selected }) => selected && `background:#ff00000d;`}
+  ${({ color }, { isGlobal }) => isGlobal && `background:${color.nudge(0.085).bg};`}
+  ${(_, { selected, isGlobal }) =>
+    selected && `background:${isGlobal ? '#ff000021' : '#ff00000d'};`}
   &:hover{
     background:${({ color }, { selected, exited }) =>
       exited ? 'inherit' : selected ? '#ff00000d' : color.nudge(0.05).bg};
@@ -85,7 +88,10 @@ interface CellWrapperProps {
 function CellWrapper(props: CellWrapperProps) {
   const dispatch = useDispatch(),
     pos = useMemo<Types.Position>(() => ({ x: props.x, y: props.y }), [props.x, props.y]),
-    isSelected = isEqual(pos, props.selected)
+    isSelected = isEqual(pos, props.selected),
+    isGlobal = useSelector(
+      (state) => !!Selectors.getByPos(state.live.globalControls, pos)
+    )
 
   const handleMouseDown = useCallback(() => {
       props.setSelected(pos)
@@ -116,6 +122,7 @@ function CellWrapper(props: CellWrapperProps) {
       onMouseLeave={handleMouseLeave}
       onMouseUp={handleMouseUp}
       cellSize={props.cellSize}
+      isGlobal={isGlobal}
     >
       <GridCell x={props.x} y={props.y} />
     </GridCellWrapper>

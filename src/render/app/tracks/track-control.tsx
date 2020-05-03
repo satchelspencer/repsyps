@@ -9,6 +9,7 @@ import * as Selectors from 'render/redux/selectors'
 import { RATE } from 'render/util/audio'
 
 import Icon from 'render/components/icon'
+import { adder } from 'render/components/control-adder'
 
 const TrackControlsWrapper = ctyled.div.styles({
   width: 15,
@@ -38,7 +39,7 @@ const TrackControlsBody = ctyled.div.styles({
   left:${({ size }) => size * 1}px;
 `
 
-const TrackHeader = ctyled.div.styles({
+const TrackHeader = adder(ctyled.div.styles({
   color: (c) => c.nudge(0.1),
   padd: 1,
   size: (s) => s * 0.9,
@@ -48,7 +49,7 @@ const TrackHeader = ctyled.div.styles({
   bg: true,
 }).extend`
   padding-right:${({ size }) => size / 1.8}px;
-`
+`)
 
 const TrackTitleWrapper = ctyled.div.styles({
   flex: 1,
@@ -160,7 +161,14 @@ function TrackControls(props: TrackControlsProps) {
     hasPreview = useSelector((state) => state.output.preview !== null),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
-    dispatch = useDispatch()
+    dispatch = useDispatch(),
+    volumeControlParams = useMemo(
+      () => ({
+        trackIndex,
+        trackProp: 'volume',
+      }),
+      [trackIndex]
+    )
 
   const barLen =
       track.playback.chunkIndex === -1
@@ -242,7 +250,7 @@ function TrackControls(props: TrackControlsProps) {
     <TrackControlsWrapper>
       <TrackHandle selected={track.selected} />
       <TrackControlsBody>
-        <TrackHeader>
+        <TrackHeader params={volumeControlParams}>
           <TrackTitleWrapper>
             <TrackTitle>{source.name}</TrackTitle>
           </TrackTitleWrapper>
