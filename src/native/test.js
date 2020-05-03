@@ -49,7 +49,7 @@ const tests = {
     audio.init('./')
     await audio.loadSource(source, 'mysource')
     console.log('separating...')
-    audio.separateSource('mysource')
+    await audio.separateSource('mysource')
 
     audio.setMixTrack('mytrack', {
       playback: {

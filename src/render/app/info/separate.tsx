@@ -1,10 +1,11 @@
-import React, { memo, useCallback } from 'react'
+import React, { memo, useState, useCallback } from 'react'
 import * as _ from 'lodash'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import separate from 'render/util/separate'
 
 import Icon from 'render/components/icon'
+import Spinner from 'render/components/spinner'
 import { HeaderContent, FillButton } from 'render/components/misc'
 
 import SidebarItem from 'render/components/item'
@@ -14,12 +15,14 @@ export interface SeparateProps {
 }
 
 const Separate = memo((props: SeparateProps) => {
-  const name = useSelector(state => state.sources[props.trackId].name),
+  const name = useSelector((state) => state.sources[props.trackId].name),
     dispatch = useDispatch(),
-    handleSeparate = useCallback(() => separate(name, props.trackId, dispatch), [
-      props.trackId,
-      name,
-    ])
+    [loading, setLoading] = useState(false),
+    handleSeparate = useCallback(async () => {
+      setLoading(true)
+      await separate(name, props.trackId, dispatch)
+      setLoading(false)
+    }, [props.trackId, name])
 
   return (
     <SidebarItem
@@ -29,7 +32,16 @@ const Separate = memo((props: SeparateProps) => {
             <Icon name="cut" scale={1.1} />
             <span>&nbsp;Track Separation</span>
           </HeaderContent>
-          <FillButton onClick={handleSeparate}>Separate</FillButton>
+          <FillButton disabled={loading} onClick={handleSeparate}>
+            {!loading ? (
+              'Separate'
+            ) : (
+              <>
+                <Spinner />
+                &nbsp;Separating...
+              </>
+            )}
+          </FillButton>
         </>
       }
     />

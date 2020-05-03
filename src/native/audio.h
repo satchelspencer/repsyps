@@ -28,7 +28,7 @@ Napi::Value removeSource(const Napi::CallbackInfo &info);
 void setMixTrack(const Napi::CallbackInfo &info);
 Napi::Value removeMixTrack(const Napi::CallbackInfo &info);
 Napi::Value getTiming(const Napi::CallbackInfo &info);
-void separateSource(const Napi::CallbackInfo &info);
+Napi::Value separateSource(const Napi::CallbackInfo &info);
 void getWaveform(const Napi::CallbackInfo &info);
 Napi::Value getImpulses(const Napi::CallbackInfo &info);
 Napi::Value loadSource(const Napi::CallbackInfo &info);

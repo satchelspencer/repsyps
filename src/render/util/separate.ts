@@ -25,7 +25,7 @@ export default async function separate(
     await audio.loadSource(vocalCachePath, trackId + '_vocal')
     await audio.loadSource(instruCachePath, trackId + '_instru')
   } else {
-    audio.separateSource(trackId)
+    await audio.separateSource(trackId)
     audio.exportSource(vocalCachePath, trackId + '_vocal')
     audio.exportSource(instruCachePath, trackId + '_instru')
   }

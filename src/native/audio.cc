@@ -472,37 +472,69 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
   return timings;
 }
 
-void separateSource(const Napi::CallbackInfo &info){
+class SeparateWorker : public Napi::AsyncWorker {
+  public:
+    SeparateWorker(
+      Napi::Env &env,
+      std::string sourceId
+    ): Napi::AsyncWorker(env),
+       deferred(Napi::Promise::Deferred::New(env)),
+       sourceId(sourceId){}
+
+    ~SeparateWorker() {}
+    void Execute() { 
+      int sourceLen = state.sources[sourceId]->length;
+      for(uint32_t i=0;i<(uint32_t)CHANNEL_COUNT;i++){
+        for(int j=0;j<2;j++){
+          float* outBuff = new float[sourceLen];
+          outChannels.push_back(outBuff);
+        }
+      }
+
+      separate(state.sources[sourceId]->channels, outChannels, sourceLen);
+    }
+    void OnOK() {
+      Napi::Env env = Env();
+      Napi::HandleScope scope(env);
+
+      int sourceLen = state.sources[sourceId]->length;
+      for(int j=0;j<2;j++){
+        std::string sourceTrackId = sourceId + (j > 0?"_instru":"_vocal");
+        source * newSource = new source{};
+        newSource->length = sourceLen;
+        newSource->removed = false;
+        newSource->safe = false;
+        newSource->data = NULL;
+
+        for(unsigned int i=0;i<(unsigned int)CHANNEL_COUNT;i++){
+          newSource->channels.push_back(outChannels[j*2 + i]);
+          newSource->pvStates.push_back(allocatePvState());
+        }
+        state.sources[sourceTrackId] = newSource;
+      }
+
+      deferred.Resolve(Napi::Boolean::New(env, true));
+    }
+    void OnError(Napi::Error const &error) {
+      deferred.Reject(error.Value());
+    }
+    Napi::Promise GetPromise() {
+      return deferred.Promise();
+    }
+  private:
+    Napi::Promise::Deferred deferred;
+    std::string sourceId;
+    std::vector<float*> outChannels;
+};
+
+Napi::Value separateSource(const Napi::CallbackInfo &info){
+  Napi::Env env = info.Env();
   std::string sourceId = info[0].As<Napi::String>().Utf8Value();
-  int sourceLen = state.sources[sourceId]->length;
 
-  std::vector<float*> outChannels;
-  int sepCount = 2;
-  unsigned int channelCount = state.sources[sourceId]->channels.size();
-
-  for(uint32_t i=0;i<channelCount;i++){
-    for(int j=0;j<sepCount;j++){
-      float* outBuff = new float[sourceLen];
-      outChannels.push_back(outBuff);
-    }
-  }
-
-  separate(state.sources[sourceId]->channels, outChannels, sourceLen);
-
-  for(int j=0;j<sepCount;j++){
-    std::string sourceTrackId = sourceId + (j > 0?"_instru":"_vocal");
-    source * newSource = new source{};
-    newSource->length = sourceLen;
-    newSource->removed = false;
-    newSource->safe = false;
-    newSource->data = NULL;
-
-    for(unsigned int i=0;i<channelCount;i++){
-      newSource->channels.push_back(outChannels[j*sepCount + i]);
-      newSource->pvStates.push_back(allocatePvState());
-    }
-    state.sources[sourceTrackId] = newSource;
-  }
+  SeparateWorker* separateWorker = new SeparateWorker(env, sourceId);
+  auto promise = separateWorker->GetPromise();
+  separateWorker->Queue();
+  return promise;
 }
 
 void getWaveform(const Napi::CallbackInfo &info){
