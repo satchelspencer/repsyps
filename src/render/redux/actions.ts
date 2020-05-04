@@ -442,4 +442,5 @@ export const loadScenes = createAction<{
   insertIndex: number
   state: Types.PersistentState
   fromPath: string
+  tracksOnly: boolean
 }>('LOAD_SCENES')

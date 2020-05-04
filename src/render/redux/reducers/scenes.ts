@@ -262,9 +262,21 @@ export default createReducer(defaultState, (handle) => [
       prevScene = state.live.scenes[payload.insertIndex - 1]
 
     /* if prev scene is empty replace it */
-    if (prevScene && !prevScene.trackIds.length)
-      newScenes.splice(payload.insertIndex - 1, 1, ...mappedState.live.scenes)
-    else newScenes.splice(payload.insertIndex, 0, ...mappedState.live.scenes)
+    if (payload.tracksOnly) {
+      const scene = newScenes[payload.insertIndex]
+
+      newScenes.splice(payload.insertIndex, 1, {
+        ...scene,
+        trackIds: [
+          ...scene.trackIds,
+          ..._.flatMap(mappedState.live.scenes, (scene) => scene.trackIds),
+        ],
+      })
+    } else {
+      if (prevScene && !prevScene.trackIds.length)
+        newScenes.splice(payload.insertIndex - 1, 1, ...mappedState.live.scenes)
+      else newScenes.splice(payload.insertIndex, 0, ...mappedState.live.scenes)
+    }
 
     return {
       ...state,

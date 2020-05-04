@@ -1,5 +1,5 @@
 import React, { useMemo, useContext, useCallback } from 'react'
-import ctyled, { CtyledContext } from 'ctyled'
+import  { CtyledContext } from 'ctyled'
 
 import * as Types from 'render/util/types'
 import { useSelectable } from 'render/components/selection'
@@ -39,6 +39,7 @@ export function adder<P>(Component: CtyledComponent<any, P>) {
       }, [isSelecting, ctyle]),
       handleClick = useCallback(
         (e) => {
+          e.preventDefault()
           if (isSelecting && !props.noSelect) onSelect({
             ...params,
             invert: e.shiftKey

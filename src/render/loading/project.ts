@@ -62,12 +62,18 @@ export function loadProject(path: string, store: Store<Types.State>) {
 export function loadProjectScenes(
   path: string,
   insertIndex: number,
-  store: Store<Types.State>
+  store: Store<Types.State>,
+  tracksOnly?: boolean
 ) {
   const state = getPropjectFromFile(path)
   if (state) {
     store.dispatch(
-      Actions.loadScenes({ state, insertIndex, fromPath: pathUtils.dirname(path) })
+      Actions.loadScenes({
+        state,
+        insertIndex,
+        fromPath: pathUtils.dirname(path),
+        tracksOnly: !!tracksOnly,
+      })
     )
   }
 }

@@ -86,6 +86,12 @@ export default function init() {
             const path = showOpenDialog({
               defaultPath: getPath('library'),
               buttonLabel: 'Open Project',
+              filters: [
+                {
+                  name: 'Repsyps Project',
+                  extensions: ['syp'],
+                },
+              ],
             })
             if (path && path[0]) loadProject(path[0], store)
           },
@@ -167,7 +173,9 @@ export default function init() {
               paths.forEach((path) => {
                 if (pathUtils.extname(path) === '.syp') {
                   loadProjectScenes(path, menuState.sceneIndex + 1, store)
-                } else dispatch(Actions.addTrackAndSource(path))
+                } else if (pathUtils.extname(path) === '.rbind')
+                  loadBindings(path[0], store)
+                else dispatch(Actions.addTrackAndSource(path))
               })
           },
           accelerator: 'CmdOrCtrl+I',
@@ -284,15 +292,14 @@ export default function init() {
           },
           accelerator: 'CmdOrCtrl+Alt+N',
         },
-        importSceneNext: {
+        importSceneTracks: {
           click: () => {
             const path = showOpenDialog({
               defaultPath: getPath('library'),
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
-              buttonLabel: 'Import Next',
+              buttonLabel: 'Import Before',
             })
-            if (path && path[0])
-              loadProjectScenes(path[0], menuState.sceneIndex + 1, store)
+            if (path && path[0]) loadProjectScenes(path[0], menuState.sceneIndex, store, true)
           },
           accelerator: 'CmdOrCtrl+Shift+I',
         },
@@ -793,7 +800,11 @@ export default function init() {
             { type: 'separator' },
             {
               label: 'Import Scene Next',
-              ...menuCommands.importSceneNext,
+              ...menuCommands.import,
+            },
+            {
+              label: 'Import Tracks to Scene',
+              ...menuCommands.importSceneTracks,
             },
             {
               label: 'Import Scene Before',
