@@ -55,7 +55,12 @@ export function getControlName(control: Types.Control) {
       : control.relativeSceneIndex === -1
       ? 'Prev Scene'
       : `Scene ${control.relativeSceneIndex < 0 ? '-' : ''}${control.relativeSceneIndex}`
-  else if ('periodDelta' in control) return `Speed ${control.periodDelta < 0 ? 'Up': 'Down'}`
+  else if ('periodDelta' in control)
+    return `Speed ${control.periodDelta < 0 ? 'Up' : 'Down'}`
+  else if ('trackStep' in control)
+    return control.trackStep > 0 ? 'Next Track' : 'Prev Track'
+  else if ('sceneStep' in control)
+    return control.sceneStep > 0 ? 'Next Scene' : 'Prev Scene'
   else return '???'
 }
 
@@ -70,5 +75,7 @@ export function getIcon(control: Types.Control): string {
   else if ('sync' in control) return 'av-timer'
   else if ('relativeSceneIndex' in control) return 'volume'
   else if ('periodDelta' in control) return 'timer'
+  else if ('trackStep' in control) return 'next'
+  else if ('sceneStep' in control) return 'cheveron-right'
   else return null
 }

@@ -559,7 +559,10 @@ export const getLocalPersistentState = createSelector(
   (save, settings, output, live): Types.LocalPersistentState => {
     return {
       save,
-      settings,
+      settings: {
+        ...settings,
+        screencast: false,
+      },
       output: {
         current: output.current,
         preview: output.preview,
@@ -609,7 +612,7 @@ export const getMenuState = createSelector(
       trackPlaying,
       playing,
       snap: settings.snap,
-      screencast: settings.screencast
+      screencast: settings.screencast,
     }
   }
 )

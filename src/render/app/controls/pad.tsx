@@ -21,8 +21,8 @@ function Pad(props: PadProps) {
   const { value, onChange } = props,
     handleMouseDown = useCallback(
       (e) => {
-        e.stopPropagation()
-        e.preventDefault()
+        //e.stopPropagation()
+        //e.preventDefault()
         onChange(1 - value)
       },
       [value]

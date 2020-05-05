@@ -73,7 +73,9 @@ export function getDefaultBindingType(control: Types.Control): Types.BindingType
     'cueStep' in control ||
     'loop' in control ||
     'sync' in control ||
-    'periodDelta' in control
+    'periodDelta' in control ||
+    'trackStep' in control ||
+    'sceneStep' in control
     ? 'note'
     : 'value'
 }

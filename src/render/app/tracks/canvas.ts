@@ -32,7 +32,9 @@ export default function useWaveformCanvas(
     editTrackLoaded = isSTEditing && source.sourceTracks[track.sourceTrackEditing].loaded,
     editTrackOffset =
       isSTEditing && track.playback.sourceTracksParams[track.sourceTrackEditing].offset,
-    chunks = useMemo(() => track.playback.chunks, [sample])
+    chunks = useMemo(() => track.playback.chunks, [
+      track.playback.playing ? sample : track.playback.chunks,
+    ])
 
   useEffect(() => {
     ctxt.current = canvasRef.current.getContext('2d')
@@ -292,7 +294,11 @@ export function drawCues(context: DrawingContext, track: Types.Track) {
   }
 }
 
-export function drawPlayback(context: DrawingContext, track: Types.Track, chunks: number[]) {
+export function drawPlayback(
+  context: DrawingContext,
+  track: Types.Track,
+  chunks: number[]
+) {
   const {
       pheight,
       scale,

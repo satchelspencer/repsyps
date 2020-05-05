@@ -1,17 +1,29 @@
-import React, { memo, useCallback } from 'react'
+import React, { memo, useCallback, useMemo } from 'react'
 import * as _ from 'lodash'
 import ctyled, { inline } from 'ctyled'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
+import { adder } from 'render/components/control-adder'
 
 import Icon from 'render/components/icon'
+
+const IconWrapper = adder(
+  ctyled.div.styles({
+    bg: true,
+    height: 1.7,
+    width: 1.7,
+    justify: 'center',
+    align: 'center',
+    rounded: true,
+  })
+)
 
 const ScenesWrapper = ctyled.div.styles({
   height: 3,
   flex: 'none',
-  color: c => c.contrast(-0.1),
+  color: (c) => c.contrast(-0.1),
   bg: true,
   align: 'center',
   justify: 'center',
@@ -21,15 +33,23 @@ const ScenesWrapper = ctyled.div.styles({
 `
 
 const SceneNumber = ctyled.div.class(inline).styles({
-  size: s => s * 1.3,
-  align: 'center',
+  size: (s) => s * 1.3,
   bg: true,
-  padd: 0.5,
-  color: c => c.contrast(0.4),
+  color: (c) => c.contrast(0.4),
   border: 1,
-  width: 3,
+  width: 7,
+  lined: true,
+  borderColor: (c) => c.contrast(-0.3),
+}).extend`
+  overflow:hidden;
+`
+
+const NumberInner = ctyled.div.styles({
+  height: 1.3,
+  bg: true,
+  align: 'center',
   justify: 'center',
-  borderColor: c => c.contrast(-0.3),
+  flex: 1,
 })
 
 const Side = ctyled.div.attrs({ start: true }).styles({
@@ -41,37 +61,52 @@ const Side = ctyled.div.attrs({ start: true }).styles({
 })
 
 function ScenesContainer() {
-  const sceneIndex = useSelector(state => state.live.sceneIndex),
-    nextScene = useSelector(Selectors.getNextScene),
-    prevScene = useSelector(Selectors.getPrevScene),
-    dispatch = useDispatch(),
-    canBack = sceneIndex > 0
+  const sceneIndex = useSelector((state) => state.live.sceneIndex),
+    currentScene = useSelector(Selectors.getCurrentScene),
+    selectedTrackId = useSelector(Selectors.getSelectedTrackId),
+    getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
+    trackIndex = useSelector((state) => getTrackIndex(state, selectedTrackId)),
+    dispatch = useDispatch()
 
-  const deleteScene = useCallback(() => dispatch(Actions.deleteScene(sceneIndex)), [
-      sceneIndex,
-    ]),
-    createScene = useCallback(() => dispatch(Actions.createScene(sceneIndex + 1)), [
-      sceneIndex,
-    ]),
-    handleBack = useCallback(() => {
-      dispatch(Actions.setSceneIndex(sceneIndex - 1))
-      dispatch(Actions.selectTrackExclusive(prevScene.trackIds[0]))
-    }, [sceneIndex, prevScene]),
-    handleNext = useCallback(() => {
-      dispatch(Actions.setSceneIndex(sceneIndex + 1))
-      dispatch(Actions.selectTrackExclusive(nextScene && nextScene.trackIds[0]))
-    }, [sceneIndex, nextScene])
+  const handleBack = useCallback(() => dispatch(Actions.stepSelectedTrack(-1)), []),
+    handleNext = useCallback(() => dispatch(Actions.stepSelectedTrack(1)), []),
+    handleBackScene = useCallback(() => dispatch(Actions.stepSceneIndex(-1)), []),
+    handleNextScene = useCallback(() => dispatch(Actions.stepSceneIndex(+1)), []),
+    params = useMemo(
+      () => ({
+        prevScene: { sceneStep: -1 },
+        prevTrack: { trackStep: -1 },
+        nextTrack: { trackStep: 1 },
+        nextScene: { sceneStep: 1 },
+      }),
+      []
+    )
 
   return (
     <ScenesWrapper>
       <Side start>
-        <Icon asButton scale={1.7} onClick={deleteScene} name="remove" />
-        <Icon asButton disabled={!canBack} scale={2} onClick={handleBack} name="prev" />
+        <IconWrapper params={params.prevScene}>
+          <Icon asButton scale={1.8} onClick={handleBackScene} name="cheveron-left" />
+        </IconWrapper>
+        <IconWrapper params={params.prevTrack}>
+          <Icon asButton scale={2} onClick={handleBack} name="prev" />
+        </IconWrapper>
       </Side>
-      <SceneNumber>{sceneIndex + 1}</SceneNumber>
+      <SceneNumber>
+        <NumberInner>{sceneIndex + 1}</NumberInner>
+        <NumberInner styles={{ color: (c) => c.contrast(-0.2), flex: 1.6 }}>
+          {`${trackIndex >= 0 ? trackIndex + 1 : trackIndex}/${
+            currentScene.trackIds.length
+          }`}
+        </NumberInner>
+      </SceneNumber>
       <Side start={false}>
-        <Icon asButton disabled={!nextScene} scale={2} onClick={handleNext} name="next" />
-        <Icon asButton scale={1.7} onClick={createScene} name="add" />
+        <IconWrapper params={params.nextTrack}>
+          <Icon asButton scale={2} onClick={handleNext} name="next" />
+        </IconWrapper>
+        <IconWrapper params={params.nextScene}>
+          <Icon asButton scale={1.8} onClick={handleNextScene} name="cheveron-right" />
+        </IconWrapper>
       </Side>
     </ScenesWrapper>
   )

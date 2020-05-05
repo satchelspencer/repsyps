@@ -101,7 +101,7 @@ export default function Knob(props: KnobProps) {
 
   const handleMouseDown = useCallback(
       (e) => {
-        e.stopPropagation()
+        //e.stopPropagation()
         setDragging(true)
         document.body.style.pointerEvents = 'none'
         setStartValue(value)

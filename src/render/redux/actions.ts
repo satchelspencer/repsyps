@@ -383,6 +383,10 @@ export function getApplyControlGroupActions(
       actions.push(setTrackSync({ trackIndex: control.trackIndex, sync: control.sync }))
     } else if ('periodDelta' in control && risingEdge) {
       actions.push(incrementPeriod(control.periodDelta))
+    } else if ('trackStep' in control && risingEdge) {
+      actions.push(stepSelectedTrack(control.trackStep))
+    }else if('sceneStep' in control && risingEdge){
+      actions.push(stepSceneIndex(control.sceneStep))
     }
   })
   return actions
@@ -422,6 +426,8 @@ export function applyControlGroupMidi(
 /* scenes */
 
 export const setSceneIndex = createAction<number>('SET_SCENE_INDEX')
+
+export const stepSceneIndex = createAction<number>('STEP_SCENE_INDEX')
 
 export const addTrackToScene = createAction<{
   trackId: string

@@ -605,9 +605,16 @@ export default function init() {
         },
         screencast: {
           click: () => {
-            if (!menuState.screencast)
-              electron.remote.getCurrentWindow().setSize(1260/1.25, 720/1.25, true)
-            dispatch(Actions.setSettings({ screencast: !menuState.screencast }))
+            const newSettings: Partial<Types.Settings> = {
+              screencast: !menuState.screencast,
+            }
+            if (!menuState.screencast) {
+              const win = electron.remote.getCurrentWindow()
+              win.setSize(1260 / 1.25, 720 / 1.25, true)
+              win.setPosition(0, 0, true)
+              newSettings.size = 9
+            }
+            dispatch(Actions.setSettings(newSettings))
           },
         },
       },

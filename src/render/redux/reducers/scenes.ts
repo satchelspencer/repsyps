@@ -28,6 +28,8 @@ export function updateSceneIndex(
       controls = Selectors.getControlsFromSceneIndex(state.live, sceneIndex),
       controlValues = Selectors.getCurrentControlValues(state),
       prevScene = state.live.scenes[sceneIndex - 1],
+      selectedTrackId = Selectors.getSelectedTrackId(state),
+      hasSelectedTrack = scene.trackIds.includes(selectedTrackId),
       lastIsPlaying =
         prevScene &&
         _.some(
@@ -52,8 +54,8 @@ export function updateSceneIndex(
       live: {
         ...state.live,
         tracks: _.mapValues(state.live.tracks, (track, trackId) => {
-          if (!forceReset && !noLongerActive.includes(trackId)) return track
-          else {
+          let newTrack = track
+          if (forceReset || noLongerActive.includes(trackId)) {
             const firstCue = track.cues[0],
               cuedTrack: Types.Track = firstCue
                 ? applyCue(track, 0)
@@ -63,7 +65,7 @@ export function updateSceneIndex(
                     nextCueIndex: -1,
                     cueIndex: -1,
                   }
-            return {
+            newTrack = {
               ...cuedTrack,
               playback: {
                 ...cuedTrack.playback,
@@ -78,6 +80,19 @@ export function updateSceneIndex(
               },
             }
           }
+          if (!hasSelectedTrack) {
+            if (scene.trackIds.indexOf(trackId) === 0)
+              newTrack = {
+                ...newTrack,
+                selected: true,
+              }
+            else if (track.selected)
+              newTrack = {
+                ...newTrack,
+                selected: false,
+              }
+          }
+          return newTrack
         }),
         scenes: state.live.scenes.map((scene, i) => {
           if (sceneIndex !== i) return scene
@@ -109,6 +124,13 @@ export function updateSceneIndex(
 export default createReducer(defaultState, (handle) => [
   handle(Actions.setSceneIndex, (state, { payload: sceneIndex }) => {
     return updateSceneIndex(state, sceneIndex)
+  }),
+  handle(Actions.stepSceneIndex, (state, { payload: sceneStep }) => {
+    const newIndex = Math.max(
+      Math.min(state.live.sceneIndex + sceneStep, state.live.scenes.length - 1),
+      0
+    )
+    return updateSceneIndex(state, newIndex)
   }),
   handle(Actions.addTrackToScene, (state, { payload }) => {
     const currentScene = state.live.scenes[payload.toSceneIndex] || defaultScene,
