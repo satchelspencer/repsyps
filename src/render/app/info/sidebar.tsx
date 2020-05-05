@@ -20,6 +20,7 @@ import ResizableBorder from 'render/components/rborder'
 const SidebarWrapper = ctyled.div.attrs({ widthp: 25 }).styles({
   column: true,
   bg: true,
+  lined: true,
   color: (c) => c.nudge(-0.05),
 }).extendSheet`
   width:${({ size }, { widthp }) => size * widthp}px;
@@ -40,6 +41,16 @@ const TrackDetailsWrapper = ctyled.div.attrs({ disabled: false }).styles({
   disabled: (_, { disabled }) => disabled,
 })
 
+const VideoWrapper = ctyled.div.attrs({ heightp: 25 }).styles({
+  width: '100%',
+  bg: true,
+  color: (c) => c.nudge(0.1),
+}).extendSheet`
+  height:${({ size }, { heightp }) => size * heightp}px;
+`
+
+const VIDEO_ASPECT = 4 / 3
+
 const clip = (size: number) => Math.min(Math.max(size, 25.5), 35)
 
 function Sidebar() {
@@ -49,6 +60,7 @@ function Sidebar() {
     isLoaded = useSelector((state) => Selectors.getTrackIsLoaded(state, trackId)),
     size = useContext(CtyledContext).theme.size,
     sideBarSize = useSelector((state) => state.settings.sidebarSize),
+    screencast = useSelector((state) => state.settings.screencast),
     dispatch = useDispatch(),
     [offset, setOffset] = useState(0),
     handleMove = useCallback(
@@ -67,11 +79,12 @@ function Sidebar() {
         )
       },
       [size, offset, sideBarSize]
-    )
+    ),
+    widthp = clip(sideBarSize + offset)
 
   return useMemo(
     () => (
-      <SidebarWrapper widthp={clip(sideBarSize + offset)}>
+      <SidebarWrapper widthp={widthp}>
         <SidebarScroller>
           {!!track && (
             <>
@@ -89,6 +102,7 @@ function Sidebar() {
             </>
           )}
         </SidebarScroller>
+        {screencast && <VideoWrapper heightp={widthp / VIDEO_ASPECT} />}
         <ResizableBorder
           onMove={handleMove}
           onCommit={handleCommit}
@@ -97,7 +111,7 @@ function Sidebar() {
         />
       </SidebarWrapper>
     ),
-    [trackId, source, isLoaded, sideBarSize, offset]
+    [trackId, source, isLoaded, sideBarSize, offset, screencast]
   )
 }
 

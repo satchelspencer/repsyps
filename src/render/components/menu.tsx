@@ -299,7 +299,8 @@ export default function init() {
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Import Before',
             })
-            if (path && path[0]) loadProjectScenes(path[0], menuState.sceneIndex, store, true)
+            if (path && path[0])
+              loadProjectScenes(path[0], menuState.sceneIndex, store, true)
           },
           accelerator: 'CmdOrCtrl+Shift+I',
         },
@@ -602,6 +603,13 @@ export default function init() {
           click: () => dispatch(Actions.setModalRoute(null)),
           accelerator: 'Escape',
         },
+        screencast: {
+          click: () => {
+            if (!menuState.screencast)
+              electron.remote.getCurrentWindow().setSize(1260/1.25, 720/1.25, true)
+            dispatch(Actions.setSettings({ screencast: !menuState.screencast }))
+          },
+        },
       },
       isSingleKey = (accelerator: string) => {
         return (
@@ -746,22 +754,22 @@ export default function init() {
               ...menuCommands.editTrack,
             },
             {
-              label: 'Infer Divisions',
+              label: 'Infer Grid',
               enabled: !inInput && menuState.editing,
               ...menuCommands.inferDivisions,
             },
             {
-              label: 'Infer Left',
+              label: 'Infer Grid Left',
               enabled: !inInput && menuState.editing,
               ...menuCommands.inferLeft,
             },
             {
-              label: 'Infer Right',
+              label: 'Infer Grid Right',
               enabled: !inInput && menuState.editing,
               ...menuCommands.inferRight,
             },
             {
-              label: 'Clear Divisions',
+              label: 'Clear Grid',
               enabled: !inInput && menuState.editing,
               ...menuCommands.clearDivisions,
             },
@@ -1052,6 +1060,12 @@ export default function init() {
             { label: 'Reload', ...menuCommands.reload },
             { role: 'toggledevtools' },
             { label: 'Escape', ...menuCommands.exitModal },
+            {
+              label: menuState.screencast
+                ? 'Disable Screencap View'
+                : 'Enable Screencap View',
+              ...menuCommands.screencast,
+            },
             { type: 'separator' },
             {
               label: 'Reset Zoom',

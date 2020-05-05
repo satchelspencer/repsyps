@@ -342,6 +342,7 @@ export interface Settings {
   sidebarSize: number
   gridSize: number
   snap: boolean
+  screencast: boolean
 }
 
 export interface Recording {
@@ -393,6 +394,7 @@ export interface MenuState {
   trackPlaying: boolean
   playing: boolean
   snap: boolean
+  screencast: boolean
 }
 
 export interface State {

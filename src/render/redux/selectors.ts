@@ -609,6 +609,7 @@ export const getMenuState = createSelector(
       trackPlaying,
       playing,
       snap: settings.snap,
+      screencast: settings.screencast
     }
   }
 )

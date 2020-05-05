@@ -186,7 +186,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
         <>
           <HeaderContent>
             <Icon name="timer" scale={1.2} />
-            <span>Time Divisions:</span>
+            <span>Time Grid:</span>
             <PeriodValue warn={!hasTimeBase}>
               {hasTimeBase ? _.round(60 / (avgBar / RATE), 0) + '/m' : '??'}
             </PeriodValue>
@@ -202,7 +202,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
         </FillButton>
         <ClearButton onClick={handleClearBounds}>
           <Icon name="close-thin" />
-          <span>clear divisions</span>
+          <span>clear grid</span>
         </ClearButton>
         <SnapButton enabled={snap} onClick={handleToggleSnap}>
           <Icon name="magnet" scale={1.1} />

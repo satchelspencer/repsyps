@@ -87,6 +87,7 @@ export const defaultPlayback: Types.Playback = {
     sidebarSize: 25.7,
     gridSize: 8,
     snap: true,
+    screencast: false
   },
   defaultRecording: Types.Recording = {
     enabled: false,
