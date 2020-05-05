@@ -5,6 +5,7 @@ import ctyled, { CtyledContext } from 'ctyled'
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
+import { FillMessage } from 'render/components/misc'
 
 import BoundsControl from './bounds'
 import SourceTracks from './source-tracks'
@@ -86,7 +87,7 @@ function Sidebar() {
     () => (
       <SidebarWrapper widthp={widthp}>
         <SidebarScroller>
-          {!!track && (
+          {!!track ? (
             <>
               <TrackDetailsWrapper disabled={!isLoaded}>
                 <SourceTracks trackId={trackId} />
@@ -100,6 +101,8 @@ function Sidebar() {
                 <Cues trackId={trackId} />
               </TrackDetailsWrapper>
             </>
+          ) : (
+            <FillMessage>No Track Selected</FillMessage>
           )}
         </SidebarScroller>
         {screencast && <VideoWrapper heightp={widthp / VIDEO_ASPECT} />}

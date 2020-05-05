@@ -216,7 +216,7 @@ int paCallbackMethod(
                         pv->nextPFFT[pvWinIndex * 2 + 1] - pv->currentPFFT[pvWinIndex * 2 + 1] - expectedPhaseAdv
                       ) / analysisStep + state->omega[pvWinIndex];
                     float centeredPhaseTimeDelta = (pv->lastPhaseTimeDelta[pvWinIndex] + forwardPhaseTimeDelta) / 2;
-                    float phaseAdvance = centeredPhaseTimeDelta * synthesisStep;
+                    float phaseAdvance = (pvWinIndex < PV_WINDOW_SIZE / 12 ? pv->lastPhaseTimeDelta[pvWinIndex] : centeredPhaseTimeDelta) * synthesisStep;
                     pv->currentPFFT[pvWinIndex * 2 + 1] = pv->lastPFFT[pvWinIndex * 2 + 1] + phaseAdvance;
                     pv->lastPhaseTimeDelta[pvWinIndex] = forwardPhaseTimeDelta;
                   }else pv->currentPFFT[pvWinIndex * 2 + 1] = dis(gen);

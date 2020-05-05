@@ -313,7 +313,6 @@ export interface Live {
   bindings: Bindings
   controlPresets: ControlPresets
   globalControls: Controls
-  defaultPresetId: string
   controlsEnabled: boolean
   selectedPosition: Position
 }
@@ -322,14 +321,12 @@ export interface LocalPersistentLive {
   bindings: Bindings
   controlPresets: ControlPresets
   globalControls: Controls
-  defaultPresetId: string
 }
 
 export interface BindingsFile {
   bindings: Bindings
   controlPresets: ControlPresets
   globalControls: Controls
-  defaultPresetId: string
 }
 
 export interface SaveStatus {

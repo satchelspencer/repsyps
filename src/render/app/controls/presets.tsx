@@ -1,4 +1,4 @@
-import React, { memo, useState, useRef, useCallback } from 'react'
+import React, { memo, useState, useRef, useCallback, useEffect } from 'react'
 import * as _ from 'lodash'
 import ctyled, { active, inline } from 'ctyled'
 
@@ -8,6 +8,7 @@ import uid from 'render/util/uid'
 
 import { useSelector, useDispatch } from 'render/redux/react'
 import Icon from 'render/components/icon'
+import Button from 'render/components/button'
 
 const PresetsWrapper = ctyled.div.styles({
   width: 12,
@@ -53,7 +54,7 @@ const PresetItemName = ctyled.div.styles({
   height: 1.2,
 })
 
-const PresetItemNameInner = ctyled.div.styles({}).extendSheet`
+const PresetItemNameInner = ctyled.div.attrs({ selected: false }).styles({}).extendSheet`
   position:absolute;
   top:0;
   left:0;
@@ -63,6 +64,7 @@ const PresetItemNameInner = ctyled.div.styles({}).extendSheet`
   display:block;
   white-space:nowrap;
   text-overflow:ellipsis;
+  text-decoration:${(_, { selected }) => (selected ? 'underline' : 'none')};
 `
 
 const HeadGroup = ctyled.div.styles({ gutter: 1 })
@@ -76,27 +78,6 @@ const PresetsBody = ctyled.div.styles({
   endLine: true,
 })
 
-const Dot = ctyled.div.attrs({ selected: false }).styles({
-  width: 0.5,
-  height: 0.5,
-}).extend`
-  border-radius:50%;
-  background:${({ color }, { selected }) =>
-    selected ? 'rgba(255,0,0,0.5)' : color.nudge(0.15).bg};
-`
-
-const DotWrapper = ctyled.div.styles({
-  width: 1,
-  height: 1,
-  align: 'center',
-  justify: 'center',
-}).extendSheet`
-  cursor:pointer;
-  &:hover{
-    opacity:0.5;
-  }
-`
-
 interface PresetProps {
   presetId: string
   preset: Types.ControlPreset
@@ -105,21 +86,15 @@ interface PresetProps {
 }
 
 const Preset = memo((props: PresetProps) => {
-  const defaultId = useSelector((state) => state.live.defaultPresetId),
-    dispatch = useDispatch(),
-    handleClick = useCallback(() => props.onSelect(props.presetId), [props.presetId]),
-    handleSetDefault = useCallback(
-      () => dispatch(Actions.setDefaultControlPreset(props.presetId)),
-      [props.presetId]
-    )
+  const dispatch = useDispatch(),
+    handleClick = useCallback(() => props.onSelect(props.presetId), [props.presetId])
   return (
     <PresetItem onClick={handleClick} selected={props.selected}>
       <PresetItemName>
-        <PresetItemNameInner>{props.preset.name}</PresetItemNameInner>
+        <PresetItemNameInner selected={props.selected}>
+          {props.preset.name}
+        </PresetItemNameInner>
       </PresetItemName>
-      <DotWrapper onClick={handleSetDefault}>
-        <Dot selected={defaultId === props.presetId} />
-      </DotWrapper>
     </PresetItem>
   )
 })
@@ -142,16 +117,16 @@ function Presets() {
       setSelected(id)
     }, []),
     [selected, setSelected] = useState<string>(null),
-    selectedDef = selected || _.keys(presets)[0] || null,
     addPreset = useCallback(() => {
       setAdding(true)
       setNewName('')
     }, []),
-    removePreset = useCallback(() => dispatch(Actions.deleteControlPreset(selectedDef)), [
-      selectedDef,
-    ]),
-    applyPreset = useCallback(() => dispatch(Actions.applyControlPreset(selectedDef)), [
-      selectedDef,
+    removePreset = useCallback(() => {
+      dispatch(Actions.deleteControlPreset(selected))
+      setSelected(null)
+    }, [selected]),
+    applyPreset = useCallback(() => dispatch(Actions.applyControlPreset(selected)), [
+      selected,
     ]),
     handleBlur = useCallback(() => {
       setAdding(false)
@@ -168,18 +143,24 @@ function Presets() {
     inputRef = useCallback((r) => r && r.focus(), []),
     handleChange = useCallback((e) => setNewName(e.target.value), [])
 
+  useEffect(() => {
+    setSelected(_.keys(presets)[0])
+  }, [])
+
   return (
     <PresetsWrapper>
       <PresetsHead>
-        <Icon
-          disabled={!selectedDef}
-          asButton
-          name="cheveron-left"
+        <Button
+          styles={{ size: (s) => s * 0.8, padd: 0.3, color: (c) => c.contrast(0.1) }}
+          disabled={!selected}
           onClick={applyPreset}
-        />
+        >
+          <Icon name="cheveron-left" />
+          &nbsp;Apply&nbsp;
+        </Button>
         <HeadGroup>
           <Icon asButton name="add" onClick={addPreset} />
-          <Icon asButton name="remove" onClick={removePreset} />
+          <Icon disabled={!selected} asButton name="remove" onClick={removePreset} />
         </HeadGroup>
       </PresetsHead>
       <PresetsBody>

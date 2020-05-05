@@ -18,7 +18,7 @@ static int WINDOW_SIZE =  OVERLAP_COUNT * WINDOW_STEP;
 #define PV_WINDOW_SIZE 2048
 static int PV_MAX_FREQ = (PV_WINDOW_SIZE / 2) - 1;
 static int PV_RATE = 44100;
-static float PV_ABSTOL = 1e-6;
+static float PV_ABSTOL = 1e-3;
 static float PV_FREQ_STEP = PV_RATE / (float)(PV_WINDOW_SIZE);
 
 typedef struct{

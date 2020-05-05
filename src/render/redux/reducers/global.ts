@@ -97,11 +97,14 @@ export default createReducer(defaultState, (handle) => [
         live: {
           ...state.live,
           ...pLive,
-          scenes: pLive.scenes.map((pscene) => ({
-            ...pscene,
-            controlValues: {},
-            initValues: {},
-          })),
+          scenes: pLive.scenes.map((pscene, i) => {
+            const sscene = state.live.scenes[i]
+            return {
+              ...pscene,
+              controlValues: (!payload.reset && sscene && sscene.controlValues) || {},
+              initValues: (!payload.reset && sscene && sscene.initValues) || {},
+            }
+          }),
           bindings: {
             ...state.live.bindings,
             ..._.mapValues(
@@ -131,7 +134,7 @@ export default createReducer(defaultState, (handle) => [
 
         playback: payload.state.playback,
       },
-      0,
+      payload.reset ? 0 : state.live.sceneIndex,
       payload.reset
     )
   }),

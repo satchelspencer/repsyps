@@ -8,14 +8,13 @@ import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import { defaultState } from 'render/redux/defaults'
-import { resetTiming } from 'render/components/timing'
 import useAddSource from 'render/util/add-source'
 
 import { useSelection } from 'render/components/selection'
 import { useDispatch, useStore } from 'render/redux/react'
 
 import { getPath, getAppPath } from 'render/loading/app-paths'
-import { loadBindings, saveBindings } from 'render/loading/bindings'
+import { loadBindings, saveBindings, loadDefaultBindings } from 'render/loading/bindings'
 import {
   loadProject,
   saveProject,
@@ -474,6 +473,21 @@ export default function init() {
             if (!control) return
             dispatch(Actions.addControlToGroup({ control }))
           },
+          accelerator: 'A',
+        },
+        addControlInv: {
+          click: async () => {
+            const control = await getSelection()
+            if (!control) return
+            dispatch(
+              Actions.addControlToGroup({
+                control: {
+                  ...control,
+                  invert: !control.invert,
+                },
+              })
+            )
+          },
           accelerator: 'B',
         },
         setMidi: {
@@ -528,6 +542,9 @@ export default function init() {
         },
         clearBindings: {
           click: () => dispatch(Actions.resetBindings()),
+        },
+        loadDefaultPresets: {
+          click: () => loadDefaultBindings(store),
         },
         trackScroll: {
           click: () => {
@@ -613,6 +630,8 @@ export default function init() {
               win.setSize(1260 / 1.25, 720 / 1.25, true)
               win.setPosition(0, 0, true)
               newSettings.size = 9
+            }else{
+              newSettings.size = 11
             }
             dispatch(Actions.setSettings(newSettings))
           },
@@ -645,7 +664,7 @@ export default function init() {
             if (
               now - inDialog > 500 &&
               now - inWrapper > 500 &&
-              (document.hasFocus() || !singleKey)
+              ((document.hasFocus() && !inInput) || !singleKey)
             ) {
               //console.log('menu', command.accelerator)
               command.click()
@@ -954,6 +973,10 @@ export default function init() {
               ...menuCommands.addControl,
             },
             {
+              label: 'Add Control Inverted',
+              ...menuCommands.addControlInv,
+            },
+            {
               label: 'Set Midi',
               ...menuCommands.setMidi,
             },
@@ -982,6 +1005,10 @@ export default function init() {
             {
               label: 'Clear Bindings',
               ...menuCommands.clearBindings,
+            },
+            {
+              label: 'Load Default Presets',
+              ...menuCommands.loadDefaultPresets,
             },
           ],
         },

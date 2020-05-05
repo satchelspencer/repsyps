@@ -57,7 +57,7 @@ const GridCellWrapper = ctyled.div
   }
   ${({ color }, { isGlobal }) => isGlobal && `background:${color.nudge(0.085).bg};`}
   ${(_, { selected, isGlobal }) =>
-    selected && `background:${isGlobal ? '#ff000021' : '#ff00000d'};`}
+    selected && `background:${isGlobal ? '#ff00000d' : '#ff00000d'};`}
   &:hover{
     background:${({ color }, { selected, exited }) =>
       exited ? 'inherit' : selected ? '#ff00000d' : color.nudge(0.05).bg};

@@ -399,14 +399,12 @@ export const getBindings = createSelector(
   [
     (state: Types.State) => state.live.bindings,
     (state: Types.State) => state.live.controlPresets,
-    (state: Types.State) => state.live.defaultPresetId,
     (state: Types.State) => state.live.globalControls,
   ],
-  (bindings, controlPresets, defaultPresetId, globalControls): Types.BindingsFile => {
+  (bindings, controlPresets, globalControls): Types.BindingsFile => {
     return {
       bindings,
       controlPresets,
-      defaultPresetId,
       globalControls,
     }
   }
@@ -531,19 +529,16 @@ export const getLocalPersistentLive = createSelector(
   [
     (state: Types.State) => state.live.bindings,
     (state: Types.State) => state.live.controlPresets,
-    (state: Types.State) => state.live.defaultPresetId,
     (state: Types.State) => state.live.globalControls,
   ],
   (
     bindings,
     controlPresets,
-    defaultPresetId,
     globalControls
   ): Types.LocalPersistentLive => {
     return {
       bindings,
       controlPresets,
-      defaultPresetId,
       globalControls,
     }
   }

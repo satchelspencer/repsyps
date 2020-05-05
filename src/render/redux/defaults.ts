@@ -1,5 +1,6 @@
 import * as Types from 'render/util/types'
 import { RATE } from 'render/util/audio'
+import defaultBindingsFile from 'render/loading/default-bindings'
 
 export const defaultPlayback: Types.Playback = {
     volume: 1,
@@ -48,14 +49,13 @@ export const defaultPlayback: Types.Playback = {
     controlValues: {},
     initValues: {},
   },
-  defaultControlPresets: Types.ControlPresets = {},
+  defaultControlPresets: Types.ControlPresets = defaultBindingsFile.state.controlPresets,
   defaultLive: Types.Live = {
     sceneIndex: 0,
     scenes: [defaultScene],
     tracks: {},
     bindings: defaultBindings,
     controlPresets: defaultControlPresets,
-    defaultPresetId: null,
     controlsEnabled: true,
     selectedPosition: { x: 0, y: 0 },
     globalControls: {},
@@ -80,14 +80,14 @@ export const defaultPlayback: Types.Playback = {
   },
   defaultSettings: Types.Settings = {
     trackScroll: true,
-    darkMode: false,
+    darkMode: true,
     size: 11,
     updateRate: 'medium',
     controlsSize: 35,
     sidebarSize: 25.7,
     gridSize: 8,
     snap: true,
-    screencast: false
+    screencast: false,
   },
   defaultRecording: Types.Recording = {
     enabled: false,

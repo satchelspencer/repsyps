@@ -1,7 +1,6 @@
 import { createReducer } from 'deox'
 import * as _ from 'lodash'
 
-import audio from 'render/util/audio'
 import * as Types from 'render/util/types'
 import * as Actions from '../actions'
 import * as Selectors from '../selectors'
@@ -10,7 +9,6 @@ import {
   defaultControlGroup,
   defaultBinding,
   defaultBindings,
-  defaultControlPresets,
 } from '../defaults'
 import { updateSceneIndex } from './scenes'
 
@@ -244,17 +242,6 @@ export default createReducer(defaultState, (handle) => [
       live: {
         ...state.live,
         controlPresets: _.omit(state.live.controlPresets, presetId),
-        defaultPresetId:
-          state.live.defaultPresetId === presetId ? null : state.live.defaultPresetId,
-      },
-    }
-  }),
-  handle(Actions.setDefaultControlPreset, (state, { payload: presetId }) => {
-    return {
-      ...state,
-      live: {
-        ...state.live,
-        defaultPresetId: presetId,
       },
     }
   }),
@@ -324,6 +311,14 @@ export default createReducer(defaultState, (handle) => [
       live: {
         ...state.live,
         ...bindingsFile,
+        controlPresets: {
+          ...state.live.controlPresets,
+          ...bindingsFile.controlPresets,
+        },
+        globalControls: {
+          ...state.live.globalControls,
+          ...bindingsFile.globalControls,
+        },
       },
     }
   }),
@@ -333,7 +328,7 @@ export default createReducer(defaultState, (handle) => [
       live: {
         ...state.live,
         bindings: defaultBindings,
-        controlPresets: defaultControlPresets,
+        controlPresets: {},
         globalControls: {},
       },
     }

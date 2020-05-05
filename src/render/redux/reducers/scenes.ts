@@ -195,11 +195,6 @@ export default createReducer(defaultState, (handle) => [
     const newScenes = [...state.live.scenes],
       newScene = { ...defaultScene }
 
-    if (state.live.defaultPresetId)
-      newScene.controls = {
-        ...state.live.controlPresets[state.live.defaultPresetId].controls,
-      }
-
     newScenes.splice(sceneIndex, 0, newScene)
     return updateSceneIndex(
       {

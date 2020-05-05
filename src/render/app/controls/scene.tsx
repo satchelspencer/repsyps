@@ -95,9 +95,11 @@ function ScenesContainer() {
       <SceneNumber>
         <NumberInner>{sceneIndex + 1}</NumberInner>
         <NumberInner styles={{ color: (c) => c.contrast(-0.2), flex: 1.6 }}>
-          {`${trackIndex >= 0 ? trackIndex + 1 : trackIndex}/${
-            currentScene.trackIds.length
-          }`}
+          {selectedTrackId
+            ? `${trackIndex >= 0 ? trackIndex + 1 : trackIndex}/${
+                currentScene.trackIds.length
+              }`
+            : '--'}
         </NumberInner>
       </SceneNumber>
       <Side start={false}>

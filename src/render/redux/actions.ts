@@ -296,7 +296,6 @@ export const addControlPreset = createAction<{
 
 export const deleteControlPreset = createAction<string>('DEL_CONTROL_PRESET')
 
-export const setDefaultControlPreset = createAction<string>('SET_DEFAULT_CONTROL_PRESET')
 
 export const applyControlPreset = createAction<string>('APPLY_CONTROL_PRESET')
 
