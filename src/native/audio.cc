@@ -379,7 +379,19 @@ void setMixTrack(const Napi::CallbackInfo &info){
 
   setMixTrackPlayback(state.mixTracks[mixTrackId]->playback, playback);
 
-  if(playback.As<Napi::Object>().Has("filter")) setMixTrackFilter(mixTrackId, &state);
+  bool needsFilterAdd = false;
+  if(state.mixTracks[mixTrackId]->hasFilter){
+    for(auto sourceTrackPair : state.mixTracks[mixTrackId]->playback->sourceTracksParams){
+      if(
+        state.sources[sourceTrackPair.first] != NULL && 
+        state.sources[sourceTrackPair.first]->filters.size() == 0
+      ){
+        needsFilterAdd = true;
+      }
+    }
+  }
+  
+  if(playback.As<Napi::Object>().Has("filter") || needsFilterAdd) setMixTrackFilter(mixTrackId, &state);
     
   if(!nextPlayback.IsUndefined()){
     if(nextPlayback.IsNull()){
