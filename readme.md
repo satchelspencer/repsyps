@@ -1,6 +1,6 @@
 ## REPSYPS
 real time mixing and syncronization
-see [http://elldev.com/#/feed/repsyps](http://elldev.com/#/feed/repsyps)
+see [http://elldev.com/repsyps](http://elldev.com/repsyps)
 
 ## Developer Installation
 

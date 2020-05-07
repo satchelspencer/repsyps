@@ -110,7 +110,6 @@ int paCallbackMethod(
   PaStreamCallbackFlags statusFlags,
   void *userData
 ){
-  std::cout << "A" << std::endl;
   streamState *state = (streamState*)userData;
   float *out = (float*)outputBuffer;
   recording* rec = state->recording;
@@ -159,13 +158,11 @@ int paCallbackMethod(
       float alpha = 1 / invAlpha;
 
       for(auto sourcePair: playback->sourceTracksParams){
-        std::cout << sourcePair.first << std::endl;
         if(
           state->sources.find(sourcePair.first) != state->sources.end() 
           && state->sources[sourcePair.first] != NULL
           && !state->sources[sourcePair.first]->safe
         ){
-          std::cout << "B" << std::endl;
           mixTrackSourceConfig* params = sourcePair.second;
           source* source = state->sources[sourcePair.first];
           int length = source->length;
