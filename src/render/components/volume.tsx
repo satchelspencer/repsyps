@@ -15,6 +15,7 @@ const VolumeWrapper = ctyled.div.styles({
 
 export interface VolumeProps {
   volume: number
+  real?: number
   noIcon?: boolean
   onChange: (volume: number) => any
 }
@@ -35,7 +36,7 @@ export default function Volume(props: VolumeProps) {
       }
     }, [props.volume, props.onChange]),
     handleChange = useCallback(
-      v => {
+      (v) => {
         setMuted(false)
         props.onChange(mappings.volume.fromStandard(v))
       },
@@ -55,6 +56,7 @@ export default function Volume(props: VolumeProps) {
       <SliderWrapper>
         <Slider
           value={mappings.volume.toStandard(muted ? lastVolume : props.volume)}
+          ghost={mappings.volume.toStandard(props.real)}
           onChange={handleChange}
           markers={CENTER}
         />

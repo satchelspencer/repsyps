@@ -69,7 +69,7 @@ export default function syncAudio(store: Store<Types.State>) {
       const trackIsNew = !lastState || !lastTrackIds.includes(trackId),
         source = currentState.sources[trackId]
 
-      if (trackIsNew) playbackSelectors[trackId] = Selectors.makeGetTrackPlayback()
+      if (trackIsNew) playbackSelectors[trackId] = Selectors.makeGetTrackPlayback(trackId)
       const prev = lastTrackPlaybacks[trackId],
         current = playbackSelectors[trackId](currentState, trackId)
 

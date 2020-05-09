@@ -22,13 +22,16 @@ export interface FilterProps {
 const center = [mappings.filter.toStandard(0.5)]
 
 const Filter = memo((props: FilterProps) => {
-  const filter = useSelector(state => state.live.tracks[props.trackId].playback.filter),
-    name = useSelector(state => state.sources[props.trackId].name),
+  const filter = useSelector((state) => state.live.tracks[props.trackId].playback.filter),
+    getTrackPlayback = useMemo(() => Selectors.makeGetTrackPlayback(props.trackId), []),
+    realFilter = useSelector((state) => getTrackPlayback(state, props.trackId)).playback
+      .filter,
+    name = useSelector((state) => state.sources[props.trackId].name),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
-    trackIndex = useSelector(state => getTrackIndex(state, props.trackId)),
+    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch(),
     setFilter = useCallback(
-      value => {
+      (value) => {
         dispatch(
           Actions.setTrackPlayback({
             trackId: props.trackId,
@@ -56,6 +59,7 @@ const Filter = memo((props: FilterProps) => {
         <SliderWrapper>
           <Slider
             value={mappings.filter.toStandard(filter)}
+            ghost={mappings.filter.toStandard(realFilter)}
             onChange={setFilter}
             markers={center}
           />

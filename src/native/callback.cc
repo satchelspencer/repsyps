@@ -272,7 +272,7 @@ int paCallbackMethod(
       }
 
       mixTrack->overlapIndex = (mixTrack->overlapIndex + 1) % OVERLAP_COUNT;
-      if(committedStep && time - mixTrack->lastCommit > 0.1){
+      if(committedStep && abs(time - mixTrack->lastCommit) > 0.1){
         mixTrack->lastCommit = time;
         mixTrack->playback->chunkIndex = 
           (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);

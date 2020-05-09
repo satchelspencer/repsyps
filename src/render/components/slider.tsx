@@ -3,7 +3,6 @@ import ResizeObserver from 'resize-observer-polyfill'
 import * as _ from 'lodash'
 
 import ctyled from 'ctyled'
-import position from '../app/controls/position'
 
 const SliderWrapper = ctyled.div
   .attrs<{ column?: boolean }>({ column: false })
@@ -20,7 +19,7 @@ const SliderWrapper = ctyled.div
 const SliderGuide = ctyled.div
   .attrs<{ column?: boolean }>({ column: false })
   .styles({
-    color: c => c.nudge(0.2),
+    color: (c) => c.nudge(0.2),
     bg: true,
     border: true,
     rounded: true,
@@ -40,7 +39,7 @@ const Handle = ctyled.div
     rounded: true,
     border: true,
     flex: 1,
-    color: c => c.invert().contrast(-0.2),
+    color: (c) => c.invert().contrast(-0.2),
   }).extend`
   height:${({ size }, { column }) =>
     Math.ceil((column ? HANDLE_MINOR : HANDLE_MAJOR) * size) + 'px'};
@@ -49,12 +48,23 @@ const Handle = ctyled.div
   position:absolute;
   `
 
+const GhostHandle = Handle.styles({ bg: true, border: false }).extendSheet`
+  transition:0.05s all;
+  pointer-events:none;
+  opacity: 0.4;
+  width:${({ size }, { column }) =>
+    Math.ceil((column ? HANDLE_MAJOR / 2 : HANDLE_MINOR / 2) * size) + 'px'} !important;
+  height:${({ size }, { column }) =>
+    Math.ceil((column ? HANDLE_MINOR / 1.5 : HANDLE_MAJOR / 1.5) * size) +
+    'px'} !important;
+`
+
 const Marker = ctyled.div
   .attrs<{ column?: boolean; position: number }>({ column: false, position: 0 })
   .styles({
     bg: true,
     flex: 1,
-    color: c => c.invert().contrast(-0.3),
+    color: (c) => c.invert().contrast(-0.3),
     height: (_, { column }) => (column ? '1px' : HANDLE_MAJOR * 1.4),
     width: (_, { column }) => (column ? HANDLE_MAJOR * 1.4 : '1px'),
   }).extend`
@@ -65,11 +75,20 @@ const Marker = ctyled.div
 interface SliderProps {
   column?: boolean
   throttle?: number
+  ghost?: number
   value: number
   markers?: number[]
   onStart?: () => any
   onFinish?: () => any
   onChange: (value: number) => any
+}
+
+const getStyle = (column: boolean, range: number, dragOffset: number, value: number) => {
+  return {
+    [column ? 'bottom' : 'left']: Math.floor(
+      range * (dragOffset !== null ? dragOffset : value)
+    ),
+  }
 }
 
 function Slider(props: SliderProps) {
@@ -82,7 +101,7 @@ function Slider(props: SliderProps) {
     ])
 
   useEffect(() => {
-    const ro = new ResizeObserver(entries => {
+    const ro = new ResizeObserver((entries) => {
       const entry = entries[0]
       const { width, height } = entry.contentRect
       setSize(props.column ? height : width)
@@ -102,19 +121,19 @@ function Slider(props: SliderProps) {
       : 0,
     callbackDeps = [handleOffset, range, docOffset, props.column, props.onChange]
 
-  const handleMouseDown = useCallback(e => {
+  const handleMouseDown = useCallback((e) => {
       e.preventDefault()
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
     }, callbackDeps),
-    handleMouseUp = useCallback(e => {
+    handleMouseUp = useCallback((e) => {
       e.preventDefault()
       props.onFinish && props.onFinish()
       setDragOffset(null)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }, callbackDeps),
-    handleMouseMove = useCallback(e => {
+    handleMouseMove = useCallback((e) => {
       e.preventDefault()
       props.onStart && props.onStart()
       const offset =
@@ -123,20 +142,20 @@ function Slider(props: SliderProps) {
           : e[props.column ? 'clientY' : 'clientX'] - docOffset) - handleOffset
       let value = Math.max(Math.min(offset / range, 1), 0)
       if (props.markers)
-        props.markers.forEach(marker => {
+        props.markers.forEach((marker) => {
           if (Math.abs(marker - value) < 0.02) value = marker
         })
       throttledOnChange(value)
       setDragOffset(value)
     }, callbackDeps)
 
-  const handleStyle = useMemo(() => {
-    return {
-      [props.column ? 'bottom' : 'left']: Math.floor(
-        range * (dragOffset !== null ? dragOffset : props.value)
-      ),
-    }
-  }, [props.column, range, props.value, dragOffset])
+  const handleStyle = useMemo(
+      () => getStyle(props.column, range, dragOffset, props.value),
+      [props.column, range, props.value, dragOffset]
+    ),
+    ghostStyle = useMemo(() => {
+      return getStyle(props.column, range, null, props.ghost)
+    }, [props.column, range, props.ghost])
 
   return (
     <SliderWrapper
@@ -156,6 +175,11 @@ function Slider(props: SliderProps) {
             />
           )
         })}
+      {props.ghost !== undefined &&
+        !_.isNaN(props.ghost) &&
+        props.ghost !== props.value && (
+          <GhostHandle column={props.column} style={ghostStyle} />
+        )}
       <Handle
         onMouseDown={handleMouseDown}
         column={props.column}

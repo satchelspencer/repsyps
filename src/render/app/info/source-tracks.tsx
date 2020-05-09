@@ -85,6 +85,7 @@ interface SourceTrackProps {
   trackIndex: number
   sourceTrackIndex: number
   params: Types.TrackSourceParams
+  realParams: Types.TrackSourceParams
   many: boolean
   visible: boolean
 }
@@ -172,7 +173,12 @@ const SourceTrack = memo((props: SourceTrackProps) => {
             )}
           </TrackHead>
           <TrackH params={volumeControlParams}>
-            <Volume noIcon volume={props.params.volume} onChange={handleVolumeChange} />
+            <Volume
+              noIcon
+              volume={props.params.volume}
+              real={props.realParams.volume}
+              onChange={handleVolumeChange}
+            />
           </TrackH>
         </TrackWrapper>
       }
@@ -184,6 +190,9 @@ const SourceTracks = (props: TrackVolumeProps) => {
   const sourceTracksParams = useSelector(
       (state) => state.live.tracks[props.trackId].playback.sourceTracksParams
     ),
+    getTrackPlayback = useMemo(() => Selectors.makeGetTrackPlayback(props.trackId), []),
+    realParams = useSelector((state) => getTrackPlayback(state, props.trackId)).playback
+      .sourceTracksParams,
     visibleSourceTrackId = useSelector(
       (state) => state.live.tracks[props.trackId].visibleSourceTrack
     ),
@@ -208,6 +217,7 @@ const SourceTracks = (props: TrackVolumeProps) => {
             trackIndex={trackIndex}
             sourceTrackIndex={sourceTrackIndex}
             params={sourceTracksParams[sourceTrackId]}
+            realParams={realParams[sourceTrackId]}
             many={many}
             visible={visibleSourceTrackId === sourceTrackId}
           />

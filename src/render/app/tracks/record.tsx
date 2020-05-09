@@ -188,10 +188,10 @@ const Recording = memo(
                     },
                     editing: false,
                   }),
-                  Actions.setTrackSync({
-                    trackId: sourceId,
-                    sync: 'off',
-                  }),
+                  // Actions.setTrackSync({
+                  //   trackId: sourceId,
+                  //   sync: 'off',
+                  // }),
                 ],
                 'ADD_RECORDED_SOURCE'
               )

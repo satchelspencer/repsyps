@@ -14,9 +14,11 @@ export interface TrackVolumeProps {
 }
 
 function TrackVolume(props: TrackVolumeProps) {
-  const volume = useSelector(state => state.live.tracks[props.trackId].playback.volume),
+  const volume = useSelector((state) => state.live.tracks[props.trackId].playback.volume),
+    getTrackPlayback = useMemo(() => Selectors.makeGetTrackPlayback(props.trackId), []),
+    realVolume = useSelector((state) => getTrackPlayback(state, props.trackId)).playback.volume,
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
-    trackIndex = useSelector(state => getTrackIndex(state, props.trackId)),
+    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch(),
     volumeControlParams = useMemo(
       () => ({
@@ -26,7 +28,7 @@ function TrackVolume(props: TrackVolumeProps) {
       [trackIndex]
     ),
     handleVolumeChange = useCallback(
-      v =>
+      (v) =>
         dispatch(
           Actions.setTrackPlayback({
             trackId: props.trackId,
@@ -42,7 +44,7 @@ function TrackVolume(props: TrackVolumeProps) {
     <SidebarItem
       title={
         <ItemAdder params={volumeControlParams}>
-          <Volume volume={volume} onChange={handleVolumeChange} />
+          <Volume volume={volume} real={realVolume} onChange={handleVolumeChange} />
         </ItemAdder>
       }
     />

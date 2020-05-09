@@ -246,6 +246,7 @@ function applyControlsToPlayback(
             sourceTracksParams: _.mapValues(outPlayback.sourceTracksParams, (params) => {
               return { ...params, volume: defaultValue(params.volume) * controlValue }
             }),
+            volume: defaultValue(outPlayback.volume) * controlValue,
           }
         }
       })
@@ -253,7 +254,7 @@ function applyControlsToPlayback(
   return outPlayback
 }
 
-export const makeGetTrackPlayback = () => {
+export const makeGetTrackPlaybackSelector = () => {
   const getTrackIndex = makeGetTrackIndex(),
     getTrackPrevIndex = makeGetTrackPrevIndex()
   return createSelector(
@@ -341,6 +342,16 @@ export const makeGetTrackPlayback = () => {
       }
     }
   )
+}
+
+const trackPlaybackSelectors: {
+  [trackId: string]: ReturnType<typeof makeGetTrackPlaybackSelector>
+} = {}
+
+export const makeGetTrackPlayback = (trackId: string) => {
+  if (!trackPlaybackSelectors[trackId])
+    trackPlaybackSelectors[trackId] = makeGetTrackPlaybackSelector()
+  return trackPlaybackSelectors[trackId]
 }
 
 export const getGlobalPlayback = createSelector(
@@ -531,11 +542,7 @@ export const getLocalPersistentLive = createSelector(
     (state: Types.State) => state.live.controlPresets,
     (state: Types.State) => state.live.globalControls,
   ],
-  (
-    bindings,
-    controlPresets,
-    globalControls
-  ): Types.LocalPersistentLive => {
+  (bindings, controlPresets, globalControls): Types.LocalPersistentLive => {
     return {
       bindings,
       controlPresets,

@@ -39,7 +39,7 @@ export const defaultPlayback: Types.Playback = {
   defaultBindings: Types.Bindings = {},
   defaultBinding: Types.Binding = {
     midi: null,
-    twoway: true,
+    twoway: false,
     badMidiValue: false,
     lastMidiValue: -1,
   },
