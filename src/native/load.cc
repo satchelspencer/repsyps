@@ -70,6 +70,7 @@ void loadSrc(
   int lineSize;
   int channelIndex;
   unsigned int aStreamIndex;
+  int totalSamples = 0;
 
   streamInfo * ainfo;
   while (av_read_frame(pFormatCtx, pkt) >= 0) {
@@ -105,7 +106,7 @@ void loadSrc(
             &ainfo->streamOutput,
             &lineSize,
             aFrame->channels,
-            ainfo->aRate*ainfo->streamLength,
+            ainfo->aRate * ainfo->streamLength * 1.1,
             ainfo->aFormat,
             0
           );
@@ -115,27 +116,29 @@ void loadSrc(
             continue;
           }
         }
-
-        /* copy data from frame to buffer */
-        if(aFrame->nb_samples > 0){
-          /* planar audio has a separate array for each channel */
-          if(ainfo->isPlanar){
-            for(channelIndex=0;channelIndex<aFrame->channels;channelIndex++){ 
+        totalSamples += aFrame->nb_samples;
+        if(totalSamples < ainfo->aRate * ainfo->streamLength){
+          /* copy data from frame to buffer */
+          if(aFrame->nb_samples > 0){
+            /* planar audio has a separate array for each channel */
+            if(ainfo->isPlanar){
+              for(channelIndex=0;channelIndex<aFrame->channels;channelIndex++){ 
+                memcpy(
+                  ainfo->streamOutput[channelIndex] + ainfo->outputSize,
+                  aFrame->data[channelIndex],
+                  ainfo->dataSize * aFrame->nb_samples
+                );
+              }
+              ainfo->outputSize += ainfo->dataSize * aFrame->nb_samples;
+            }else{
+              /* non planar audio is interleaved */
               memcpy(
-                ainfo->streamOutput[channelIndex] + ainfo->outputSize,
-                aFrame->data[channelIndex],
-                ainfo->dataSize * aFrame->nb_samples
+                ainfo->streamOutput[0] + ainfo->outputSize,
+                aFrame->data[0],
+                ainfo->dataSize * aFrame->nb_samples * aFrame->channels
               );
+              ainfo->outputSize += ainfo->dataSize * aFrame->nb_samples * aFrame->channels;
             }
-            ainfo->outputSize += ainfo->dataSize * aFrame->nb_samples;
-          }else{
-            /* non planar audio is interleaved */
-            memcpy(
-              ainfo->streamOutput[0] + ainfo->outputSize,
-              aFrame->data[0],
-              ainfo->dataSize * aFrame->nb_samples * aFrame->channels
-            );
-            ainfo->outputSize += ainfo->dataSize * aFrame->nb_samples * aFrame->channels;
           }
         }
         av_packet_unref(pkt);

@@ -10,7 +10,7 @@
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H
 
-static bool REPSYS_LOG = false;
+static bool REPSYS_LOG = true;
 static int CHANNEL_COUNT = 2;
 static int OVERLAP_COUNT = 2;
 static int WINDOW_STEP = 256;
