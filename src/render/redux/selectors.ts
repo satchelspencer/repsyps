@@ -207,11 +207,11 @@ function applyControlsToPlayback(
     const controlGroup = controls[posStr],
       initValue = defaultValue(initValues[posStr]),
       defValue = defaultValue(values[posStr]),
-      value = Math.pow(initValue > 0.5 ? defValue : 1 - defValue, 1 / 1.6)
+      invValue = initValue > 0.5 ? defValue : 1 - defValue
 
     if (controlGroup && !controlGroup.absolute)
       controlGroup.controls.forEach((control) => {
-        const controlValue = control.invert ? 1 - value : value
+        const controlValue = Math.pow(control.invert ? 1 - invValue : invValue, 1 / 1.6)
         if ('trackIndex' in control && control.trackIndex === trackIndex) {
           if ('trackProp' in control) {
             outPlayback = {

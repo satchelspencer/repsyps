@@ -467,7 +467,7 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
       if(REPSYS_LOG) std::cout << "free track " << mixTrackPair.first << std::endl;
       state.mixTracks[mixTrackPair.first] = NULL;
       delete mixTrack;
-    }else if(mixTrack->playback->playing){
+    }else{
       Napi::Object mixTrackState = Napi::Object::New(env);
       mixTrackState.Set("sample", mixTrack->sample);
 

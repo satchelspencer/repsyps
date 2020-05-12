@@ -276,15 +276,25 @@ int paCallbackMethod(
         mixTrack->lastCommit = time;
         mixTrack->playback->chunkIndex = 
           (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
-        mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
-        if(mixTrack->hasNext && (mixTrack->playback->chunkIndex == 0 || mixTrack->playback->nextAtChunk)){
-          applyNextPlayback(mixTrackPair.first, state);
-          mixTrack->playback->chunkIndex = 0;
-        } 
-        if(rec != NULL && rec->fromSourceId == mixTrackPair.first &&  !rec->started){
-          rec->started = true;
-          rec->fromSourceOffset = chunkEndPosition;
+        
+        /* if end of playback and no loop and no next. stoppit */
+        if(!mixTrack->hasNext && mixTrack->playback->chunkIndex == 0 && !mixTrack->playback->loop){
+          mixTrack->playback->playing = false;
+           mixTrack->playback->chunkIndex = -1;
+        }else{
+          mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
+          
+          if(mixTrack->hasNext && (mixTrack->playback->chunkIndex == 0 || mixTrack->playback->nextAtChunk)){
+            applyNextPlayback(mixTrackPair.first, state);
+            mixTrack->playback->chunkIndex = 0;
+          } 
+          
+          if(rec != NULL && rec->fromSourceId == mixTrackPair.first &&  !rec->started){
+            rec->started = true;
+            rec->fromSourceOffset = chunkEndPosition;
+          }
         }
+        
       }
     }
 

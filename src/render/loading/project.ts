@@ -115,6 +115,6 @@ export function exportProject(path: string, store: Store<Types.State>) {
       )
     })
   })
-  const projectPath = pathUtils.join(path, baseName)
+  const projectPath = pathUtils.join(path, baseName + '.syp')
   saveProject(projectPath, store)
 }
