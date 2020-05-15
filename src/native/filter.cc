@@ -3,12 +3,15 @@
 static int FILTER_COUNT = OVERLAP_COUNT * CHANNEL_COUNT;
 
 void setMixTrackFilter(std::string mixTrackId, streamState* state){
-  mixTrack* mixTrack = state->mixTracks[mixTrackId];
-  if(mixTrack != NULL){
+  if(
+    state->mixTracks.find(mixTrackId) != state->mixTracks.end() &&
+    state->mixTracks[mixTrackId] != NULL
+  ){
+    mixTrack* mixTrack = state->mixTracks[mixTrackId];
     float filter = mixTrack->playback->filter;
-    if(filter == 0.5){
-      mixTrack->hasFilter = false;
-    }else{
+
+    if(filter == 0.5) mixTrack->hasFilter = false;
+    else{
       float low_des = filter > 0.5 ? 0.0 : 1.0;
       float high_des = 1 - low_des;
       float cutoff_mag = abs(filter - 0.5);
@@ -31,7 +34,10 @@ void setMixTrackFilter(std::string mixTrackId, streamState* state){
       firdespm_run(num_taps,num_bands,bands,des,weights,wtype,LIQUID_FIRDESPM_BANDPASS,h);
 
       for(auto sourcePair: mixTrack->playback->sourceTracksParams){
-        if(state->sources[sourcePair.first] != NULL){
+        if(
+          state->sources.find(sourcePair.first) != state->sources.end() &&
+          state->sources[sourcePair.first] != NULL
+        ){
           source* source = state->sources[sourcePair.first];
           int startingSize = source->filters.size();
           source->filters.reserve(FILTER_COUNT);

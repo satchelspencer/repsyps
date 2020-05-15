@@ -18,7 +18,9 @@ const RelinkWrapper = ctyled.div.styles({
   border: true,
   rounded: true,
   color: (c) => c.nudge(0.1),
-})
+}).extendSheet`
+box-shadow:0 0 5px rgba(0,0,0,0.1);
+`
 
 const MissingList = ctyled.div.styles({
   flex: 1,

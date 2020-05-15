@@ -72,6 +72,9 @@ export default function init() {
           noMenu?: boolean
         }
       } = {
+        about: {
+          click: () => dispatch(Actions.setModalRoute('about')),
+        },
         quit: {
           click: () => app.quit(),
           accelerator: 'CmdOrCtrl+Q',
@@ -630,7 +633,7 @@ export default function init() {
               win.setSize(1260 / 1.25, 720 / 1.25, true)
               win.setPosition(0, 0, true)
               newSettings.size = 9
-            }else{
+            } else {
               newSettings.size = 11
             }
             dispatch(Actions.setSettings(newSettings))
@@ -708,7 +711,24 @@ export default function init() {
 
     function handleUpdate() {
       const template = [
-        ...(isMac ? [{ role: 'appMenu' }] : []),
+        ...(isMac
+          ? [
+              {
+                label: 'repsyps',
+                submenu: [
+                  { label: 'About Repsyps', ...menuCommands.about },
+                  { type: 'separator' },
+                  { role: 'services' },
+                  { type: 'separator' },
+                  { role: 'hide' },
+                  { role: 'hideothers' },
+                  { role: 'unhide' },
+                  { type: 'separator' },
+                  { role: 'quit' },
+                ],
+              },
+            ]
+          : []),
         {
           label: 'File',
           submenu: [
@@ -1130,6 +1150,34 @@ export default function init() {
                   { role: 'window' },
                 ]
               : [{ role: 'close' }]),
+          ],
+        },
+        {
+          role: 'help',
+          submenu: [
+            {
+              label: 'View Tutorials',
+              click: async () => {
+                await electron.shell.openExternal('https://elldev.com/repsyps/intro')
+              },
+            },
+            {
+              label: 'Github Repo',
+              click: async () => {
+                await electron.shell.openExternal(
+                  'https://github.com/satchelspencer/repsyps'
+                )
+              },
+            },
+            {
+              label: 'Report an Issue',
+              click: async () => {
+                await electron.shell.openExternal(
+                  'https://github.com/satchelspencer/repsyps/issues'
+                )
+              },
+            },
+            { label: 'About Repsyps', ...menuCommands.about },
           ],
         },
       ]

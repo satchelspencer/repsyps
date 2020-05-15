@@ -8,22 +8,22 @@ import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 
 import { apply, version, Migration, Versioned } from './apply-migration'
-import * as env from 'render/util/env'
 
-const migration: Migration<any, any> = null
+const migration: Migration<any, any> = null,
+  latest = '0.0.0'
 
 export function loadLocalStorage(store: Store<Types.State>) {
   const raw = localStorage.getItem('repsyps'),
     lraw = localStorage.getItem('repsyps:local')
   try {
     const lstate = JSON.parse(lraw) as Versioned<Types.LocalPersistentState>
-    if (lstate.version === env.version)
+    if (lstate.version === latest)
       store.dispatch(Actions.loadLocalPersisted(lstate.state))
   } catch (e) {}
   try {
     const state = JSON.parse(raw),
       migrated = apply(state, migration) as Versioned<Types.PersistentState>
-    if (migrated.version === env.version)
+    if (migrated.version === latest)
       store.dispatch(Actions.loadPersisted({ state: migrated.state, reset: true }))
   } catch (e) {}
 }
@@ -33,8 +33,8 @@ export function saveLocalStorage(store: Store<Types.State>) {
     persisted = Selectors.getPersistentState(state),
     lpersisted = Selectors.getLocalPersistentState(state)
 
-  localStorage.setItem('repsyps', JSON.stringify(version(persisted)))
-  localStorage.setItem('repsyps:local', JSON.stringify(version(lpersisted)))
+  localStorage.setItem('repsyps', JSON.stringify(version(persisted, latest)))
+  localStorage.setItem('repsyps:local', JSON.stringify(version(lpersisted, latest)))
 }
 
 function getPropjectFromFile(path: string) {
@@ -42,7 +42,7 @@ function getPropjectFromFile(path: string) {
   try {
     const state = JSON.parse(raw),
       migrated = apply(state, migration) as Versioned<Types.PersistentState>
-    if (migrated.version === env.version) {
+    if (migrated.version === latest) {
       return migrated.state
     } else return null
   } catch (e) {
@@ -81,13 +81,13 @@ export function loadProjectScenes(
 export function exportCurrentScene(path: string, store: Store<Types.State>) {
   const state = store.getState(),
     sceneState = Selectors.getSceneExport(state, state.live.sceneIndex, path)
-  fs.writeFileSync(path, JSON.stringify(version(sceneState)))
+  fs.writeFileSync(path, JSON.stringify(version(sceneState, latest)))
 }
 
 export function saveProject(path: string, store: Store<Types.State>) {
   store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
   const bindings = Selectors.getPersistentState(store.getState())
-  fs.writeFileSync(path, JSON.stringify(version(bindings)))
+  fs.writeFileSync(path, JSON.stringify(version(bindings, latest)))
 }
 
 export function exportProject(path: string, store: Store<Types.State>) {

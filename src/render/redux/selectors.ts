@@ -200,7 +200,7 @@ function applyControlsToPlayback(
 ) {
   let outPlayback: Types.TrackPlayback = {
     ...playback,
-    alpha: playback.alpha * boundsAlpha,
+    alpha: playback.aperiodic ? playback.alpha : playback.alpha * boundsAlpha,
   }
   if (!enabled) return playback
   _.keys(controls).forEach((posStr) => {
@@ -319,7 +319,7 @@ export const makeGetTrackPlaybackSelector = () => {
           prevValues,
           prevInitValues,
           enabled,
-          boundsAlpha,
+          1,
           relativeSceneIndex + 1
         )
         newNextPlayback =
@@ -331,7 +331,7 @@ export const makeGetTrackPlaybackSelector = () => {
             prevValues,
             prevInitValues,
             enabled,
-            boundsAlpha,
+            1,
             relativeSceneIndex + 1
           )
       }

@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 
 import Relink from './relink'
+import About from './about'
 
 const ModalWrapper = ctyled.div.styles({
   align: 'center',
@@ -36,6 +37,7 @@ function Modal() {
       <ModalWrapper onClick={handleWrapperClick}>
         <ModalBody onClick={handleBodyClick}>
           {route === 'relink' && <Relink />}
+          {route === 'about' && <About />}
         </ModalBody>
       </ModalWrapper>
     )

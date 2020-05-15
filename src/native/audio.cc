@@ -6,6 +6,7 @@ static PaStream * pstream = NULL;
 
 void poller(){
   while(true){
+    /* allocate new recording chunk as needed */
     if(
       state.recording != NULL 
       && state.recording->chunkIndex == state.recording->chunks.size()-1
@@ -411,7 +412,7 @@ Napi::Value removeMixTrack(const Napi::CallbackInfo &info){
 
   if(state.mixTracks[mixTrackId] == NULL) return Napi::Boolean::New(env, false);
   
-  if(state.mixTracks.find(mixTrackId) != state.mixTracks.end()  && state.mixTracks[mixTrackId] != NULL){
+  if(state.mixTracks.find(mixTrackId) != state.mixTracks.end() && state.mixTracks[mixTrackId] != NULL){
     state.mixTracks[mixTrackId]->removed = true;
     return Napi::Boolean::New(env, true);
   }
@@ -433,17 +434,15 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
 
   timings.Set("recTime", state.recording ? state.recording->length : 0);
 
-  source* mixTrackSource;
-  unsigned int channelIndex;
   for(auto sourcesPair: state.sources){
-    mixTrackSource = sourcesPair.second;
-    if(mixTrackSource && mixTrackSource->safe){
+    source* mixTrackSource = sourcesPair.second;
+    if(mixTrackSource && mixTrackSource != NULL && mixTrackSource->safe){
       if(REPSYS_LOG) std::cout << "free source " << sourcesPair.first << std::endl;
       if(mixTrackSource->data != NULL){
         av_freep(&mixTrackSource->data[0]);
         av_freep(&mixTrackSource->data);
       }else{
-        for(channelIndex=0;channelIndex<mixTrackSource->channels.size();channelIndex++){
+        for(unsigned int channelIndex=0;channelIndex<mixTrackSource->channels.size();channelIndex++){
           delete [] mixTrackSource->channels[channelIndex];
         }
       }
@@ -453,7 +452,9 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
         delete [] pv->currentPFFT;
         delete [] pv->nextPFFT;
       }
-      for(firfilt_rrrf filter: mixTrackSource->filters) firfilt_rrrf_destroy(filter);
+      for(firfilt_rrrf filter: mixTrackSource->filters){
+        if(filter != NULL) firfilt_rrrf_destroy(filter);
+      }
       state.sources[sourcesPair.first] = NULL;
       delete mixTrackSource;
     }
@@ -469,7 +470,7 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
       delete mixTrack;
     }else{
       Napi::Object mixTrackState = Napi::Object::New(env);
-      mixTrackState.Set("sample", mixTrack->sample);
+      if(mixTrack->playback->playing) mixTrackState.Set("sample", mixTrack->sample);
 
       mixTrackState.Set("playback", getPlaybackTiming(env, mixTrack->playback));
       if(mixTrack->hasNext)

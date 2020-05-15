@@ -251,7 +251,7 @@ export default createReducer(defaultState, (handle) => [
     let newPeriod = null
 
     if (!aperiodic && !isLoop && bounds.length && sample)
-      newPlayback.chunks = getChunksFromBounds(sample, bounds, 1)
+      newPlayback.chunks = getChunksFromBounds(sample, bounds)
 
     if (sync === 'lock') {
       const nextBoundIndex = _.findIndex(bounds, (b) => {
