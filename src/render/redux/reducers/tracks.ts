@@ -128,6 +128,61 @@ export function selectTrack(state: Types.State, trackId: string) {
   )
 }
 
+function setTrackSync(
+  state: Types.State,
+  trackId: string,
+  syncin: Types.SyncControlState
+) {
+  const playback = state.live.tracks[trackId].playback,
+    sync = syncin === undefined ? (playback.aperiodic ? 'on' : 'off') : syncin,
+    aperiodic = sync === 'off',
+    isLoop = !!playback.chunks[playback.chunkIndex * 2 + 1],
+    { bounds, boundsAlpha } = state.sources[trackId],
+    sample = (getTiming().tracks[trackId] || { sample: 0 }).sample,
+    newPlayback = {
+      ...playback,
+      aperiodic,
+    }
+  let newPeriod = null
+
+  if (!aperiodic && !isLoop && bounds.length && sample)
+    newPlayback.chunks = getChunksFromBounds(sample, bounds)
+
+  if (sync === 'lock') {
+    const nextBoundIndex = _.findIndex(bounds, (b) => {
+        return b > sample
+      }),
+      boundIndex = nextBoundIndex - 1
+
+    if (nextBoundIndex !== -1 && boundIndex !== -1) {
+      if (playback.aperiodic)
+        audio.syncToTrack(trackId, bounds[boundIndex], bounds[nextBoundIndex])
+      newPeriod =
+        (bounds[nextBoundIndex] - bounds[boundIndex]) * playback.alpha * boundsAlpha
+    }
+  }
+
+  return {
+    ...state,
+    playback: newPeriod
+      ? {
+          ...state.playback,
+          period: newPeriod,
+        }
+      : state.playback,
+    live: {
+      ...state.live,
+      tracks: {
+        ...state.live.tracks,
+        [trackId]: {
+          ...state.live.tracks[trackId],
+          playback: newPlayback,
+        },
+      },
+    },
+  }
+}
+
 export default createReducer(defaultState, (handle) => [
   handle(Actions.addTrack, (state, { payload }) => {
     const currentScene = state.live.scenes[state.live.sceneIndex],
@@ -235,57 +290,11 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.setTrackSync, (state, { payload }) => {
-    const trackId =
-        payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
-      playback = state.live.tracks[trackId].playback,
-      sync =
-        payload.sync === undefined ? (playback.aperiodic ? 'on' : 'off') : payload.sync,
-      aperiodic = sync === 'off',
-      isLoop = !!playback.chunks[playback.chunkIndex * 2 + 1],
-      { bounds, boundsAlpha } = state.sources[trackId],
-      sample = (getTiming().tracks[trackId] || { sample: 0 }).sample,
-      newPlayback = {
-        ...playback,
-        aperiodic,
-      }
-    let newPeriod = null
-
-    if (!aperiodic && !isLoop && bounds.length && sample)
-      newPlayback.chunks = getChunksFromBounds(sample, bounds)
-
-    if (sync === 'lock') {
-      const nextBoundIndex = _.findIndex(bounds, (b) => {
-          return b > sample
-        }),
-        boundIndex = nextBoundIndex - 1
-
-      if (nextBoundIndex !== -1 && boundIndex !== -1) {
-        if (playback.aperiodic)
-          audio.syncToTrack(trackId, bounds[boundIndex], bounds[nextBoundIndex])
-        newPeriod =
-          (bounds[nextBoundIndex] - bounds[boundIndex]) * playback.alpha * boundsAlpha
-      }
-    }
-
-    return {
-      ...state,
-      playback: newPeriod
-        ? {
-            ...state.playback,
-            period: newPeriod,
-          }
-        : state.playback,
-      live: {
-        ...state.live,
-        tracks: {
-          ...state.live.tracks,
-          [trackId]: {
-            ...state.live.tracks[trackId],
-            playback: newPlayback,
-          },
-        },
-      },
-    }
+    return setTrackSync(
+      state,
+      payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
+      payload.sync
+    )
   }),
   handle(Actions.selectTrackExclusive, (state, { payload: trackId }) => {
     return selectTrack(state, trackId)
@@ -311,7 +320,7 @@ export default createReducer(defaultState, (handle) => [
   }),
   handle(Actions.editTrack, (state, { payload }) => {
     const track = state.live.tracks[payload.trackId]
-    return applyTrackPlayback(
+    return setTrackSync(
       {
         ...state,
         live: {
@@ -327,9 +336,7 @@ export default createReducer(defaultState, (handle) => [
         },
       },
       payload.trackId,
-      {
-        aperiodic: payload.edit,
-      }
+      payload.edit ? 'off' : 'on'
     )
   }),
   handle(Actions.setTrackPlayLock, (state, { payload }) => {
