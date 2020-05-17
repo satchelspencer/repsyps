@@ -19,7 +19,7 @@ const ControlsWrapper = ctyled.div.styles({
   padd: 2,
   justify: 'space-between',
 }).extendSheet`
-  width:${({ size }) => size * 25 - (isMac ? 144 / window.devicePixelRatio : 0)}px;
+  width:${({ size }) => size * 25 - (isMac ? 72 : 0)}px;
 `
 
 const Playback = memo(() => {

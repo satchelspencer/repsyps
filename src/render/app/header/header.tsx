@@ -16,9 +16,9 @@ const HeaderWrapper = ctyled.div.attrs({ fixed: false }).styles({
 }).extendSheet`
   ${({ size }, { fixed }) =>
     fixed
-      ? `height:${72 / window.devicePixelRatio}px;
+      ? `height:${36}px;
         -webkit-app-region: drag;
-        padding-left:${144 / window.devicePixelRatio}px;`
+        padding-left:${72}px;`
       : `height:${size * 3}px;`}
 `
 
