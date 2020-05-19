@@ -12,6 +12,7 @@ import SourceTracks from './source-tracks'
 import Separate from './separate'
 import Cues from './cues'
 import Filter from './filter'
+import Delay from './delay'
 import Loop from './loop'
 import Sync from './sync'
 import Stretch from './stretch'
@@ -93,6 +94,7 @@ function Sidebar() {
                 <SourceTracks trackId={trackId} />
                 <TrackVolume trackId={trackId} />
                 <Filter trackId={trackId} />
+                <Delay trackId={trackId} />
                 <BoundsControl trackId={trackId} />
                 <Sync trackId={trackId} />
                 <Stretch trackId={trackId} />

@@ -45,6 +45,45 @@ const tests = {
 
     audio.start(audio.getDefaultOutput())
   },
+  delay: async () => {
+    audio.init('./')
+    await audio.loadSource(source, 'mysource')
+
+    audio.setMixTrack('mytrack', {
+      playback: {
+        chunks: [0, ssize],
+        playing: true,
+        sourceTracksParams: {
+          mysource: {
+            volume: 1,
+            offset: 0,
+          },
+        },
+        delay: ssize/8,
+        delayGain: 0.2
+      },
+      nextPlayback: null,
+    })
+
+    audio.updatePlayback({
+      period: ssize * 1.2,
+      volume: 0.5,
+      playing: true,
+    })
+
+    let i = true;
+    setInterval(() => {
+      audio.setMixTrack('mytrack', {
+        playback: {
+          volume: i?0:1
+        },
+        nextPlayback: null,
+      })
+      i = !i
+    }, 2000)
+
+    audio.start(audio.getDefaultOutput())
+  },
   sep: async () => {
     audio.init('./')
     await audio.loadSource(source, 'mysource')

@@ -51,6 +51,22 @@ const global: NamedMappings = {
       else return (Math.pow(2 * input - 1, 8) + 1) / 2
     },
   },
+  delayGain: {
+    toStandard(input) {
+      return input * 3
+    },
+    fromStandard(input) {
+      return input / 3
+    },
+  },
+  delay: {
+    toStandard(input) {
+      return (input - 200) / 44100
+    },
+    fromStandard(input) {
+      return input * 44100 + 200
+    },
+  },
 }
 
 export default global

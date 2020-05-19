@@ -72,7 +72,6 @@ export default function syncAudio(store: Store<Types.State>) {
       if (trackIsNew) playbackSelectors[trackId] = Selectors.makeGetTrackPlayback(trackId)
       const prev = lastTrackPlaybacks[trackId],
         current = playbackSelectors[trackId](currentState, trackId)
-
       _.keys(current.playback.sourceTracksParams).forEach(async (sourceId) => {
         const sourceTrack = source.sourceTracks[sourceId],
           sourceIsNew = !sourceTrack.loaded

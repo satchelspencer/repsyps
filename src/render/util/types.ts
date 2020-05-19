@@ -72,6 +72,8 @@ export interface PersitentTrackPlayback {
   nextAtChunk: boolean
   volume: number
   filter: number
+  delay: number
+  delayGain: number
   sourceTracksParams: TrackSourcesParams
 }
 
@@ -167,7 +169,7 @@ export interface Position {
 
 export type SourceTrackValueProp = 'volume' | string
 
-export type TrackValueProp = 'filter' | string
+export type TrackValueProp = 'filter' | 'delay' | 'delayGain' | string
 
 export type GlobalValueProp = 'rate' | 'volume' | string
 

@@ -15,6 +15,8 @@ export const defaultPlayback: Types.Playback = {
     playing: false,
     aperiodic: true,
     filter: 0.5,
+    delay: 22250,
+    delayGain: 0,
     chunkIndex: -1,
     nextAtChunk: false,
     muted: false,

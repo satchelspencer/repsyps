@@ -277,6 +277,8 @@ mixTrackPlayback * initMixTrackPlayback(){
   playback->preview = false;
   playback->nextAtChunk = false;
   playback->unpause = false;
+  playback->delay = 0.;
+  playback->delayGain = 0.;
   return playback;
 }
 
@@ -342,6 +344,10 @@ void setMixTrackPlayback(mixTrackPlayback * playback, Napi::Value value){
       playback->muted = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "filter"){
       playback->filter = value.As<Napi::Number>().FloatValue();
+    }else if(propNameStr == "delay"){
+      playback->delay = value.As<Napi::Number>().FloatValue();
+    }else if(propNameStr == "delayGain"){
+      playback->delayGain = value.As<Napi::Number>().FloatValue();
     }else if(propNameStr == "aperiodic"){
       playback->aperiodic = value.As<Napi::Boolean>().Value();
     }else if(propNameStr == "preservePitch"){
@@ -375,6 +381,18 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->overlapIndex = 0;
     newMixTrack->removed = false;
     newMixTrack->safe = false;
+
+    ringbuffer * newBuffer = new ringbuffer{};
+    newBuffer->size = DELAY_MAX_SIZE;
+    newBuffer->head = 0;
+    newBuffer->tail = 0;
+    for(int i=0;i<CHANNEL_COUNT;i++){
+      float* buff = new float[newBuffer->size];
+      for(int j=0;j<newBuffer->size;j++) buff[j] = 0;
+      newBuffer->channels.push_back(buff);
+    }
+    newMixTrack->delayBuffer = newBuffer;
+
     state.mixTracks[mixTrackId] = newMixTrack;
   }
 
@@ -467,6 +485,9 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
     if(mixTrack->safe){
       if(REPSYS_LOG) std::cout << "free track " << mixTrackPair.first << std::endl;
       state.mixTracks[mixTrackPair.first] = NULL;
+      for(float* buff: mixTrack->delayBuffer->channels){
+        delete [] buff;
+      }
       delete mixTrack;
     }else{
       Napi::Object mixTrackState = Napi::Object::New(env);

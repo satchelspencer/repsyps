@@ -58,6 +58,10 @@ double getSamplePosition(
   ( playback->chunks[playback->chunkIndex*2+1] * phase );
 }
 
+int normMod(const int & x, ringbuffer * buff){
+  return (x + buff->size) % buff->size;
+}
+
 void applyFilter(
   float& sampleValue,
   mixTrackPlayback* playback,
@@ -66,6 +70,7 @@ void applyFilter(
   mixTrackSourceConfig* params,
   streamState *state,
   const int& outBufferHead,
+  const int& trackBufferHead,
   const int& channelIndex,
   const float& window
 ){
@@ -82,7 +87,11 @@ void applyFilter(
     firfilt_rrrf_push(source->filters[filterIndex], sampleValue);   
     firfilt_rrrf_execute(source->filters[filterIndex], &sampleValue);
   }
-  state->buffer->channels[channelIndex][outBufferHead] += sampleValue * window;
+  float windowedValue = sampleValue * window;
+  float delayedValue = mixTrack->delayBuffer->channels[channelIndex][normMod(trackBufferHead - playback->delay, mixTrack->delayBuffer)];
+  mixTrack->delayBuffer->channels[channelIndex][normMod(trackBufferHead + WINDOW_SIZE*2, mixTrack->delayBuffer)] = 0;
+  state->buffer->channels[channelIndex][outBufferHead] += windowedValue + delayedValue;
+  mixTrack->delayBuffer->channels[channelIndex][trackBufferHead] += (delayedValue + windowedValue) * playback->delayGain;
 }
 
 static std::complex<float> * x = new std::complex<float>[PV_WINDOW_SIZE];
@@ -170,6 +179,7 @@ int paCallbackMethod(
           for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
             double trackPosition = trackStartPosition - params->offset;
             int outBufferHead = state->buffer->head;
+            int trackBufferHead = mixTrack->delayBuffer->head;
             playback = mixTrack->playback;
 
             if(playback->preservePitch){
@@ -234,8 +244,9 @@ int paCallbackMethod(
                 fft_execute(pr);
                 for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
                   float sampleValue = z[pvWinIndex].real() / (PV_WINDOW_SIZE / 2) / pvOverlap;
-                  applyFilter(sampleValue, playback, mixTrack, source, params, state, outBufferHead, channelIndex, state->pvWindow[pvWinIndex]);
+                  applyFilter(sampleValue, playback, mixTrack, source, params, state, outBufferHead, trackBufferHead, channelIndex, state->pvWindow[pvWinIndex]);
                   outBufferHead = (outBufferHead + 1) % state->buffer->size;
+                  trackBufferHead = (trackBufferHead + 1) % mixTrack->delayBuffer->size;
                 }
                 trackPosition += analysisStep;
               }
@@ -259,10 +270,11 @@ int paCallbackMethod(
                   sampleValue = source->channels[channelIndex][sourceIndex];
                   float nextValue = source->channels[channelIndex][sourceIndex + 1];
                   sampleValue += (nextValue - sampleValue) * positionFrac;
-                  applyFilter(sampleValue, playback, mixTrack, source, params, state, outBufferHead, channelIndex, state->window[windowIndex]);
+                  applyFilter(sampleValue, playback, mixTrack, source, params, state, outBufferHead, trackBufferHead, channelIndex, state->window[windowIndex]);
                 }
                 
                 outBufferHead = (outBufferHead + 1) % state->buffer->size;
+                trackBufferHead = (trackBufferHead + 1) % mixTrack->delayBuffer->size;
                 trackPosition += invAlpha;
               }
               /* end resampling */
@@ -296,6 +308,7 @@ int paCallbackMethod(
         }
 
       }
+      mixTrack->delayBuffer->head = (mixTrack->delayBuffer->head + WINDOW_STEP) % mixTrack->delayBuffer->size;
     }
 
     state->buffer->head = (state->buffer->head + WINDOW_STEP) % state->buffer->size;

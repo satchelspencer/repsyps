@@ -20,6 +20,7 @@ static int PV_MAX_FREQ = (PV_WINDOW_SIZE / 2) - 1;
 static int PV_RATE = 44100;
 static float PV_ABSTOL = 1e-3;
 static float PV_FREQ_STEP = PV_RATE / (float)(PV_WINDOW_SIZE);
+static int DELAY_MAX_SIZE = PV_RATE * 10;
 
 typedef struct{
   float volume;
@@ -43,6 +44,8 @@ typedef struct{
   bool loop;
   bool muted;
   float filter;
+  float delay;
+  float delayGain;
   bool aperiodic;
   bool preservePitch;
   bool nextAtChunk;
@@ -76,6 +79,7 @@ typedef struct{
   bool hasFilter;
   bool removed;
   bool safe;
+  ringbuffer *delayBuffer;
 } mixTrack;
 
 typedef struct{
