@@ -318,6 +318,16 @@ int paCallbackMethod(
     window++;
   }
 
+  if(state->buffer->head - state->buffer->tail == 0){
+    float max = 0;
+    for(int diff = 0;diff < ANALYSIS_SIZE;diff++){
+      int bufferIndex = normMod(state->buffer->head - diff, state->buffer);
+      float value = abs(state->buffer->channels[0][bufferIndex]);
+      if(value > max) max = value;
+    }
+    state->playback->maxLevel = max;
+  }
+
   /* update time and misc */
   state->playback->time = startTime + ((double)framesPerBuffer / state->playback->period);
 

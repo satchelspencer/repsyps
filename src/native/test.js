@@ -244,5 +244,5 @@ const test = tests[process.argv[2] || 'default']
 if (!test) console.log('UNKNOWN TEST:', process.argv[2])
 else {
   test()
-  setInterval(() => console.log(audio.getTiming().tracks), 1000)
+  setInterval(() => console.log(audio.getTiming()), 1000)
 }

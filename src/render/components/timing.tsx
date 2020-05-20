@@ -8,6 +8,7 @@ const defaultTimes: Types.TimingState = {
   time: 0,
   tracks: {},
   recTime: 0,
+  maxLevel: 0,
 }
 
 let currentTiming: Types.TimingState = defaultTimes,

@@ -95,6 +95,7 @@ export interface TimingState {
   time: number
   tracks: { [trackId: string]: TrackTiming }
   recTime: number
+  maxLevel: number
 }
 
 export interface Times {

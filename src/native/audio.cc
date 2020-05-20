@@ -32,6 +32,7 @@ Napi::Value init(const Napi::CallbackInfo &info){
   newPlayback->time = 0.;
   newPlayback->playing = false;
   newPlayback->period = 0;
+  newPlayback->maxLevel = 0;
   state.playback = newPlayback;
 
   float* window = new float[WINDOW_SIZE];
@@ -451,6 +452,7 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
   Napi::Object tracktimings = Napi::Object::New(env);
 
   timings.Set("recTime", state.recording ? state.recording->length : 0);
+  timings.Set("maxLevel", state.playback->maxLevel);
 
   for(auto sourcesPair: state.sources){
     source* mixTrackSource = sourcesPair.second;

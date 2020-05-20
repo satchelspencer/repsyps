@@ -20,6 +20,7 @@ import GridCell from './grid-cell'
 import PositionDetail from './position'
 import ControlsOptions from './options'
 import Presets from './presets'
+import Levels from './level'
 import isEqual from 'src/render/util/is-equal'
 
 const ControlsGridWrapper = ctyled.div.attrs({ enabled: true }).styles({
@@ -212,6 +213,7 @@ function ControlsGrid() {
           </GridInner>
         </ControlsGridWrapper>
         <Presets />
+        <Levels />
       </ControlsIH>
     </ControlsH>
   )
