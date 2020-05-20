@@ -78,7 +78,7 @@ void applyFilter(
   else if(sampleValue > 1) sampleValue = 1;
   if(playback->preview)
     state->previewBuffer->channels[channelIndex][outBufferHead] += sampleValue * window;
-  if(playback->muted) return;
+  if(playback->muted) sampleValue *= 0;
   sampleValue *= params->volume;
   sampleValue *= mixTrack->playback->volume;
   sampleValue *= state->playback->volume;

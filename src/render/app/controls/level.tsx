@@ -1,15 +1,8 @@
-import React, { memo, useState, useRef, useCallback, useEffect } from 'react'
+import React, { memo, useRef } from 'react'
 import * as _ from 'lodash'
-import ctyled, { active, inline } from 'ctyled'
+import ctyled from 'ctyled'
 
-import * as Actions from 'render/redux/actions'
-import * as Types from 'render/util/types'
-import uid from 'render/util/uid'
 import { useTiming } from 'render/components/timing'
-
-import { useSelector, useDispatch } from 'render/redux/react'
-import Icon from 'render/components/icon'
-import Button from 'render/components/button'
 
 const LevelsWrapper = ctyled.div.styles({
   column: true,
@@ -44,7 +37,7 @@ const ClipIndicator = ctyled.div.attrs({ clip: false }).styles({
 
 const LevelBarInner = ctyled.div.attrs({ clip: false }).styles({
   bg: true,
-  color: (c, { clip }) => (clip ? c.as(red) : c.nudge(0.2)),
+  color: (c) => c.contrast(-0.3).nudge(-0.1),
 }).extend`
   position:absolute;
   left:0;
@@ -55,7 +48,7 @@ const LevelBarInner = ctyled.div.attrs({ clip: false }).styles({
 
 const MaxLevelBar = ctyled.div.styles({
   bg: true,
-  color: (c) => c.nudge(0.5),
+  color: (c) => c.invert().contrast(-0.5),
 }).extend`
   position:absolute;
   left:0;
@@ -65,30 +58,30 @@ const MaxLevelBar = ctyled.div.styles({
 
 function Levels() {
   const { maxLevel: rawLevel } = useTiming(),
-    maxLevel = Math.sqrt(rawLevel),
+    maxLevel = Math.max(Math.log(rawLevel + 0.01) / 4 + 1, 0),
     levels = useRef<number[]>([0])
 
   levels.current.push(maxLevel)
   if (levels.current.length > 20) levels.current.shift()
 
-  const max = _.max(levels.current),
+  const max = Math.max(_.max(levels.current), maxLevel),
     clip = max > 1
 
   return (
     <LevelsWrapper>
       <ClipIndicator clip={clip} />
       <LevelBarWrapper>
+        <MaxLevelBar
+          style={{
+            bottom: Math.min(max, 1) * 100 + '%',
+            transition: maxLevel > max ? 'none' : '0.2s all',
+          }}
+        />
         <LevelBarInner
           clip={false}
           style={{
             height: Math.min(maxLevel, 1) * 100 + '%',
             opacity: clip ? 0.5 : 1,
-          }}
-        />
-        <MaxLevelBar
-          style={{
-            bottom: Math.min(max, 1) * 100 + '%',
-            transition: maxLevel > max ? 'none' : '0.1s all',
           }}
         />
       </LevelBarWrapper>

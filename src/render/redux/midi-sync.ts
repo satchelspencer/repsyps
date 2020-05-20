@@ -38,7 +38,8 @@ export default async function init(store: Store<Types.State>) {
 
       let upper: any,
         leastNote = Infinity,
-        leastUpper: number = null
+        leastUpper: number = null,
+        leastFn: Types.MidiFunctionName = null
 
       for (upper in midiChanges) {
         upper = parseInt(upper, 10)
@@ -53,6 +54,7 @@ export default async function init(store: Store<Types.State>) {
         if (note < leastNote) {
           leastNote = note
           leastUpper = upper
+          leastFn = fn
         }
       }
 
@@ -71,6 +73,7 @@ export default async function init(store: Store<Types.State>) {
                     ...binding,
                     midi: leastUpper,
                     waiting: false,
+                    twoway: instantFunctions.includes(leastFn),
                   },
                 }),
                 Actions.setInitValue({
