@@ -75,6 +75,7 @@ export function addTrackAndSource(path: string) {
         editing: true,
       }),
       selectTrackExclusive(id),
+      editTrack({ trackId: id, edit: true }),
     ],
     'ADD_TRACK_AND_SOURCE'
   )
@@ -296,7 +297,6 @@ export const addControlPreset = createAction<{
 
 export const deleteControlPreset = createAction<string>('DEL_CONTROL_PRESET')
 
-
 export const applyControlPreset = createAction<string>('APPLY_CONTROL_PRESET')
 
 export const setControlsEnabled = createAction<boolean>('SET_CONTROLS_ENABLED')
@@ -384,7 +384,7 @@ export function getApplyControlGroupActions(
       actions.push(incrementPeriod(control.periodDelta))
     } else if ('trackStep' in control && risingEdge) {
       actions.push(stepSelectedTrack(control.trackStep))
-    }else if('sceneStep' in control && risingEdge){
+    } else if ('sceneStep' in control && risingEdge) {
       actions.push(stepSceneIndex(control.sceneStep))
     }
   })

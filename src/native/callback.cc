@@ -260,7 +260,7 @@ int paCallbackMethod(
                 if(hasEnd && trackPosition + params->offset > chunkEndPosition){
                   //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
                   if(hasNext) playback = mixTrack->nextPlayback;
-                  if(!committedStep) committedStep = true;
+                  if(!committedStep && windowIndex < WINDOW_STEP) committedStep = true;
                 }
                 if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition + params->offset;
 
