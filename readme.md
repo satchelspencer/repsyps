@@ -25,7 +25,7 @@ repsyps depends on native libraries that must be installed manually for developm
 git clone https://github.com/satchelspencer/repsyps && cd repsyps
 
 # downlad spleeter weights and test audio files
-wget http://elldev.com/repsyps/lib.tar
+wget http://d1p4j3i2t4q5mq.cloudfront.net/lib.tar
 tar xvzf lib.tar lib && rm lib.tar
 
 # open the library dir
@@ -79,11 +79,11 @@ yarn
 ### Windows Installation
 - nodejs 10+ [see installer](https://nodejs.org/en/download/)
 - yarn `npm install -g yarn`
-- download precompiled libraries [http://elldev.com/repsyps/lib-win.zip](http://elldev.com/repsyps/lib-win.zip) and extract it into the repsyps directory `/lib`
+- download precompiled libraries [http://d1p4j3i2t4q5mq.cloudfront.net/lib-win.zip](http://d1p4j3i2t4q5mq.cloudfront.net/lib-win.zip) and extract it into the repsyps directory `/lib`
 - run `yarn`
  
 ### Linux Installation
-- tested on debian
+- tested on debian 
 - autoconf `sudo apt-get install automake autoconf`
 - nodejs 10+ [see installer](https://nodejs.org/en/download/)
 - yarn `sudo npm install -g yarn`
@@ -96,7 +96,7 @@ clone repsyps to a reasonable place
 git clone https://github.com/satchelspencer/repsyps && cd repsyps
 
 # downlad spleeter weights and test audio files
-wget http://elldev.com/repsyps/lib.tar
+wget http://d1p4j3i2t4q5mq.cloudfront.net/lib.tar
 tar -xvf lib.tar lib && rm lib.tar
 
 # open the library dir
