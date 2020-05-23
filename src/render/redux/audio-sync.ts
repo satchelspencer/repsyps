@@ -194,12 +194,25 @@ export default function syncAudio(store: Store<Types.State>) {
     }
 
     /* change audio output */
-    if (!lastState || lastState.output.current !== currentState.output.current)
-      audio.start(currentState.output.current)
+    if (!lastState || lastState.output.current !== currentState.output.current) {
+      const matchingOutput = availableOutputs.find(
+        (output) => output.index === currentState.output.current
+      )
+      audio.start(matchingOutput ? currentState.output.current : audio.getDefaultOutput())
+    }
 
     if (!lastState || lastState.output.preview !== currentState.output.preview) {
       if (currentState.output.preview === null) audio.stopPreview()
-      else audio.startPreview(currentState.output.preview)
+      else {
+        const matchingPreview = availableOutputs.find(
+          (output) => output.index === currentState.output.preview
+        )
+        if (
+          matchingPreview &&
+          currentState.output.preview !== currentState.output.current
+        )
+          audio.startPreview(currentState.output.preview)
+      }
     }
 
     lastState = currentState
