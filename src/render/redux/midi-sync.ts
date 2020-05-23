@@ -219,7 +219,7 @@ export default async function init(store: Store<Types.State>) {
       }
       lastControlIds = currentControlIds
     },
-    100,
+    50,
     { leading: false, trailing: true }
   )
 

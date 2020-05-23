@@ -136,7 +136,9 @@ export const makeGetBindingAtPos = () =>
   )
 
 export const getTrackIdByIndex = (live: Types.Live, index: number) => {
-  if (index >= 0) return live.scenes[live.sceneIndex].trackIds[index]
+  if (index === null)
+    return _.keys(live.tracks).find((trackId) => live.tracks[trackId].selected)
+  else if (index >= 0) return live.scenes[live.sceneIndex].trackIds[index]
   else {
     const prev = live.scenes[live.sceneIndex - 1]
     return prev && prev.trackIds[prev.trackIds.length + index]
@@ -196,7 +198,8 @@ function applyControlsToPlayback(
   initValues: Types.ControlValues,
   enabled: boolean,
   boundsAlpha: number,
-  relativeSceneIndex: number
+  relativeSceneIndex: number,
+  selected: boolean
 ) {
   let outPlayback: Types.TrackPlayback = {
     ...playback,
@@ -212,7 +215,10 @@ function applyControlsToPlayback(
     if (controlGroup && !controlGroup.absolute)
       controlGroup.controls.forEach((control) => {
         const controlValue = Math.pow(control.invert ? 1 - invValue : invValue, 1 / 1.6)
-        if ('trackIndex' in control && control.trackIndex === trackIndex) {
+        if (
+          'trackIndex' in control &&
+          (control.trackIndex === trackIndex || (control.trackIndex === null && selected))
+        ) {
           if ('trackProp' in control) {
             outPlayback = {
               ...outPlayback,
@@ -256,9 +262,8 @@ function applyControlsToPlayback(
 
 export const makeGetTrackPlaybackSelector = () => {
   const getTrackIndex = makeGetTrackIndex(),
-    getTrackPrevIndex = makeGetTrackPrevIndex()
-  return createSelector(
-    [
+    getTrackPrevIndex = makeGetTrackPrevIndex(),
+    deps: ((state: Types.State, trackId: string) => any)[] = [
       getTrackIndex,
       getTrackPrevIndex,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].playback,
@@ -271,7 +276,11 @@ export const makeGetTrackPlaybackSelector = () => {
       getCurrentInitValues,
       getPrevInitValues,
       (state: Types.State) => state.live.controlsEnabled,
-    ],
+      (state: Types.State, trackId: string) => trackId === getSelectedTrackId(state),
+    ]
+
+  return createSelector(
+    deps,
     (
       trackIndex,
       trackPrevIndex,
@@ -284,7 +293,8 @@ export const makeGetTrackPlaybackSelector = () => {
       prevValues,
       initValues,
       prevInitValues,
-      enabled
+      enabled,
+      selected
     ) => {
       const relativeSceneIndex = trackIndex < 0 ? -1 : 0
       let newPlayback = applyControlsToPlayback(
@@ -295,7 +305,8 @@ export const makeGetTrackPlaybackSelector = () => {
           initValues,
           enabled,
           boundsAlpha,
-          relativeSceneIndex
+          relativeSceneIndex,
+          selected
         ),
         newNextPlayback =
           nextPlayback &&
@@ -307,7 +318,8 @@ export const makeGetTrackPlaybackSelector = () => {
             initValues,
             enabled,
             boundsAlpha,
-            relativeSceneIndex
+            relativeSceneIndex,
+            selected
           )
 
       if (trackIndex < 0) {
@@ -320,7 +332,8 @@ export const makeGetTrackPlaybackSelector = () => {
           prevInitValues,
           enabled,
           1,
-          relativeSceneIndex + 1
+          relativeSceneIndex + 1,
+          selected
         )
         newNextPlayback =
           newNextPlayback &&
@@ -332,7 +345,8 @@ export const makeGetTrackPlaybackSelector = () => {
             prevInitValues,
             enabled,
             1,
-            relativeSceneIndex + 1
+            relativeSceneIndex + 1,
+            selected
           )
       }
 

@@ -25,6 +25,11 @@ function normIndex(index: number) {
   return index >= 0 ? index + 1 : index
 }
 
+function trackIndex2Str(index: number) {
+  if (index === null) return 'Current Track'
+  else return `Track ${normIndex(index)}`
+}
+
 export function getControlName(control: Types.Control) {
   if ('globalProp' in control) return 'Global ' + _.startCase(control.globalProp)
   else if ('sourceTrackProp' in control)
@@ -32,23 +37,23 @@ export function getControlName(control: Types.Control) {
       control.sourceTrackProp === 'volume'
         ? ''
         : _.startCase(control.sourceTrackProp) + ''
-    }Track ${normIndex(control.trackIndex)} - Source ${normIndex(
+    }${trackIndex2Str(control.trackIndex)} - Source ${normIndex(
       control.sourceTrackIndex
     )}`
   else if ('trackProp' in control)
-    return `Track ${normIndex(control.trackIndex)} ${_.startCase(control.trackProp)}`
+    return `${trackIndex2Str(control.trackIndex)} ${_.startCase(control.trackProp)}`
   else if ('cueStep' in control)
-    return `${control.cueStep > 0 ? 'Next' : 'Prev'} Track ${normIndex(
+    return `${control.cueStep > 0 ? 'Next' : 'Prev'} ${trackIndex2Str(
       control.trackIndex
     )}`
   else if ('cueIndex' in control)
-    return `Cue ${normIndex(control.cueIndex)} Track ${normIndex(control.trackIndex)}`
+    return `Cue ${normIndex(control.cueIndex)} ${trackIndex2Str(control.trackIndex)}`
   else if ('loop' in control)
     return control.loop === -1
-      ? `To End Track ${normIndex(control.trackIndex)}`
-      : `Loop ${control.loop} Track ${normIndex(control.trackIndex)}`
+      ? `To End ${trackIndex2Str(control.trackIndex)}`
+      : `Loop ${control.loop} ${trackIndex2Str(control.trackIndex)}`
   else if ('sync' in control)
-    return `Sync ${_.startCase(control.sync)} Track ${normIndex(control.trackIndex)}`
+    return `Sync ${_.startCase(control.sync)} ${trackIndex2Str(control.trackIndex)}`
   else if ('relativeSceneIndex' in control)
     return !control.relativeSceneIndex
       ? 'Current Scene'

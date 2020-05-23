@@ -78,6 +78,12 @@ export function getDefaultBindingType(control: Types.Control): Types.BindingType
     : 'value'
 }
 
+export function getDefaultAbsolute(control: Types.Control) {
+  return (
+    'globalProp' in control || ('trackIndex' in control && control.trackIndex === null)
+  )
+}
+
 export default createReducer(defaultState, (handle) => [
   handle(Actions.setControlGroup, (state, { payload }) =>
     setControlGroup(state, payload.controlGroup, payload.position)
@@ -94,7 +100,7 @@ export default createReducer(defaultState, (handle) => [
     return setControlGroup(
       state,
       {
-        absolute: 'globalProp' in payload.control,
+        absolute: getDefaultAbsolute(payload.control),
         bindingType: type,
         position: position,
         controls: [...currentControls, payload.control],
