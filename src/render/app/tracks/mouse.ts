@@ -160,9 +160,8 @@ export function useResizePlayback(trackId: string) {
       mouseUp(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
         if (!ctxt.aperiodic) return false
         if (chunkIndex !== -1) {
-          if (ctxt.clickX === pos.x) {
-            //if no drag
-            const sample = getTimeFromPosition(pos.x, view.snap, view)
+          const sample = getTimeFromPosition(pos.x, view.snap, view)
+          if (ctxt.clickSample === sample) {
             dispatch(
               Actions.setTrackPlayback({
                 trackId,
@@ -196,9 +195,10 @@ export function useSelectPlayback(trackId: string) {
         shiftKey: boolean
       ) {
         if (!ctxt.aperiodic) return false
-        const dx = Math.abs(pos.x - ctxt.clickX),
-          xPos = getTimeFromPosition(pos.x, view.snap, view)
-        if (dx < 3) {
+        const xPos = getTimeFromPosition(pos.x, view.snap, view),
+          dx = Math.abs(xPos - ctxt.clickSample)
+
+        if (dx < 3 * view.scale) {
           if (shiftKey) {
             let start = chunks[0]
             let end = chunks[0] + chunks[1]
@@ -233,7 +233,7 @@ export function useSelectPlayback(trackId: string) {
           }
         } else {
           //dragged selection
-          const start = getTimeFromPosition(ctxt.clickX, view.snap, view),
+          const start = ctxt.clickSample,
             len = Math.abs(xPos - start)
 
           dispatch(
@@ -331,10 +331,11 @@ export function usePlaybackBound(trackId: string) {
         shiftKey: boolean,
         chunks: number[]
       ) {
+        const clickX = (ctxt.clickSample - view.start) / view.scale / canvasScale
         if (ctxt.aperiodic || bounds.length < 2 || (!selected && ctxt.clickX === pos.x))
           return false
 
-        let firstBoundIndex = getNextBoundIndex(ctxt.clickX, view, bounds),
+        let firstBoundIndex = getNextBoundIndex(clickX, view, bounds),
           secondBoundIndex = getNextBoundIndex(pos.x, view, bounds)
 
         let startBoundIndex = Math.min(firstBoundIndex, secondBoundIndex),

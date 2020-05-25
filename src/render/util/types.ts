@@ -228,6 +228,16 @@ export interface GlobalValueControl extends ControlMapping {
   globalProp: GlobalValueProp
 }
 
+export interface JogWheelControl extends ControlMapping {
+  trackIndex: number
+  jog: true
+}
+
+export interface TrackClickControl extends ControlMapping{
+  trackIndex: number
+  click: true
+}
+
 export type Control =
   | CueControl
   | CueStepControl
@@ -239,6 +249,8 @@ export type Control =
   | SceneVolumeControl
   | IncrementPeriodControl
   | SceneStepControl
+  | JogWheelControl
+  | TrackClickControl
 
 export interface ControlGroup {
   name?: string
@@ -260,7 +272,7 @@ export type MidiFunctionName =
   | 'channel-aftertouch'
   | 'pitch-bend'
 
-export type BindingType = 'note' | 'value'
+export type BindingType = 'note' | 'value' | 'jog'
 
 export interface PersistentBinding {
   midi: number //first two bits of midi message

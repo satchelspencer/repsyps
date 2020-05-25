@@ -9,6 +9,7 @@ export interface AdderProps {
   params: Partial<Types.Control>
   onClick?: any
   noSelect?: boolean
+  hideWhenInactive?: boolean
 }
 
 export function adder<P>(Component: CtyledComponent<any, P>) {
@@ -22,7 +23,7 @@ export function adder<P>(Component: CtyledComponent<any, P>) {
     `}
   `
   return (props: P & AdderProps) => {
-    const { params, noSelect, ...childProps } = props,
+    const { params, noSelect, hideWhenInactive, ...childProps } = props,
       { isSelecting, onSelect } = useSelectable<Partial<Types.Control>>('control'),
       ctyle = useContext(CtyledContext),
       childCtyle = useMemo(() => {
@@ -50,9 +51,11 @@ export function adder<P>(Component: CtyledComponent<any, P>) {
         [props.params, isSelecting, props.onClick]
       )
     return (
-      <CtyledContext.Provider value={childCtyle}>
-        <Mod {...(childProps as P)} selecting={isSelecting} onClick={handleClick} />
-      </CtyledContext.Provider>
+      (isSelecting || !props.hideWhenInactive) && (
+        <CtyledContext.Provider value={childCtyle}>
+          <Mod {...(childProps as P)} selecting={isSelecting} onClick={handleClick} />
+        </CtyledContext.Provider>
+      )
     )
   }
 }

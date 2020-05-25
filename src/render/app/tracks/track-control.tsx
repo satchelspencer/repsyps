@@ -39,10 +39,15 @@ const TrackControlsBody = ctyled.div.styles({
   left:${({ size }) => size * 1}px;
 `
 
+const TrackHeaderWrapper = ctyled.div.styles({
+  size: (s) => s * 0.9,
+  lined: true,
+})
+
 const TrackHeader = adder(ctyled.div.styles({
   color: (c) => c.nudge(0.1),
   padd: 1,
-  size: (s) => s * 0.9,
+  flex: 1,
   justify: 'space-between',
   align: 'center',
   gutter: 0.8,
@@ -50,6 +55,17 @@ const TrackHeader = adder(ctyled.div.styles({
 }).extend`
   padding-right:${({ size }) => size / 1.8}px;
 `)
+
+const JogAdder = adder(
+  ctyled.div.styles({
+    padd: 1,
+    align: 'center',
+    justify: 'center',
+    bg: true,
+    size: (s) => s * 1.2,
+    color: (c) => c.contrast(-0.3),
+  })
+)
 
 const TrackTitleWrapper = ctyled.div.styles({
   flex: 1,
@@ -168,6 +184,20 @@ function TrackControls(props: TrackControlsProps) {
         trackProp: 'volume',
       }),
       [trackIndex]
+    ),
+    jogControlParams = useMemo(
+      () => ({
+        trackIndex,
+        jog: true,
+      }),
+      [trackIndex]
+    ),
+    clickControlParams = useMemo(
+      () => ({
+        trackIndex,
+        click: true,
+      }),
+      [trackIndex]
     )
 
   const barLen =
@@ -250,18 +280,26 @@ function TrackControls(props: TrackControlsProps) {
     <TrackControlsWrapper>
       <TrackHandle selected={track.selected} />
       <TrackControlsBody>
-        <TrackHeader params={volumeControlParams}>
-          <TrackTitleWrapper>
-            <TrackTitle>{source.name}</TrackTitle>
-          </TrackTitleWrapper>
-          <PreviewButton disabled={!hasPreview} onClick={handlePreview}>
-            <Icon
-              scale={1.2}
-              name={track.playback.preview ? 'headphones' : 'headphones-off'}
-              asButton
-            />
-          </PreviewButton>
-        </TrackHeader>
+        <TrackHeaderWrapper>
+          <TrackHeader params={volumeControlParams}>
+            <TrackTitleWrapper>
+              <TrackTitle>{source.name}</TrackTitle>
+            </TrackTitleWrapper>
+            <PreviewButton disabled={!hasPreview} onClick={handlePreview}>
+              <Icon
+                scale={1.2}
+                name={track.playback.preview ? 'headphones' : 'headphones-off'}
+                asButton
+              />
+            </PreviewButton>
+          </TrackHeader>
+          <JogAdder params={jogControlParams} hideWhenInactive={true}>
+            <Icon name="jog" />
+          </JogAdder>
+          <JogAdder params={clickControlParams} hideWhenInactive={true}>
+            <Icon name="immediate" />
+          </JogAdder>
+        </TrackHeaderWrapper>
         <TrackControlsInner>
           <InnerV>
             <SpeedWrapper>

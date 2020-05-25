@@ -67,15 +67,19 @@ function setControlGroup(
 }
 
 export function getDefaultBindingType(control: Types.Control): Types.BindingType {
-  return 'cueIndex' in control ||
-    'cueStep' in control ||
-    'loop' in control ||
-    'sync' in control ||
-    'periodDelta' in control ||
-    'trackStep' in control ||
-    'sceneStep' in control
-    ? 'note'
-    : 'value'
+  const isNote =
+      'cueIndex' in control ||
+      'cueStep' in control ||
+      'loop' in control ||
+      'sync' in control ||
+      'periodDelta' in control ||
+      'trackStep' in control ||
+      'sceneStep' in control ||
+      'click' in control,
+    isJog = 'jog' in control
+  if (isNote) return 'note'
+  else if (isJog) return 'jog'
+  else return 'value'
 }
 
 export function getDefaultAbsolute(control: Types.Control) {

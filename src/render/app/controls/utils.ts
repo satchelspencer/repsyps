@@ -66,6 +66,8 @@ export function getControlName(control: Types.Control) {
     return control.trackStep > 0 ? 'Next Track' : 'Prev Track'
   else if ('sceneStep' in control)
     return control.sceneStep > 0 ? 'Next Scene' : 'Prev Scene'
+  else if ('jog' in control) return `${trackIndex2Str(control.trackIndex)} Jog`
+  else if ('click' in control) return `${trackIndex2Str(control.trackIndex)} Click`
   else return '???'
 }
 
@@ -88,5 +90,7 @@ export function getIcon(control: Types.Control): string {
   else if ('periodDelta' in control) return 'timer'
   else if ('trackStep' in control) return 'next'
   else if ('sceneStep' in control) return 'cheveron-right'
+  else if ('jog' in control) return 'jog'
+  else if ('click' in control) return 'immediate'
   else return null
 }

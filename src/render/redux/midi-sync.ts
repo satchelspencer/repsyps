@@ -5,6 +5,7 @@ import { batchActions } from 'redux-batched-actions'
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
+import { call } from 'render/util/track-events'
 
 const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
     128: 'note',
@@ -26,7 +27,8 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
     [controlId: string]: (state: Types.State, control: Types.Control) => any
   } = {}
 let lastControlIds = [],
-  midiChanges: { [upperBytes: number]: number } = {}
+  midiChanges: { [upperBytes: number]: number } = {},
+  midiCounts: { [upperBytes: number]: number } = {}
 
 export default async function init(store: Store<Types.State>) {
   const handleMessage = (portName) => {
@@ -57,6 +59,8 @@ export default async function init(store: Store<Types.State>) {
           leastFn = fn
         }
       }
+
+      //console.log(midiCounts['45091'])
 
       for (let posStr in state.live.bindings) {
         const binding = state.live.bindings[posStr],
@@ -103,11 +107,27 @@ export default async function init(store: Store<Types.State>) {
             if (
               binding.twoway ||
               !binding.badMidiValue ||
-              Math.abs(normValue - absValue) < 0.02
+              Math.abs(normValue - absValue) < 0.02 ||
+              control.bindingType === 'jog'
             ) {
               store.dispatch(
                 Actions.applyControlGroupMidi(position, control, lastValue, normValue)
               )
+              control.controls.forEach((control) => {
+                if ('jog' in control) {
+                  const trackId = Selectors.getTrackIdByIndex(
+                    state.live,
+                    control.trackIndex
+                  )
+                  if (trackId) call(trackId, 'jog', midiCounts[binding.midi])
+                } else if ('click' in control) {
+                  const trackId = Selectors.getTrackIdByIndex(
+                    state.live,
+                    control.trackIndex
+                  )
+                  if (trackId) call(trackId, 'click', normValue > 0)
+                }
+              })
             } else if (binding.badMidiValue) {
               store.dispatch(
                 Actions.setBadMidiValue({
@@ -121,14 +141,17 @@ export default async function init(store: Store<Types.State>) {
         }
       }
       midiChanges = {}
+      midiCounts = {}
     },
-    throttledHandle = _.throttle(handleMessage, 100, { trailing: true }),
+    throttledHandle = _.throttle(handleMessage, 50, { trailing: true }),
     wrappedThrottleHandle = (message, portName) => {
       const [fn, note, value] = message.data,
         fname = getFunction(fn),
-        mappedFn = fname === 'note' ? 144 + (midiChannelMask & fn) : fn
+        mappedFn = fname === 'note' ? 144 + (midiChannelMask & fn) : fn,
+        upper = (mappedFn << 8) + note
 
-      midiChanges[(mappedFn << 8) + note] = value
+      midiChanges[upper] = value
+      midiCounts[upper] = (midiCounts[upper] || 0) + (value - 64)
 
       if (value === 0 || value === 127 || instantFunctions.includes(fname)) {
         handleMessage(portName)
@@ -219,7 +242,7 @@ export default async function init(store: Store<Types.State>) {
       }
       lastControlIds = currentControlIds
     },
-    50,
+    100,
     { leading: false, trailing: true }
   )
 

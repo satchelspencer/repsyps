@@ -13,6 +13,10 @@ export function getTimeFromPosition(x: number, snap: boolean, view: ViewContext)
   return snapSampleToImpulses(raw, view.scale, view.impulses, snap)
 }
 
+export function getPositionFromTime(sample: number, scale, start){
+  return (sample-start) / canvasScale / scale
+}
+
 export function getBoundIndex(x: number, view: ViewContext, bounds: number[]) {
   const sample = getTimeFromPosition(x, false, view)
   return _.findIndex(bounds, (b) => {

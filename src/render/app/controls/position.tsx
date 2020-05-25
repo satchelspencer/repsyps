@@ -184,6 +184,17 @@ function PositionDetail(props: ControlDetailProps) {
         ),
       []
     ),
+    setAsJog = useCallback(
+      () =>
+        dispatch(
+          Actions.setControlGroup({
+            controlGroup: {
+              bindingType: 'jog',
+            },
+          })
+        ),
+      []
+    ),
     handleAddControl = useCallback(async () => {
       const control = await getSelection()
       if (!control) return
@@ -255,7 +266,6 @@ function PositionDetail(props: ControlDetailProps) {
                     </ControlSelectableButton>
                   </Horizontal>
                   <Horizontal>
-                    <HeaderContent>Control</HeaderContent>
                     <ControlSelectableButton
                       onClick={setAsValue}
                       selected={selectedControlGroup.bindingType === 'value'}
@@ -269,6 +279,13 @@ function PositionDetail(props: ControlDetailProps) {
                     >
                       <Icon name="pad" />
                       &nbsp;Pad
+                    </ControlSelectableButton>
+                    <ControlSelectableButton
+                      onClick={setAsJog}
+                      selected={selectedControlGroup.bindingType === 'jog'}
+                    >
+                      <Icon name="jog" />
+                      &nbsp;Jog
                     </ControlSelectableButton>
                   </Horizontal>
                 </>

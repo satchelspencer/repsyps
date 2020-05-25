@@ -18,7 +18,8 @@ export default function useWaveformCanvas(
   source: Types.Source,
   sample: number,
   playLocked: boolean,
-  scroll: boolean
+  scroll: boolean,
+  jogging: boolean
 ) {
   const canvasRef = useRef(null),
     ctxt = useRef(null),
@@ -26,7 +27,18 @@ export default function useWaveformCanvas(
     visibleLoaded = source.sourceTracks[track.visibleSourceTrack].loaded,
     visibleOffset = track.playback.sourceTracksParams[track.visibleSourceTrack].offset,
     effectivePos = track.playback.playing ? 0 /* position */ : 0,
-    { scale, start, impulses, width, height, clickX, center, mouseDown } = view,
+    {
+      scale,
+      start,
+      impulses,
+      width,
+      height,
+      clickX,
+      clickSample,
+      centerSample,
+      center,
+      mouseDown,
+    } = view,
     pwidth = width * canvasScale,
     isSTEditing = !!track.sourceTrackEditing,
     editTrackLoaded = isSTEditing && source.sourceTracks[track.sourceTrackEditing].loaded,
@@ -88,8 +100,8 @@ export default function useWaveformCanvas(
         start,
         end: start + pwidth * scale,
         ctx,
-        clickX: clickX * canvasScale,
-        center: center * canvasScale,
+        clickX: clickSample,
+        center: centerSample,
         mouseDown,
         sample,
         color: ctyledContext.theme.color, //{fg: 'black', bg: 'white'},
@@ -113,6 +125,8 @@ export default function useWaveformCanvas(
     drawCues(drawContext, track)
     drawBounds(drawContext, source.bounds, track.editing)
     drawDrag(drawContext)
+
+    if (jogging) drawCursor(drawContext)
   }, [
     visibleLoaded,
     track.playback,
@@ -126,6 +140,7 @@ export default function useWaveformCanvas(
     playLocked,
     track.cues,
     ctyledContext.theme.color,
+    jogging,
     ..._.values(view),
   ])
 
@@ -240,10 +255,8 @@ export function drawDrag(context: DrawingContext) {
   const { ctx, mouseDown, clickX, center, pheight, view, start, scale } = context
 
   if (mouseDown) {
-    const centerSnap =
-        (getTimeFromPosition(center / canvasScale, view.snap, view) - start) / scale,
-      clickXSnap =
-        (getTimeFromPosition(clickX / canvasScale, view.snap, view) - start) / scale
+    const centerSnap = (center - start) / scale,
+      clickXSnap = (clickX - start) / scale
     ctx.fillStyle = 'rgba(255,0,0,0.1)'
     ctx.fillRect(clickXSnap, 0, centerSnap - clickXSnap, pheight)
   }
@@ -402,4 +415,21 @@ export function drawBounds(context: DrawingContext, bounds: number[], editing: b
       }
     }
   })
+}
+
+export function drawCursor(context: DrawingContext) {
+  const { pheight, ctx, pwidth } = context
+
+  /* cursor shadow */
+  let px = pwidth / 2
+  ctx.fillStyle = context.color.fg + '33'
+  ctx.fillRect(px - thickLine * 1.5, 0, thickLine * 3, pheight)
+
+  /* cursor */
+  ctx.lineWidth = lineWidth
+  ctx.strokeStyle = context.color.fg
+  ctx.beginPath()
+  ctx.lineTo(px, 0)
+  ctx.lineTo(px, pheight)
+  ctx.stroke()
 }

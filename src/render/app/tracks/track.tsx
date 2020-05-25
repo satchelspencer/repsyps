@@ -23,6 +23,7 @@ import { getRelativePos, getBoundIndex, getTimeFromPosition } from './utils'
 import { useSelectable } from 'render/components/selection'
 import useMeasure from 'render/components/measure'
 import { useTrackTiming } from 'render/components/timing'
+import { sub, unsub } from 'render/util/track-events'
 
 import useZoom from './zoom'
 import useWaveformCanvas from './canvas'
@@ -87,6 +88,7 @@ export interface ViewContext {
   scale: number
   start: number
   center: number
+  centerSample: number
   impulses: number[]
   mouseDown: boolean
   snap: boolean
@@ -94,6 +96,7 @@ export interface ViewContext {
 
 export interface DrawViewContext extends ViewContext {
   clickX: number
+  clickSample: number
   width: number
   height: number
 }
@@ -104,6 +107,7 @@ export interface BoundViewContext extends ViewContext {
 
 export interface ClickEventContext {
   clickX: number
+  clickSample: number
   aperiodic: boolean
   editing: boolean
   selected: boolean
@@ -132,21 +136,27 @@ const Track = memo(
     /* react state */
     const [center, setCenter] = useState(0),
       [clickX, setClickX] = useState(null),
+      [clickSample, setClickSample] = useState(null),
+      [centerSample, setCenterSample] = useState(null),
       [mouseDown, setMouseDown] = useState(false)
 
     const container = useRef(null),
       { left, top, width, height } = useMeasure(container)
 
     /* ZOOM/PANNING CONTROL */
-    const { scale, start } = useZoom(
+    const { scale, start, jogging } = useZoom(
+      trackId,
       container,
       center,
+      setCenter,
+      setCenterSample,
       width,
       sample,
       playLock,
       setPlayLock,
       trackScroll,
-      loaded
+      loaded,
+      track.selected
     )
 
     /* automatically lock track */
@@ -163,6 +173,7 @@ const Track = memo(
         scale,
         start,
         center,
+        centerSample,
         impulses,
         mouseDown,
         snap,
@@ -171,6 +182,7 @@ const Track = memo(
       drawView: DrawViewContext = {
         ...view,
         clickX,
+        clickSample,
         width,
         height,
       }
@@ -178,6 +190,7 @@ const Track = memo(
     /* click event contexts */
     const clickCtxt: ClickEventContext = {
         clickX,
+        clickSample,
         aperiodic: track.playback.aperiodic || !source.bounds.length,
         editing: track.editing,
         sourceTrackEditing: track.sourceTrackEditing,
@@ -197,7 +210,8 @@ const Track = memo(
       source,
       sample,
       playLock,
-      trackScroll
+      trackScroll,
+      jogging
     )
 
     /* mouse event handlers */
@@ -210,15 +224,16 @@ const Track = memo(
 
     const handleMouseDown = useCallback(
         (e) => {
-          if (e.shiftKey) {
+          if (e && e.shiftKey) {
             e.preventDefault()
             e.stopPropagation()
           }
-          const pos = getRelativePos(e, left, top)
+          const pos = e ? getRelativePos(e, left, top) : { x: width / 2, y: 0 }
           resizePlaybackHandlers.mouseDown(clickCtxt, view, pos, track.playback.chunks)
           boundHandlers.mouseDown(clickCtxt, view, pos, source.bounds)
-          offsetTrackHandlers.mouseDown(clickCtxt, pos, e.shiftKey)
+          offsetTrackHandlers.mouseDown(clickCtxt, pos, e && e.shiftKey)
           setClickX(pos.x)
+          setClickSample(getTimeFromPosition(pos.x, snap, view))
           setMouseDown(true)
           setPlayLock(false)
         },
@@ -231,12 +246,13 @@ const Track = memo(
           resizePlaybackHandlers.mouseMove(clickCtxt, pos, view, track.playback.chunks)
           offsetTrackHandlers.mouseMove(clickCtxt, pos, view)
           setCenter(pos.x)
+          setCenterSample(getTimeFromPosition(pos.x, snap, view))
         },
         [...clickCtxtValues, ...viewValues, track.playback.chunks]
       ),
       handleMouseUp = useCallback(
         (e) => {
-          const pos = getRelativePos(e, left, top)
+          const pos = e ? getRelativePos(e, left, top) : { x: width / 2, y: 0 }
 
           playbackBoundHandlers.mouseUp(
             clickCtxt,
@@ -244,7 +260,7 @@ const Track = memo(
             view,
             source.bounds,
             track.selected,
-            e.shiftKey,
+            e && e.shiftKey,
             track.playback.chunks
           )
 
@@ -259,11 +275,24 @@ const Track = memo(
             didOffsetTrack = offsetTrackHandlers.mouseUp(clickCtxt, pos)
 
           if (!didSelectBound && !didResizeBound && !didResizePlayback && !didOffsetTrack)
-            selectPlaybackHandlers.mouseUp(clickCtxt, pos, view, track.playback.chunks, e.shiftKey)
+            selectPlaybackHandlers.mouseUp(
+              clickCtxt,
+              pos,
+              view,
+              track.playback.chunks,
+              e && e.shiftKey
+            )
           setClickX(null)
+          setClickSample(null)
           setMouseDown(false)
         },
-        [...clickCtxtValues, ...viewValues, source.bounds, track.selected, track.playback.chunks]
+        [
+          ...clickCtxtValues,
+          ...viewValues,
+          source.bounds,
+          track.selected,
+          track.playback.chunks,
+        ]
       ),
       handleDoubleClick = useCallback(
         (e) => {
@@ -275,8 +304,19 @@ const Track = memo(
       ),
       handleMouseLeave = useCallback(() => {
         setClickX(null)
+        setClickSample(null)
         setMouseDown(false)
       }, [])
+
+    useEffect(() => {
+      sub(trackId, 'click', (up) => {
+        if (up) handleMouseUp(null)
+        else handleMouseDown(null)
+      })
+    }, [trackId, width, handleMouseUp, handleMouseDown])
+    useEffect(() => {
+      return () => unsub(trackId, 'click')
+    }, [])
 
     const cursorStyles = useMemo(() => {
       const boundIndex = getBoundIndex(center, view, source.bounds),

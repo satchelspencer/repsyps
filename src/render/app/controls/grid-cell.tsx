@@ -11,6 +11,7 @@ import Icon from 'render/components/icon'
 import { midiName, getControlName } from './utils'
 import Knob from './knob'
 import Pad from './pad'
+import Jog from './jog'
 
 const CellMidi = ctyled.div.class(inline).styles({
   padd: 1,
@@ -99,6 +100,14 @@ const GridCell = memo((props: GridCellProps) => {
       {control && control.bindingType === 'note' && (
         <>
           <Pad value={displayValue} onChange={handleChange} />
+          <CellLabel>
+            {control.name || control.controls.map((c) => getControlName(c)).join(', ')}
+          </CellLabel>
+        </>
+      )}
+      {control && control.bindingType === 'jog' && (
+        <>
+          <Jog value={displayValue} onChange={handleChange} />
           <CellLabel>
             {control.name || control.controls.map((c) => getControlName(c)).join(', ')}
           </CellLabel>
