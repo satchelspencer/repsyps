@@ -183,7 +183,8 @@ export const makeGetControlAbsValue = () => {
           value = trackPlayback.sourceTracksParams[trackSourceId][control.sourceTrackProp]
           prop = control.sourceTrackProp
         }
-      } else if (value !== null) value = mappings[prop].toStandard(value)
+      }
+      if (value !== null) value = mappings[prop].toStandard(value)
       return value
     }
   )

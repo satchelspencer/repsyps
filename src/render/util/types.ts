@@ -233,9 +233,14 @@ export interface JogWheelControl extends ControlMapping {
   jog: true
 }
 
-export interface TrackClickControl extends ControlMapping{
+export interface TrackClickControl extends ControlMapping {
   trackIndex: number
   click: true
+}
+
+export interface TrackPlayPauseControl extends ControlMapping {
+  trackIndex: number
+  playPause: true
 }
 
 export type Control =
@@ -251,6 +256,7 @@ export type Control =
   | SceneStepControl
   | JogWheelControl
   | TrackClickControl
+  | TrackPlayPauseControl
 
 export interface ControlGroup {
   name?: string

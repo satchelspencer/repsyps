@@ -120,6 +120,8 @@ const ControlsButton = ctyled.div
     ${(_, { active }) => active && `text-decoration:underline;`}
   `
 
+const ControlsButtonAdder = adder(ControlsButton)
+
 const InnerV = ctyled.div.styles({
   flex: 1,
   height: '100%',
@@ -196,6 +198,15 @@ function TrackControls(props: TrackControlsProps) {
       () => ({
         trackIndex,
         click: true,
+        invert: true,
+      }),
+      [trackIndex]
+    ),
+    playPauseParams = useMemo(
+      () => ({
+        trackIndex,
+        playPause: true,
+        invert: true,
       }),
       [trackIndex]
     )
@@ -211,10 +222,6 @@ function TrackControls(props: TrackControlsProps) {
     atStart = playing && activeCueIndex === 0,
     atEnd = playing && activeCueIndex === track.cues.length - 1,
     canPrev = atStart || activeCueIndex > 0,
-    canNext =
-      (hasCues && atEnd) ||
-      (activeCueIndex !== -1 && activeCueIndex < track.cues.length - 1),
-    pausedOnCue = !track.playback.playing && activeCueIndex !== -1,
     boundsAlpha = track.playback.aperiodic ? 1 : source.boundsAlpha
 
   const handlePrevCue = useCallback(
@@ -235,15 +242,16 @@ function TrackControls(props: TrackControlsProps) {
             cueStep: 1,
           })
         )
-      else
-        dispatch(
-          Actions.setTrackPlayback({
-            trackId: props.trackId,
-            playback: {
-              playing: !track.playback.playing,
-            },
-          })
-        )
+    }, [props.trackId]),
+    handlePlayPause = useCallback(() => {
+      dispatch(
+        Actions.setTrackPlayback({
+          trackId: props.trackId,
+          playback: {
+            playing: !track.playback.playing,
+          },
+        })
+      )
     }, [props.trackId, track.playback.playing]),
     handleMute = useCallback(
       () =>
@@ -313,26 +321,11 @@ function TrackControls(props: TrackControlsProps) {
               <ControlsButton disabled={!canPrev} onClick={handlePrevCue}>
                 <Icon name="prev" scale={1.2} />
               </ControlsButton>
-              <CueLabel disabled={!hasCues}>
-                <b>{activeCueIndex === -1 ? 'n/a' : activeCueIndex + 1}</b>
-              </CueLabel>
-              <ControlsButton onClick={handleForward}>
-                <Icon
-                  name={
-                    hasCues
-                      ? pausedOnCue
-                        ? 'play'
-                        : canNext
-                        ? atEnd
-                          ? 'stop'
-                          : 'next'
-                        : 'play'
-                      : track.playback.playing
-                      ? 'pause'
-                      : 'play'
-                  }
-                  scale={1.2}
-                />
+              <ControlsButtonAdder params={playPauseParams} onClick={handlePlayPause}>
+                <Icon name={track.playback.playing ? 'pause' : 'play'} scale={1.2} />
+              </ControlsButtonAdder>
+              <ControlsButton disabled={!hasCues} onClick={handleForward}>
+                <Icon name={atEnd ? 'stop' : 'next'} scale={1.2} />
               </ControlsButton>
             </CuesWrapper>
           </InnerV>

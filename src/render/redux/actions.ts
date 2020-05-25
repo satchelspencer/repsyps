@@ -87,7 +87,7 @@ export const setTrackPlayback = createAction<{
   playback: Partial<Types.TrackPlayback>
 }>('SET_TRACK_PLAYBACK')
 
-export const playPauseTrack = createAction<string>('PLAY_PAUSE_TRACK')
+export const playPauseTrack = createAction<string | number>('PLAY_PAUSE_TRACK')
 
 export const toggleTrackLoop = createAction<string>('TOGGLE_TRACK_LOOP')
 
@@ -378,6 +378,8 @@ export function getApplyControlGroupActions(
           loop: control.loop,
         })
       )
+    } else if ('playPause' in control && risingEdge) {
+      actions.push(playPauseTrack(control.trackIndex))
     } else if ('sync' in control && risingEdge) {
       actions.push(setTrackSync({ trackIndex: control.trackIndex, sync: control.sync }))
     } else if ('periodDelta' in control && risingEdge) {

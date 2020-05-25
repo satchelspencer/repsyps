@@ -31,6 +31,20 @@ export default function useZoom(
     startRef = useRef(0),
     scaleRef = useRef(2)
 
+  const end = start + pwidth * scale,
+    wStart = sample - (pwidth / 2) * scale,
+    rStart = Math.floor(wStart / scale) * scale,
+    offScreen = sample < start || sample > end
+
+  useEffect(() => {
+    if (playLocked) {
+      if (!scroll && offScreen) setStart(sample)
+      if (scroll) setStart(rStart)
+      setJogging(false)
+    }
+    if (!selected) setJogging(false)
+  }, [playLocked, rStart, offScreen, loaded, selected])
+
   useEffect(() => {
     handleWheel.current = (e) => {
       setJogging(false)
@@ -39,7 +53,8 @@ export default function useZoom(
       if (ctrlKey || metaKey) {
         const scaleMultiplier = scale / 100,
           nextScale = Math.max(scale + clip(deltaY) * scaleMultiplier, 2),
-          dx = ((nextScale - scale) / 2) * center * canvasScale
+          zoomCenter = playLocked ? width / 2 : center,
+          dx = ((nextScale - scale) / 2) * zoomCenter * canvasScale
         setStart(start - dx)
         setScale(nextScale < 800 ? nextScale : Math.floor(nextScale))
       } else {
@@ -51,7 +66,7 @@ export default function useZoom(
     }
     startRef.current = start
     scaleRef.current = scale
-  }, [scale, start])
+  }, [scale, start, playLocked, width])
 
   useEffect(() => {
     container.current.addEventListener(
@@ -76,19 +91,6 @@ export default function useZoom(
   useEffect(() => {
     return () => unsub(trackId, 'jog')
   }, [])
-
-  const end = start + pwidth * scale,
-    wStart = sample - (pwidth / 2) * scale,
-    rStart = Math.floor(wStart / scale) * scale,
-    offScreen = sample < start || sample > end
-  useEffect(() => {
-    if (playLocked) {
-      if (!scroll && offScreen) setStart(sample)
-      if (scroll) setStart(rStart)
-      setJogging(false)
-    }
-    if (!selected) setJogging(false)
-  }, [playLocked, rStart, offScreen, loaded, selected])
 
   return { scale, start, jogging }
 }

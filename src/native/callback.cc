@@ -259,10 +259,10 @@ int paCallbackMethod(
                 double positionFrac = trackPosition-floor(trackPosition);
                 if(hasEnd && trackPosition + params->offset > chunkEndPosition){
                   //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
+                  //if(windowIndex == WINDOW_STEP) mixTrack->sample = (trackPosition-chunkEndPosition) + nextChunkStart;
                   if(hasNext) playback = mixTrack->nextPlayback;
                   if(!committedStep && windowIndex < WINDOW_STEP) committedStep = true;
-                }
-                if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition + params->offset;
+                }else if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition + params->offset;
 
                 float sampleValue = 0;
                 if( trackPosition > 0 && trackPosition < length - 1){

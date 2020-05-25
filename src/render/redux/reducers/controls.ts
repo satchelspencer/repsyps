@@ -75,7 +75,8 @@ export function getDefaultBindingType(control: Types.Control): Types.BindingType
       'periodDelta' in control ||
       'trackStep' in control ||
       'sceneStep' in control ||
-      'click' in control,
+      'click' in control ||
+      'playPause' in control,
     isJog = 'jog' in control
   if (isNote) return 'note'
   else if (isJog) return 'jog'

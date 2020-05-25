@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react'
+import React, { memo } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
@@ -15,15 +15,6 @@ const JogWrapper = ctyled.div.styles({
   opacity:0.9;
   border:${({ size }) => size / 4}px solid ${({ color }) =>
   color.contrast(0.12).bq} !important;
-`
-
-const JogInner = ctyled.div.styles({
-  width: '15%',
-  height: '15%',
-  border: 0,
-}).extendSheet`
-border-radius:50%;
-  background:${({ color }) => color.contrast(0.2).bq} !important;
 `
 
 export interface JogProps {

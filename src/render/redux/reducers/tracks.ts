@@ -244,8 +244,12 @@ export default createReducer(defaultState, (handle) => [
       newSceneIndex
     )
   }),
-  handle(Actions.playPauseTrack, (state, { payload: trackId }) => {
-    const track = state.live.tracks[trackId],
+  handle(Actions.playPauseTrack, (state, { payload: trackIdOrIndex }) => {
+    const trackId =
+        typeof trackIdOrIndex !== 'string'
+          ? Selectors.getTrackIdByIndex(state.live, trackIdOrIndex)
+          : trackIdOrIndex,
+      track = state.live.tracks[trackId],
       isPlaying = state.playback.playing
     if (!track) return state
     else
