@@ -9,6 +9,12 @@ function clip(x: number) {
   return Math.abs(x) > v ? (x > 0 ? v : -v) : x
 }
 
+export interface ZoomState {
+  scale: number
+  start: number
+  jogging: boolean
+}
+
 export default function useZoom(
   trackId: string,
   container: React.MutableRefObject<any>,
@@ -23,13 +29,26 @@ export default function useZoom(
   loaded: boolean,
   selected: boolean
 ) {
-  const [scale, setScale] = useState(1000),
-    [start, setStart] = useState(-200 * 24 * canvasScale),
-    [jogging, setJogging] = useState(false),
-    handleWheel = useRef(null),
+  const s = useRef<ZoomState>({
+      scale: 1000,
+      start: -200 * 24 * canvasScale,
+      jogging: false,
+    }),
     pwidth = width * canvasScale,
-    startRef = useRef(0),
-    scaleRef = useRef(2)
+    { scale, start, jogging } = s.current,
+    [u, setU] = useState(0),
+    update = useCallback((state: Partial<ZoomState>) => {
+      s.current = {
+        ...s.current,
+        ...state,
+      }
+      setU(Math.random())
+    }, [])
+
+  const centerRef = useRef(0)
+  useEffect(() => {
+    centerRef.current = center * canvasScale
+  }, [center])
 
   const end = start + pwidth * scale,
     wStart = sample - (pwidth / 2) * scale,
@@ -38,53 +57,53 @@ export default function useZoom(
 
   useEffect(() => {
     if (playLocked) {
-      if (!scroll && offScreen) setStart(sample)
-      if (scroll) setStart(rStart)
-      setJogging(false)
+      if (!scroll && offScreen) update({ start: sample })
+      else if (scroll) update({ start: rStart })
+      update({ jogging: false })
     }
-    if (!selected) setJogging(false)
-  }, [playLocked, rStart, offScreen, loaded, selected])
+    if (!selected) update({ jogging: false })
+  }, [playLocked, selected, rStart, offScreen, loaded])
 
   useEffect(() => {
-    handleWheel.current = (e) => {
-      setJogging(false)
-      const { deltaX, deltaY, ctrlKey, metaKey } = e
+    const handleWheel = (e) => {
+      update({ jogging: false })
+      const { deltaX, deltaY, ctrlKey, metaKey } = e,
+        { scale, start } = s.current
       if (ctrlKey || metaKey || (deltaX && !deltaY)) e.preventDefault()
       if (ctrlKey || metaKey) {
         const scaleMultiplier = scale / 100,
           nextScale = Math.max(scale + clip(deltaY) * scaleMultiplier, 2),
-          zoomCenter = playLocked ? width / 2 : center,
+          zoomCenter = playLocked ? width / 2 : centerRef.current,
           dx = ((nextScale - scale) / 2) * zoomCenter * canvasScale
-        setStart(start - dx)
-        setScale(nextScale < 800 ? nextScale : Math.floor(nextScale))
+        update({
+          start: start - dx,
+          scale: nextScale < 800 ? nextScale : Math.floor(nextScale),
+        })
       } else {
         const xonly = e.shiftKey || (Math.abs(deltaX) > 4 && Math.abs(deltaY) < 4),
           dx = e.shiftKey ? deltaY : deltaX
         if (xonly && playLocked) setPlayLocked(false)
-        if (!playLocked || xonly) setStart(start + clip(dx) * scale)
+        if (!playLocked || xonly) update({ start: start + clip(dx) * scale })
       }
     }
-    startRef.current = start
-    scaleRef.current = scale
-  }, [scale, start, playLocked, width])
-
-  useEffect(() => {
     container.current.addEventListener(
       'wheel',
-      (e) => {
-        handleWheel.current && handleWheel.current(e)
-      },
+      handleWheel,
       { passive: false } //so we can prevent default
     )
-  }, [container.current])
+    return () => container.current.removeEventListener('wheel', handleWheel)
+  }, [container.current, playLocked, width])
 
   useEffect(() => {
     sub(trackId, 'jog', (delta: number) => {
-      const newStart = startRef.current + clip(delta) * scaleRef.current
-      setJogging(true)
+      const { scale, start } = s.current,
+        newStart = start + clip(delta) * scale
+      update({
+        jogging: true,
+        start: newStart,
+      })
       setPlayLocked(false)
-      setStart(newStart)
-      setCenterSample(newStart + (width * scaleRef.current * canvasScale) / 2)
+      setCenterSample(newStart + (width * scale * canvasScale) / 2)
       setCenter(width / 2)
     })
   }, [trackId, width])
@@ -92,5 +111,5 @@ export default function useZoom(
     return () => unsub(trackId, 'jog')
   }, [])
 
-  return { scale, start, jogging }
+  return s.current
 }
