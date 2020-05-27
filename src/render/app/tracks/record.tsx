@@ -153,7 +153,7 @@ const Recording = memo(
             prefixBounds = firstBound
               ? fromSourceBounds.filter((b) => firstBound - b > 44100)
               : [],
-            path = dialog.showSaveDialog({
+            path = dialog.showSaveDialogSync({
               nameFieldLabel: 'Recording Name',
               defaultPath: getPath('recordings/untitled'),
               buttonLabel: 'Save Recording',

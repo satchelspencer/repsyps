@@ -2,10 +2,11 @@ import { app, dialog, ipcMain } from 'electron'
 import * as path from 'path'
 import { format as formatUrl } from 'url'
 import contextMenu from 'electron-context-menu'
-import * as imp from 'electron-devtools-installer'
+import installExtension, {
+  REDUX_DEVTOOLS,
+  REACT_DEVELOPER_TOOLS,
+} from 'electron-devtools-installer'
 import * as Splashscreen from '@trodi/electron-splashscreen'
-
-import audio from 'render/util/audio'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 let mainWindow: any = null
@@ -14,6 +15,7 @@ if (isDevelopment)
   contextMenu({
     showInspectElement: true,
   })
+else Object.assign(console, require('electron-log').functions)
 
 dialog.showErrorBox = (title, content) => console.log('err', title, content)
 
@@ -64,7 +66,7 @@ else {
   let fileQueue: string[] = [],
     renderer: Electron.WebContents = null
 
-  ipcMain.on('connect', (e: Electron.IpcMessageEvent) => {
+  ipcMain.on('connect', (e: Electron.IpcMainEvent) => {
     console.log('ipc connected')
     mainWindow.webContents.setZoomFactor(1)
     renderer = e.sender
@@ -94,8 +96,8 @@ else {
   app.on('ready', () => {
     mainWindow = createMainWindow()
     mainWindow.webContents.on('did-frame-finish-load', () => {
-      imp.default(
-        [imp.REACT_DEVELOPER_TOOLS, imp.REDUX_DEVTOOLS],
+      installExtension(
+        [REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS],
         process.env.UPDATE_DEVTOOLS === 'true'
       )
     })

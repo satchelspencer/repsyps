@@ -1,6 +1,6 @@
 {
   "name": "repsyps",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "private": true,
   "scripts": {
     "start": "electron-webpack dev",
@@ -9,8 +9,9 @@
     "test-native": "node src/native/test",
     "clean": "node-gyp clean",
     "build-electron": "electron-webpack",
-    "dist": "yarn build-electron && electron-builder -c.mac.identity=null",
-    "dist-sign": "yarn build-electron && electron-builder -c.afterSign=conf/notarize.js"
+    "dist": "rm -rf dist && yarn build-electron && electron-builder",
+    "dist-sign": "rm -rf dist && yarn build-electron && electron-builder -c.afterSign=conf/notarize.js",
+    "release": "rm -rf dist && yarn build-electron && electron-builder --publish always"
   },
   "build": {
     "appId": "repsyps",
@@ -24,6 +25,12 @@
     ],
     "directories": {
       "buildResources": "conf/build"
+    },
+    "publish": {
+      "provider": "s3",
+      "bucket": "repsyps",
+      "region": "us-west-2",
+      "endpoint": "https://repsyps.s3-us-west-2.amazonaws.com"
     },
     "mac": {
       "fileAssociations": [
@@ -138,7 +145,9 @@
     "electron-context-menu": "^0.14.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-localshortcut": "^3.2.1",
+    "electron-log": "^4.2.0",
     "electron-notarize": "^0.3.0",
+    "electron-updater": "^4.3.1",
     "express": "^4.17.1",
     "file-loader": "^4.2.0",
     "jsondiffpatch": "^0.4.1",
@@ -167,8 +176,8 @@
     "@types/react": "^16.8.23",
     "@types/react-dom": "^16.8.4",
     "devtron": "^1.4.0",
-    "electron": "5.0.4",
-    "electron-builder": "^20.44.4",
+    "electron": "^8.0.0",
+    "electron-builder": "^22.7.0",
     "electron-webpack": "^2.7.1",
     "electron-webpack-ts": "^3.2.0",
     "typescript": "^3.5.2",

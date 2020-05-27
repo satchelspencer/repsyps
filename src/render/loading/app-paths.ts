@@ -23,5 +23,5 @@ export function getPath(path: string) {
 }
 
 export function getAppPath(path: string) {
-  return remote.app.getPath(path)
+  return remote.app.getPath(path as any)
 }

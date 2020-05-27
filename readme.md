@@ -76,6 +76,8 @@ cd ../..
 yarn
 ~~~
 
+*make sure the lib folder has read/write permissions*
+
 ### Windows Installation
 - nodejs 10+ [see installer](https://nodejs.org/en/download/)
 - yarn `npm install -g yarn`

@@ -53,6 +53,7 @@ const Body = ctyled.div.styles({
   lined: true,
 }).extend`
   margin-top:1px;
+  overflow: hidden;
 `
 
 const BodyInner = ctyled.div.styles({

@@ -705,3 +705,13 @@ export const getAllSources = createSelector(
 export const getMissingSources = createSelector([getAllSources], (sources) => {
   return sources.filter((source) => source.missing)
 })
+
+export const getAnyTrackPlaying = createSelector(
+  [
+    (state: Types.State) => state.live.tracks,
+    (state: Types.State) => state.playback.playing,
+  ],
+  (tracks, playing) => {
+    return playing && _.some(tracks, (track) => track.playback.playing)
+  }
+)

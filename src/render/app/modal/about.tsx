@@ -5,8 +5,11 @@ import ctyled, { active } from 'ctyled'
 import { keyframes } from 'react-emotion'
 
 import { version } from 'render/util/env'
+import { useDispatch } from 'render/redux/react'
+import * as Actions from 'render/redux/actions'
 
 import Icon from 'render/components/icon'
+import { Status } from 'render/components/misc'
 
 const rotate = keyframes`
   0% {
@@ -49,7 +52,10 @@ const Moi = ctyled.div.class(active).styles({}).extend`
   text-decoration:underline;
 `
 
-function About() {
+export interface AboutProps {}
+
+function About(props: AboutProps) {
+  const dispatch = useDispatch()
   return (
     <AboutWrapper>
       <Rotater>
@@ -58,10 +64,13 @@ function About() {
       <Title>REPSYPS v{version}</Title>
       <Credit>
         created by&nbsp;
-        <Moi onClick={() => electron.shell.openExternalSync('https://elldev.com')}>
+        <Moi onClick={() => electron.shell.openExternal('https://elldev.com')}>
           satchel spencer
         </Moi>
       </Credit>
+      <Status link onClick={() => dispatch(Actions.setModalRoute('update'))}>
+        check for updates
+      </Status>
     </AboutWrapper>
   )
 }

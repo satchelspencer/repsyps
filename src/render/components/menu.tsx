@@ -44,13 +44,13 @@ export default function init() {
       inWrapper = 0
 
     const showOpenDialog = (options: electron.OpenDialogOptions) => {
-      const path = dialog.showOpenDialog(options)
+      const path = dialog.showOpenDialogSync(options)
       inDialog = new Date().getTime()
       return path
     }
 
     const showSaveDialog = (options: electron.SaveDialogOptions) => {
-      const path = dialog.showSaveDialog(options)
+      const path = dialog.showSaveDialogSync(options)
       inDialog = new Date().getTime()
       return path
     }
@@ -74,6 +74,9 @@ export default function init() {
       } = {
         about: {
           click: () => dispatch(Actions.setModalRoute('about')),
+        },
+        update: {
+          click: () => dispatch(Actions.setModalRoute('update')),
         },
         quit: {
           click: () => app.quit(),
@@ -717,6 +720,7 @@ export default function init() {
                 label: 'repsyps',
                 submenu: [
                   { label: 'About Repsyps', ...menuCommands.about },
+                  { label: 'Check for Updates...', ...menuCommands.update },
                   { type: 'separator' },
                   { role: 'services' },
                   { type: 'separator' },
@@ -1177,6 +1181,7 @@ export default function init() {
                 )
               },
             },
+            { label: 'Check for Updates...', ...menuCommands.update },
             { label: 'About Repsyps', ...menuCommands.about },
           ],
         },

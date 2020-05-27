@@ -76,3 +76,27 @@ export const FillMessage = ctyled.div.styles({
   width:100%;
   height:100%;
 `
+
+export const Status = ctyled.div
+  .attrs<{
+    err?: boolean
+    link?: boolean
+  }>({
+    err: false,
+    link: false,
+  })
+  .styles({ size: (s) => s * 0.85, align: 'center', gutter: 1 }).extendSheet`
+${(_, { link }) =>
+  link &&
+  `
+  text-decoration:underline;
+  cursor:pointer;
+  color:#70c4ffb3;
+`}
+${(_, { err }) =>
+  err &&
+  `
+color:rgba(255,0,0,0.7)
+`}
+
+`
