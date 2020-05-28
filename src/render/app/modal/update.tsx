@@ -51,13 +51,13 @@ function Update(props: UpdateProps) {
   }, [])
   return (
     <AboutWrapper>
-      {(props.updateStatus === null || !done) && (
+      {props.updateStatus === null && done && (
         <Status>
           <Icon name="check" scale={2} />
           &nbsp; REPSYPS is up to date!
         </Status>
       )}
-      {done && props.updateStatus === 'checking' && (
+      {(props.updateStatus === 'checking' || !done) && (
         <Status>
           <Spinner />
           &nbsp;checking...
