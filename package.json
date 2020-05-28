@@ -1,6 +1,6 @@
 {
   "name": "repsyps",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "scripts": {
     "start": "electron-webpack dev",
@@ -11,7 +11,8 @@
     "build-electron": "electron-webpack",
     "dist": "rm -rf dist && yarn build-electron && electron-builder",
     "dist-sign": "rm -rf dist && yarn build-electron && electron-builder -c.afterSign=conf/notarize.js",
-    "release": "rm -rf dist && yarn build-electron && electron-builder --publish always"
+    "release": "rm -rf dist && yarn build-electron && electron-builder --publish always",
+    "release-sign": "rm -rf dist && yarn build-electron && electron-builder -c.afterSign=conf/notarize.js --publish always"
   },
   "build": {
     "appId": "repsyps",

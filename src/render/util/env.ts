@@ -2,7 +2,7 @@ export const isMac = process.platform === 'darwin'
 
 export const isDev = process.env.NODE_ENV === 'development'
 
-export const version = '0.0.1'
+export const version = '0.0.2'
 
 let ratio = 1
 try {
