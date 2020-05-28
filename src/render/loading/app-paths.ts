@@ -10,6 +10,7 @@ export default function initPaths() {
       'repsyps/library',
       'repsyps/cache',
       'repsyps/recordings',
+      'repsyps/downloads',
     ]
 
   ensurePaths.forEach((path) => {

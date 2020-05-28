@@ -11,11 +11,11 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "strictNullChecks": false,
+    "skipLibCheck": true,
     "paths": {
       "src/*": ["*"],
       "lib/*": ["lib/*"],
       "render/*": ["render/*"]
-    },
-  },
- 
+    }
+  }
 }

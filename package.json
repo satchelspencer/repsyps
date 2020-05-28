@@ -170,7 +170,8 @@
     "rxjs": "^6.5.4",
     "socket.io": "^2.2.0",
     "source-map-support": "^0.5.12",
-    "svgo": "^1.2.2"
+    "svgo": "^1.2.2",
+    "ytdl-core": "^2.1.5"
   },
   "devDependencies": {
     "@babel/preset-react": "^7.0.0",

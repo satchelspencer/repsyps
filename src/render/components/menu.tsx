@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
-import electron from 'electron'
+import electron, { clipboard } from 'electron'
 import pathUtils from 'path'
 import _ from 'lodash'
 import localShortcut from 'electron-localshortcut'
+import ytdl from 'ytdl-core'
+import fs from 'fs'
 
 import * as Types from 'render/util/types'
 import * as Actions from 'render/redux/actions'
@@ -184,6 +186,26 @@ export default function init() {
               })
           },
           accelerator: 'CmdOrCtrl+I',
+        },
+        download: {
+          click: () => {
+            const url = clipboard.readText()
+            if (ytdl.validateURL(url)) {
+              ytdl.getBasicInfo(url, (e, info) => {
+                const outPath = pathUtils.join(getPath('downloads'), info.title + '.mp4')
+                ytdl(url, {
+                  filter: (format) => format.container === 'mp4',
+                })
+                  .pipe(fs.createWriteStream(outPath))
+                  .on('error', (e) => console.log('dl err', e))
+                  .on('finish', (e) => {
+                    if (!e) dispatch(Actions.addTrackAndSource(outPath))
+                  })
+              })
+            }
+          },
+          noMenu: true,
+          accelerator: 'CmdOrCtrl+L',
         },
         record: {
           click: () => dispatch(Actions.setRecording({ enabled: true, fromTrack: null })),

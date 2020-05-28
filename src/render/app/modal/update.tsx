@@ -57,12 +57,13 @@ function Update(props: UpdateProps) {
           &nbsp; REPSYPS is up to date!
         </Status>
       )}
-      {(props.updateStatus === 'checking' || !done) && (
-        <Status>
-          <Spinner />
-          &nbsp;checking...
-        </Status>
-      )}
+      {(props.updateStatus === 'checking' || !done) &&
+        props.updateStatus !== 'downloading' && (
+          <Status>
+            <Spinner />
+            &nbsp;checking...
+          </Status>
+        )}
       {props.updateStatus === 'error' && <Status err>update check failed</Status>}
       {props.updateStatus === 'downloading' && (
         <Status>
