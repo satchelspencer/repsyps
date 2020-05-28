@@ -4,6 +4,7 @@ import pathUtils from 'path'
 import _ from 'lodash'
 import localShortcut from 'electron-localshortcut'
 import ytdl from 'ytdl-core'
+import filenamify from 'filenamify'
 import fs from 'fs'
 
 import * as Types from 'render/util/types'
@@ -192,7 +193,10 @@ export default function init() {
             const url = clipboard.readText()
             if (ytdl.validateURL(url)) {
               ytdl.getBasicInfo(url, (e, info) => {
-                const outPath = pathUtils.join(getPath('downloads'), info.title + '.mp4')
+                const outPath = pathUtils.join(
+                  getPath('downloads'),
+                  filenamify(info.title) + '.mp4'
+                )
                 ytdl(url, {
                   filter: (format) => format.container === 'mp4',
                 })
