@@ -130,7 +130,7 @@ Napi::Value start(const Napi::CallbackInfo &info){
   outputParameters.device = deviceIndex;
   outputParameters.channelCount = 2; /* stereo output */
   outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
-  outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultHighOutputLatency;
+  outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
   outputParameters.hostApiSpecificStreamInfo = NULL;
 
   if(gstream != NULL){
