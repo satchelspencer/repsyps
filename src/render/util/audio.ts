@@ -8,7 +8,7 @@ interface AudioAPI {
   init(root: string): void
   getOutputs(): Types.Output[]
   getDefaultOutput(): number
-  start(deviceIndex: number): void
+  start(deviceIndex: number, darwin: boolean): void
   stop(): void
   startPreview(deviceIndex: number): void
   stopPreview()

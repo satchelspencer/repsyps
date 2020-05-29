@@ -193,18 +193,21 @@ export default function init() {
             const url = clipboard.readText()
             if (ytdl.validateURL(url)) {
               ytdl.getBasicInfo(url, (e, info) => {
-                const outPath = pathUtils.join(
-                  getPath('downloads'),
-                  filenamify(info.title) + '.mp4'
-                )
-                ytdl(url, {
-                  filter: (format) => format.container === 'mp4',
-                })
-                  .pipe(fs.createWriteStream(outPath))
-                  .on('error', (e) => console.log('dl err', e))
-                  .on('finish', (e) => {
-                    if (!e) dispatch(Actions.addTrackAndSource(outPath))
+                if (e) console.log('dl info err', e)
+                else {
+                  const outPath = pathUtils.join(
+                    getPath('downloads'),
+                    filenamify(info.title) + '.mp4'
+                  )
+                  ytdl(url, {
+                    filter: (format) => format.container === 'mp4',
                   })
+                    .pipe(fs.createWriteStream(outPath))
+                    .on('error', (e) => console.log('dl err', e))
+                    .on('finish', (e) => {
+                      if (!e) dispatch(Actions.addTrackAndSource(outPath))
+                    })
+                }
               })
             }
           },

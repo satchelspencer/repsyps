@@ -168,7 +168,7 @@
     "redux-devtools-extension": "^2.13.8",
     "reselect": "^4.0.0",
     "resize-observer-polyfill": "^1.5.1",
-    "rxjs": "^6.5.4",
+    "rxjs": "^6.5.5",
     "socket.io": "^2.2.0",
     "source-map-support": "^0.5.12",
     "svgo": "^1.2.2",

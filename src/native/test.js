@@ -43,7 +43,7 @@ const tests = {
       playing: true,
     })
 
-    audio.start(audio.getDefaultOutput())
+    audio.start(audio.getDefaultOutput(), true)
   },
   delay: async () => {
     audio.init('./')
@@ -59,8 +59,8 @@ const tests = {
             offset: 0,
           },
         },
-        delay: ssize/8,
-        delayGain: 0.2
+        delay: ssize / 8,
+        delayGain: 0.2,
       },
       nextPlayback: null,
     })
@@ -71,18 +71,18 @@ const tests = {
       playing: true,
     })
 
-    let i = true;
+    let i = true
     setInterval(() => {
       audio.setMixTrack('mytrack', {
         playback: {
-          volume: i?0:1
+          volume: i ? 0 : 1,
         },
         nextPlayback: null,
       })
       i = !i
     }, 2000)
 
-    audio.start(audio.getDefaultOutput())
+    audio.start(audio.getDefaultOutput(), true)
   },
   sep: async () => {
     audio.init('./')
@@ -110,7 +110,7 @@ const tests = {
       playing: true,
     })
 
-    audio.start(audio.getDefaultOutput())
+    audio.start(audio.getDefaultOutput(), true)
   },
   wave: async () => {
     audio.init('./')
@@ -161,7 +161,7 @@ const tests = {
       playing: true,
     })
 
-    audio.start(audio.getDefaultOutput())
+    audio.start(audio.getDefaultOutput(), true)
   },
   rm: async () => {
     audio.init('./')
@@ -203,7 +203,7 @@ const tests = {
       playing: true,
     })
 
-    audio.start(audio.getDefaultOutput())
+    audio.start(audio.getDefaultOutput(), true)
   },
   restart: async () => {
     audio.init('./')
@@ -230,7 +230,7 @@ const tests = {
       playing: true,
     })
 
-    audio.start(audio.getDefaultOutput())
+    audio.start(audio.getDefaultOutput(), true)
 
     let def = false
     setInterval(() => {

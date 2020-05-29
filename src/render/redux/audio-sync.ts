@@ -12,6 +12,7 @@ import diff from 'render/util/diff'
 import reducer from 'render/redux/reducer'
 import isEqual from 'render/util/is-equal'
 import { updateTiming, removeTrackTimings } from 'render/components/timing'
+import { isMac } from 'render/util/env'
 
 export const UPDATE_PERIODS = {
     high: 17,
@@ -198,7 +199,10 @@ export default function syncAudio(store: Store<Types.State>) {
       const matchingOutput = availableOutputs.find(
         (output) => output.index === currentState.output.current
       )
-      audio.start(matchingOutput ? currentState.output.current : audio.getDefaultOutput())
+      audio.start(
+        matchingOutput ? currentState.output.current : audio.getDefaultOutput(),
+        isMac
+      )
     }
 
     if (!lastState || lastState.output.preview !== currentState.output.preview) {

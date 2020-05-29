@@ -33,10 +33,8 @@ export default function useWaveformCanvas(
       impulses,
       width,
       height,
-      clickX,
       clickSample,
       centerSample,
-      center,
       mouseDown,
     } = view,
     pwidth = width * canvasScale,
@@ -252,9 +250,9 @@ export function drawImpulses(context: DrawingContext, impulses: number[]) {
 }
 
 export function drawDrag(context: DrawingContext) {
-  const { ctx, mouseDown, clickX, center, pheight, view, start, scale } = context
+  const { ctx, mouseDown, clickX, center, pheight, start, scale } = context
 
-  if (mouseDown) {
+  if (mouseDown && clickX !== null && center !== null) {
     const centerSnap = (center - start) / scale,
       clickXSnap = (clickX - start) / scale
     ctx.fillStyle = 'rgba(255,0,0,0.1)'

@@ -132,14 +132,13 @@ int paCallbackMethod(
 
   int window = 0;
   while(outputFrameIndex < framesPerBuffer){
-    double time = startTime + (outputFrameIndex / state->playback->period);
     for(auto mixTrackPair: state->mixTracks){
       mixTrack* mixTrack = mixTrackPair.second;
       if(!mixTrack || mixTrack->removed || mixTrack->safe) continue;
 
       mixTrackPlayback* playback = mixTrack->playback;
       float trackAlpha = playback->alpha;
-      double mixTrackPhase = trackAlpha * time;
+      double mixTrackPhase = trackAlpha * state->playback->time;
       mixTrackPhase -= floor(mixTrackPhase);
       int chunkIndex = playback->chunkIndex;
       int chunkCount = playback->chunks.size()/2;
@@ -259,7 +258,6 @@ int paCallbackMethod(
                 double positionFrac = trackPosition-floor(trackPosition);
                 if(hasEnd && trackPosition + params->offset > chunkEndPosition){
                   //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
-                  //if(windowIndex == WINDOW_STEP) mixTrack->sample = (trackPosition-chunkEndPosition) + nextChunkStart;
                   if(hasNext) playback = mixTrack->nextPlayback;
                   if(!committedStep && windowIndex < WINDOW_STEP) committedStep = true;
                 }else if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition + params->offset;
@@ -284,8 +282,8 @@ int paCallbackMethod(
       }
 
       mixTrack->overlapIndex = (mixTrack->overlapIndex + 1) % OVERLAP_COUNT;
-      if(committedStep && abs(time - mixTrack->lastCommit) > 0.1){
-        mixTrack->lastCommit = time;
+      if(committedStep && abs(state->playback->time - mixTrack->lastCommit) > 0.1){
+        mixTrack->lastCommit = state->playback->time;
         mixTrack->playback->chunkIndex = 
           (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
         
@@ -312,12 +310,14 @@ int paCallbackMethod(
     }
 
     state->buffer->head = (state->buffer->head + WINDOW_STEP) % state->buffer->size;
+    state->playback->time += ((double)WINDOW_STEP / state->playback->period);
     state->previewBuffer->head = state->buffer->head;
     out = (float*)outputBuffer;
     copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, rec);
     window++;
   }
 
+  /* calculate output level */
   if(state->buffer->head - state->buffer->tail == 0){
     float max = 0;
     for(int diff = 0;diff < ANALYSIS_SIZE;diff++){
@@ -329,7 +329,7 @@ int paCallbackMethod(
   }
 
   /* update time and misc */
-  state->playback->time = startTime + ((double)framesPerBuffer / state->playback->period);
+  //state->playback->time = startTime + ((double)framesPerBuffer / state->playback->period);
 
   /* phase wrapped drung this callback */
   if(startTime-floor(startTime) > state->playback->time-floor(state->playback->time)){

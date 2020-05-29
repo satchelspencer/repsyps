@@ -2,7 +2,7 @@ import React from 'react'
 
 import ctyled, { inline, active } from 'ctyled'
 
-const NonIndexButton = props => {
+const NonIndexButton = (props) => {
   return <div {...props} tabIndex="-1" />
 }
 
@@ -21,7 +21,7 @@ const StyledButton = ctyled(NonIndexButton)
     allowClick: false,
   })
   .styles({
-    color: c => c.nudge(0.2),
+    color: (c) => c.nudge(0.2),
     padd: (p, { compact }) => (compact ? 0.5 : 1),
     border: true,
     hover: true,
@@ -29,7 +29,7 @@ const StyledButton = ctyled(NonIndexButton)
     gutter: 0.5,
     alignSelf: (_, { inline }) => (inline ? 'flex-start' : undefined),
     size: (s, { inline }) => (inline ? s * 0.9 : s),
-    borderColor: c => c.contrast(-0.1),
+    borderColor: (c) => c.contrast(-0.1),
   }).extendSheet`
     font-size:inherit;
     ${(_, { disabled }) => disabled && `opacity:0.6;`}

@@ -124,14 +124,17 @@ Napi::Value getDefaultOutput(const Napi::CallbackInfo &info){
 Napi::Value start(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
   int deviceIndex = info[0].As<Napi::Number>().Int32Value();
+  bool darwin = info[1].As<Napi::Boolean>().Value();
   if(REPSYS_LOG) std::cout << "start " << deviceIndex << std::endl;
 
   PaStreamParameters outputParameters;
   outputParameters.device = deviceIndex;
   outputParameters.channelCount = 2; /* stereo output */
   outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
-  outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
+  
   outputParameters.hostApiSpecificStreamInfo = NULL;
+  if(darwin) outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultHighOutputLatency;
+  else outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
 
   if(gstream != NULL){
     if(REPSYS_LOG) std::cout << "stopping old stream" << std::endl;

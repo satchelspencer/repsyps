@@ -84,6 +84,7 @@ export default function useZoom(
           dx = e.shiftKey ? deltaY : deltaX
         if (xonly && playLocked) setPlayLocked(false)
         if (!playLocked || xonly) update({ start: start + clip(dx) * scale })
+        setCenterSample(start + centerRef.current * scale)
       }
     }
     container.current.addEventListener(
