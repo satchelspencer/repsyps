@@ -45,6 +45,8 @@ export const setOutputs = createAction<Partial<Types.OutputState>>('SET_OUTPUTS'
 
 export const setModalRoute = createAction<string>('SET_MODAL_ROUTE')
 
+export const setLibraryState = createAction<Partial<Types.LibraryState>>('SET_LIBRARY')
+
 /* track actions */
 
 export const addTrack = createAction<{

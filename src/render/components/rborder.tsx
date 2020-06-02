@@ -10,7 +10,8 @@ export interface ResizableBorderProps {
 }
 
 const RBorderWrapper = ctyled.div.attrs({ vertical: false, start: false }).styles({})
-  .extend`
+  .extendSheet`
+  opacity:0;
   position:absolute;
   z-index:1;
   ${({ size }, { vertical, start }) => `

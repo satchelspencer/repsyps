@@ -365,6 +365,8 @@ export interface Settings {
   controlsSize: number
   sidebarSize: number
   gridSize: number
+  libSize: number
+  libOpen: boolean
   snap: boolean
   screencast: boolean
 }
@@ -421,6 +423,34 @@ export interface MenuState {
   screencast: boolean
 }
 
+export interface LibraryTrack {
+  name: string
+  avgPeriod: number
+  length: number
+}
+
+export interface LibraryProjectTracks {
+  [trackId: string]: LibraryTrack
+}
+
+export interface LibraryProjectScene{
+  trackIds: string[]
+}
+
+export interface LibraryProject {
+  tracks: LibraryProjectTracks
+  scenes: LibraryProjectScene[]
+}
+
+export interface LibraryProjects {
+  [path: string]: LibraryProject
+}
+
+export interface LibraryState {
+  scanning: boolean
+  projects: LibraryProjects
+}
+
 export interface State {
   playback: Playback
   live: Live
@@ -430,4 +460,5 @@ export interface State {
   recording: Recording
   output: OutputState
   modalRoute: string
+  library: LibraryState
 }

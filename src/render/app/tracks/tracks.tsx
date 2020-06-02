@@ -10,6 +10,7 @@ import { adder } from 'render/components/control-adder'
 
 import Track from './track'
 import Recording from './record'
+import Library from './library'
 
 const TrackWrapper = ctyled.div.styles({
   flex: 1,
@@ -18,16 +19,26 @@ const TrackWrapper = ctyled.div.styles({
   overflow:hidden;
 `
 
+const TracksListWrapper = ctyled.div.styles({
+  flex: 1,
+})
+
 const TracksList = SortableContainer(
   ctyled.div.styles({
     column: true,
     lined: true,
     endLine: true,
-    flex: 1,
     scroll: true,
     color: (c) => c.nudge(0.025),
     bg: true,
-  })
+    flex: 'none',
+  }).extendSheet`
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+  `
 )
 
 const SceneDivider = adder(ctyled.div
@@ -166,50 +177,53 @@ function Tracks() {
   return (
     <TrackWrapper>
       <TrackVert>
-        <TracksList
-          axis="y"
-          lockAxis="y"
-          useDragHandle
-          lockToContainerEdges
-          onSortEnd={handleSortEnd}
-          distance={5}
-          transitionDuration={0}
-          onScroll={handleScroll}
-          inRef={wrapperRef}
-        >
-          <SceneDivider
-            params={firstParams}
-            onClick={handleSelectFirst}
-            selected={currentSceneIndex === 0}
-            noSelect={currentSceneIndex > 1}
+        <TracksListWrapper>
+          <TracksList
+            axis="y"
+            lockAxis="y"
+            useDragHandle
+            lockToContainerEdges
+            onSortEnd={handleSortEnd}
+            distance={5}
+            transitionDuration={0}
+            onScroll={handleScroll}
+            inRef={wrapperRef}
           >
-            1
-          </SceneDivider>
-          {scenesItems.map((item, index) => {
-            if (typeof item === 'string')
-              return (
-                <Track
-                  index={index}
-                  vBounds={vBounds}
-                  key={item}
-                  trackId={item}
-                  listRef={wrapperRef}
-                />
-              )
-            else
-              return (
-                <SceneHeader
-                  key={item}
-                  index={index}
-                  item={item}
-                  relativeSceneIndex={item - currentSceneIndex}
-                  onSelectScene={handleSelectScene}
-                />
-              )
-          })}
-        </TracksList>
+            <SceneDivider
+              params={firstParams}
+              onClick={handleSelectFirst}
+              selected={currentSceneIndex === 0}
+              noSelect={currentSceneIndex > 1}
+            >
+              1
+            </SceneDivider>
+            {scenesItems.map((item, index) => {
+              if (typeof item === 'string')
+                return (
+                  <Track
+                    index={index}
+                    vBounds={vBounds}
+                    key={item}
+                    trackId={item}
+                    listRef={wrapperRef}
+                  />
+                )
+              else
+                return (
+                  <SceneHeader
+                    key={item}
+                    index={index}
+                    item={item}
+                    relativeSceneIndex={item - currentSceneIndex}
+                    onSelectScene={handleSelectScene}
+                  />
+                )
+            })}
+          </TracksList>
+        </TracksListWrapper>
         <Recording />
       </TrackVert>
+      <Library />
     </TrackWrapper>
   )
 }

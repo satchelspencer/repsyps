@@ -272,4 +272,13 @@ export default createReducer(defaultState, (handle) => [
       modalRoute: route,
     }
   }),
+  handle(Actions.setLibraryState, (state, { payload: newState }) => {
+    return {
+      ...state,
+      library: {
+        ...state.library,
+        ...newState,
+      },
+    }
+  }),
 ])

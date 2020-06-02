@@ -1023,10 +1023,12 @@ export default function init() {
           submenu: [
             {
               label: 'Add Control',
+              enabled: !inInput,
               ...menuCommands.addControl,
             },
             {
               label: 'Add Control Inverted',
+              enabled: !inInput,
               ...menuCommands.addControlInv,
             },
             {

@@ -715,3 +715,12 @@ export const getAnyTrackPlaying = createSelector(
     return playing && _.some(tracks, (track) => track.playback.playing)
   }
 )
+
+export const getAvgPeriod = (bounds: number[]) => {
+  if (bounds.length < 2) return null
+  let sum = 0
+  for (let i = 0; i < bounds.length - 2; i++) {
+    sum += bounds[i + 1] - bounds[i]
+  }
+  return sum / (bounds.length - 1)
+}

@@ -37,8 +37,7 @@ export function saveLocalStorage(store: Store<Types.State>) {
   localStorage.setItem('repsyps:local', JSON.stringify(version(lpersisted, latest)))
 }
 
-function getPropjectFromFile(path: string) {
-  const raw = fs.readFileSync(path, 'utf8')
+export function getProjectFromRaw(raw: string) {
   try {
     const state = JSON.parse(raw),
       migrated = apply(state, migration) as Versioned<Types.PersistentState>
@@ -48,6 +47,11 @@ function getPropjectFromFile(path: string) {
   } catch (e) {
     return null
   }
+}
+
+function getPropjectFromFile(path: string) {
+  const raw = fs.readFileSync(path, 'utf8')
+  return getProjectFromRaw(raw)
 }
 
 export function loadProject(path: string, store: Store<Types.State>) {

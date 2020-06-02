@@ -36,7 +36,7 @@ const Wrapper = ctyled.div.attrs({ invert: false }).styles({
     overflow:hidden;
     & * ::-webkit-scrollbar {     
       background-color: ${({ color }) => color.bg};
-      width:${({ size }) => size}px;
+      width:${({ size }) => Math.floor(size)}px;
       border-left:1px solid rgba(0,0,0,${({ color }) =>
         color.serial().inverted ? 0.35 : 0.1});
     }

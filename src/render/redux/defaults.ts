@@ -87,6 +87,8 @@ export const defaultPlayback: Types.Playback = {
     updateRate: 'medium',
     controlsSize: 35,
     sidebarSize: 25.7,
+    libSize: 20,
+    libOpen: false,
     gridSize: 8,
     snap: true,
     screencast: false,
@@ -101,6 +103,10 @@ export const defaultPlayback: Types.Playback = {
     devices: [],
     preview: null,
   },
+  defaultLibraryState: Types.LibraryState = {
+    scanning: true,
+    projects: {},
+  },
   defaultState: Types.State = {
     save: defaultSave,
     playback: defaultPlayback,
@@ -110,4 +116,5 @@ export const defaultPlayback: Types.Playback = {
     recording: defaultRecording,
     output: defaultOutput,
     modalRoute: null,
+    library: defaultLibraryState,
   }
