@@ -408,10 +408,6 @@ export interface OutputState {
 }
 
 export interface MenuState {
-  trackScroll: boolean
-  darkMode: boolean
-  size: number
-  updateRate: UpdateRate
   sceneIndex: number
   scenesCount: number
   output: OutputState
@@ -419,8 +415,7 @@ export interface MenuState {
   editing: boolean
   trackPlaying: boolean
   playing: boolean
-  snap: boolean
-  screencast: boolean
+  settings: Settings
 }
 
 export interface LibraryTrack {
@@ -433,7 +428,7 @@ export interface LibraryProjectTracks {
   [trackId: string]: LibraryTrack
 }
 
-export interface LibraryProjectScene{
+export interface LibraryProjectScene {
   trackIds: string[]
 }
 

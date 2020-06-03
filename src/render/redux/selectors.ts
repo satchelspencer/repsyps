@@ -616,10 +616,6 @@ export const getMenuState = createSelector(
     playing
   ): Types.MenuState => {
     return {
-      trackScroll: settings.trackScroll,
-      darkMode: settings.darkMode,
-      size: settings.size,
-      updateRate: settings.updateRate,
       sceneIndex,
       scenesCount,
       output,
@@ -627,8 +623,7 @@ export const getMenuState = createSelector(
       editing,
       trackPlaying,
       playing,
-      snap: settings.snap,
-      screencast: settings.screencast,
+      settings
     }
   }
 )

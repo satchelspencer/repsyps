@@ -583,6 +583,12 @@ export default function init() {
         loadDefaultPresets: {
           click: () => loadDefaultBindings(store),
         },
+        library: {
+          click: () => {
+            dispatch(Actions.setSettings({ libOpen: !menuState.settings.libOpen }))
+          },
+          accelerator: 'CmdOrCtrl+K',
+        },
         trackScroll: {
           click: () => {
             const currentScroll = store.getState().settings.trackScroll
@@ -606,7 +612,7 @@ export default function init() {
           accelerator: 'CmdOrCtrl+Shift+D',
         },
         snapping: {
-          click: () => dispatch(Actions.setSettings({ snap: !menuState.snap })),
+          click: () => dispatch(Actions.setSettings({ snap: !menuState.settings.snap })),
           accelerator: 'Alt+S',
         },
         highRate: {
@@ -660,9 +666,9 @@ export default function init() {
         screencast: {
           click: () => {
             const newSettings: Partial<Types.Settings> = {
-              screencast: !menuState.screencast,
+              screencast: !menuState.settings.screencast,
             }
-            if (!menuState.screencast) {
+            if (!menuState.settings.screencast) {
               const win = electron.remote.getCurrentWindow()
               win.setSize(1260 / 1.25, 720 / 1.25, true)
               win.setPosition(0, 0, true)
@@ -1109,19 +1115,19 @@ export default function init() {
             {
               label: 'Track Scroll',
               type: 'checkbox',
-              checked: menuState.trackScroll,
+              checked: menuState.settings.trackScroll,
               ...menuCommands.trackScroll,
             },
             {
               label: 'Dark Mode',
               type: 'checkbox',
-              checked: menuState.darkMode,
+              checked: menuState.settings.darkMode,
               ...menuCommands.darkMode,
             },
             {
               label: 'Snapping',
               type: 'checkbox',
-              checked: menuState.snap,
+              checked: menuState.settings.snap,
               ...menuCommands.snapping,
             },
             {
@@ -1130,29 +1136,33 @@ export default function init() {
                 {
                   label: 'High',
                   type: 'checkbox',
-                  checked: menuState.updateRate === 'high',
+                  checked: menuState.settings.updateRate === 'high',
                   ...menuCommands.highRate,
                 },
                 {
                   label: 'Medium',
                   type: 'checkbox',
-                  checked: menuState.updateRate === 'medium',
+                  checked: menuState.settings.updateRate === 'medium',
                   ...menuCommands.medRate,
                 },
                 {
                   label: 'Low',
                   type: 'checkbox',
-                  checked: menuState.updateRate === 'low',
+                  checked: menuState.settings.updateRate === 'low',
                   ...menuCommands.lowRate,
                 },
               ],
+            },
+            {
+              label: menuState.settings.libOpen ? 'Hide Library' : 'Show Library',
+              ...menuCommands.library,
             },
             { type: 'separator' },
             { label: 'Reload', ...menuCommands.reload },
             { role: 'toggledevtools' },
             { label: 'Escape', ...menuCommands.exitModal },
             {
-              label: menuState.screencast
+              label: menuState.settings.screencast
                 ? 'Disable Screencap View'
                 : 'Enable Screencap View',
               ...menuCommands.screencast,

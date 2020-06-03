@@ -96,7 +96,9 @@ const MSContainer = ctyled.div.styles({
   height: '100%',
   width: 3,
   gutter: 0.8,
-})
+}).extendSheet`
+  font-size:${({ size }) => size}px !important;
+`
 
 const ControlsButton = ctyled.div
   .class(active)
@@ -140,19 +142,15 @@ const SpeedWrapper = ctyled.div.styles({
   gutter: 1,
   border: 1,
   borderColor: (c) => c.contrast(-0.3),
-}).extend`
+}).extendSheet`
   padding:0px ${({ size }) => size / 1.6}px;
+  font-size:${({ size }) => size}px !important;
 `
 
 const CuesWrapper = ctyled.div.styles({
   width: '100%',
   flex: 1,
   gutter: 1,
-})
-
-const CueLabel = ControlsButton.styles({
-  hover: false,
-  border: 0,
 })
 
 const TrackIndex = ctyled.div.styles({
