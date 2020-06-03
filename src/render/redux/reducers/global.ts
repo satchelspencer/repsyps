@@ -53,6 +53,7 @@ export default createReducer(defaultState, (handle) => [
         globalControls: state.live.globalControls,
       },
       settings: state.settings,
+      library: state.library,
       output: state.output,
     }
   }),
@@ -131,7 +132,6 @@ export default createReducer(defaultState, (handle) => [
             }
           }),
         },
-
         playback: payload.state.playback,
       },
       payload.reset ? 0 : state.live.sceneIndex,

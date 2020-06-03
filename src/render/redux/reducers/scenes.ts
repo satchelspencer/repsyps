@@ -255,7 +255,13 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.loadScenes, (state, { payload }) => {
-    const newState = globalReducer(
+    const insertIndex =
+        payload.insertIndex === undefined
+          ? payload.tracksOnly
+            ? state.live.sceneIndex
+            : state.live.sceneIndex + 1
+          : payload.insertIndex,
+      newState = globalReducer(
         defaultState,
         Actions.loadPersisted({
           state: payload.state,
@@ -276,13 +282,13 @@ export default createReducer(defaultState, (handle) => [
 
     const mappedState = remap(newState, idMap),
       newScenes = [...state.live.scenes],
-      prevScene = state.live.scenes[payload.insertIndex - 1]
+      prevScene = state.live.scenes[insertIndex - 1]
 
     /* if prev scene is empty replace it */
     if (payload.tracksOnly) {
-      const scene = newScenes[payload.insertIndex]
+      const scene = newScenes[insertIndex]
 
-      newScenes.splice(payload.insertIndex, 1, {
+      newScenes.splice(insertIndex, 1, {
         ...scene,
         trackIds: [
           ...scene.trackIds,
@@ -291,8 +297,8 @@ export default createReducer(defaultState, (handle) => [
       })
     } else {
       if (prevScene && !prevScene.trackIds.length)
-        newScenes.splice(payload.insertIndex - 1, 1, ...mappedState.live.scenes)
-      else newScenes.splice(payload.insertIndex, 0, ...mappedState.live.scenes)
+        newScenes.splice(insertIndex - 1, 1, ...mappedState.live.scenes)
+      else newScenes.splice(insertIndex, 0, ...mappedState.live.scenes)
     }
 
     return {

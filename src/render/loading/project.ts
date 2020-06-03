@@ -65,9 +65,9 @@ export function loadProject(path: string, store: Store<Types.State>) {
 
 export function loadProjectScenes(
   path: string,
-  insertIndex: number,
   store: Store<Types.State>,
-  tracksOnly?: boolean
+  tracksOnly: boolean,
+  insertIndex?: number
 ) {
   const state = getPropjectFromFile(path)
   if (state) {
@@ -76,7 +76,74 @@ export function loadProjectScenes(
         state,
         insertIndex,
         fromPath: pathUtils.dirname(path),
-        tracksOnly: !!tracksOnly,
+        tracksOnly,
+      })
+    )
+  }
+}
+
+export function loadProjectTrack(
+  path: string,
+  store: Store<Types.State>,
+  trackId: string,
+  tracksOnly: boolean,
+  insertIndex?: number
+) {
+  const state = getPropjectFromFile(path),
+    wrapperScene = state.live.scenes.find((scene) => scene.trackIds.includes(trackId)),
+    singleTrackState: Types.PersistentState = {
+      ...state,
+      live: {
+        ...state.live,
+        tracks: _.pick(state.live.tracks, trackId),
+        scenes: [
+          {
+            ...wrapperScene,
+            trackIds: [trackId],
+          },
+        ],
+      },
+      sources: _.pick(state.sources, trackId),
+    }
+  if (state) {
+    store.dispatch(
+      Actions.loadScenes({
+        state: singleTrackState,
+        insertIndex,
+        fromPath: pathUtils.dirname(path),
+        tracksOnly,
+      })
+    )
+  }
+}
+
+export function loadProjectScene(
+  path: string,
+  store: Store<Types.State>,
+  sceneIndex: number,
+  tracksOnly: boolean,
+  insertIndex?: number
+) {
+  const state = getPropjectFromFile(path),
+    scene: Types.PersistentScene = state.live.scenes[sceneIndex],
+    singleTrackState: Types.PersistentState = {
+      ...state,
+      live: {
+        ...state.live,
+        tracks: _.pickBy(state.live.tracks, (_, trackId) =>
+          scene.trackIds.includes(trackId)
+        ),
+        scenes: state.live.scenes.slice(sceneIndex, sceneIndex + 1),
+      },
+      sources: _.pick(state.sources, scene.trackIds),
+    }
+  if (state) {
+    store.dispatch(
+      Actions.loadScenes({
+        state: singleTrackState,
+        insertIndex,
+        fromPath: pathUtils.dirname(path),
+        tracksOnly: tracksOnly,
       })
     )
   }

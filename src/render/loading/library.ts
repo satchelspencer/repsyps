@@ -11,6 +11,7 @@ import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 
 export function getLibraryProject(state: Types.PersistentState): Types.LibraryProject {
+  let periodSum = 0
   return {
     scenes: state.live.scenes.map((scene) => {
       return {
@@ -20,10 +21,13 @@ export function getLibraryProject(state: Types.PersistentState): Types.LibraryPr
     tracks: _.mapValues(
       state.live.tracks,
       (track, trackId): Types.LibraryTrack => {
-        const source = state.sources[trackId]
+        const source = state.sources[trackId],
+          avgPeriod = Selectors.getAvgPeriod(source.bounds) * source.boundsAlpha
+
+        periodSum += avgPeriod
         return {
           name: source.name,
-          avgPeriod: Selectors.getAvgPeriod(source.bounds) * source.boundsAlpha,
+          avgPeriod: avgPeriod,
           length:
             source.bounds.length > 1
               ? source.bounds[source.bounds.length - 1] - source.bounds[0]
@@ -31,6 +35,7 @@ export function getLibraryProject(state: Types.PersistentState): Types.LibraryPr
         }
       }
     ),
+    avgPeriod: periodSum / _.keys(state.live.tracks).length,
   }
 }
 

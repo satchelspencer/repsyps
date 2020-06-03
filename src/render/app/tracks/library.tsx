@@ -1,16 +1,31 @@
-import React, { useCallback, useContext, useMemo, useState, useEffect, memo } from 'react'
+import React, {
+  useCallback,
+  useContext,
+  useRef,
+  useMemo,
+  useState,
+  useEffect,
+  memo,
+} from 'react'
 import * as _ from 'lodash'
 import ctyled, { CtyledContext, active, inline } from 'ctyled'
 import * as pathUtils from 'path'
 
-import { useSelector, useDispatch } from 'render/redux/react'
+import { useSelector, useDispatch, useStore } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import * as Types from 'render/util/types'
 import { getPath } from 'render/loading/app-paths'
+import { palette } from 'render/components/theme'
 
 import ResizableBorder from 'render/components/rborder'
 import Icon from 'render/components/icon'
+
+import {
+  loadProjectScenes,
+  loadProjectScene,
+  loadProjectTrack,
+} from 'render/loading/project'
 
 const LibraryWrapper = ctyled.div.attrs({ widthp: 25 }).styles({
   column: true,
@@ -83,16 +98,17 @@ const MIN_LIB_SIZE = 8,
 
 const LibItem = ctyled.div
   .class(active)
-  .attrs({ depth: 0 })
+  .attrs<{ depth: number; hilight?: boolean }>({ depth: 0, hilight: false })
   .styles({
     height: 2.25,
     align: 'center',
     bg: true,
     gutter: 1,
-    hover: 0.3,
-    color: (c, { depth }) => c.nudge(-0.05 - depth * 0.07),
+    hover: 0.4,
+    color: (c, { depth }) => c.nudge(-0.05 - depth * 0.09),
+    bgColor: (c, { hilight }) => c.as(hilight ? palette.green : palette.gray),
   }).extend`
-  padding-left:${({ size }, { depth }) => size / 2 + (size / 2) * depth}px;
+  padding-left:${({ size }, { depth }) => size / 2 + (size / 1.5) * depth}px;
   padding-right:${({ size }) => size / 2}px;
 `
 
@@ -131,50 +147,95 @@ const TempoDelta = ctyled.div.class(inline).styles({
   rounded: true,
   padd: 0.5,
   size: (s) => s * 0.85,
+  width: 4,
+  justify: 'center',
 })
+
+const ProjectWrapper = ctyled.div.styles({
+  column: true,
+  lined: true,
+})
+
+const IconBuffer = ctyled.div.styles({ width: 1.1 })
 
 export interface LibraryProjectProps {
   project: Types.LibraryProject
   path: string
   period: number
+  match: LibraryMatchState
 }
 
 const getRatioStr = (ratio: number): string => {
   if (ratio === 0) return '+0.0'
   else {
-    const rounded = _.round(ratio, 1)
+    const rounded = _.round(ratio, Math.abs(ratio) > 10 ? 0 : 1)
     return (rounded > 0 ? '+' : '') + rounded
   }
 }
 
 const LibraryProject = memo((props: LibraryProjectProps) => {
-  const hasMultipleTracks = _.keys(props.project.tracks).length > 1,
+  const trackCount = _.keys(props.project.tracks).length,
+    hasMultipleTracks = trackCount > 1,
     hasMultipleScenes = props.project.scenes.length > 1,
     root = getPath('library'),
     projectName = pathUtils.relative(root, props.path).replace(/\.syp$/g, ''),
     [open, setOpen] = useState(false),
+    clickTimeoutRef = useRef(null),
     handleToggleOpen = useCallback(() => {
-      setOpen(!open)
-    }, [open])
+      if (!clickTimeoutRef.current)
+        clickTimeoutRef.current = setTimeout(() => {
+          setOpen(!open)
+          clickTimeoutRef.current = null
+        }, 300)
+    }, [open]),
+    store = useStore(),
+    handleDoubleClick = useCallback(
+      (e) => {
+        clearTimeout(clickTimeoutRef.current)
+        clickTimeoutRef.current = null
+        loadProjectScenes(props.path, store, e.shiftKey)
+      },
+      [props.path, store]
+    ),
+    [showAll, setShowAll] = useState(false),
+    matchingCount = _.keys(props.match.tracks).length,
+    hasTrackMatch = matchingCount > 0,
+    showNotMatching = !hasTrackMatch || showAll,
+    notMatchingCount = showNotMatching ? 0 : trackCount - matchingCount,
+    handleShowAll = useCallback(() => setShowAll(true), []),
+    projectRatio = (props.project.avgPeriod / props.period - 1) * 100
+
+  useEffect(() => {
+    setOpen(hasTrackMatch)
+    setShowAll(false)
+  }, [props.match])
 
   return (
-    <>
+    <ProjectWrapper>
       {hasMultipleTracks && (
-        <LibItem depth={0} onClick={handleToggleOpen}>
+        <LibItem depth={0} onClick={handleToggleOpen} onDoubleClick={handleDoubleClick}>
           <ItemName name={projectName} />
+          <TempoDelta>{getRatioStr(projectRatio)}%</TempoDelta>
           <Icon name={open ? 'caret-down' : 'caret-right'} scale={1.2} />
         </LibItem>
       )}
       {(!hasMultipleTracks || open) &&
         _.map(props.project.scenes, (scene, sceneIndex) => {
-          const sceneHasMultiple = scene.trackIds.length > 1,
+          const sceneHasMultiple =
+              scene.trackIds.filter((id) => showNotMatching || props.match.tracks[id])
+                .length > 1,
             trackDepth =
               (sceneHasMultiple && hasMultipleScenes ? 1 : 0) +
               (hasMultipleTracks ? 1 : 0)
           return (
             <React.Fragment key={sceneIndex}>
               {hasMultipleScenes && sceneHasMultiple && (
-                <LibItem depth={1}>
+                <LibItem
+                  depth={1}
+                  onDoubleClick={(e) =>
+                    loadProjectScene(props.path, store, sceneIndex, e.shiftKey)
+                  }
+                >
                   <ItemName name={'Scene ' + (sceneIndex + 1)} />
                 </LibItem>
               )}
@@ -182,25 +243,52 @@ const LibraryProject = memo((props: LibraryProjectProps) => {
                 const track = props.project.tracks[trackId],
                   ratio = (track.avgPeriod / props.period - 1) * 100
                 return (
-                  <LibItem depth={trackDepth} key={trackId}>
-                    <ItemName
-                      name={
-                        (sceneHasMultiple || !hasMultipleTracks
-                          ? ''
-                          : 'Scene ' + (sceneIndex + 1) + ': ') +
-                        (hasMultipleTracks ? track.name : projectName)
+                  (showNotMatching || props.match.tracks[trackId]) && (
+                    <LibItem
+                      depth={trackDepth}
+                      key={trackId}
+                      hilight={
+                        !!props.match.tracks[trackId] && hasMultipleTracks && showAll
                       }
-                    />
-                    <TempoDelta>{getRatioStr(ratio)}%</TempoDelta>
-                  </LibItem>
+                      onDoubleClick={(e) =>
+                        loadProjectTrack(props.path, store, trackId, e.shiftKey)
+                      }
+                    >
+                      <ItemName
+                        name={
+                          (sceneHasMultiple || !hasMultipleTracks
+                            ? ''
+                            : 'Scene ' + (sceneIndex + 1) + ': ') +
+                          (hasMultipleTracks ? track.name : projectName)
+                        }
+                      />
+                      <TempoDelta>{getRatioStr(ratio)}%</TempoDelta>
+                      {trackDepth === 0 && <IconBuffer />}
+                    </LibItem>
+                  )
                 )
               })}
             </React.Fragment>
           )
         })}
-    </>
+      {notMatchingCount > 0 && open && (
+        <LibItem depth={1} onClick={handleShowAll}>
+          + {notMatchingCount} more track{notMatchingCount > 1 ? 's' : ''}
+        </LibItem>
+      )}
+    </ProjectWrapper>
   )
 })
+
+export interface LibraryFilter {
+  sortPeriod: number
+  filterText: string
+}
+
+export interface LibraryMatchState {
+  project: boolean
+  tracks: { [trackId: string]: boolean }
+}
 
 function Library() {
   const { libSize, libOpen } = useSelector((state) => state.settings),
@@ -238,9 +326,57 @@ function Library() {
     handleKeyDown = useCallback((e) => {
       e.stopPropagation()
     }, []),
-    handleSearchClear = useCallback(() => setSearchText(''), [])
+    handleSearchClear = useCallback(() => setSearchText(''), []),
+    bodyRef = useRef(null),
+    [maxResults, setMaxResults] = useState(40),
+    handleIncMaxResults = useCallback(() => {
+      setMaxResults(maxResults + 20)
+    }, [maxResults])
 
-  const paths = _.keys(library.projects)
+  const [filterState, setFilterState] = useState<LibraryFilter>({
+      sortPeriod: null,
+      filterText: null,
+    }),
+    applyFilterState = useCallback(
+      _.debounce((newFilter: LibraryFilter) => {
+        setFilterState(newFilter)
+        setMaxResults(40)
+      }, 300),
+      []
+    )
+  useEffect(() => {
+    applyFilterState({
+      filterText: searchText ? searchText.toLowerCase() : null,
+      sortPeriod: period,
+    })
+  }, [searchText, period])
+
+  const { paths, matches } = useMemo(() => {
+    const matches: {
+        [path: string]: LibraryMatchState
+      } = {},
+      filtered = _.keys(library.projects).filter((path) => {
+        const trackMatches = {},
+          projectMatches = path.toLowerCase().includes(filterState.filterText),
+          trackHasMatch = _.some(library.projects[path].tracks, (track, trackId) => {
+            const match = track.name.toLowerCase().includes(filterState.filterText)
+            if (match) trackMatches[trackId] = true
+            return match
+          }),
+          anyMatch = !filterState.filterText || projectMatches || trackHasMatch
+
+        if (anyMatch) matches[path] = { project: projectMatches, tracks: trackMatches }
+        return anyMatch
+      }),
+      sorted = _.sortBy(filtered, (path) =>
+        Math.abs(library.projects[path].avgPeriod - filterState.sortPeriod)
+      )
+    if (bodyRef.current) bodyRef.current.scrollTop = 0
+    return {
+      paths: sorted,
+      matches,
+    }
+  }, [library.projects, filterState])
 
   return libOpen ? (
     <LibraryWrapper widthp={widthp}>
@@ -255,17 +391,25 @@ function Library() {
           <Icon asButton onClick={handleSearchClear} scale={1.3} name="close-thin" />
         </SearchWrapper>
       </LibraryHeader>
-      <LibraryBody>
-        {paths.map((path) => {
+      <LibraryBody inRef={bodyRef}>
+        {paths.map((path, i) => {
           return (
-            <LibraryProject
-              period={period}
-              key={path}
-              path={path}
-              project={library.projects[path]}
-            />
+            i < maxResults && (
+              <LibraryProject
+                period={filterState.sortPeriod}
+                key={path}
+                path={path}
+                project={library.projects[path]}
+                match={matches[path]}
+              />
+            )
           )
         })}
+        {paths.length > maxResults && (
+          <LibItem styles={{ justify: 'center' }} onClick={handleIncMaxResults} depth={1}>
+            <u>show more...</u>
+          </LibItem>
+        )}
       </LibraryBody>
       <ResizableBorder
         onMove={handleMove}

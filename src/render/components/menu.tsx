@@ -180,7 +180,7 @@ export default function init() {
             if (paths)
               paths.forEach((path) => {
                 if (pathUtils.extname(path) === '.syp') {
-                  loadProjectScenes(path, menuState.sceneIndex + 1, store)
+                  loadProjectScenes(path, store, false, menuState.sceneIndex + 1)
                 } else if (pathUtils.extname(path) === '.rbind')
                   loadBindings(path[0], store)
                 else dispatch(Actions.addTrackAndSource(path))
@@ -334,7 +334,7 @@ export default function init() {
               buttonLabel: 'Import Before',
             })
             if (path && path[0])
-              loadProjectScenes(path[0], menuState.sceneIndex, store, true)
+              loadProjectScenes(path[0], store, true, menuState.sceneIndex)
           },
           accelerator: 'CmdOrCtrl+Shift+I',
         },
@@ -345,7 +345,8 @@ export default function init() {
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Import Before',
             })
-            if (path && path[0]) loadProjectScenes(path[0], menuState.sceneIndex, store)
+            if (path && path[0])
+              loadProjectScenes(path[0], store, false, menuState.sceneIndex)
           },
           accelerator: 'CmdOrCtrl+Alt+I',
         },
@@ -356,7 +357,8 @@ export default function init() {
               filters: [{ name: 'repsyps project', extensions: ['syp'] }],
               buttonLabel: 'Import to End',
             })
-            if (path && path[0]) loadProjectScenes(path[0], menuState.scenesCount, store)
+            if (path && path[0])
+              loadProjectScenes(path[0], store, false, menuState.scenesCount)
           },
           accelerator: 'CmdOrCtrl+Shift+Alt+I',
         },

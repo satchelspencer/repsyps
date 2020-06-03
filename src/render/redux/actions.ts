@@ -448,7 +448,7 @@ export const cycleScenes = createAction<number>('CYCLE_SCENES')
 export const deleteAfter = createAction<number>('DELETE_SCENES_AFTER')
 
 export const loadScenes = createAction<{
-  insertIndex: number
+  insertIndex?: number
   state: Types.PersistentState
   fromPath: string
   tracksOnly: boolean

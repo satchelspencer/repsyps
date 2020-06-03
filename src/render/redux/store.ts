@@ -17,7 +17,7 @@ const store = createStore(
   defaultState,
   devToolsEnhancer({
     actionCreators: Actions,
-    actionsBlacklist: ['UPDATE_TIMES'],
+    actionsBlacklist: ['UPDATE_TIMES', 'APPLY_CONTROL'],
   })
 )
 
