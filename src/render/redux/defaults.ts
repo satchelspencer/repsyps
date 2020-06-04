@@ -1,6 +1,7 @@
 import * as Types from 'render/util/types'
 import { RATE } from 'render/util/audio'
 import defaultBindingsFile from 'render/loading/default-bindings'
+import { getPath } from 'render/loading/app-paths'
 
 export const defaultPlayback: Types.Playback = {
     volume: 1,
@@ -106,6 +107,7 @@ export const defaultPlayback: Types.Playback = {
   defaultLibraryState: Types.LibraryState = {
     scanning: true,
     projects: {},
+    root: getPath('library'),
   },
   defaultState: Types.State = {
     save: defaultSave,

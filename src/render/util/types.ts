@@ -444,6 +444,7 @@ export interface LibraryProjects {
 
 export interface LibraryState {
   scanning: boolean
+  root: string
   projects: LibraryProjects
 }
 

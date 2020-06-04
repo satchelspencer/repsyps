@@ -9,7 +9,9 @@ export default function useMeasure(container: RefObject<HTMLDivElement>) {
       width: 0,
       height: 0,
     }),
-    { controlsSize, sidebarSize, libSize } = useSelector((state) => state.settings)
+    { controlsSize, sidebarSize, libSize, libOpen } = useSelector(
+      (state) => state.settings
+    )
 
   const getSize = useCallback(() => {
     const { left, top } = container.current
@@ -27,6 +29,7 @@ export default function useMeasure(container: RefObject<HTMLDivElement>) {
     controlsSize,
     sidebarSize,
     libSize,
+    libOpen,
   ])
 
   useEffect(() => {

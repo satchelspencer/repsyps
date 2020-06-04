@@ -233,6 +233,17 @@ export default function init() {
           click: () => dispatch(Actions.setModalRoute('relink')),
           accelerator: 'CmdOrCtrl+F',
         },
+        openLibrary: {
+          click: () => {
+            const path = showOpenDialog({
+              defaultPath: getPath('/'),
+              buttonLabel: 'Open Library',
+              properties: ['openDirectory'],
+            })
+            if (path && path[0]) dispatch(Actions.setLibraryState({ root: path[0] }))
+          },
+          accelerator: 'CmdOrCtrl+Shift+K',
+        },
         undo: {
           click: undo,
           accelerator: 'CmdOrCtrl+Z',
@@ -821,6 +832,10 @@ export default function init() {
             {
               label: 'Find Missing Media',
               ...menuCommands.findMissing,
+            },
+            {
+              label: 'Open Library',
+              ...menuCommands.openLibrary,
             },
             { type: 'separator' },
             { role: 'quit' },

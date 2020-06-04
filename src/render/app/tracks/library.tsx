@@ -20,6 +20,7 @@ import { palette } from 'render/components/theme'
 
 import ResizableBorder from 'render/components/rborder'
 import Icon from 'render/components/icon'
+import { FillMessage } from 'render/components/misc'
 
 import {
   loadProjectScenes,
@@ -44,6 +45,11 @@ const LibraryHeader = ctyled.div.styles({
 const LibraryBody = ctyled.div.styles({
   flex: 1,
   scroll: true,
+  width: '100%',
+  column: true,
+})
+
+const LibraryLined = ctyled.div.styles({
   width: '100%',
   column: true,
   lined: true,
@@ -351,11 +357,12 @@ function Library() {
     })
   }, [searchText, period])
 
-  const { paths, matches } = useMemo(() => {
+  const { paths, matches, hasLibrary } = useMemo(() => {
     const matches: {
         [path: string]: LibraryMatchState
       } = {},
-      filtered = _.keys(library.projects).filter((path) => {
+      allPaths = _.keys(library.projects),
+      filtered = allPaths.filter((path) => {
         const trackMatches = {},
           projectMatches = path.toLowerCase().includes(filterState.filterText),
           trackHasMatch = _.some(library.projects[path].tracks, (track, trackId) => {
@@ -375,6 +382,7 @@ function Library() {
     return {
       paths: sorted,
       matches,
+      hasLibrary: allPaths.length > 0,
     }
   }, [library.projects, filterState])
 
@@ -392,23 +400,35 @@ function Library() {
         </SearchWrapper>
       </LibraryHeader>
       <LibraryBody inRef={bodyRef}>
-        {paths.map((path, i) => {
-          return (
-            i < maxResults && (
-              <LibraryProject
-                period={filterState.sortPeriod}
-                key={path}
-                path={path}
-                project={library.projects[path]}
-                match={matches[path]}
-              />
-            )
-          )
-        })}
-        {paths.length > maxResults && (
-          <LibItem styles={{ justify: 'center' }} onClick={handleIncMaxResults} depth={1}>
-            <u>show more...</u>
-          </LibItem>
+        {!hasLibrary && !library.scanning && (
+          <FillMessage>No Tracks in Library</FillMessage>
+        )}
+        {hasLibrary && !paths.length && <FillMessage>No Results</FillMessage>}
+        {!!paths.length && (
+          <LibraryLined>
+            {paths.map((path, i) => {
+              return (
+                i < maxResults && (
+                  <LibraryProject
+                    period={filterState.sortPeriod}
+                    key={path}
+                    path={path}
+                    project={library.projects[path]}
+                    match={matches[path]}
+                  />
+                )
+              )
+            })}
+            {paths.length > maxResults && (
+              <LibItem
+                styles={{ justify: 'center' }}
+                onClick={handleIncMaxResults}
+                depth={1}
+              >
+                <u>show more...</u>
+              </LibItem>
+            )}
+          </LibraryLined>
         )}
       </LibraryBody>
       <ResizableBorder

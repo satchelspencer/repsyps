@@ -47,6 +47,8 @@ export const setModalRoute = createAction<string>('SET_MODAL_ROUTE')
 
 export const setLibraryState = createAction<Partial<Types.LibraryState>>('SET_LIBRARY')
 
+export const addLibraryProjects = createAction<Types.LibraryProjects>('ADD_LIB_PROJECTS')
+
 /* track actions */
 
 export const addTrack = createAction<{

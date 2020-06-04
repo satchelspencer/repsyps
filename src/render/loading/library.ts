@@ -63,7 +63,20 @@ export function scan(path: string) {
 }
 
 export async function initLibrary(store: Store<Types.State>) {
+  let lastScannedRoot: string = null
+  store.subscribe(async () => {
+    const newRoot = store.getState().library.root
+    if (newRoot !== lastScannedRoot) {
+      lastScannedRoot = newRoot
+      store.dispatch(Actions.setLibraryState({ scanning: true }))
+      const projects = await scan(newRoot)
+      store.dispatch(Actions.setLibraryState({ scanning: false, projects }))
+    }
+  })
+}
+
+export async function appendToLibrary(store: Store<Types.State>, path: string) {
   store.dispatch(Actions.setLibraryState({ scanning: true }))
-  const projects = await scan(getPath('library'))
-  store.dispatch(Actions.setLibraryState({ scanning: false, projects }))
+  const projects = await scan(path)
+  store.dispatch(Actions.addLibraryProjects(projects))
 }

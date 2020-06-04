@@ -7,6 +7,7 @@ import * as Types from 'render/util/types'
 import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 
+import { appendToLibrary } from './library'
 import { apply, version, Migration, Versioned } from './apply-migration'
 
 const migration: Migration<any, any> = null,
@@ -153,12 +154,14 @@ export function exportCurrentScene(path: string, store: Store<Types.State>) {
   const state = store.getState(),
     sceneState = Selectors.getSceneExport(state, state.live.sceneIndex, path)
   fs.writeFileSync(path, JSON.stringify(version(sceneState, latest)))
+  appendToLibrary(store, path)
 }
 
 export function saveProject(path: string, store: Store<Types.State>) {
   store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
   const bindings = Selectors.getPersistentState(store.getState())
   fs.writeFileSync(path, JSON.stringify(version(bindings, latest)))
+  appendToLibrary(store, path)
 }
 
 export function exportProject(path: string, store: Store<Types.State>) {
@@ -188,4 +191,5 @@ export function exportProject(path: string, store: Store<Types.State>) {
   })
   const projectPath = pathUtils.join(path, baseName + '.syp')
   saveProject(projectPath, store)
+  appendToLibrary(store, path)
 }

@@ -281,4 +281,16 @@ export default createReducer(defaultState, (handle) => [
       },
     }
   }),
+  handle(Actions.addLibraryProjects, (state, { payload: newProjects }) => {
+    return {
+      ...state,
+      library: {
+        ...state.library,
+        projects: {
+          ...state.library.projects,
+          ...newProjects,
+        },
+      },
+    }
+  }),
 ])
