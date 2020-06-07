@@ -14,6 +14,7 @@ const midiFunctions: { [byte: number]: string } = {
   midiFnMask = parseInt('11110000', 2)
 
 export function midiName(midi: number) {
+  if (midi === null) return ''
   const fnbyte = midi >> 8,
     note = midi & 127,
     channel = fnbyte & 15

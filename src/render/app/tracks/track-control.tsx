@@ -5,8 +5,10 @@ import { SortableHandle } from 'react-sortable-hoc'
 
 import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
+import * as Types from 'render/util/types'
 import * as Selectors from 'render/redux/selectors'
 import { RATE } from 'render/util/audio'
+import { useSelectable } from 'render/components/selection'
 
 import Icon from 'render/components/icon'
 import { adder } from 'render/components/control-adder'
@@ -177,6 +179,7 @@ function TrackControls(props: TrackControlsProps) {
     hasPreview = useSelector((state) => state.output.preview !== null),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
+    { isSelecting } = useSelectable<Partial<Types.Control>>('control'),
     dispatch = useDispatch(),
     volumeControlParams = useMemo(
       () => ({
@@ -291,13 +294,15 @@ function TrackControls(props: TrackControlsProps) {
             <TrackTitleWrapper>
               <TrackTitle>{source.name}</TrackTitle>
             </TrackTitleWrapper>
-            <PreviewButton disabled={!hasPreview} onClick={handlePreview}>
-              <Icon
-                scale={1.2}
-                name={track.playback.preview ? 'headphones' : 'headphones-off'}
-                asButton
-              />
-            </PreviewButton>
+            {!isSelecting && (
+              <PreviewButton disabled={!hasPreview} onClick={handlePreview}>
+                <Icon
+                  scale={1.2}
+                  name={track.playback.preview ? 'headphones' : 'headphones-off'}
+                  asButton
+                />
+              </PreviewButton>
+            )}
           </TrackHeader>
           <JogAdder params={jogControlParams} hideWhenInactive={true}>
             <Icon name="jog" />

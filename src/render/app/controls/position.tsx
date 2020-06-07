@@ -19,6 +19,7 @@ import {
 import Icon from 'render/components/icon'
 
 import { midiName, getControlName, getIcon } from './utils'
+import { defaultBinding } from 'src/render/redux/defaults'
 
 const ControlSelectableButton = SelectableButton.styles({
   color: (c, { selected }) =>
@@ -32,7 +33,7 @@ const ControlSelectableButton = SelectableButton.styles({
 })
 
 const ControlInspector = ctyled.div.styles({
-  width: 20,
+  width: 23,
   column: true,
   lined: true,
   bg: true,
@@ -101,6 +102,10 @@ const MidiWrapper = ctyled.div.styles({
   padd: 1,
 })
 
+const MCPButton = ControlBloc.extendSheet`
+  font-size:${({ size }) => size * 0.6}px;
+`
+
 export interface ControlDetailProps {
   position: Types.Position
 }
@@ -112,6 +117,7 @@ function PositionDetail(props: ControlDetailProps) {
     selectedBinding = useSelector((state) =>
       Selectors.getByPos(state.live.bindings, props.position)
     ),
+    binding = selectedBinding || defaultBinding,
     isGlobal = useSelector(
       (state) => !!Selectors.getByPos(state.live.globalControls, props.position)
     ),
@@ -130,15 +136,11 @@ function PositionDetail(props: ControlDetailProps) {
       )
     }, [shouldStartWaiting]),
     toggleTwoWay = useCallback(() => {
-      if (selectedBinding)
-        dispatch(
-          Actions.setBinding({
-            binding: {
-              twoway: !selectedBinding.twoway,
-            },
-          })
-        )
-    }, [selectedBinding && selectedBinding.twoway]),
+      dispatch(Actions.setBinding({ binding: { twoway: !binding.twoway } }))
+    }, [binding.twoway]),
+    toggleMCP = useCallback(() => {
+      dispatch(Actions.setBinding({ binding: { mcp: !binding.mcp } }))
+    }, [binding.mcp]),
     removeMidiBinding = useCallback(() => dispatch(Actions.removeBinding()), []),
     setAbsolute = useCallback(
       () =>
@@ -228,16 +230,13 @@ function PositionDetail(props: ControlDetailProps) {
               )}
             </FillButton>
             <ControlBloc compact onClick={toggleTwoWay}>
-              <Icon
-                scale={1.1}
-                name={selectedBinding && selectedBinding.twoway ? 'twoway' : 'oneway'}
-              />
+              <Icon scale={1.1} name={binding.twoway ? 'twoway' : 'oneway'} />
             </ControlBloc>
-            <SidebarValue>
-              {selectedBinding && selectedBinding.midi
-                ? midiName(selectedBinding.midi)
-                : '--'}
-            </SidebarValue>
+            <MCPButton compact onClick={toggleMCP}>
+              <Icon name={binding.mcp ? 'check' : 'pad'} scale={0.7} />
+              &nbsp;MCP
+            </MCPButton>
+            <SidebarValue>{binding.midi ? midiName(binding.midi) : '--'}</SidebarValue>
             <Icon
               disabled={!selectedBinding}
               onClick={removeMidiBinding}

@@ -45,6 +45,7 @@ export const defaultPlayback: Types.Playback = {
     twoway: false,
     badMidiValue: false,
     lastMidiValue: -1,
+    mcp: false,
   },
   defaultScene: Types.Scene = {
     controls: {},

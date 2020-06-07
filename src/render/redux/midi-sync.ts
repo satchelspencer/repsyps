@@ -28,7 +28,9 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
   } = {}
 let lastControlIds = [],
   midiChanges: { [upperBytes: number]: number } = {},
-  midiCounts: { [upperBytes: number]: number } = {}
+  midiCounts: { [upperBytes: number]: number } = {},
+  mcps: { [upper: number]: boolean } = {},
+  waitingBinding: Types.Binding = null
 
 export default async function init(store: Store<Types.State>) {
   const handleMessage = (portName) => {
@@ -60,8 +62,6 @@ export default async function init(store: Store<Types.State>) {
         }
       }
 
-      //console.log(midiCounts['45091'])
-
       for (let posStr in state.live.bindings) {
         const binding = state.live.bindings[posStr],
           position = Selectors.str2pos(posStr),
@@ -77,7 +77,6 @@ export default async function init(store: Store<Types.State>) {
                     ...binding,
                     midi: leastUpper,
                     waiting: false,
-                    twoway: instantFunctions.includes(leastFn),
                   },
                 }),
                 Actions.setInitValue({
@@ -143,18 +142,22 @@ export default async function init(store: Store<Types.State>) {
       midiChanges = {}
       midiCounts = {}
     },
-    throttledHandle = _.throttle(handleMessage, 50, { trailing: true }),
+    throttledHandle = _.throttle(handleMessage, 50, { trailing: false }),
     wrappedThrottleHandle = (message, portName) => {
       const [fn, note, value] = message.data,
         fname = getFunction(fn),
         mappedFn = fname === 'note' ? 144 + (midiChannelMask & fn) : fn,
-        upper = (mappedFn << 8) + note
+        mcpCheckUpper = (mappedFn << 8) + (fname === 'pitch-bend' ? 0 : note),
+        isMCP = mcps[mcpCheckUpper] || (waitingBinding && waitingBinding.mcp),
+        upper = isMCP ? mcpCheckUpper : (mappedFn << 8) + note,
+        signedDelta = isMCP ? (value > 64 ? 64 - value : value) : value - 64
 
       midiChanges[upper] = value
-      midiCounts[upper] = (midiCounts[upper] || 0) + (value - 64)
-
+      midiCounts[upper] = (midiCounts[upper] || 0) + signedDelta
+      outputs[portName].send(message.data, message.timeStamp)
       if (value === 0 || value === 127 || instantFunctions.includes(fname)) {
         handleMessage(portName)
+        throttledHandle.flush()
         //throttledHandle(portName)
       } else throttledHandle(portName)
     },
@@ -169,6 +172,14 @@ export default async function init(store: Store<Types.State>) {
       midiValues[port.name] = midiValues[port.name] || {}
       outputs[port.name] = port
       port.send([255])
+
+      // const header = [0xf0, 0, 0, 0x66, 0x14]
+      // // port.send([...header, 0, 0xf7])
+
+      // setInterval(() => {
+      //   port.send([0x90, 0x00, 0x])
+      // }, 1000)
+
       handleStoreUpdate()
     },
     removeOutput = (port) => {
@@ -176,7 +187,7 @@ export default async function init(store: Store<Types.State>) {
       delete midiValues[port.name]
     }
 
-  nav.requestMIDIAccess().then((midiAccess) => {
+  nav.requestMIDIAccess({ sysex: true }).then((midiAccess) => {
     midiAccess.onstatechange = (e) => {
       if (e.port.type === 'input') {
         if (e.port.state === 'connected') addInput(e.port)
@@ -198,6 +209,9 @@ export default async function init(store: Store<Types.State>) {
         currentControlIds = _.keys(currentControls),
         addedControlsIds = _.difference(currentControlIds, lastControlIds),
         removedControlsIds = _.difference(lastControlIds, currentControlIds)
+
+      mcps = Selectors.getMcpFunctions(state)
+      waitingBinding = null
 
       addedControlsIds.forEach((controlId) => {
         absValueSelectors[controlId] = Selectors.makeGetControlAbsValue()
@@ -225,7 +239,11 @@ export default async function init(store: Store<Types.State>) {
               if (midiValue === undefined || Math.abs(normedValue - midiValue) > 0.02) {
                 if (binding.twoway) {
                   const note = binding.midi & 127
-                  outputs[outputId].send([fn, note, Math.floor(normedValue * 127)])
+                  outputs[outputId].send([
+                    fn,
+                    midiFunctions[fn & midiFnMask] === 'pitch-bend' ? 0 : note,
+                    Math.floor(normedValue * 127),
+                  ])
                 } else if (!binding.badMidiValue) {
                   store.dispatch(
                     Actions.setBadMidiValue({
@@ -238,6 +256,9 @@ export default async function init(store: Store<Types.State>) {
               }
             }
           }
+        }
+        if (binding && binding.waiting) {
+          waitingBinding = binding
         }
       }
       lastControlIds = currentControlIds

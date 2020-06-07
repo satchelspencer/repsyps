@@ -283,11 +283,13 @@ export type BindingType = 'note' | 'value' | 'jog'
 export interface PersistentBinding {
   midi: number //first two bits of midi message
   twoway: boolean
+  mcp: boolean
 }
 
 export interface Binding extends PersistentBinding {
   waiting?: boolean
   twoway: boolean
+  mcp: boolean
   badMidiValue: boolean
   lastMidiValue: number
 }

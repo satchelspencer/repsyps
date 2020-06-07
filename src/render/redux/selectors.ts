@@ -623,7 +623,7 @@ export const getMenuState = createSelector(
       editing,
       trackPlaying,
       playing,
-      settings
+      settings,
     }
   }
 )
@@ -719,3 +719,18 @@ export const getAvgPeriod = (bounds: number[]) => {
   }
   return sum / (bounds.length - 1)
 }
+
+export const getMcpFunctions = createSelector(
+  [(state: Types.State) => state.live.bindings],
+  (bindings) => {
+    const mcps: { [upper: number]: boolean } = {}
+    _.each(bindings, (binding) => {
+      if (binding.mcp) {
+        const upper =
+          (binding.midi & 0xf000) >> 8 === 224 ? binding.midi & 0xff00 : binding.midi
+        mcps[upper] = true
+      }
+    })
+    return mcps
+  }
+)
