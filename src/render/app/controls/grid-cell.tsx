@@ -71,6 +71,7 @@ const GridCell = memo((props: GridCellProps) => {
         dispatch(Actions.applyControlGroup(position, control, displayValue, value)),
       [position, control, displayValue, value]
     )
+
   return (
     <>
       {binding && binding.midi !== null && <CellMidi>{midiName(binding.midi)}</CellMidi>}

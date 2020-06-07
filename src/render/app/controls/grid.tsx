@@ -138,10 +138,9 @@ function ControlsGrid() {
   const size = useContext(CtyledContext).theme.size,
     selected = useSelector((state) => state.live.selectedPosition),
     gridSize = useSelector((state) => state.settings.gridSize),
-    targetWidth = size * gridSize,
     enabled = useSelector((state) => state.live.controlsEnabled)
 
-  const count = Math.ceil(width / targetWidth),
+  const count = Math.floor(gridSize),
     cellSize = width / count,
     rowCount = Math.ceil(height / cellSize)
 
@@ -167,11 +166,11 @@ function ControlsGrid() {
       (diff) => {
         dispatch(
           Actions.setSettings({
-            gridSize: width / (width / targetWidth + diff) / size,
+            gridSize: gridSize + diff,
           })
         )
       },
-      [width, targetWidth, size]
+      [width, gridSize, size]
     ),
     handleSetSelected = useCallback((position: Types.Position) => {
       dispatch(Actions.setSelectedPosition(position))

@@ -77,6 +77,7 @@ export default async function init(store: Store<Types.State>) {
                     ...binding,
                     midi: leastUpper,
                     waiting: false,
+                    twoway: binding.twoway || instantFunctions.includes(leastFn),
                   },
                 }),
                 Actions.setInitValue({

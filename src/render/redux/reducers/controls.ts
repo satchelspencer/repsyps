@@ -317,8 +317,22 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.loadBindings, (state, { payload: bindingsFile }) => {
+    const maxX =
+      _.max(
+        _.map(
+          [..._.keys(bindingsFile.bindings), ..._.keys(bindingsFile.globalControls)],
+          (p) => {
+            const pos = Selectors.str2pos(p)
+            return pos.x
+          }
+        )
+      ) || 0
     return {
       ...state,
+      settings: {
+        ...state.settings,
+        gridSize: Math.max(maxX + 1, 5),
+      },
       live: {
         ...state.live,
         ...bindingsFile,

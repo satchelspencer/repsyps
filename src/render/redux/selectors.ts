@@ -49,7 +49,7 @@ export function getActiveTrackIds(state: Types.State, sceneIndex?: number): stri
 export function getControlsFromSceneIndex(live: Types.Live, sceneIndex: number) {
   return {
     ...((live.scenes[sceneIndex] && live.scenes[sceneIndex].controls) || {}),
-    ...live.globalControls,
+    ..._.pickBy(live.globalControls, (a) => !!a),
   }
 }
 

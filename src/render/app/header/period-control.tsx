@@ -50,8 +50,8 @@ const IncButton = adder(ctyled.div.class(active).styles({
 const INC_SIZE = RATE * 0.01
 
 const periodParams = { globalProp: 'period' },
-  upIncParams = { periodDelta: -INC_SIZE },
-  downIncParams = { periodDelta: INC_SIZE }
+  upIncParams = { periodDelta: -INC_SIZE, invert: true },
+  downIncParams = { periodDelta: INC_SIZE, invert: true }
 
 const PeriodControl = memo(() => {
   const period = useSelector((state) => state.playback.period),

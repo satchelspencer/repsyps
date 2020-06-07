@@ -74,10 +74,10 @@ function ScenesContainer() {
     handleNextScene = useCallback(() => dispatch(Actions.stepSceneIndex(+1)), []),
     params = useMemo(
       () => ({
-        prevScene: { sceneStep: -1 },
-        prevTrack: { trackStep: -1 },
-        nextTrack: { trackStep: 1 },
-        nextScene: { sceneStep: 1 },
+        prevScene: { sceneStep: -1, invert: true },
+        prevTrack: { trackStep: -1, invert: true },
+        nextTrack: { trackStep: 1, invert: true },
+        nextScene: { sceneStep: 1, invert: true },
       }),
       []
     )
