@@ -4,9 +4,8 @@ import { batchActions } from 'redux-batched-actions'
 import pathUtils from 'path'
 
 import * as Types from 'render/util/types'
-import mappings from 'render/util/mappings'
+import * as mappings from 'render/util/mappings'
 import { getId } from 'render/util/uid'
-import { bool } from 'prop-types'
 
 function createAction<Payload>(name) {
   return createActionCreator(name, (res) => (payload: Payload) => res(payload))

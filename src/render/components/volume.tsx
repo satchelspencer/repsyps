@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import * as _ from 'lodash'
 import ctyled from 'ctyled'
 
-import mappings from 'render/util/mappings'
+import * as mappings from 'render/util/mappings'
 import Icon from 'render/components/icon'
 import Slider from './slider'
 import { SliderWrapper } from './misc'

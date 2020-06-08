@@ -88,7 +88,8 @@ void applyFilter(
     firfilt_rrrf_execute(source->filters[filterIndex], &sampleValue);
   }
   float windowedValue = sampleValue * window;
-  float delayedValue = mixTrack->delayBuffer->channels[channelIndex][normMod(trackBufferHead - playback->delay, mixTrack->delayBuffer)];
+  int delayedIndex = normMod(trackBufferHead - (playback->delay * state->playback->period), mixTrack->delayBuffer);
+  float delayedValue = mixTrack->delayBuffer->channels[channelIndex][delayedIndex];
   mixTrack->delayBuffer->channels[channelIndex][normMod(trackBufferHead + WINDOW_SIZE*2, mixTrack->delayBuffer)] = 0;
   state->buffer->channels[channelIndex][outBufferHead] += windowedValue + delayedValue;
   mixTrack->delayBuffer->channels[channelIndex][trackBufferHead] += (delayedValue + windowedValue) * playback->delayGain;

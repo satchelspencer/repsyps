@@ -4,7 +4,7 @@ import ctyled, { active } from 'ctyled'
 
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
-import mappings from 'render/util/mappings'
+import * as mappings from 'render/util/mappings'
 
 import Slider from 'render/components/slider'
 import Icon from 'render/components/icon'

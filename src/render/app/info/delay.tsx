@@ -4,22 +4,21 @@ import * as _ from 'lodash'
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
-import mappings from 'render/util/mappings'
+import * as mappings from 'render/util/mappings'
 
 import Icon from 'render/components/icon'
 import {
   HeaderContent,
   SliderWrapper,
   ItemAdder,
-  Horizontal,
+  WideButton,
 } from 'render/components/misc'
 import Slider from 'render/components/slider'
+import SidebarItem from 'render/components/item'
 
 export interface DelayProps {
   trackId: string
 }
-
-const center = [mappings.filter.toStandard(0.5)]
 
 const Delay = memo((props: DelayProps) => {
   const { delay, delayGain } = useSelector(
@@ -31,6 +30,7 @@ const Delay = memo((props: DelayProps) => {
     name = useSelector((state) => state.sources[props.trackId].name),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
+    period = useSelector((state) => state.playback).period,
     dispatch = useDispatch(),
     setGain = useCallback(
       (value) => {
@@ -70,34 +70,40 @@ const Delay = memo((props: DelayProps) => {
     )
 
   return (
-    <Horizontal>
-      <ItemAdder params={controlGainParams}>
-        <HeaderContent>
-          <Icon scale={1.1} name="echo" />
-          <span>&nbsp;Echo</span>
-        </HeaderContent>
-        <SliderWrapper>
-          <Slider
-            value={mappings.delayGain.toStandard(delayGain)}
-            ghost={mappings.delayGain.toStandard(realPlayback.delayGain)}
-            onChange={setGain}
-          />
-        </SliderWrapper>
-      </ItemAdder>
+    <SidebarItem
+      open={true}
+      title={
+        <>
+          <HeaderContent>
+            <Icon name="echo" scale={1.1} />
+            <span>&nbsp;Delay</span>
+          </HeaderContent>
+          <ItemAdder params={controlGainParams}>
+            <SliderWrapper>
+              <Slider
+                value={mappings.delayGain.toStandard(delayGain)}
+                ghost={mappings.delayGain.toStandard(realPlayback.delayGain)}
+                onChange={setGain}
+              />
+            </SliderWrapper>
+          </ItemAdder>
+        </>
+      }
+    >
       <ItemAdder params={controlDelayParams}>
         <HeaderContent>
-          <span>&nbsp;Delay</span>
+          <span>Length</span>
         </HeaderContent>
         <SliderWrapper>
           <Slider
             value={mappings.delay.toStandard(delay)}
             ghost={mappings.delay.toStandard(realPlayback.delay)}
             onChange={setDelay}
-            markers={center}
+            markers={[0.25, 0.5]}
           />
         </SliderWrapper>
       </ItemAdder>
-    </Horizontal>
+    </SidebarItem>
   )
 })
 

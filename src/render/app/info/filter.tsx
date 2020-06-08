@@ -4,7 +4,7 @@ import * as _ from 'lodash'
 import { useDispatch, useSelector } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
-import mappings from 'render/util/mappings'
+import * as mappings from 'render/util/mappings'
 
 import Icon from 'render/components/icon'
 import {

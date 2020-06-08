@@ -3,7 +3,7 @@ import { createSelector, defaultMemoize, createSelectorCreator } from 'reselect'
 import pathUtils from 'path'
 
 import * as Types from 'render/util/types'
-import mappings from 'render/util/mappings'
+import * as mappings from 'render/util/mappings'
 import { objShallowEqual } from 'render/util/is-equal'
 import { updateSourcesPaths } from 'render/redux/reducers/global'
 
@@ -203,6 +203,7 @@ function applyControlsToPlayback(
 ) {
   let outPlayback: Types.TrackPlayback = {
     ...playback,
+    delay: playback.delay !== undefined && playback.delay <= 1 ? playback.delay : 0.5,
     alpha: playback.aperiodic ? playback.alpha : playback.alpha * boundsAlpha,
   }
   if (!enabled) return playback
