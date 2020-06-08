@@ -143,58 +143,23 @@ function PositionDetail(props: ControlDetailProps) {
     }, [binding.mcp]),
     removeMidiBinding = useCallback(() => dispatch(Actions.removeBinding()), []),
     setAbsolute = useCallback(
-      () =>
-        dispatch(
-          Actions.setControlGroup({
-            controlGroup: {
-              absolute: true,
-            },
-          })
-        ),
+      () => dispatch(Actions.setControlGroup({ controlGroup: { absolute: true } })),
       []
     ),
     setRelative = useCallback(
-      () =>
-        dispatch(
-          Actions.setControlGroup({
-            controlGroup: {
-              absolute: false,
-            },
-          })
-        ),
+      () => dispatch(Actions.setControlGroup({ controlGroup: { absolute: false } })),
       []
     ),
     setAsValue = useCallback(
-      () =>
-        dispatch(
-          Actions.setControlGroup({
-            controlGroup: {
-              bindingType: 'value',
-            },
-          })
-        ),
+      () => dispatch(Actions.setControlGroup({ controlGroup: { bindingType: 'value' } })),
       []
     ),
     setAsNote = useCallback(
-      () =>
-        dispatch(
-          Actions.setControlGroup({
-            controlGroup: {
-              bindingType: 'note',
-            },
-          })
-        ),
+      () => dispatch(Actions.setControlGroup({ controlGroup: { bindingType: 'note' } })),
       []
     ),
     setAsJog = useCallback(
-      () =>
-        dispatch(
-          Actions.setControlGroup({
-            controlGroup: {
-              bindingType: 'jog',
-            },
-          })
-        ),
+      () => dispatch(Actions.setControlGroup({ controlGroup: { bindingType: 'jog' } })),
       []
     ),
     handleAddControl = useCallback(async () => {

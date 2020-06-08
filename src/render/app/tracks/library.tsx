@@ -10,6 +10,9 @@ import React, {
 import * as _ from 'lodash'
 import ctyled, { CtyledContext, active, inline } from 'ctyled'
 import * as pathUtils from 'path'
+import electron from 'electron'
+import TimeAgo from 'javascript-time-ago'
+import en from 'javascript-time-ago/locale/en'
 
 import { useSelector, useDispatch, useStore } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
@@ -20,13 +23,17 @@ import { palette } from 'render/components/theme'
 
 import ResizableBorder from 'render/components/rborder'
 import Icon from 'render/components/icon'
-import { FillMessage } from 'render/components/misc'
+import { FillMessage, SelectableButton } from 'render/components/misc'
 
 import {
   loadProjectScenes,
   loadProjectScene,
   loadProjectTrack,
 } from 'render/loading/project'
+import { sort } from 'semver'
+
+TimeAgo.addLocale(en)
+const timeAgo = new TimeAgo('en-US')
 
 const LibraryWrapper = ctyled.div.attrs({ widthp: 25 }).styles({
   column: true,
@@ -40,6 +47,8 @@ const LibraryWrapper = ctyled.div.attrs({ widthp: 25 }).styles({
 const LibraryHeader = ctyled.div.styles({
   color: (c) => c.nudge(0.1),
   bg: true,
+  column: true,
+  lined: true,
 })
 
 const LibraryBody = ctyled.div.styles({
@@ -57,10 +66,16 @@ const LibraryLined = ctyled.div.styles({
 })
 
 const SearchWrapper = ctyled.div.styles({
+  width: '100%',
+  column: true,
   gutter: 1,
   padd: 1,
+  color: (c) => c.contrast(0.02),
+})
+
+const SearchInner = ctyled.div.styles({
   align: 'center',
-  width: '100%',
+  gutter: 1,
 })
 
 const SearchInput = ctyled.input.styles({
@@ -157,6 +172,8 @@ const TempoDelta = ctyled.div.class(inline).styles({
   justify: 'center',
 })
 
+const Time = ctyled.div.styles({ size: (s) => s * 0.8, color: (c) => c.contrast(-0.1) })
+
 const ProjectWrapper = ctyled.div.styles({
   column: true,
   lined: true,
@@ -177,6 +194,10 @@ const getRatioStr = (ratio: number): string => {
     const rounded = _.round(ratio, Math.abs(ratio) > 10 ? 0 : 1)
     return (rounded > 0 ? '+' : '') + rounded
   }
+}
+
+const formatDate = (mTime: number) => {
+  return _.last(timeAgo.format(mTime, 'twitter').split(', '))
 }
 
 const LibraryProject = memo((props: LibraryProjectProps) => {
@@ -221,6 +242,7 @@ const LibraryProject = memo((props: LibraryProjectProps) => {
       {hasMultipleTracks && (
         <LibItem depth={0} onClick={handleToggleOpen} onDoubleClick={handleDoubleClick}>
           <ItemName name={projectName} />
+          <Time>{formatDate(props.project.mTime)}</Time>
           <TempoDelta>{getRatioStr(projectRatio)}%</TempoDelta>
           <Icon name={open ? 'caret-down' : 'caret-right'} scale={1.2} />
         </LibItem>
@@ -268,6 +290,7 @@ const LibraryProject = memo((props: LibraryProjectProps) => {
                           (hasMultipleTracks ? track.name : projectName)
                         }
                       />
+                      {trackDepth === 0 && <Time>{formatDate(props.project.mTime)}</Time>}
                       <TempoDelta>{getRatioStr(ratio)}%</TempoDelta>
                       {trackDepth === 0 && <IconBuffer />}
                     </LibItem>
@@ -296,12 +319,44 @@ export interface LibraryMatchState {
   tracks: { [trackId: string]: boolean }
 }
 
+export const LibraryPath = ctyled.div.class(active).styles({
+  gutter: 1,
+  padd: 1,
+  align: 'center',
+  width: '100%',
+  height: 2.7,
+  bg: true,
+  hover: 0.25,
+  color: (c) => c.nudge(0.1),
+})
+
+export const LibraryPathName = ctyled.div.styles({
+  flex: 1,
+  height: 1.7,
+})
+
+export const LibraryPathInner = ctyled.div.styles({}).extendSheet`
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  display:block;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow: ellipsis;
+  line-height:${({ size }) => size * 1.6}px;
+  direction: rtl;
+  text-align:center;
+`
+
 function Library() {
   const { libSize, libOpen } = useSelector((state) => state.settings),
     library = useSelector((state) => state.library),
     period = useSelector(Selectors.getGlobalPlayback).period,
     dispatch = useDispatch(),
     [offset, setOffset] = useState(0),
+    [sortBy, setSortBy] = useState<'tempo' | 'date' | 'name'>('tempo'),
     size = useContext(CtyledContext).theme.size,
     handleMove = useCallback(
       (delta) => {
@@ -333,6 +388,14 @@ function Library() {
       e.stopPropagation()
     }, []),
     handleSearchClear = useCallback(() => setSearchText(''), []),
+    handleOpenLib = useCallback(() => {
+      const path = electron.remote.dialog.showOpenDialogSync({
+        defaultPath: getPath('/'),
+        buttonLabel: 'Open Library',
+        properties: ['openDirectory'],
+      })
+      if (path && path[0]) dispatch(Actions.setLibraryState({ root: path[0] }))
+    }, []),
     bodyRef = useRef(null),
     [maxResults, setMaxResults] = useState(40),
     handleIncMaxResults = useCallback(() => {
@@ -375,28 +438,61 @@ function Library() {
         if (anyMatch) matches[path] = { project: projectMatches, tracks: trackMatches }
         return anyMatch
       }),
-      sorted = _.sortBy(filtered, (path) =>
-        Math.abs(library.projects[path].avgPeriod - filterState.sortPeriod)
-      )
+      sorted = _.sortBy(filtered, (path) => {
+        const project = library.projects[path]
+        if (sortBy === 'tempo')
+          return Math.abs(project.avgPeriod - filterState.sortPeriod)
+        else if (sortBy === 'date') return project.mTime * -1
+        else if (sortBy === 'name') return path
+        else return 1
+      })
     if (bodyRef.current) bodyRef.current.scrollTop = 0
     return {
       paths: sorted,
       matches,
       hasLibrary: allPaths.length > 0,
     }
-  }, [library.projects, filterState])
+  }, [library.projects, filterState, sortBy])
 
   return libOpen ? (
     <LibraryWrapper widthp={widthp}>
       <LibraryHeader>
+        <LibraryPath onClick={handleOpenLib}>
+          <LibraryPathName>
+            <LibraryPathInner>{library.root.replace('/', '')}</LibraryPathInner>
+          </LibraryPathName>
+        </LibraryPath>
         <SearchWrapper>
-          <SearchInput
-            value={searchText}
-            onKeyDown={handleKeyDown}
-            onChange={handleSearchChange}
-            placeholder="filter by name"
-          />
-          <Icon asButton onClick={handleSearchClear} scale={1.3} name="close-thin" />
+          <SearchInner>
+            <SearchInput
+              value={searchText}
+              onKeyDown={handleKeyDown}
+              onChange={handleSearchChange}
+              placeholder="search by name"
+            />
+            <Icon asButton onClick={handleSearchClear} scale={1.3} name="close-thin" />
+          </SearchInner>
+          <SearchInner>
+            <Icon name="twoway" scale={1.5} />
+            <SelectableButton
+              selected={sortBy === 'tempo'}
+              onClick={() => setSortBy('tempo')}
+            >
+              Tempo
+            </SelectableButton>
+            <SelectableButton
+              selected={sortBy === 'date'}
+              onClick={() => setSortBy('date')}
+            >
+              Date
+            </SelectableButton>
+            <SelectableButton
+              selected={sortBy === 'name'}
+              onClick={() => setSortBy('name')}
+            >
+              Name
+            </SelectableButton>
+          </SearchInner>
         </SearchWrapper>
       </LibraryHeader>
       <LibraryBody inRef={bodyRef}>

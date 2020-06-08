@@ -5,12 +5,14 @@ import walk from 'walk'
 import { Store } from 'redux'
 
 import * as Types from 'render/util/types'
-import { getPath } from 'render/loading/app-paths'
 import { getProjectFromRaw } from './project'
 import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 
-export function getLibraryProject(state: Types.PersistentState): Types.LibraryProject {
+export function getLibraryProject(
+  state: Types.PersistentState,
+  mTime: number
+): Types.LibraryProject {
   let periodSum = 0
   return {
     scenes: state.live.scenes.map((scene) => {
@@ -36,6 +38,7 @@ export function getLibraryProject(state: Types.PersistentState): Types.LibraryPr
       }
     ),
     avgPeriod: periodSum / _.keys(state.live.tracks).length,
+    mTime,
   }
 }
 
@@ -49,7 +52,7 @@ export function scan(path: string) {
 
         const raw = await fs.promises.readFile(path, 'utf-8'),
           state = getProjectFromRaw(raw),
-          libState = state && getLibraryProject(state)
+          libState = state && getLibraryProject(state, stat.mtimeMs)
 
         if (libState) newProjects[path] = libState
       }

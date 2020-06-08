@@ -438,6 +438,7 @@ export interface LibraryProject {
   tracks: LibraryProjectTracks
   scenes: LibraryProjectScene[]
   avgPeriod: number
+  mTime: number
 }
 
 export interface LibraryProjects {
