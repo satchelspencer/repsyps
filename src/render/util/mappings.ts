@@ -9,7 +9,7 @@ function ease(x1, y1, x2, y2) {
   }
 }
 
-const filterEase = ease(0.49, 0.01, 1, 0.56)
+const volumeEase = ease(0.12, 0, 0, 1)
 
 export interface Mapping<P> {
   toStandard(number, params?: P): number

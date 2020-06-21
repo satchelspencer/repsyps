@@ -151,9 +151,10 @@ export default async function init(store: Store<Types.State>) {
         mcpCheckUpper = (mappedFn << 8) + (fname === 'pitch-bend' ? 0 : note),
         isMCP = mcps[mcpCheckUpper] || (waitingBinding && waitingBinding.mcp),
         upper = isMCP ? mcpCheckUpper : (mappedFn << 8) + note,
-        signedDelta = isMCP ? (value > 64 ? 64 - value : value) : value - 64
+        signedDelta = isMCP ? (value > 64 ? 64 - value : value) : value - 64,
+        highResVal = isMCP && fname === 'pitch-bend' ? value + (note >> 4) / 8 : value
 
-      midiChanges[upper] = value
+      midiChanges[upper] = Math.min(highResVal, 127)
       midiCounts[upper] = (midiCounts[upper] || 0) + signedDelta
       outputs[portName].send(message.data, message.timeStamp)
       if (value === 0 || value === 127 || instantFunctions.includes(fname)) {
@@ -173,13 +174,6 @@ export default async function init(store: Store<Types.State>) {
       midiValues[port.name] = midiValues[port.name] || {}
       outputs[port.name] = port
       port.send([255])
-
-      // const header = [0xf0, 0, 0, 0x66, 0x14]
-      // // port.send([...header, 0, 0xf7])
-
-      // setInterval(() => {
-      //   port.send([0x90, 0x00, 0x])
-      // }, 1000)
 
       handleStoreUpdate()
     },

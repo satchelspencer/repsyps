@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from 'render/redux/react'
 import * as Actions from 'render/redux/actions'
 import useMeasure from 'render/components/measure'
 import Menu from 'render/components/menu'
+import { version } from 'render/util/env'
 
 import Tracks from './tracks/tracks'
 import Sidebar from './info/sidebar'
@@ -18,10 +19,7 @@ const Wrapper = ctyled.div.attrs({ invert: false }).styles({
   color: (c, { invert }) =>
     invert
       ? c.as(palette.gray).absLum(0.3).contrast(0.2).invert()
-      : c
-          .as(palette.gray)
-          .absLum(0.8)
-          .contrast(0.2),
+      : c.as(palette.gray).absLum(0.8).contrast(0.2),
   size: 11,
   bg: true,
   lined: true,
@@ -62,12 +60,22 @@ const BodyInner = ctyled.div.styles({
   height: '100%',
 })
 
-const preventKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'P', 'O']
+const preventKeys = [
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  ' ',
+  'Tab',
+  'P',
+  'O',
+]
 
 function App() {
   const { darkMode, size } = useSelector((state) => state.settings),
     dispatch = useDispatch(),
     handleDragover = useCallback((e) => e.preventDefault(), []),
+    lastShownChangeLog = useSelector((state) => state.settings.lastShownChangeLog),
     handleDrop = useCallback((e) => {
       e.preventDefault()
       const file = e.dataTransfer.files[0].path
@@ -84,6 +92,11 @@ function App() {
   useEffect(() => {
     window.addEventListener('dragover', handleDragover)
     window.addEventListener('drop', handleDrop)
+
+    if (lastShownChangeLog !== version) {
+      dispatch(Actions.setSettings({ lastShownChangeLog: version }))
+      dispatch(Actions.setModalRoute('changelog'))
+    }
 
     return () => {
       window.removeEventListener('dragover', handleDragover)

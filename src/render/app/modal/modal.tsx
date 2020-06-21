@@ -11,6 +11,7 @@ import { isDev } from 'render/util/env'
 import Relink from './relink'
 import About from './about'
 import Update from './update'
+import ChangeLog from './changelog'
 
 const { autoUpdater } = remote.require('electron-updater'),
   log = require('electron-log')
@@ -75,6 +76,7 @@ function Modal() {
           {route === 'update' && (
             <Update updateStatus={updateStatus} autoUpdater={autoUpdater} />
           )}
+          {route === 'changelog' && <ChangeLog />}
         </ModalBody>
       </ModalWrapper>
     )

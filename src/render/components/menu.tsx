@@ -78,6 +78,9 @@ export default function init() {
         about: {
           click: () => dispatch(Actions.setModalRoute('about')),
         },
+        changelog: {
+          click: () => dispatch(Actions.setModalRoute('changelog')),
+        },
         update: {
           click: () => dispatch(Actions.setModalRoute('update')),
         },
@@ -1240,6 +1243,7 @@ export default function init() {
               },
             },
             { label: 'Check for Updates...', ...menuCommands.update },
+            { label: 'Changelog', ...menuCommands.changelog },
             { label: 'About Repsyps', ...menuCommands.about },
           ],
         },

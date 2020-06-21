@@ -371,6 +371,7 @@ export interface Settings {
   libOpen: boolean
   snap: boolean
   screencast: boolean
+  lastShownChangeLog: string
 }
 
 export interface Recording {

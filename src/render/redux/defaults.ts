@@ -94,6 +94,7 @@ export const defaultPlayback: Types.Playback = {
     gridSize: 8,
     snap: true,
     screencast: false,
+    lastShownChangeLog: null,
   },
   defaultRecording: Types.Recording = {
     enabled: false,

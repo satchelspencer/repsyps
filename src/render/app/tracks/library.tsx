@@ -30,7 +30,6 @@ import {
   loadProjectScene,
   loadProjectTrack,
 } from 'render/loading/project'
-import { sort } from 'semver'
 
 TimeAgo.addLocale(en)
 const timeAgo = new TimeAgo('en-US')
