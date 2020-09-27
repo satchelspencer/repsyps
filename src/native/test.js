@@ -38,9 +38,10 @@ const tests = {
     })
 
     audio.updatePlayback({
-      period: ssize * 1.2,
+      period: ssize * 0.9,
       volume: 0.5,
       playing: true,
+      aperiodic: true
     })
 
     audio.start(audio.getDefaultOutput(), true)

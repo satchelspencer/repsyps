@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <list>
+#include <rubberband/RubberBandStretcher.h>
 
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H
@@ -82,6 +83,11 @@ typedef struct{
   bool removed;
   bool safe;
   ringbuffer *delayBuffer;
+  RubberBand::RubberBandStretcher *stretcher;
+  ringbuffer *stretchBuffer;
+  float** stretchInput;
+  float** stretchOutput;
+  firfilt_rrrf filter;
 } mixTrack;
 
 typedef struct{

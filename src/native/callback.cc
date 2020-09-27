@@ -10,6 +10,11 @@ double getMixTrackPhase(
   return mixTrackPhase;
 }
 
+int getAvailable(ringbuffer* buffer){
+  if(buffer->head >= buffer->tail) return buffer->head - buffer->tail;
+  else return buffer->head + (buffer->size - buffer->tail);
+}
+
 void copyToOut(
   ringbuffer * buffer, 
   float * out, 
@@ -129,17 +134,14 @@ int paCallbackMethod(
   for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *(out+frameIndex) = 0;
   if(!state->playback->playing) return paContinue;
 
-  copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, rec);
-
-  int window = 0;
-  while(outputFrameIndex < framesPerBuffer){
-    for(auto mixTrackPair: state->mixTracks){
-      mixTrack* mixTrack = mixTrackPair.second;
-      if(!mixTrack || mixTrack->removed || mixTrack->safe) continue;
-
-      mixTrackPlayback* playback = mixTrack->playback;
+  for(auto mixTrackPair: state->mixTracks){
+    mixTrack* mixTrack = mixTrackPair.second;
+    if(!mixTrack || mixTrack->removed || mixTrack->safe) continue;
+    
+    if(mixTrack->stretcher->available() < framesPerBuffer){ mixTrackPlayback* playback = mixTrack->playback;
       float trackAlpha = playback->alpha;
-      double mixTrackPhase = trackAlpha * state->playback->time;
+      double correctedTime = state->playback->time + ((double)mixTrack->stretcher->available() / state->playback->period);
+      double mixTrackPhase = trackAlpha * correctedTime;
       mixTrackPhase -= floor(mixTrackPhase);
       int chunkIndex = playback->chunkIndex;
       int chunkCount = playback->chunks.size()/2;
@@ -151,186 +153,129 @@ int paCallbackMethod(
         mixTrack->sample = getSamplePosition(playback, 0);
       }
 
-      double trackStartPosition = playback->aperiodic ? mixTrack->sample : getSamplePosition(playback, mixTrackPhase);
-      double chunkEndPosition = getSamplePosition(playback, 1);
-      int chunkLength = playback->chunks[(chunkIndex * 2) + 1];
-      bool hasEnd = chunkLength != 0;
-      int nextChunkIndex = (chunkIndex + 1) % chunkCount;
-      bool hasNext = mixTrack->hasNext && (chunkIndex == 0 || playback->nextAtChunk);
-      double nextChunkStart = hasNext ?
-        mixTrack->nextPlayback->chunks[0] : 
-        playback->chunks[nextChunkIndex * 2];
-      bool committedStep = false;
-      float invAlpha = (hasEnd && !playback->aperiodic) ?
-        chunkLength / (float)state->playback->period * trackAlpha :
-        trackAlpha;
-      float alpha = 1 / invAlpha;
+      int inputed = 0;
+      int processed = 0;
+      int available = mixTrack->stretcher->available();
+      int i = 0;
+      while(available < framesPerBuffer){
+        double trueSamplePos = getSamplePosition(playback, mixTrackPhase);
+        if(abs(trueSamplePos - mixTrack->sample) > 100) mixTrack->sample = trueSamplePos;
+        double trackStartPosition = mixTrack->sample;//playback->aperiodic ? mixTrack->sample : getSamplePosition(playback, mixTrackPhase);
+        //std::cout << mixTrack->sample - trackStartPosition << " " << available << std::endl;
+        double chunkEndPosition = getSamplePosition(playback, 1);
+        int chunkLength = playback->chunks[(chunkIndex * 2) + 1];
+        bool hasEnd = chunkLength != 0;
+        int nextChunkIndex = (chunkIndex + 1) % chunkCount;
+        bool hasNext = mixTrack->hasNext && (chunkIndex == 0 || playback->nextAtChunk);
+        double nextChunkStart = hasNext ?
+          mixTrack->nextPlayback->chunks[0] : 
+          playback->chunks[nextChunkIndex * 2];
+        bool committedStep = false;
+        float invAlpha = (hasEnd && !playback->aperiodic) ?
+          chunkLength / (float)state->playback->period * trackAlpha :
+          trackAlpha;
+        float alpha = 1 / invAlpha;
 
-      for(auto sourcePair: playback->sourceTracksParams){
-        if(
-          state->sources.find(sourcePair.first) != state->sources.end() 
-          && state->sources[sourcePair.first] != NULL
-          && !state->sources[sourcePair.first]->safe
-        ){
+        mixTrack->stretcher->setTimeRatio(alpha);
+        mixTrack->stretcher->setPitchScale(1);
+
+        int needed = mixTrack->stretcher->getSamplesRequired();
+        inputed += needed;
+
+        /* copy from all sources into stretchInput */
+        int sourceIndex = 0;
+        for(auto sourcePair: playback->sourceTracksParams){
+          if(!( //skip destroyed sources
+            state->sources.find(sourcePair.first) != state->sources.end() 
+            && state->sources[sourcePair.first] != NULL
+            && !state->sources[sourcePair.first]->safe
+          )) continue;
+
           mixTrackSourceConfig* params = sourcePair.second;
           source* source = state->sources[sourcePair.first];
           int length = source->length;
+          double trackPosition = trackStartPosition - params->offset;
 
-          for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
-            double trackPosition = trackStartPosition - params->offset;
-            int outBufferHead = state->buffer->head;
-            int trackBufferHead = mixTrack->delayBuffer->head;
-            playback = mixTrack->playback;
+          for(int inputIndex=0;inputIndex<needed;inputIndex++){
+            for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
+                int pos = trackPosition + processed + inputIndex;
+              float sampleValue = (pos < length && pos >= 0) ? source->channels[channelIndex][pos] : 0;
+              sampleValue *= params->volume; //mix it before input
+              mixTrack->stretchInput[channelIndex][inputIndex] = sourceIndex == 0
+                ? sampleValue
+                : mixTrack->stretchInput[channelIndex][inputIndex] + sampleValue;
+            }
+          }
+          sourceIndex++;
+        }
 
-            if(playback->preservePitch){
-              /* Phase Vocorder */
-              int pvOverlap;
-              if(alpha < 0.8) pvOverlap = 2;
-              else pvOverlap = 5 + (alpha - 1) * 2;
-              
-              pvState* pv = source->pvStates[channelIndex];
-              int pvSubwindows = pvOverlap / OVERLAP_COUNT;
-              float synthesisStep = WINDOW_STEP / pvSubwindows;
-              float analysisStep = synthesisStep / alpha;
-
-              for(int pvWindow=0;pvWindow < pvSubwindows;pvWindow++){
-                /* shift down the prev, current and next */
-                float* swap = pv->lastPFFT;
-                pv->lastPFFT = pv->currentPFFT;
-                pv->currentPFFT = pv->nextPFFT;
-                pv->nextPFFT = swap;
-
-
-                outBufferHead = (int)(state->buffer->head + (pvWindow * synthesisStep)) % state->buffer->size;
-                for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                  int pos = trackPosition + pvWinIndex;
-                  x[pvWinIndex] = 
-                    state->pvWindow[pvWinIndex] *
-                    ((pos < length && pos >= 0) ? source->channels[channelIndex][pos] : 0);
-                }
-
-                fft_execute(pf);
-
-                /* convert to polar form PFFT is [mag, phase, mag, phase] */
-                for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE / 2;pvWinIndex++){
-                  pv->nextPFFT[pvWinIndex * 2] = std::abs(y[pvWinIndex]);
-                  pv->nextPFFT[pvWinIndex * 2 + 1] = std::arg(y[pvWinIndex]);
-                }
-
-                /* classic PV */
-                for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE / 2;pvWinIndex++){
-                  float mag = pv->lastPFFT[pvWinIndex * 2];
-                  if(mag > PV_ABSTOL){
-                    float expectedPhaseAdv = state->omega[pvWinIndex] * analysisStep;
-                    float forwardPhaseTimeDelta = 
-                      unwrapPhase(
-                        pv->nextPFFT[pvWinIndex * 2 + 1] - pv->currentPFFT[pvWinIndex * 2 + 1] - expectedPhaseAdv
-                      ) / analysisStep + state->omega[pvWinIndex];
-                    float centeredPhaseTimeDelta = (pv->lastPhaseTimeDelta[pvWinIndex] + forwardPhaseTimeDelta) / 2;
-                    float phaseAdvance = (pvWinIndex < PV_WINDOW_SIZE / 12 ? pv->lastPhaseTimeDelta[pvWinIndex] : centeredPhaseTimeDelta) * synthesisStep;
-                    pv->currentPFFT[pvWinIndex * 2 + 1] = pv->lastPFFT[pvWinIndex * 2 + 1] + phaseAdvance;
-                    pv->lastPhaseTimeDelta[pvWinIndex] = forwardPhaseTimeDelta;
-                  }else pv->currentPFFT[pvWinIndex * 2 + 1] = dis(gen);
-                }
-                
-                /* convert back from polar */
-                for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                  if(pvWinIndex < PV_WINDOW_SIZE / 2)
-                    y[pvWinIndex] = std::polar(pv->currentPFFT[pvWinIndex*2], pv->currentPFFT[pvWinIndex*2+1]);
-                  else y[pvWinIndex] = 0;
-                }
-                  
-                /* invert fft */
-                fft_execute(pr);
-                for(int pvWinIndex=0;pvWinIndex < PV_WINDOW_SIZE;pvWinIndex++){
-                  float sampleValue = z[pvWinIndex].real() / (PV_WINDOW_SIZE / 2) / pvOverlap;
-                  applyFilter(sampleValue, playback, mixTrack, source, params, state, outBufferHead, trackBufferHead, channelIndex, state->pvWindow[pvWinIndex]);
-                  outBufferHead = (outBufferHead + 1) % state->buffer->size;
-                  trackBufferHead = (trackBufferHead + 1) % mixTrack->delayBuffer->size;
-                }
-                trackPosition += analysisStep;
-              }
-              if(trackPosition + params->offset > chunkEndPosition && hasEnd) committedStep = true;
-              mixTrack->sample = trackPosition + params->offset;
-              /* END PV */
-            }else{
-              /* resampling */
-              for(int windowIndex=0;windowIndex < WINDOW_SIZE;windowIndex++){
-                double positionFrac = trackPosition-floor(trackPosition);
-                if(hasEnd && trackPosition + params->offset > chunkEndPosition){
-                  //trackPosition = (trackPosition-chunkEndPosition) + nextChunkStart; //SAMPLE_ACCURATE_LOOP
-                  if(hasNext) playback = mixTrack->nextPlayback;
-                  if(!committedStep && windowIndex < WINDOW_STEP) committedStep = true;
-                }else if(windowIndex == WINDOW_STEP) mixTrack->sample = trackPosition + params->offset;
-
-                float sampleValue = 0;
-                if( trackPosition > 0 && trackPosition < length - 1){
-                  int sourceIndex = trackPosition;
-                  sampleValue = source->channels[channelIndex][sourceIndex];
-                  float nextValue = source->channels[channelIndex][sourceIndex + 1];
-                  sampleValue += (nextValue - sampleValue) * positionFrac;
-                  applyFilter(sampleValue, playback, mixTrack, source, params, state, outBufferHead, trackBufferHead, channelIndex, state->window[windowIndex]);
-                }
-                
-                outBufferHead = (outBufferHead + 1) % state->buffer->size;
-                trackBufferHead = (trackBufferHead + 1) % mixTrack->delayBuffer->size;
-                trackPosition += invAlpha;
-              }
-              /* end resampling */
+        /* apply time updates to track */
+        mixTrack->sample = trackStartPosition + needed;
+        if(hasEnd && trueSamplePos + needed > chunkEndPosition){ //we crossed a chunk boundary
+          mixTrack->playback->chunkIndex = 
+            (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
+          
+          /* if end of playback and no loop and no next. stoppit */
+          if(!mixTrack->hasNext && mixTrack->playback->chunkIndex == 0 && !mixTrack->playback->loop){
+            mixTrack->playback->playing = false;
+            mixTrack->playback->chunkIndex = -1;
+          }else{
+            mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
+            
+            if(mixTrack->hasNext && (mixTrack->playback->chunkIndex == 0 || mixTrack->playback->nextAtChunk)){
+              applyNextPlayback(mixTrackPair.first, state);
+              mixTrack->playback->chunkIndex = 0;
+            } 
+            
+            if(rec != NULL && rec->fromSourceId == mixTrackPair.first && !rec->started){
+              rec->started = true;
+              rec->fromSourceOffset = chunkEndPosition;
             }
           }
         }
-      }
 
-      mixTrack->overlapIndex = (mixTrack->overlapIndex + 1) % OVERLAP_COUNT;
-      if(committedStep && abs(state->playback->time - mixTrack->lastCommit) > 0.1){
-        mixTrack->lastCommit = state->playback->time;
-        mixTrack->playback->chunkIndex = 
-          (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
-        
-        /* if end of playback and no loop and no next. stoppit */
-        if(!mixTrack->hasNext && mixTrack->playback->chunkIndex == 0 && !mixTrack->playback->loop){
-          mixTrack->playback->playing = false;
-           mixTrack->playback->chunkIndex = -1;
-        }else{
-          mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
-          
-          if(mixTrack->hasNext && (mixTrack->playback->chunkIndex == 0 || mixTrack->playback->nextAtChunk)){
-            applyNextPlayback(mixTrackPair.first, state);
-            mixTrack->playback->chunkIndex = 0;
-          } 
-          
-          if(rec != NULL && rec->fromSourceId == mixTrackPair.first &&  !rec->started){
-            rec->started = true;
-            rec->fromSourceOffset = chunkEndPosition;
+        for(int inputIndex=0;inputIndex<needed;inputIndex++){
+          for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
+            float sampleValue = mixTrack->stretchInput[channelIndex][inputIndex];
+            if(sampleValue < -1) sampleValue = -1;
+            else if(sampleValue > 1) sampleValue = 1;
+            if(playback->muted) sampleValue *= 0;
+            sampleValue *= mixTrack->playback->volume;
+            sampleValue *= state->playback->volume;
+            // if(mixTrack->hasFilter && mixTrack->filter != NULL){
+            //   firfilt_rrrf_push(mixTrack->filter, sampleValue);   
+            //   firfilt_rrrf_execute(mixTrack->filter, &sampleValue);
+            // }
+            // int delayedIndex = normMod(
+            //   mixTrack->delayBuffer->head - (playback->delay * state->playback->period),
+            //   mixTrack->delayBuffer
+            // );
+            // float delayedValue = mixTrack->delayBuffer->channels[channelIndex][delayedIndex];
+            // sampleValue += delayedValue;
+            // mixTrack->delayBuffer->channels[channelIndex][mixTrack->delayBuffer->head + inputIndex] = sampleValue * playback->delayGain;
+            mixTrack->stretchInput[channelIndex][inputIndex] = sampleValue;
           }
         }
+        mixTrack->delayBuffer->head = (mixTrack->delayBuffer->head + needed) % mixTrack->delayBuffer->size;
 
+        mixTrack->stretcher->process(mixTrack->stretchInput, needed, false);
+        int newAvailable = mixTrack->stretcher->available();
+        processed += newAvailable - available;
+        available = newAvailable;
+        if(available == 0) break;
       }
-      mixTrack->delayBuffer->head = (mixTrack->delayBuffer->head + WINDOW_STEP) % mixTrack->delayBuffer->size;
     }
-
-    state->buffer->head = (state->buffer->head + WINDOW_STEP) % state->buffer->size;
-    state->playback->time += ((double)WINDOW_STEP / state->playback->period);
-    state->previewBuffer->head = state->buffer->head;
-    out = (float*)outputBuffer;
-    copyToOut(state->buffer, out, outputFrameIndex, framesPerBuffer, rec);
-    window++;
-  }
-
-  /* calculate output level */
-  if(state->buffer->head - state->buffer->tail == 0){
-    float max = 0;
-    for(int diff = 0;diff < ANALYSIS_SIZE;diff++){
-      int bufferIndex = normMod(state->buffer->head - diff, state->buffer);
-      float value = abs(state->buffer->channels[0][bufferIndex]);
-      if(value > max) max = value;
+    //std::cout << "av " << mixTrack->stretcher->available() << " - " << framesPerBuffer << std::endl;
+    mixTrack->stretcher->retrieve(mixTrack->stretchOutput, framesPerBuffer);
+    float* output = (float*)outputBuffer;
+    for(int frameIndex=0;frameIndex<framesPerBuffer;frameIndex++){
+      for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++)
+        *output++ += mixTrack->stretchOutput[channelIndex][frameIndex];
     }
-    state->playback->maxLevel = max;
   }
 
   /* update time and misc */
-  //state->playback->time = startTime + ((double)framesPerBuffer / state->playback->period);
+  state->playback->time = startTime + ((double)framesPerBuffer / state->playback->period);
 
   /* phase wrapped drung this callback */
   if(startTime-floor(startTime) > state->playback->time-floor(state->playback->time)){

@@ -33,24 +33,9 @@ void setMixTrackFilter(std::string mixTrackId, streamState* state){
 
       firdespm_run(num_taps,num_bands,bands,des,weights,wtype,LIQUID_FIRDESPM_BANDPASS,h);
 
-      for(auto sourcePair: mixTrack->playback->sourceTracksParams){
-        if(
-          state->sources.find(sourcePair.first) != state->sources.end() &&
-          state->sources[sourcePair.first] != NULL
-        ){
-          source* source = state->sources[sourcePair.first];
-          int startingSize = source->filters.size();
-          source->filters.reserve(FILTER_COUNT);
-          for(int filterIndex=0;filterIndex<FILTER_COUNT;filterIndex++){
-            firfilt_rrrf q = firfilt_rrrf_create(h,num_taps);
-            if(filterIndex < startingSize){
-              firfilt_rrrf oldFilter = source->filters[filterIndex];
-              if(oldFilter != NULL) firfilt_rrrf_destroy(oldFilter);
-            }
-            source->filters[filterIndex] = q;
-          }
-        }
-      }
+      firfilt_rrrf q = firfilt_rrrf_create(h,num_taps);
+      if(mixTrack->filter != NULL) firfilt_rrrf_destroy(mixTrack->filter);
+      mixTrack->filter = q;
       mixTrack->hasFilter = true;
     }
   }

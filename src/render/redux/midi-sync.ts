@@ -151,12 +151,22 @@ export default async function init(store: Store<Types.State>) {
         mcpCheckUpper = (mappedFn << 8) + (fname === 'pitch-bend' ? 0 : note),
         isMCP = mcps[mcpCheckUpper] || (waitingBinding && waitingBinding.mcp),
         upper = isMCP ? mcpCheckUpper : (mappedFn << 8) + note,
-        signedDelta = isMCP ? (value > 64 ? 64 - value : value) : value - 64,
+        sevenBitSigned = value < 32 || value > 96,
+        signedDelta = isMCP
+          ? value > 64
+            ? 64 - value
+            : value
+          : sevenBitSigned
+          ? value > 64
+            ? value - 127
+            : value
+          : value - 64,
         highResVal = isMCP && fname === 'pitch-bend' ? value + (note >> 4) / 8 : value
 
       midiChanges[upper] = Math.min(highResVal, 127)
       midiCounts[upper] = (midiCounts[upper] || 0) + signedDelta
       outputs[portName].send(message.data, message.timeStamp)
+      console.log(fname, value)
       if (value === 0 || value === 127 || instantFunctions.includes(fname)) {
         handleMessage(portName)
         throttledHandle.flush()

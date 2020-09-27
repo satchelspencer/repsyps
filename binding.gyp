@@ -100,6 +100,7 @@
             "<@(libsdir)/ffmpeg-4.2.2/libavformat/libavformat.a",
             "<@(libsdir)/ffmpeg-4.2.2/libswresample/libswresample.a",
             "<@(libsdir)/fftw-3.3.8/.libs/libfftw3.a",
+            "<@(libsdir)/rubberband-1.9.0/lib/librubberband.a",
 		        "-L../lib/libtensorflow/lib -ltensorflow -Wl,-rpath,@loader_path/../../lib/libtensorflow/lib"
 		      ],
           "include_dirs": [
@@ -109,6 +110,7 @@
             "<@(libsdir)/fftw-3.3.8/api",
             "<@(libsdir)/liquid-dsp/include",
             "<@(libsdir)/ffmpeg-4.2.2",
+            "<@(libsdir)/rubberband-1.9.0",
             "<!@(node -p \"require('node-addon-api').include\")"
           ],
         }]

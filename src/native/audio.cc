@@ -397,6 +397,36 @@ void setMixTrack(const Napi::CallbackInfo &info){
     }
     newMixTrack->delayBuffer = newBuffer;
 
+    RubberBand::RubberBandStretcher *stretcher = new RubberBand::RubberBandStretcher(
+      PV_RATE,
+      CHANNEL_COUNT,
+      RubberBand::RubberBandStretcher::OptionProcessRealTime |
+      RubberBand::RubberBandStretcher::OptionDetectorCompound ,
+      1.0,
+      1.0
+    );
+    //stretcher->setMaxProcessSize(WINDOW_SIZE);
+    stretcher->setTransientsOption(RubberBand::RubberBandStretcher::OptionTransientsCrisp);
+    stretcher->setPhaseOption(RubberBand::RubberBandStretcher::OptionPhaseLaminar);
+    stretcher->setDetectorOption(RubberBand::RubberBandStretcher::OptionDetectorCompound);
+    stretcher->setFormantOption(RubberBand::RubberBandStretcher::OptionFormantPreserved);
+    newMixTrack->stretcher = stretcher;
+    newMixTrack->stretchInput = new float*[CHANNEL_COUNT];
+    newMixTrack->stretchOutput = new float*[CHANNEL_COUNT];
+    for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchInput[i] = new float[PV_WINDOW_SIZE*2];
+    for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchOutput[i] = new float[PV_WINDOW_SIZE*2];
+
+    ringbuffer * stretchBuffer = new ringbuffer{};
+    stretchBuffer->size = PV_WINDOW_SIZE * 4;
+    stretchBuffer->head = 0;
+    stretchBuffer->tail = 0;
+    for(int i=0;i<CHANNEL_COUNT;i++){
+      float* buff = new float[stretchBuffer->size];
+      for(int j=0;j<stretchBuffer->size;j++) buff[j] = 0;
+      stretchBuffer->channels.push_back(buff);
+    }
+    newMixTrack->stretchBuffer = stretchBuffer;
+
     state.mixTracks[mixTrackId] = newMixTrack;
   }
 

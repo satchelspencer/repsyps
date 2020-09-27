@@ -62,6 +62,7 @@ rm ffmpeg-4.2.2.tar.xz
 cd ffmpeg-4.2.2
 ./configure --disable-autodetect
 make
+cd ..
 
 # install fftw
 wget http://www.fftw.org/fftw-3.3.8.tar.gz
@@ -70,6 +71,15 @@ rm fftw-3.3.8.tar.gz
 cd fftw-3.3.8
 ./configure
 make
+cd ..
+
+# install rubber-band
+wget https://breakfastquay.com/files/releases/rubberband-1.9.0.tar.bz2
+tar xf rubberband-1.9.0.tar.bz2
+rm rubberband-1.9.0.tar.bz2
+cd rubberband-1.9.0
+mkdir lib
+make -f Makefile.osx static
 
 # back to project dir and install node deps
 cd ../..
