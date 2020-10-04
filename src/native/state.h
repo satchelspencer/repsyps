@@ -8,6 +8,7 @@
 #include <list>
 #include <rubberband/RubberBandStretcher.h>
 #include <DspFilters/Dsp.h>
+#include <samplerate.h>
 
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H

@@ -82,6 +82,16 @@ mkdir lib
 make -f Makefile.osx static
 cd ..
 
+## install libsamplerate
+wget http://www.mega-nerd.com/SRC/libsamplerate-0.1.9.tar.gz
+tar xf libsamplerate-0.1.9.tar.gz
+rm libsamplerate-0.1.9.tar.gz
+cd libsamplerate-0.1.9
+./configure --disable-fftw --disable-sndfile --prefix $(pwd)
+make
+make install
+cd ..
+
 #install DSPFilters
 git clone https://github.com/vinniefalco/DSPFilters
 cd DSPFilters/shared/DSPFilters
