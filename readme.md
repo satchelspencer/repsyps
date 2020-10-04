@@ -80,9 +80,15 @@ rm rubberband-1.9.0.tar.bz2
 cd rubberband-1.9.0
 mkdir lib
 make -f Makefile.osx static
+cd ..
+
+#install DSPFilters
+git clone https://github.com/vinniefalco/DSPFilters
+cd DSPFilters/shared/DSPFilters
+cmake .
+make
 
 # back to project dir and install node deps
-cd ../..
 yarn
 ~~~
 

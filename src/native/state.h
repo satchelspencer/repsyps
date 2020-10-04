@@ -7,6 +7,7 @@
 #include <iostream>
 #include <list>
 #include <rubberband/RubberBandStretcher.h>
+#include <DspFilters/Dsp.h>
 
 #ifndef STATE_HEADER_H
 #define STATE_HEADER_H
@@ -84,7 +85,7 @@ typedef struct{
   bool safe;
   ringbuffer *delayBuffer;
   RubberBand::RubberBandStretcher *stretcher;
-  ringbuffer *stretchBuffer;
+  ringbuffer *inputBuffer;
   float** stretchInput;
   float** stretchOutput;
   firfilt_rrrf filter;

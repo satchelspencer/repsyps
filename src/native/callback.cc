@@ -67,6 +67,15 @@ int normMod(const int & x, ringbuffer * buff){
   return (x + buff->size) % buff->size;
 }
 
+int normModSize(const int & x, const int & size){
+return (x + size + size) % size;
+}
+
+int moddiff(const int & x, const int & y, const int & size){
+  int diff = (normModSize(x, size)-normModSize(y, size)+size)%size;
+  return diff > (size/2)?size-diff:diff;
+}
+
 void applyFilter(
   float& sampleValue,
   mixTrackPlayback* playback,
@@ -136,54 +145,54 @@ int paCallbackMethod(
 
   for(auto mixTrackPair: state->mixTracks){
     mixTrack* mixTrack = mixTrackPair.second;
-    if(!mixTrack || mixTrack->removed || mixTrack->safe) continue;
-    
-    if(mixTrack->stretcher->available() < framesPerBuffer){ mixTrackPlayback* playback = mixTrack->playback;
-      float trackAlpha = playback->alpha;
-      double correctedTime = state->playback->time + ((double)mixTrack->stretcher->available() / state->playback->period);
-      double mixTrackPhase = trackAlpha * correctedTime;
-      mixTrackPhase -= floor(mixTrackPhase);
-      int chunkIndex = playback->chunkIndex;
-      int chunkCount = playback->chunks.size()/2;
-      
-      if(chunkCount == 0 || !playback->playing) continue;
-      if(chunkIndex == -1){
-        mixTrack->playback->chunkIndex = 0;
-        chunkIndex = 0;
-        mixTrack->sample = getSamplePosition(playback, 0);
-      }
+    if(
+      !mixTrack || mixTrack->removed || mixTrack->safe ||
+      !mixTrack->playback->playing || mixTrack->playback->chunks.size() == 0
+    ) continue;
+    int stretcherAvailable = mixTrack->stretcher->available();
 
-      int inputed = 0;
-      int processed = 0;
-      int available = mixTrack->stretcher->available();
-      int i = 0;
-      while(available < framesPerBuffer){
-        double trueSamplePos = getSamplePosition(playback, mixTrackPhase);
-        if(abs(trueSamplePos - mixTrack->sample) > 100) mixTrack->sample = trueSamplePos;
-        double trackStartPosition = mixTrack->sample;//playback->aperiodic ? mixTrack->sample : getSamplePosition(playback, mixTrackPhase);
-        //std::cout << mixTrack->sample - trackStartPosition << " " << available << std::endl;
-        double chunkEndPosition = getSamplePosition(playback, 1);
-        int chunkLength = playback->chunks[(chunkIndex * 2) + 1];
+    while(stretcherAvailable < framesPerBuffer){
+      /* read from source >> inputbuffer */
+      int needed = mixTrack->stretcher->getSamplesRequired();
+      int readAvailable = getAvailable(mixTrack->inputBuffer);
+
+      while(readAvailable < needed){
+        mixTrackPlayback* playback = mixTrack->playback;
+        double samplesOffset = stretcherAvailable + (readAvailable * mixTrack->stretcher->getTimeRatio());
+        double trackTime = state->playback->time + (samplesOffset / state->playback->period);
+        double mixTrackPhase = playback->alpha * trackTime;
+        mixTrackPhase -= floor(mixTrackPhase);
+        int chunkCount = playback->chunks.size()/2;
+
+        if(chunkCount == 0 || !playback->playing) continue;
+        if(playback->chunkIndex == -1){
+          playback->chunkIndex = 0;
+          mixTrack->sample = getSamplePosition(playback, 0);
+        }
+
+        int chunkLength = playback->chunks[(playback->chunkIndex * 2) + 1];
         bool hasEnd = chunkLength != 0;
-        int nextChunkIndex = (chunkIndex + 1) % chunkCount;
-        bool hasNext = mixTrack->hasNext && (chunkIndex == 0 || playback->nextAtChunk);
+        double chunkEndPosition = getSamplePosition(playback, 1);
+        bool hasNext = mixTrack->hasNext && (playback->chunkIndex == 0 || playback->nextAtChunk);
+        int nextChunkIndex = (playback->chunkIndex + 1) % chunkCount;
         double nextChunkStart = hasNext ?
           mixTrack->nextPlayback->chunks[0] : 
           playback->chunks[nextChunkIndex * 2];
-        bool committedStep = false;
+
         float invAlpha = (hasEnd && !playback->aperiodic) ?
-          chunkLength / (float)state->playback->period * trackAlpha :
-          trackAlpha;
+          chunkLength / (float)state->playback->period * playback->alpha :
+          playback->alpha;
         float alpha = 1 / invAlpha;
 
         mixTrack->stretcher->setTimeRatio(alpha);
-        mixTrack->stretcher->setPitchScale(1);
 
-        int needed = mixTrack->stretcher->getSamplesRequired();
-        inputed += needed;
+        double trueSamplePos = getSamplePosition(playback, mixTrackPhase);
+        int sampleDelta = moddiff(trueSamplePos, mixTrack->sample, chunkLength);
+        if(abs(sampleDelta) > 1024){
+          mixTrack->sample = trueSamplePos;
+          //std::cout << "cr " << sampleDelta << std::endl;
+        }
 
-        /* copy from all sources into stretchInput */
-        int sourceIndex = 0;
         for(auto sourcePair: playback->sourceTracksParams){
           if(!( //skip destroyed sources
             state->sources.find(sourcePair.first) != state->sources.end() 
@@ -194,86 +203,77 @@ int paCallbackMethod(
           mixTrackSourceConfig* params = sourcePair.second;
           source* source = state->sources[sourcePair.first];
           int length = source->length;
-          double trackPosition = trackStartPosition - params->offset;
+          int sourcePos = mixTrack->sample - params->offset;
 
-          for(int inputIndex=0;inputIndex<needed;inputIndex++){
+          int head = mixTrack->inputBuffer->head;
+          for(int inputIndex=0;inputIndex<WINDOW_SIZE;inputIndex++){
             for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
-                int pos = trackPosition + processed + inputIndex;
+              int pos = mixTrack->sample + inputIndex;
               float sampleValue = (pos < length && pos >= 0) ? source->channels[channelIndex][pos] : 0;
               sampleValue *= params->volume; //mix it before input
-              mixTrack->stretchInput[channelIndex][inputIndex] = sourceIndex == 0
-                ? sampleValue
-                : mixTrack->stretchInput[channelIndex][inputIndex] + sampleValue;
+              sampleValue *= state->window[inputIndex];
+              mixTrack->inputBuffer->channels[channelIndex][head] += sampleValue;
             }
+            head = (head + 1) % mixTrack->inputBuffer->size;
           }
-          sourceIndex++;
         }
 
-        /* apply time updates to track */
-        mixTrack->sample = trackStartPosition + needed;
-        if(hasEnd && trueSamplePos + needed > chunkEndPosition){ //we crossed a chunk boundary
-          mixTrack->playback->chunkIndex = 
-            (mixTrack->playback->chunkIndex + 1) % (mixTrack->playback->chunks.size() / 2);
-          
-          /* if end of playback and no loop and no next. stoppit */
-          if(!mixTrack->hasNext && mixTrack->playback->chunkIndex == 0 && !mixTrack->playback->loop){
-            mixTrack->playback->playing = false;
-            mixTrack->playback->chunkIndex = -1;
+        mixTrack->inputBuffer->head = (mixTrack->inputBuffer->head + WINDOW_STEP) % mixTrack->inputBuffer->size;
+        int nextReadAvailable = getAvailable(mixTrack->inputBuffer);
+        if(nextReadAvailable == readAvailable) break;
+        readAvailable = nextReadAvailable;
+        
+        mixTrack->sample += WINDOW_STEP;
+        if(hasEnd && mixTrack->sample > chunkEndPosition){ //chunk boundary
+          playback->chunkIndex = (playback->chunkIndex + 1) % chunkCount;
+          if(!mixTrack->hasNext && playback->chunkIndex == 0 && !playback->loop){
+            playback->playing = false;
+            playback->chunkIndex = -1;
           }else{
-            mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
-            
-            if(mixTrack->hasNext && (mixTrack->playback->chunkIndex == 0 || mixTrack->playback->nextAtChunk)){
+            mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition); //???????????
+            if(mixTrack->hasNext && (playback->chunkIndex == 0 || playback->nextAtChunk)){
               applyNextPlayback(mixTrackPair.first, state);
-              mixTrack->playback->chunkIndex = 0;
+              playback->chunkIndex = 0;
             } 
-            
             if(rec != NULL && rec->fromSourceId == mixTrackPair.first && !rec->started){
               rec->started = true;
               rec->fromSourceOffset = chunkEndPosition;
             }
           }
         }
+      }
 
-        for(int inputIndex=0;inputIndex<needed;inputIndex++){
-          for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
-            float sampleValue = mixTrack->stretchInput[channelIndex][inputIndex];
-            if(sampleValue < -1) sampleValue = -1;
-            else if(sampleValue > 1) sampleValue = 1;
-            if(playback->muted) sampleValue *= 0;
-            sampleValue *= mixTrack->playback->volume;
-            sampleValue *= state->playback->volume;
-            // if(mixTrack->hasFilter && mixTrack->filter != NULL){
-            //   firfilt_rrrf_push(mixTrack->filter, sampleValue);   
-            //   firfilt_rrrf_execute(mixTrack->filter, &sampleValue);
-            // }
-            // int delayedIndex = normMod(
-            //   mixTrack->delayBuffer->head - (playback->delay * state->playback->period),
-            //   mixTrack->delayBuffer
-            // );
-            // float delayedValue = mixTrack->delayBuffer->channels[channelIndex][delayedIndex];
-            // sampleValue += delayedValue;
-            // mixTrack->delayBuffer->channels[channelIndex][mixTrack->delayBuffer->head + inputIndex] = sampleValue * playback->delayGain;
-            mixTrack->stretchInput[channelIndex][inputIndex] = sampleValue;
-          }
+      /* inputbuffer >> stretchInput */
+      for(int inputIndex=0;inputIndex<needed;inputIndex++){
+        for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
+          mixTrack->stretchInput[channelIndex][inputIndex] = 
+            mixTrack->inputBuffer->channels[channelIndex][mixTrack->inputBuffer->tail];
+          mixTrack->inputBuffer->channels[channelIndex][mixTrack->inputBuffer->tail] = 0;
         }
-        mixTrack->delayBuffer->head = (mixTrack->delayBuffer->head + needed) % mixTrack->delayBuffer->size;
+        mixTrack->inputBuffer->tail = (mixTrack->inputBuffer->tail + 1) % mixTrack->inputBuffer->size;
+      }
 
-        mixTrack->stretcher->process(mixTrack->stretchInput, needed, false);
-        int newAvailable = mixTrack->stretcher->available();
-        processed += newAvailable - available;
-        available = newAvailable;
-        if(available == 0) break;
+      /* apply effects chain here? */
+
+      /* stretchInput >> stretchOutput */
+      mixTrack->stretcher->process(mixTrack->stretchInput, needed, false);
+      int nextStretcherAvailable = mixTrack->stretcher->available();
+      if(nextStretcherAvailable == stretcherAvailable) break;
+      stretcherAvailable = nextStretcherAvailable;
+    }
+  
+    /* stretchOutput >> paOutput */
+    if(stretcherAvailable >= framesPerBuffer){
+      mixTrack->stretcher->retrieve(mixTrack->stretchOutput, framesPerBuffer);
+      float* output = (float*)outputBuffer;
+      for(int frameIndex=0;frameIndex<framesPerBuffer;frameIndex++){
+        for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++)
+          *output++ += mixTrack->stretchOutput[channelIndex][frameIndex];
       }
     }
-    //std::cout << "av " << mixTrack->stretcher->available() << " - " << framesPerBuffer << std::endl;
-    mixTrack->stretcher->retrieve(mixTrack->stretchOutput, framesPerBuffer);
-    float* output = (float*)outputBuffer;
-    for(int frameIndex=0;frameIndex<framesPerBuffer;frameIndex++){
-      for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++)
-        *output++ += mixTrack->stretchOutput[channelIndex][frameIndex];
-    }
+    
   }
-
+  
   /* update time and misc */
   state->playback->time = startTime + ((double)framesPerBuffer / state->playback->period);
 

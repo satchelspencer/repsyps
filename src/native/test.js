@@ -38,7 +38,7 @@ const tests = {
     })
 
     audio.updatePlayback({
-      period: ssize * 0.9,
+      period: ssize * 0.8,
       volume: 0.5,
       playing: true,
       aperiodic: true

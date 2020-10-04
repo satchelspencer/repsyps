@@ -416,16 +416,16 @@ void setMixTrack(const Napi::CallbackInfo &info){
     for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchInput[i] = new float[PV_WINDOW_SIZE*2];
     for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchOutput[i] = new float[PV_WINDOW_SIZE*2];
 
-    ringbuffer * stretchBuffer = new ringbuffer{};
-    stretchBuffer->size = PV_WINDOW_SIZE * 4;
-    stretchBuffer->head = 0;
-    stretchBuffer->tail = 0;
+    ringbuffer * inputBuffer = new ringbuffer{};
+    inputBuffer->size = WINDOW_SIZE * 16;
+    inputBuffer->head = 0;
+    inputBuffer->tail = 0;
     for(int i=0;i<CHANNEL_COUNT;i++){
-      float* buff = new float[stretchBuffer->size];
-      for(int j=0;j<stretchBuffer->size;j++) buff[j] = 0;
-      stretchBuffer->channels.push_back(buff);
+      float* buff = new float[inputBuffer->size];
+      for(int j=0;j<inputBuffer->size;j++) buff[j] = 0;
+      inputBuffer->channels.push_back(buff);
     }
-    newMixTrack->stretchBuffer = stretchBuffer;
+    newMixTrack->inputBuffer = inputBuffer;
 
     state.mixTracks[mixTrackId] = newMixTrack;
   }
