@@ -17,6 +17,7 @@ static bool REPSYS_LOG = false;
 static int CHANNEL_COUNT = 2;
 static int OVERLAP_COUNT = 2;
 static int WINDOW_STEP = 256;
+static int MAX_ALPHA = 10;
 static int WINDOW_SIZE =  OVERLAP_COUNT * WINDOW_STEP;
 #define PV_WINDOW_SIZE 2048
 static int ANALYSIS_SIZE = PV_WINDOW_SIZE * 4;
@@ -37,6 +38,96 @@ class Stretcher {
     virtual void reset() = 0;
     virtual void process(float **input, int samples) = 0;
     virtual void retrieve(float **output, int samples) = 0;
+};
+
+typedef struct{
+  std::vector<float*>  channels;
+  int size;
+  int head;
+  int tail;
+} ringbuffer;
+
+class REStretcher: public Stretcher{
+  public: 
+    REStretcher(){
+      int e;
+      resampler = src_new(1, CHANNEL_COUNT, &e);
+    
+      inputBuffer = new float[MAX_ALPHA*WINDOW_SIZE*2];
+      outputBuffer = new float[MAX_ALPHA*WINDOW_SIZE*2];
+
+      data = new SRC_DATA{};
+      data->end_of_input = 0;
+      data->src_ratio = 1;
+      data->data_in = inputBuffer;
+      data->data_out = outputBuffer;
+      data->output_frames = WINDOW_SIZE * 16;
+
+      outputRing = new ringbuffer{};
+      outputRing->size = data->output_frames * 2;
+      outputRing->head = 0;
+      outputRing->tail = 0;
+      for(int i=0;i<CHANNEL_COUNT;i++){
+        float* buff = new float[outputRing->size];
+        for(int j=0;j<outputRing->size;j++) buff[j] = 0;
+        outputRing->channels.push_back(buff);
+      }
+    }
+    ~REStretcher(){
+      src_delete(resampler);
+      delete[] inputBuffer;
+      delete[] outputBuffer;
+    }
+    int getAvailable(){
+      if(outputRing->head >= outputRing->tail) return outputRing->head - outputRing->tail;
+      else return outputRing->head + (outputRing->size - outputRing->tail);
+    }
+    int getRequired(){
+      return WINDOW_SIZE * data->src_ratio;
+    }
+    int getTimeRatio(){
+      return data->src_ratio;
+    }
+    void setTimeRatio(double ratio){
+      src_set_ratio(resampler, ratio);
+      data->src_ratio = ratio;
+    }
+    void setPitchRatio(double ratio){}
+    void reset(){
+    }
+    void process(float **input, int samples){
+      //std::cout << samples << std::endl;
+      float* head = inputBuffer;
+      for(int sample=0;sample<samples;sample++){
+        for(int c=0;c<CHANNEL_COUNT;c++){
+          *(head++) = input[c][sample];
+        }
+      }
+      data->input_frames = samples;
+      src_process(resampler, data);
+      //std::cout << samples << " " << data->input_frames_used << std::endl;
+      int channel = 0;
+      for(int os=0;os<data->output_frames_gen * CHANNEL_COUNT;os++){
+        outputRing->channels[channel][outputRing->head] = outputBuffer[os];
+        channel = (channel + 1) % CHANNEL_COUNT;
+        if(channel == 0) outputRing->head = (outputRing->head + 1) % outputRing->size;
+      }
+    }
+    void retrieve(float **output, int samples){
+      for(int sample=0;sample<samples;sample++){
+        for(int c=0;c<CHANNEL_COUNT;c++){
+          output[c][sample] = outputRing->channels[c][outputRing->tail];
+          outputRing->channels[c][outputRing->tail] = 0;
+        }
+        outputRing->tail = (outputRing->tail + 1) % outputRing->size;
+      }
+    }
+  private:
+    SRC_STATE* resampler;
+    SRC_DATA* data;
+    float* inputBuffer;
+    float* outputBuffer;
+    ringbuffer *outputRing;
 };
 
 class PVStretcher: public Stretcher{
@@ -117,13 +208,6 @@ typedef struct{
 } mixTrackPlayback;
 
 typedef struct{
-  std::vector<float*>  channels;
-  int size;
-  int head;
-  int tail;
-} ringbuffer;
-
-typedef struct{
   float* lastPhaseTimeDelta;
   float* lastPFFT;
   float* currentPFFT;
@@ -143,6 +227,7 @@ typedef struct{
   bool safe;
   ringbuffer *delayBuffer;
   PVStretcher* pvstretcher;
+  REStretcher* restretcher;
   ringbuffer *inputBuffer;
   float** stretchInput;
   float** stretchOutput;

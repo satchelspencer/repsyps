@@ -398,7 +398,8 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->delayBuffer = newBuffer;
 
     newMixTrack->pvstretcher = new PVStretcher();
-    
+    newMixTrack->restretcher = new REStretcher();
+
     newMixTrack->stretchInput = new float*[CHANNEL_COUNT];
     newMixTrack->stretchOutput = new float*[CHANNEL_COUNT];
     for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchInput[i] = new float[PV_WINDOW_SIZE*2];
