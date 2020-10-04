@@ -1,50 +1,9 @@
 #include "callback.h"
 #include <iostream>
 
-double getMixTrackPhase(
-  playback* playback,
-  const float & alpha
-){
-  double mixTrackPhase = playback->time * alpha;
-  mixTrackPhase -= floor(mixTrackPhase); 
-  return mixTrackPhase;
-}
-
 int getAvailable(ringbuffer* buffer){
   if(buffer->head >= buffer->tail) return buffer->head - buffer->tail;
   else return buffer->head + (buffer->size - buffer->tail);
-}
-
-void copyToOut(
-  ringbuffer * buffer, 
-  float * out, 
-  unsigned int & outputFrameIndex,
-  const unsigned long & framesPerBuffer,
-  recording* rec 
-){
-  recordChunk* chunk = NULL;
-  if(rec != NULL && rec->started) chunk = rec->chunks[rec->chunkIndex];
-
-  int bufferChannelCount = buffer->channels.size();
-  float sampleValue;
-  while(buffer->head != buffer->tail && outputFrameIndex < framesPerBuffer){
-    for(int channelIndex=0;channelIndex<bufferChannelCount;channelIndex++){
-      sampleValue = buffer->channels[channelIndex][buffer->tail];
-      *out++ = sampleValue;
-      if(chunk) chunk->channels[channelIndex][chunk->used] += sampleValue;
-      buffer->channels[channelIndex][buffer->tail] = 0; //reset buffer value to 0
-    }
-    if(chunk){
-      chunk->used++;
-      rec->length++;
-      if(chunk->used >= chunk->size){ //chunkFilled
-        rec->chunkIndex++;
-        chunk = rec->chunks[rec->chunkIndex];
-      } 
-    }
-    outputFrameIndex++;
-    buffer->tail = (buffer->tail + 1)%buffer->size;
-  }
 }
 
 void applyNextPlayback(std::string mixTrackId, streamState* state){
@@ -63,10 +22,6 @@ double getSamplePosition(
   ( playback->chunks[playback->chunkIndex*2+1] * phase );
 }
 
-int normMod(const int & x, ringbuffer * buff){
-  return (x + buff->size) % buff->size;
-}
-
 int normModSize(const int & x, const int & size){
 return (x + size + size) % size;
 }
@@ -75,56 +30,6 @@ int moddiff(const int & x, const int & y, const int & size){
   int diff = (normModSize(x, size)-normModSize(y, size)+size)%size;
   return diff > (size/2)?size-diff:diff;
 }
-
-void applyFilter(
-  float& sampleValue,
-  mixTrackPlayback* playback,
-  mixTrack* mixTrack,
-  source* source,
-  mixTrackSourceConfig* params,
-  streamState *state,
-  const int& outBufferHead,
-  const int& trackBufferHead,
-  const int& channelIndex,
-  const float& window
-){
-  if(sampleValue < -1) sampleValue = -1;
-  else if(sampleValue > 1) sampleValue = 1;
-  if(playback->preview)
-    state->previewBuffer->channels[channelIndex][outBufferHead] += sampleValue * window;
-  if(playback->muted) sampleValue *= 0;
-  sampleValue *= params->volume;
-  sampleValue *= mixTrack->playback->volume;
-  sampleValue *= state->playback->volume;
-  int filterIndex = mixTrack->overlapIndex * OVERLAP_COUNT + channelIndex;
-  if(mixTrack->hasFilter && source->filters[filterIndex] != NULL){
-    firfilt_rrrf_push(source->filters[filterIndex], sampleValue);   
-    firfilt_rrrf_execute(source->filters[filterIndex], &sampleValue);
-  }
-  float windowedValue = sampleValue * window;
-  int delayedIndex = normMod(trackBufferHead - (playback->delay * state->playback->period), mixTrack->delayBuffer);
-  float delayedValue = mixTrack->delayBuffer->channels[channelIndex][delayedIndex];
-  mixTrack->delayBuffer->channels[channelIndex][normMod(trackBufferHead + WINDOW_SIZE*2, mixTrack->delayBuffer)] = 0;
-  state->buffer->channels[channelIndex][outBufferHead] += windowedValue + delayedValue;
-  mixTrack->delayBuffer->channels[channelIndex][trackBufferHead] += (delayedValue + windowedValue) * playback->delayGain;
-}
-
-static std::complex<float> * x = new std::complex<float>[PV_WINDOW_SIZE];
-static std::complex<float> * y = new std::complex<float>[PV_WINDOW_SIZE];
-static std::complex<float> * z = new std::complex<float>[PV_WINDOW_SIZE];
-static fftplan pf = fft_create_plan(PV_WINDOW_SIZE, (liquid_float_complex*)x, (liquid_float_complex*)y, LIQUID_FFT_FORWARD,  0);
-static fftplan pr = fft_create_plan(PV_WINDOW_SIZE, (liquid_float_complex*)y, (liquid_float_complex*)z, LIQUID_FFT_BACKWARD,  0);
-
-static float pi = M_PI;
-static float tau = pi*2;
-
-float unwrapPhase(const float & theta){
-  return theta - (tau * round(theta / tau));
-}
-
-static std::random_device rd;
-static std::mt19937 gen(rd());
-static std::uniform_real_distribution<> dis(0., 2.0*M_PI);
 
 int paCallbackMethod(
   const void *inputBuffer, 
@@ -138,8 +43,7 @@ int paCallbackMethod(
   float *out = (float*)outputBuffer;
   recording* rec = state->recording;
   double startTime = state->playback->time;
-  unsigned int outputFrameIndex = 0;
-
+  
   for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *(out+frameIndex) = 0;
   if(!state->playback->playing) return paContinue;
 
@@ -185,6 +89,7 @@ int paCallbackMethod(
         float alpha = 1 / invAlpha;
 
         mixTrack->stretcher->setTimeRatio(alpha);
+        //mixTrack->stretcher->setPitchScale(invAlpha);
 
         double trueSamplePos = getSamplePosition(playback, mixTrackPhase);
         int sampleDelta = moddiff(trueSamplePos, mixTrack->sample, chunkLength);
@@ -208,7 +113,7 @@ int paCallbackMethod(
           int head = mixTrack->inputBuffer->head;
           for(int inputIndex=0;inputIndex<WINDOW_SIZE;inputIndex++){
             for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
-              int pos = mixTrack->sample + inputIndex;
+              int pos = sourcePos + inputIndex;
               float sampleValue = (pos < length && pos >= 0) ? source->channels[channelIndex][pos] : 0;
               sampleValue *= params->volume; //mix it before input
               sampleValue *= state->window[inputIndex];
@@ -327,12 +232,10 @@ int paPreviewCallbackMethod(
 ){
   streamState *state = (streamState*)userData;
   float *out = (float*)outputBuffer;
-  unsigned int outputFrameIndex = 0;
+  //unsigned int outputFrameIndex = 0;
 
   for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *(out+frameIndex) = 0;
   if(!state->previewing) return paContinue;
   
-  copyToOut(state->previewBuffer, out, outputFrameIndex, framesPerBuffer, NULL);
-
   return paContinue;
 }

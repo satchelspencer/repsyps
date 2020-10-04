@@ -86,6 +86,8 @@
 		          "-std=c++17",
 		          "-stdlib=libc++",
               "-Wno-return-type-c-linkage",
+              "-Wno-sign-compare",
+              "-Wno-ignored-qualifiers",
               "-O3"
 		        ],
 		        "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
