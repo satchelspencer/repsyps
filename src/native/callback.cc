@@ -43,7 +43,7 @@ int paCallbackMethod(
   float *out = (float*)outputBuffer;
   recording* rec = state->recording;
   double startTime = state->playback->time;
-  
+
   for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *(out+frameIndex) = 0;
   if(!state->playback->playing) return paContinue;
 
@@ -53,16 +53,17 @@ int paCallbackMethod(
       !mixTrack || mixTrack->removed || mixTrack->safe ||
       !mixTrack->playback->playing || mixTrack->playback->chunks.size() == 0
     ) continue;
-    int stretcherAvailable = mixTrack->stretcher->available();
+    Stretcher* stretcher = mixTrack->pvstretcher;
+    int stretcherAvailable = stretcher->getAvailable();
 
     while(stretcherAvailable < framesPerBuffer){
       /* read from source >> inputbuffer */
-      int needed = mixTrack->stretcher->getSamplesRequired();
+      int needed = stretcher->getRequired();
       int readAvailable = getAvailable(mixTrack->inputBuffer);
 
       while(readAvailable < needed){
         mixTrackPlayback* playback = mixTrack->playback;
-        double samplesOffset = stretcherAvailable + (readAvailable * mixTrack->stretcher->getTimeRatio());
+        double samplesOffset = stretcherAvailable + (readAvailable * stretcher->getTimeRatio());
         double trackTime = state->playback->time + (samplesOffset / state->playback->period);
         double mixTrackPhase = playback->alpha * trackTime;
         mixTrackPhase -= floor(mixTrackPhase);
@@ -88,8 +89,8 @@ int paCallbackMethod(
           playback->alpha;
         float alpha = 1 / invAlpha;
 
-        mixTrack->stretcher->setTimeRatio(alpha);
-        //mixTrack->stretcher->setPitchScale(invAlpha);
+        stretcher->setTimeRatio(alpha);
+        //stretcher->setPitchRatio(invAlpha);
 
         double trueSamplePos = getSamplePosition(playback, mixTrackPhase);
         int sampleDelta = moddiff(trueSamplePos, mixTrack->sample, chunkLength);
@@ -161,15 +162,15 @@ int paCallbackMethod(
       /* apply effects chain here? */
 
       /* stretchInput >> stretchOutput */
-      mixTrack->stretcher->process(mixTrack->stretchInput, needed, false);
-      int nextStretcherAvailable = mixTrack->stretcher->available();
+      stretcher->process(mixTrack->stretchInput, needed);
+      int nextStretcherAvailable = stretcher->getAvailable();
       if(nextStretcherAvailable == stretcherAvailable) break;
       stretcherAvailable = nextStretcherAvailable;
     }
   
     /* stretchOutput >> paOutput */
     if(stretcherAvailable >= framesPerBuffer){
-      mixTrack->stretcher->retrieve(mixTrack->stretchOutput, framesPerBuffer);
+      stretcher->retrieve(mixTrack->stretchOutput, framesPerBuffer);
       float* output = (float*)outputBuffer;
       for(int frameIndex=0;frameIndex<framesPerBuffer;frameIndex++){
         for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++)

@@ -397,20 +397,8 @@ void setMixTrack(const Napi::CallbackInfo &info){
     }
     newMixTrack->delayBuffer = newBuffer;
 
-    RubberBand::RubberBandStretcher *stretcher = new RubberBand::RubberBandStretcher(
-      PV_RATE,
-      CHANNEL_COUNT,
-      RubberBand::RubberBandStretcher::OptionProcessRealTime |
-      RubberBand::RubberBandStretcher::OptionDetectorCompound ,
-      1.0,
-      1.0
-    );
-    //stretcher->setMaxProcessSize(WINDOW_SIZE);
-    stretcher->setTransientsOption(RubberBand::RubberBandStretcher::OptionTransientsCrisp);
-    stretcher->setPhaseOption(RubberBand::RubberBandStretcher::OptionPhaseLaminar);
-    stretcher->setDetectorOption(RubberBand::RubberBandStretcher::OptionDetectorCompound);
-    stretcher->setFormantOption(RubberBand::RubberBandStretcher::OptionFormantPreserved);
-    newMixTrack->stretcher = stretcher;
+    newMixTrack->pvstretcher = new PVStretcher();
+    
     newMixTrack->stretchInput = new float*[CHANNEL_COUNT];
     newMixTrack->stretchOutput = new float*[CHANNEL_COUNT];
     for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchInput[i] = new float[PV_WINDOW_SIZE*2];

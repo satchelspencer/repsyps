@@ -25,6 +25,63 @@ static float PV_ABSTOL = 1e-3;
 static float PV_FREQ_STEP = PV_RATE / (float)(PV_WINDOW_SIZE);
 static int DELAY_MAX_SIZE = PV_RATE * 10;
 
+
+class Stretcher {
+  public:
+    virtual int getAvailable() = 0;
+    virtual int getRequired() = 0;
+    virtual int getTimeRatio() = 0;
+    virtual void setTimeRatio(double ratio) = 0;
+    virtual void setPitchRatio(double ratio) = 0;
+    virtual void reset() = 0;
+    virtual void process(float **input, int samples) = 0;
+    virtual void retrieve(float **output, int samples) = 0;
+};
+
+class PVStretcher: public Stretcher{
+  public: 
+    PVStretcher(){
+      stretcher = new RubberBand::RubberBandStretcher(
+        PV_RATE,
+        CHANNEL_COUNT,
+        RubberBand::RubberBandStretcher::OptionProcessRealTime |
+        RubberBand::RubberBandStretcher::OptionDetectorCompound ,
+        1.0,
+        1.0
+      );
+      stretcher->setTransientsOption(RubberBand::RubberBandStretcher::OptionTransientsCrisp);
+      stretcher->setPhaseOption(RubberBand::RubberBandStretcher::OptionPhaseLaminar);
+      stretcher->setDetectorOption(RubberBand::RubberBandStretcher::OptionDetectorCompound);
+      stretcher->setFormantOption(RubberBand::RubberBandStretcher::OptionFormantPreserved);
+    }
+    int getAvailable(){
+      return stretcher->available();
+    }
+    int getRequired(){
+      return stretcher->getSamplesRequired();
+    }
+    int getTimeRatio(){
+      return stretcher->getTimeRatio();
+    }
+    void setTimeRatio(double ratio){
+      stretcher->setTimeRatio(ratio);
+    }
+    void setPitchRatio(double ratio){
+      stretcher->setPitchScale(ratio);
+    }
+    void reset(){
+      stretcher->reset();
+    }
+    void process(float **input, int samples){
+      stretcher->process(input, samples, false);
+    }
+    void retrieve(float **output, int samples){
+      stretcher->retrieve(output, samples);
+    }
+  private:
+    RubberBand::RubberBandStretcher *stretcher;
+};
+
 typedef struct{
   float volume;
   double time;
@@ -84,7 +141,7 @@ typedef struct{
   bool removed;
   bool safe;
   ringbuffer *delayBuffer;
-  RubberBand::RubberBandStretcher *stretcher;
+  PVStretcher* pvstretcher;
   ringbuffer *inputBuffer;
   float** stretchInput;
   float** stretchOutput;
