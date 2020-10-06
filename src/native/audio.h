@@ -6,7 +6,6 @@
 #include "portaudio.h"
 
 #include "state.h"
-#include "filter.h"
 #include "callback.h"
 #include "separate.h"
 #include "load.h"

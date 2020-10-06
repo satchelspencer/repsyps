@@ -51,13 +51,6 @@ typedef struct{
 } mixTrackPlayback;
 
 typedef struct{
-  float* lastPhaseTimeDelta;
-  float* lastPFFT;
-  float* currentPFFT;
-  float* nextPFFT;
-} pvState;
-
-typedef struct{
   mixTrackPlayback* playback;
   mixTrackPlayback* nextPlayback;
   bool hasNext;
@@ -78,9 +71,7 @@ typedef struct{
 } mixTrack;
 
 typedef struct{
-  std::vector<float*>  channels;
-  std::vector<pvState *> pvStates;
-  std::vector<firfilt_rrrf> filters;
+  std::vector<float*> channels;
   int length;
   uint8_t ** data;
   bool removed;
@@ -110,8 +101,6 @@ typedef struct{
   ringbuffer *previewBuffer;
   bool previewing;
   float* window;
-  float* pvWindow;
-  double* omega;
   unsigned int windowSize;
   playback *playback;
   std::unordered_map<std::string, mixTrack*> mixTracks;

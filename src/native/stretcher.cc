@@ -14,7 +14,7 @@ REStretcher::REStretcher(){
   data->data_in = inputBuffer;
   data->data_out = outputBuffer;
   data->output_frames = WINDOW_SIZE * 16;
-  
+
   outputRing = ringbuffer_new(data->output_frames * 2);
 }
 
@@ -76,7 +76,7 @@ void REStretcher::retrieve(float **output, int samples){
 
 PVStretcher::PVStretcher(){
   stretcher = new RubberBand::RubberBandStretcher(
-    PV_RATE,
+    SAMPLE_RATE,
     CHANNEL_COUNT,
     RubberBand::RubberBandStretcher::OptionProcessRealTime |
     RubberBand::RubberBandStretcher::OptionDetectorCompound ,

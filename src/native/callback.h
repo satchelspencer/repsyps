@@ -12,7 +12,6 @@ extern "C"{
 #define LIQUID_DEFINE_COMPLEX(R,C) typedef std::complex<R> C
 
 #include "state.h"
-#include "filter.h"
 
 double getMixTrackPhase(
   playback* playback,

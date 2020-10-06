@@ -41,16 +41,6 @@ Napi::Value init(const Napi::CallbackInfo &info){
   for(int i=0;i<WINDOW_SIZE;i++)
     window[i] = (cos(M_PI*2*(float(i)/(WINDOW_SIZE-1) + 0.5)) + 1)/2;
 
-  
-  float* pvWindow = new float[PV_WINDOW_SIZE];
-  for(int i=0;i<PV_WINDOW_SIZE;i++){
-    pvWindow[i] = (cos(M_PI*2*(float(i)/(PV_WINDOW_SIZE-1) + 0.5)) + 1)/2;
-  }
-  state.pvWindow = pvWindow;
-
-  double* omega = new double[PV_WINDOW_SIZE / 2];
-  for(int i=0;i<PV_WINDOW_SIZE / 2;i++) omega[i] = (M_PI * 2 * i) / PV_WINDOW_SIZE ;
-  state.omega = omega;
   state.buffer = ringbuffer_new(WINDOW_SIZE*16);
   state.previewBuffer = ringbuffer_new(WINDOW_SIZE*16);
   state.previewing = false;
@@ -59,22 +49,6 @@ Napi::Value init(const Napi::CallbackInfo &info){
 
   Napi::Env env = info.Env();
   return Napi::Number::New(env, 666);
-}
-
-pvState* allocatePvState(){
-  pvState* newPvState = new pvState{};
-  newPvState->lastPhaseTimeDelta = new float[PV_WINDOW_SIZE];
-  newPvState->lastPFFT = new float[PV_WINDOW_SIZE];
-  newPvState->currentPFFT = new float[PV_WINDOW_SIZE];
-  newPvState->nextPFFT = new float[PV_WINDOW_SIZE];
-
-  for(int i=0;i<PV_WINDOW_SIZE;i++){
-    newPvState->lastPhaseTimeDelta[i] = 0;
-    newPvState->lastPFFT[i] = 0;
-    newPvState->currentPFFT[i] = 0;
-    newPvState->nextPFFT[i] = 0;
-  }
-  return newPvState;
 }
 
 Napi::Value getOutputs(const Napi::CallbackInfo &info){
@@ -373,8 +347,8 @@ void setMixTrack(const Napi::CallbackInfo &info){
 
     newMixTrack->stretchInput = new float*[CHANNEL_COUNT];
     newMixTrack->stretchOutput = new float*[CHANNEL_COUNT];
-    for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchInput[i] = new float[PV_WINDOW_SIZE*2];
-    for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchOutput[i] = new float[PV_WINDOW_SIZE*2];
+    for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchInput[i] = new float[WINDOW_SIZE*8];
+    for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchOutput[i] = new float[WINDOW_SIZE*8];
 
     newMixTrack->inputBuffer = ringbuffer_new(WINDOW_SIZE * 16);
 
@@ -382,20 +356,8 @@ void setMixTrack(const Napi::CallbackInfo &info){
   }
 
   setMixTrackPlayback(state.mixTracks[mixTrackId]->playback, playback);
-
-  bool needsFilterAdd = false;
-  if(state.mixTracks[mixTrackId]->hasFilter){
-    for(auto sourceTrackPair : state.mixTracks[mixTrackId]->playback->sourceTracksParams){
-      if(
-        state.sources[sourceTrackPair.first] != NULL && 
-        state.sources[sourceTrackPair.first]->filters.size() == 0
-      ){
-        needsFilterAdd = true;
-      }
-    }
-  }
   
-  if(playback.As<Napi::Object>().Has("filter") || needsFilterAdd) setMixTrackFilter(mixTrackId, &state);
+  //if(playback.As<Napi::Object>().Has("filter")
     
   if(!nextPlayback.IsUndefined()){
     if(nextPlayback.IsNull()){
@@ -449,15 +411,6 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
         for(unsigned int channelIndex=0;channelIndex<mixTrackSource->channels.size();channelIndex++){
           delete [] mixTrackSource->channels[channelIndex];
         }
-      }
-      for(pvState* pv : mixTrackSource->pvStates){
-        delete [] pv->lastPhaseTimeDelta;
-        delete [] pv->lastPFFT;
-        delete [] pv->currentPFFT;
-        delete [] pv->nextPFFT;
-      }
-      for(firfilt_rrrf filter: mixTrackSource->filters){
-        if(filter != NULL) firfilt_rrrf_destroy(filter);
       }
       state.sources[sourcesPair.first] = NULL;
       delete mixTrackSource;
@@ -527,7 +480,6 @@ class SeparateWorker : public Napi::AsyncWorker {
 
         for(unsigned int i=0;i<(unsigned int)CHANNEL_COUNT;i++){
           newSource->channels.push_back(outChannels[j*2 + i]);
-          newSource->pvStates.push_back(allocatePvState());
         }
         state.sources[sourceTrackId] = newSource;
       }
@@ -638,7 +590,6 @@ class LoadWorker : public Napi::AsyncWorker {
         newSource->data = res->data;
         for(unsigned int i=0;i<res->channels.size();i++){
           newSource->channels.push_back(res->channels[i]);
-          newSource->pvStates.push_back(allocatePvState());
         }
         state.sources[res->sourceId] = newSource;
         loadedSources.Set(i, res->sourceId);
@@ -751,7 +702,6 @@ Napi::Value stopRecording(const Napi::CallbackInfo &info){
         delete [] chunk->channels[channelIndex];
       }
       newSource->channels.push_back(channel);
-      newSource->pvStates.push_back(allocatePvState());
     }
     state.sources[sourceId] = newSource;
     

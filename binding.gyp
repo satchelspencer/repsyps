@@ -9,7 +9,6 @@
         "src/native/addon.cc",
         "src/native/audio.cc",
         "src/native/callback.cc",
-        "src/native/filter.cc",
         "src/native/separate.cc",
         "src/native/load.cc",
         "src/native/export.cc",

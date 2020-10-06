@@ -9,7 +9,6 @@ int getAvailable(ringbuffer* buffer){
 void applyNextPlayback(std::string mixTrackId, streamState* state){
   mixTrack* mixTrack = state->mixTracks[mixTrackId];
   mixTrack->playback = mixTrack->nextPlayback;
-  setMixTrackFilter(mixTrackId, state);
   mixTrack->nextPlayback = NULL;
   mixTrack->hasNext = false;
 }
