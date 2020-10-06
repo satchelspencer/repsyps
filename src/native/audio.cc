@@ -51,28 +51,8 @@ Napi::Value init(const Napi::CallbackInfo &info){
   double* omega = new double[PV_WINDOW_SIZE / 2];
   for(int i=0;i<PV_WINDOW_SIZE / 2;i++) omega[i] = (M_PI * 2 * i) / PV_WINDOW_SIZE ;
   state.omega = omega;
-
-  ringbuffer * newBuffer = new ringbuffer{};
-  newBuffer->size = WINDOW_SIZE*16;
-  newBuffer->head = 0;
-  newBuffer->tail = 0;
-  for(int i=0;i<2;i++){
-    float* buff = new float[newBuffer->size];
-    for(int j=0;j<newBuffer->size;j++) buff[j] = 0;
-    newBuffer->channels.push_back(buff);
-  }
-  state.buffer = newBuffer;
-
-  ringbuffer * pBuffer = new ringbuffer{};
-  pBuffer->size = WINDOW_SIZE*16;
-  pBuffer->head = 0;
-  pBuffer->tail = 0;
-  for(int i=0;i<CHANNEL_COUNT;i++){
-    float* buff = new float[pBuffer->size];
-    for(int j=0;j<pBuffer->size;j++) buff[j] = 0;
-    pBuffer->channels.push_back(buff);
-  }
-  state.previewBuffer = pBuffer;
+  state.buffer = ringbuffer_new(WINDOW_SIZE*16);
+  state.previewBuffer = ringbuffer_new(WINDOW_SIZE*16);
   state.previewing = false;
 
   state.recording = NULL;
@@ -386,16 +366,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->removed = false;
     newMixTrack->safe = false;
 
-    ringbuffer * newBuffer = new ringbuffer{};
-    newBuffer->size = DELAY_MAX_SIZE;
-    newBuffer->head = 0;
-    newBuffer->tail = 0;
-    for(int i=0;i<CHANNEL_COUNT;i++){
-      float* buff = new float[newBuffer->size];
-      for(int j=0;j<newBuffer->size;j++) buff[j] = 0;
-      newBuffer->channels.push_back(buff);
-    }
-    newMixTrack->delayBuffer = newBuffer;
+    newMixTrack->delayBuffer = ringbuffer_new(DELAY_MAX_SIZE);
 
     newMixTrack->pvstretcher = new PVStretcher();
     newMixTrack->restretcher = new REStretcher();
@@ -405,16 +376,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
     for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchInput[i] = new float[PV_WINDOW_SIZE*2];
     for(int i=0;i<CHANNEL_COUNT;i++) newMixTrack->stretchOutput[i] = new float[PV_WINDOW_SIZE*2];
 
-    ringbuffer * inputBuffer = new ringbuffer{};
-    inputBuffer->size = WINDOW_SIZE * 16;
-    inputBuffer->head = 0;
-    inputBuffer->tail = 0;
-    for(int i=0;i<CHANNEL_COUNT;i++){
-      float* buff = new float[inputBuffer->size];
-      for(int j=0;j<inputBuffer->size;j++) buff[j] = 0;
-      inputBuffer->channels.push_back(buff);
-    }
-    newMixTrack->inputBuffer = inputBuffer;
+    newMixTrack->inputBuffer = ringbuffer_new(WINDOW_SIZE * 16);
 
     state.mixTracks[mixTrackId] = newMixTrack;
   }
@@ -509,9 +471,8 @@ Napi::Value getTiming(const Napi::CallbackInfo &info){
     if(mixTrack->safe){
       if(REPSYS_LOG) std::cout << "free track " << mixTrackPair.first << std::endl;
       state.mixTracks[mixTrackPair.first] = NULL;
-      for(float* buff: mixTrack->delayBuffer->channels){
-        delete [] buff;
-      }
+      ringbuffer_delete(mixTrack->delayBuffer);
+      ringbuffer_delete(mixTrack->inputBuffer);
       delete mixTrack;
     }else{
       Napi::Object mixTrackState = Napi::Object::New(env);

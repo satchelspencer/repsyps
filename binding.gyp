@@ -15,7 +15,9 @@
         "src/native/export.cc",
         "src/native/impdet.cc",
         "src/native/waveform.cc",
-        "src/native/recording.cc"
+        "src/native/recording.cc",
+        "src/native/stretcher.cc",
+        "src/native/ringbuffer.cc"
       ],
       'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ],
       "conditions": [

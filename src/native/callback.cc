@@ -53,7 +53,7 @@ int paCallbackMethod(
       !mixTrack || mixTrack->removed || mixTrack->safe ||
       !mixTrack->playback->playing || mixTrack->playback->chunks.size() == 0
     ) continue;
-    Stretcher* stretcher = mixTrack->restretcher;
+    Stretcher* stretcher = mixTrack->pvstretcher;
     int stretcherAvailable = stretcher->getAvailable();
 
     while(stretcherAvailable < framesPerBuffer){
