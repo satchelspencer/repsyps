@@ -352,12 +352,25 @@ void setMixTrack(const Napi::CallbackInfo &info){
 
     newMixTrack->inputBuffer = ringbuffer_new(WINDOW_SIZE * 16);
 
+    newMixTrack->filter = new Dsp::SmoothedFilterDesign<Dsp::RBJ::Design::LowPass, CHANNEL_COUNT> (WINDOW_SIZE);
+    Dsp::Params params;
+    params[0] = SAMPLE_RATE;
+    params[1] = SAMPLE_RATE/2; // cutoff frequency
+    params[2] = 1.25; // Q
+    newMixTrack->filter->setParams(params);
+
     state.mixTracks[mixTrackId] = newMixTrack;
   }
 
   setMixTrackPlayback(state.mixTracks[mixTrackId]->playback, playback);
   
-  //if(playback.As<Napi::Object>().Has("filter")
+  if(playback.As<Napi::Object>().Has("filter")){
+    Dsp::Params params;
+    params[0] = SAMPLE_RATE;
+    params[1] = SAMPLE_RATE/2 * state.mixTracks[mixTrackId]->playback->filter; // cutoff frequency
+    params[2] = 1.25; // Q
+     state.mixTracks[mixTrackId]->filter->setParams(params);
+  }
     
   if(!nextPlayback.IsUndefined()){
     if(nextPlayback.IsNull()){

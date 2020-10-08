@@ -52,7 +52,10 @@ int paCallbackMethod(
       !mixTrack || mixTrack->removed || mixTrack->safe ||
       !mixTrack->playback->playing || mixTrack->playback->chunks.size() == 0
     ) continue;
-    Stretcher* stretcher = mixTrack->pvstretcher;
+    Stretcher* stretcher;
+    if(mixTrack->playback->preservePitch) stretcher = mixTrack->pvstretcher;
+    else stretcher = mixTrack->restretcher;
+
     int stretcherAvailable = stretcher->getAvailable();
 
     while(stretcherAvailable < framesPerBuffer){
@@ -76,6 +79,7 @@ int paCallbackMethod(
 
         int chunkLength = playback->chunks[(playback->chunkIndex * 2) + 1];
         bool hasEnd = chunkLength != 0;
+        bool periodic = hasEnd && !playback->aperiodic;
         double chunkEndPosition = getSamplePosition(playback, 1);
         bool hasNext = mixTrack->hasNext && (playback->chunkIndex == 0 || playback->nextAtChunk);
         int nextChunkIndex = (playback->chunkIndex + 1) % chunkCount;
@@ -83,7 +87,7 @@ int paCallbackMethod(
           mixTrack->nextPlayback->chunks[0] : 
           playback->chunks[nextChunkIndex * 2];
 
-        float invAlpha = (hasEnd && !playback->aperiodic) ?
+        float invAlpha = periodic ?
           chunkLength / (float)state->playback->period * playback->alpha :
           playback->alpha;
         float alpha = 1 / invAlpha;
@@ -91,13 +95,15 @@ int paCallbackMethod(
         stretcher->setTimeRatio(alpha);
         //stretcher->setPitchRatio(invAlpha);
 
-        double trueSamplePos = getSamplePosition(playback, mixTrackPhase);
-        int sampleDelta = moddiff(trueSamplePos, mixTrack->sample, chunkLength);
-        if(abs(sampleDelta) > 1024){
-          mixTrack->sample = trueSamplePos;
-          //std::cout << "cr " << sampleDelta << std::endl;
+        if(periodic){
+          double trueSamplePos = getSamplePosition(playback, mixTrackPhase);
+          int sampleDelta = moddiff(trueSamplePos, mixTrack->sample, chunkLength);
+          if(abs(sampleDelta) > 1024){
+            mixTrack->sample = trueSamplePos;
+            //std::cout << "cr " << sampleDelta << std::endl;
+          }
         }
-
+       
         for(auto sourcePair: playback->sourceTracksParams){
           if(!( //skip destroyed sources
             state->sources.find(sourcePair.first) != state->sources.end() 
@@ -159,6 +165,7 @@ int paCallbackMethod(
       }
 
       /* apply effects chain here? */
+      mixTrack->filter->process(needed, mixTrack->stretchInput);
 
       /* stretchInput >> stretchOutput */
       stretcher->process(mixTrack->stretchInput, needed);

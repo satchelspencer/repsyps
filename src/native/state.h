@@ -67,7 +67,7 @@ typedef struct{
   ringbuffer *inputBuffer;
   float** stretchInput;
   float** stretchOutput;
-  firfilt_rrrf filter;
+  Dsp::Filter* filter;
 } mixTrack;
 
 typedef struct{
