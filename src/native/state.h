@@ -60,6 +60,7 @@ typedef struct{
   bool hasFilter;
   bool removed;
   bool safe;
+  float gain;
   ringbuffer *delayBuffer;
   PVStretcher* pvstretcher;
   REStretcher* restretcher;
@@ -96,7 +97,6 @@ typedef struct{
 } recording;
 
 typedef struct{
-  ringbuffer *buffer;
   ringbuffer *previewBuffer;
   bool previewing;
   float* window;

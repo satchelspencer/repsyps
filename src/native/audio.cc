@@ -41,7 +41,6 @@ Napi::Value init(const Napi::CallbackInfo &info){
   for(int i=0;i<WINDOW_SIZE;i++)
     window[i] = (cos(M_PI*2*(float(i)/(WINDOW_SIZE-1) + 0.5)) + 1)/2;
 
-  state.buffer = ringbuffer_new(WINDOW_SIZE*16);
   state.previewBuffer = ringbuffer_new(1024);
   state.previewing = false;
 
@@ -123,9 +122,6 @@ void startPreview(const Napi::CallbackInfo &info){
   for(int i=0;i<state.previewBuffer->size;i++){
     for(int ci=0;ci<CHANNEL_COUNT;ci++) state.previewBuffer->channels[ci][i] = 0;
   }
-  
-  state.previewBuffer->head = state.buffer->head;
-  state.previewBuffer->tail = state.buffer->tail;
 
   PaStreamParameters outputParameters;
   outputParameters.device = deviceIndex;
@@ -339,6 +335,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
     newMixTrack->overlapIndex = 0;
     newMixTrack->removed = false;
     newMixTrack->safe = false;
+    newMixTrack->gain = 0.;
 
     newMixTrack->delayBuffer = ringbuffer_new(DELAY_MAX_SIZE);
 
@@ -352,7 +349,7 @@ void setMixTrack(const Napi::CallbackInfo &info){
 
     newMixTrack->inputBuffer = ringbuffer_new(WINDOW_SIZE * 16);
 
-    newMixTrack->filter = new Dsp::SmoothedFilterDesign<Dsp::RBJ::Design::LowPass, CHANNEL_COUNT> (WINDOW_SIZE);
+    newMixTrack->filter = new Dsp::SmoothedFilterDesign<Dsp::RBJ::Design::LowPass, CHANNEL_COUNT> (WINDOW_SIZE * 4);
     Dsp::Params params;
     params[0] = SAMPLE_RATE;
     params[1] = SAMPLE_RATE/2; // cutoff frequency

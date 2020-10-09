@@ -177,6 +177,10 @@ int paCallbackMethod(
     }
   
     /* stretchOutput >> paOutput */
+    float desiredGain = mixTrack->playback->volume * state->playback->volume;
+    if(mixTrack->playback->muted) desiredGain = 0;
+    float gainStep = (desiredGain - mixTrack->gain) / WINDOW_SIZE;
+
     if(stretcherAvailable >= framesPerBuffer){
       stretcher->retrieve(mixTrack->stretchOutput, framesPerBuffer);
       float* output = (float*)outputBuffer;
@@ -187,9 +191,9 @@ int paCallbackMethod(
           if(mixTrack->playback->preview)
             state->previewBuffer->channels[channelIndex][trackPreviewHead] += sampleValue;
 
-          if(!mixTrack->playback->muted)
-            *output++ += sampleValue * mixTrack->playback->volume;
+          *output++ += sampleValue * mixTrack->gain;
         }
+        mixTrack->gain = mixTrack->gain + gainStep;
         trackPreviewHead = (trackPreviewHead + 1) % state->previewBuffer->size;
       }
     }
