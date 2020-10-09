@@ -2,23 +2,21 @@
 
 static unsigned int IMPDET_WINSIZE = 512;
 static unsigned int IMPDET_AVGLEN = 80;
-static float IMPDET_CUTOFF = 3000 / 44100.;
-static const unsigned int IMPDET_NTAPS = 121;
+static int IMPDET_CUTOFF = 3000;
 
 std::vector<int> impulseDetect(float* source, int sourceLen){
-  /* setup highpass filter */
-  float h[IMPDET_NTAPS];
-  float ft = estimate_req_filter_df(60, IMPDET_NTAPS);
-  float bands[4] = { 0.0f, IMPDET_CUTOFF, IMPDET_CUTOFF + ft, 0.5f };
-  float des[2] = { 0, 1 };
-  float weights[2] = { 1.0f, 1.0f };
-  liquid_firdespm_wtype wtype[2] = {LIQUID_FIRDESPM_FLATWEIGHT, LIQUID_FIRDESPM_FLATWEIGHT};
-  firdespm_run(IMPDET_NTAPS,2,bands,des,weights,wtype,LIQUID_FIRDESPM_BANDPASS,h);
-  firfilt_rrrf filter = firfilt_rrrf_create(h,IMPDET_NTAPS);
+  Dsp::Filter* filter = new Dsp::FilterDesign<Dsp::RBJ::Design::HighPass, 1>();
+  Dsp::Params params;
+  params[0] = SAMPLE_RATE;
+  params[1] = IMPDET_CUTOFF; // cutoff frequency
+  params[2] = 1.25; // Q
+  filter->setParams(params);
 
   std::vector<int> beats;  //output
   unsigned int winCount = (sourceLen / IMPDET_WINSIZE) - 1;
   std::list<float> lastMeans = { 1. };
+
+  float* winBuffer = new float[IMPDET_WINSIZE];
 
   float sampleValue;
   unsigned int startSample;
@@ -31,10 +29,15 @@ std::vector<int> impulseDetect(float* source, int sourceLen){
   for(unsigned int winIndex=0;winIndex<winCount;winIndex++){
     startSample = winIndex * IMPDET_WINSIZE;
     energy = 0;
+
+    /* copy into buffer for filtering */
+    for(winSampleIndex=0;winSampleIndex<IMPDET_WINSIZE;winSampleIndex++)
+      winBuffer[winSampleIndex] = source[startSample + winSampleIndex];
+    
+    filter->process(IMPDET_WINSIZE, &winBuffer);
+
     for(winSampleIndex=0;winSampleIndex<IMPDET_WINSIZE;winSampleIndex++){
-      sampleValue = source[startSample + winSampleIndex];
-      firfilt_rrrf_push(filter, sampleValue);   
-      firfilt_rrrf_execute(filter, &sampleValue);
+      sampleValue = winBuffer[winSampleIndex];
       energy += sampleValue*sampleValue;
     }
     energy /= IMPDET_WINSIZE; 
@@ -57,6 +60,9 @@ std::vector<int> impulseDetect(float* source, int sourceLen){
       }
     }else if(inBeat) inBeat = false;
   }
-  firfilt_rrrf_destroy(filter);
+
+  delete [] winBuffer;
+  delete filter;
+  
   return beats;
 }

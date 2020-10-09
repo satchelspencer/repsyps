@@ -1,7 +1,6 @@
 #include <napi.h>
 #include "portaudio.h"
 #include <complex.h>
-#include <liquid.h>
 #include <unordered_map> 
 #include <vector>
 #include <iostream>

@@ -32,7 +32,6 @@
             "<@(libsdir)/portaudio/include",
             "<@(libsdir)/libtensorflow/include",
             "<@(libsdir)/fftw-3.3.5",
-            "<@(libsdir)/liquid-dsp/include/liquid",
             "<@(libsdir)/ffmpeg/include",
             "<!@(node -p \"require('node-addon-api').include\")"
           ],
@@ -40,7 +39,6 @@
             "libraries":[
               "<@(libsdir)/libtensorflow/lib/tensorflow.lib",
               "<@(libsdir)/portaudio/portaudio_x64.lib",
-              "<@(libsdir)/liquid-dsp/libliquid.lib",
               "<@(libsdir)/fftw-3.3.5/libfftw3-3.lib",
               "<@(libsdir)/ffmpeg/lib/avutil.lib",
               "<@(libsdir)/ffmpeg/lib/avcodec.lib",
@@ -53,7 +51,6 @@
             'files': [
               "<@(libsdir)/portaudio/portaudio_x64.dll",
               "<@(libsdir)/libtensorflow/lib/tensorflow.dll",
-              "<@(libsdir)/liquid-dsp/libliquid.dll",
               "<@(libsdir)/ffmpeg/lib/avutil-56.dll",
               "<@(libsdir)/ffmpeg/lib/avcodec-58.dll",
               "<@(libsdir)/ffmpeg/lib/avformat-58.dll",
@@ -65,7 +62,6 @@
           "cflags_cc": [ "-fno-rtti", "-std=c++1z", "-fpermissive"],
           "libraries": [
 		        "-L<@(libsdir)/portaudio/lib/.libs -lportaudio -Wl,-rpath,./lib/portaudio/lib/.libs",
-			      "<@(libsdir)/liquid-dsp/libliquid.a",
             "-L<@(libsdir)/ffmpeg-4.2.2/libavutil -lavutil -Wl,-rpath,./lib/ffmpeg-4.2.2/libavutil",
         		"-L<@(libsdir)/ffmpeg-4.2.2/libavcodec -lavcodec -Wl,-rpath,./lib/ffmpeg-4.2.2/libavcodec",
          		"-L<@(libsdir)/ffmpeg-4.2.2/libavformat -lavformat -Wl,-rpath,./lib/ffmpeg-4.2.2/libavformat",
@@ -76,7 +72,6 @@
             "src/native",
             "<@(libsdir)/portaudio/include",
             "<@(libsdir)/libtensorflow/include",
-            "<@(libsdir)/liquid-dsp/include",
             "<@(libsdir)/ffmpeg-4.2.2",
             "<!@(node -p \"require('node-addon-api').include\")"
           ],
@@ -97,7 +92,6 @@
 		      },
 		      "libraries": [
 		        "<@(libsdir)/portaudio/lib/.libs/libportaudio.a",
-            "<@(libsdir)/liquid-dsp/libliquid.ar",
             "<@(libsdir)/ffmpeg-4.2.2/libavutil/libavutil.a",
             "<@(libsdir)/ffmpeg-4.2.2/libavcodec/libavcodec.a",
             "<@(libsdir)/ffmpeg-4.2.2/libavformat/libavformat.a",
@@ -113,7 +107,6 @@
             "<@(libsdir)/portaudio/include",
             "<@(libsdir)/libtensorflow/include",
             "<@(libsdir)/fftw-3.3.8/api",
-            "<@(libsdir)/liquid-dsp/include",
             "<@(libsdir)/ffmpeg-4.2.2",
             "<@(libsdir)/rubberband-1.9.0",
             "<@(libsdir)/libsamplerate-0.1.9/include",

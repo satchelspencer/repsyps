@@ -7,9 +7,6 @@ extern "C"{
 }
 #include <complex.h>
 #include <fftw3.h>
-#include <liquid.h>
-#undef  LIQUID_DEFINE_COMPLEX
-#define LIQUID_DEFINE_COMPLEX(R,C) typedef std::complex<R> C
 
 #include "state.h"
 

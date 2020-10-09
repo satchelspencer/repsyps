@@ -7,7 +7,6 @@ see [http://elldev.com/repsyps](http://elldev.com/repsyps)
 repsyps depends on native libraries that must be installed manually for development:
 
  - [portaudio 2.0](http://portaudio.com/docs/v19-doxydocs/index.html) for realtime audio output
- - [liquid-dsp 1.3.2](https://github.com/jgaeddert/liquid-dsp) for filtering and other dsp
  - [libtensorflow 1.15.0](https://www.tensorflow.org/install/lang_c) for running A.I. source separation
  - [ffmpeg 4.2.2](http://ffmpeg.org/download.html) for decoding/encoding audio
  - [fftw 3.8](http://www.fftw.org/) fast fourier transform
@@ -38,14 +37,6 @@ tar xvzf pa_stable_v190600_20161030.tgz portaudio
 rm pa_stable_v190600_20161030.tgz
 cd portaudio
 ./configure --disable-mac-universal && make
-cd ..
-
-# liquid-dsp installation
-git clone git://github.com/jgaeddert/liquid-dsp.git
-cd liquid-dsp
-./bootstrap.sh
-./configure
-make
 cd ..
 
 # download precompiled tensorflow binaries
@@ -137,14 +128,6 @@ tar xvzf pa_stable_v190600_20161030.tgz portaudio
 rm pa_stable_v190600_20161030.tgz
 cd portaudio
 ./configure --with-alsa CFLAGS=-fPIC && make
-cd ..
-
-# liquid-dsp installation??
-git clone git://github.com/jgaeddert/liquid-dsp.git
-cd liquid-dsp
-./bootstrap.sh
-./configure
-make
 cd ..
 
 # download precompiled tensorflow binaries
