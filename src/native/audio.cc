@@ -42,7 +42,7 @@ Napi::Value init(const Napi::CallbackInfo &info){
     window[i] = (cos(M_PI*2*(float(i)/(WINDOW_SIZE-1) + 0.5)) + 1)/2;
 
   state.buffer = ringbuffer_new(WINDOW_SIZE*16);
-  state.previewBuffer = ringbuffer_new(WINDOW_SIZE*16);
+  state.previewBuffer = ringbuffer_new(1024);
   state.previewing = false;
 
   state.recording = NULL;

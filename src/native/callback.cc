@@ -46,6 +46,8 @@ int paCallbackMethod(
   for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *(out+frameIndex) = 0;
   if(!state->playback->playing) return paContinue;
 
+  int previewHead = state->previewBuffer->head;
+
   for(auto mixTrackPair: state->mixTracks){
     mixTrack* mixTrack = mixTrackPair.second;
     if(
@@ -178,13 +180,23 @@ int paCallbackMethod(
     if(stretcherAvailable >= framesPerBuffer){
       stretcher->retrieve(mixTrack->stretchOutput, framesPerBuffer);
       float* output = (float*)outputBuffer;
+      int trackPreviewHead = previewHead;
       for(int frameIndex=0;frameIndex<framesPerBuffer;frameIndex++){
-        for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++)
-          *output++ += mixTrack->stretchOutput[channelIndex][frameIndex];
+        for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
+          float sampleValue = mixTrack->stretchOutput[channelIndex][frameIndex];
+          if(mixTrack->playback->preview)
+            state->previewBuffer->channels[channelIndex][trackPreviewHead] += sampleValue;
+
+          if(!mixTrack->playback->muted)
+            *output++ += sampleValue * mixTrack->playback->volume;
+        }
+        trackPreviewHead = (trackPreviewHead + 1) % state->previewBuffer->size;
       }
     }
     
   }
+
+  state->previewBuffer->head = (state->previewBuffer->head + framesPerBuffer) % state->previewBuffer->size;
   
   /* update time and misc */
   state->playback->time = startTime + ((double)framesPerBuffer / state->playback->period);
@@ -242,7 +254,20 @@ int paPreviewCallbackMethod(
   //unsigned int outputFrameIndex = 0;
 
   for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex++ ) *(out+frameIndex) = 0;
-  if(!state->previewing) return paContinue;
+  if(
+    !state->previewing ||
+    getAvailable(state->previewBuffer) < framesPerBuffer
+  ) return paContinue;
   
+  int previewTail = state->previewBuffer->tail;
+  for(int frameIndex=0;frameIndex<framesPerBuffer;frameIndex++){
+    for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
+      *out++ = state->previewBuffer->channels[channelIndex][previewTail];
+      state->previewBuffer->channels[channelIndex][previewTail] = 0;
+    }
+    previewTail = (previewTail + 1) % state->previewBuffer->size;
+  }
+  state->previewBuffer->tail = previewTail;
+
   return paContinue;
 }
