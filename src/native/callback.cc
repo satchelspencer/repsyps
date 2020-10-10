@@ -214,6 +214,12 @@ int paCallbackMethod(
       } 
     }
   }
+
+  state->playback->maxLevel *= 0.99;
+  for(unsigned int frameIndex=0; frameIndex<framesPerBuffer*2; frameIndex = frameIndex+2 ){
+    float absValue = abs(out[frameIndex]);
+    if(absValue > state->playback->maxLevel) state->playback->maxLevel = absValue;
+  }
   
   state->previewBuffer->head = (state->previewBuffer->head + framesPerBuffer) % state->previewBuffer->size;
   
