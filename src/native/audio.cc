@@ -359,23 +359,24 @@ void setMixTrack(const Napi::CallbackInfo &info){
     state.mixTracks[mixTrackId] = newMixTrack;
   }
 
-  setMixTrackPlayback(state.mixTracks[mixTrackId]->playback, playback);
-  
+  mixTrack* mixTrack = state.mixTracks[mixTrackId];
+  setMixTrackPlayback(mixTrack->playback, playback);
+
   if(playback.As<Napi::Object>().Has("filter")){
     Dsp::Params params;
     params[0] = SAMPLE_RATE;
-    params[1] = SAMPLE_RATE/2 * state.mixTracks[mixTrackId]->playback->filter; // cutoff frequency
+    params[1] = SAMPLE_RATE/2 * mixTrack->playback->filter; // cutoff frequency
     params[2] = 1.25; // Q
-     state.mixTracks[mixTrackId]->filter->setParams(params);
+    mixTrack->filter->setParams(params);
   }
     
   if(!nextPlayback.IsUndefined()){
     if(nextPlayback.IsNull()){
-      state.mixTracks[mixTrackId]->hasNext = false;
+      mixTrack->hasNext = false;
     }else {
-      state.mixTracks[mixTrackId]->nextPlayback = initMixTrackPlayback();
+      mixTrack->nextPlayback = initMixTrackPlayback();
       setMixTrackPlayback(state.mixTracks[mixTrackId]->nextPlayback, nextPlayback);
-      state.mixTracks[mixTrackId]->hasNext = true;
+      mixTrack->hasNext = true;
     }
   }
 }

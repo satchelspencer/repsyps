@@ -13,6 +13,14 @@ ringbuffer* ringbuffer_new(int size){
   return buf;
 }
 
+void ringbuffer_clear(ringbuffer* buf){
+  for(int i=0;i<CHANNEL_COUNT;i++){
+    for(int sample=0;sample<buf->size;sample++) buf->channels[i][sample] = 0;
+  }
+  buf->head = 0;
+  buf->tail = 0;
+}
+
 void ringbuffer_delete(ringbuffer* buf){
   for(int i=0;i<CHANNEL_COUNT;i++){
     delete [] buf->channels[i];

@@ -14,6 +14,8 @@ typedef struct{
 
 ringbuffer* ringbuffer_new(int size);
 
+void ringbuffer_clear(ringbuffer* buf);
+
 void ringbuffer_delete(ringbuffer* buf);
 
 #endif

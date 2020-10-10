@@ -50,15 +50,20 @@ int paCallbackMethod(
 
   for(auto mixTrackPair: state->mixTracks){
     mixTrack* mixTrack = mixTrackPair.second;
-    if(
-      !mixTrack || mixTrack->removed || mixTrack->safe ||
-      !mixTrack->playback->playing || mixTrack->playback->chunks.size() == 0
-    ) continue;
+    if(!mixTrack || mixTrack->removed || mixTrack->safe) continue;
+        
     Stretcher* stretcher;
     if(mixTrack->playback->preservePitch) stretcher = mixTrack->pvstretcher;
     else stretcher = mixTrack->restretcher;
-
     int stretcherAvailable = stretcher->getAvailable();
+
+    if(!mixTrack->playback->playing || mixTrack->playback->chunks.size() == 0){
+      if(stretcherAvailable > 0){
+        stretcher->reset();
+        ringbuffer_clear(mixTrack->inputBuffer);
+      }
+      continue;
+    }
 
     while(stretcherAvailable < framesPerBuffer){
       /* read from source >> inputbuffer */

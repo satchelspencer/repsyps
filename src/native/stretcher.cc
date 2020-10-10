@@ -45,7 +45,10 @@ void REStretcher::setTimeRatio(double ratio){
 
 void REStretcher::setPitchRatio(double ratio){}
 
-void REStretcher::reset(){}
+void REStretcher::reset(){
+  ringbuffer_clear(outputRing);
+  src_reset(resampler);
+}
 
 void REStretcher::process(float **input, int samples){
   float* head = inputBuffer;
