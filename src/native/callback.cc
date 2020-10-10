@@ -200,6 +200,21 @@ int paCallbackMethod(
     
   }
 
+  if(rec != NULL && rec->started){
+    recordChunk* chunk = rec->chunks[rec->chunkIndex];
+    for(unsigned int frameIndex=0; frameIndex<framesPerBuffer; frameIndex++ ){
+      for(int channelIndex=0;channelIndex < CHANNEL_COUNT;channelIndex++){
+        chunk->channels[channelIndex][chunk->used] = out[(frameIndex*2) + channelIndex];
+      }
+      chunk->used++;
+      rec->length++;
+      if(chunk->used >= chunk->size){ //chunkFilled
+        rec->chunkIndex++;
+        chunk = rec->chunks[rec->chunkIndex];
+      } 
+    }
+  }
+  
   state->previewBuffer->head = (state->previewBuffer->head + framesPerBuffer) % state->previewBuffer->size;
   
   /* update time and misc */
