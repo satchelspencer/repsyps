@@ -7,7 +7,7 @@ import * as Actions from 'render/redux/actions'
 import { SelectableButton, Horizontal } from 'render/components/misc'
 
 export interface AlphaProps {
-  trackId: string
+  sourceId: string
 }
 
 interface SetterProps {
@@ -27,18 +27,18 @@ const Setter = (props: SetterProps) => {
 }
 
 const Alpha = memo((props: AlphaProps) => {
-  const alpha = useSelector((state) => state.sources[props.trackId].boundsAlpha),
+  const alpha = useSelector((state) => state.sources[props.sourceId].boundsAlpha),
     dispatch = useDispatch(),
     setAlpha = useCallback(
       (value) => {
         dispatch(
           Actions.setSourceAlpha({
-            sourceId: props.trackId,
+            sourceId: props.sourceId,
             boundsAlpha: value,
           })
         )
       },
-      [props.trackId, name]
+      [props.sourceId, name]
     )
 
   return (

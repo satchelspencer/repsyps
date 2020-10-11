@@ -26,7 +26,6 @@ const Filter = memo((props: FilterProps) => {
     getTrackPlayback = useMemo(() => Selectors.makeGetTrackPlayback(props.trackId), []),
     realFilter = useSelector((state) => getTrackPlayback(state, props.trackId)).playback
       .filter,
-    name = useSelector((state) => state.sources[props.trackId].name),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch(),
@@ -39,7 +38,7 @@ const Filter = memo((props: FilterProps) => {
           })
         )
       },
-      [props.trackId, name]
+      [props.trackId]
     ),
     controlParams = useMemo(
       () => ({

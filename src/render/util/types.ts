@@ -420,6 +420,7 @@ export interface MenuState {
   editing: boolean
   trackPlaying: boolean
   playing: boolean
+  sourceId: string | null
   settings: Settings
 }
 

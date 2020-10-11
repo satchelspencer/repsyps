@@ -115,16 +115,16 @@ const SourceTrackOffset = memo((props: SourceTrackOffsetProps) => {
 })
 
 const BoundsControl = memo((props: BoundsControlProps) => {
-  const { playback, editing, sourceTrackEditing } = useSelector(
+  const { playback, editing, sourceTrackEditing, sourceId } = useSelector(
       (state) => state.live.tracks[props.trackId]
     ),
-    { bounds, sourceTracks } = useSelector((state) => state.sources[props.trackId]),
+    { bounds, sourceTracks } = useSelector((state) => state.sources[sourceId]),
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection<string>('track'),
     snap = useSelector((state) => state.settings.snap),
     hasTimeBase = !!bounds.length,
     clength = playback.chunks[1],
-    inferPayload = useMemo(() => ({ sourceId: props.trackId }), [props.trackId]),
+    inferPayload = useMemo(() => ({ sourceId }), [sourceId]),
     inferLR = useCallback(() => {
       dispatch(Actions.inferBounds({ ...inferPayload, direction: 'both' }))
     }, [inferPayload]),
@@ -162,7 +162,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
       () =>
         dispatch(
           Actions.setSourceBounds({
-            sourceId: props.trackId,
+            sourceId,
             bounds: [],
           })
         ),
@@ -223,7 +223,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
           <Icon name="cheveron-right" />
         </FillButton>
       </Horizontal>
-      <Alpha trackId={props.trackId} />
+      <Alpha sourceId={sourceId} />
       <SourceTracks>
         {Object.keys(playback.sourceTracksParams).map((sourceTrackId) => (
           <SourceTrackOffset

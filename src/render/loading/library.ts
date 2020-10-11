@@ -22,8 +22,8 @@ export function getLibraryProject(
     }),
     tracks: _.mapValues(
       state.live.tracks,
-      (track, trackId): Types.LibraryTrack => {
-        const source = state.sources[trackId],
+      (track): Types.LibraryTrack => {
+        const source = state.sources[track.sourceId],
           avgPeriod = Selectors.getAvgPeriod(source.bounds) * source.boundsAlpha
 
         periodSum += avgPeriod

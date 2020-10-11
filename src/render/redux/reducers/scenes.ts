@@ -71,7 +71,10 @@ export function updateSceneIndex(
                 ...cuedTrack.playback,
                 chunks:
                   !cuedTrack.playback.aperiodic && !firstCue && forceReset
-                    ? getChunksFromBounds(0, state.sources[trackId].bounds)
+                    ? getChunksFromBounds(
+                        0,
+                        state.sources[state.live.tracks[trackId].sourceId].bounds
+                      )
                     : cuedTrack.playback.chunks,
                 playing: false,
                 muted: false,

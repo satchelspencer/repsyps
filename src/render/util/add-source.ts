@@ -16,10 +16,12 @@ export default function useAddSource() {
       buttonLabel: 'Add Source',
     })
     if (paths) {
-      const id = getId(paths[0])
+      const id = getId(paths[0]),
+        sourceId = store.getState().live.tracks[trackId].sourceId
+
       store.dispatch(
         Actions.createTrackSource({
-          sourceId: trackId,
+          sourceId,
           sourceTrackId: id,
           sourceTrack: {
             name: pathUtils.basename(paths[0], pathUtils.extname(paths[0])),

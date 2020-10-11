@@ -21,13 +21,12 @@ export interface DelayProps {
 }
 
 const Delay = memo((props: DelayProps) => {
-  const { delay, delayGain } = useSelector(
-      (state) => state.live.tracks[props.trackId].playback
-    ),
+  const { playback, sourceId } = useSelector((state) => state.live.tracks[props.trackId]),
+    { delay, delayGain } = playback,
     getTrackPlayback = useMemo(() => Selectors.makeGetTrackPlayback(props.trackId), []),
     realPlayback = useSelector((state) => getTrackPlayback(state, props.trackId))
       .playback,
-    name = useSelector((state) => state.sources[props.trackId].name),
+    name = useSelector((state) => state.sources[sourceId].name),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     period = useSelector((state) => state.playback).period,

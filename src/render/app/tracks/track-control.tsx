@@ -175,7 +175,7 @@ function TrackControls(props: TrackControlsProps) {
     track = useSelector((state) => state.live.tracks[props.trackId]),
     period = useSelector((state) => state.playback.period),
     isSolo = useSelector((state) => getTrackIsSolo(state, props.trackId)),
-    source = useSelector((state) => state.sources[props.trackId]),
+    source = useSelector((state) => state.sources[track.sourceId]),
     hasPreview = useSelector((state) => state.output.preview !== null),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),

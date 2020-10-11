@@ -217,7 +217,7 @@ const Track = memo(
     /* mouse event handlers */
     const selectPlaybackHandlers = useSelectPlayback(trackId),
       resizePlaybackHandlers = useResizePlayback(trackId),
-      boundHandlers = useResizeBounds(trackId),
+      boundHandlers = useResizeBounds(track.sourceId),
       selectBoundHandlers = useSelectBound(trackId),
       playbackBoundHandlers = usePlaybackBound(trackId),
       offsetTrackHandlers = useOffsetTrack(trackId)
@@ -385,7 +385,7 @@ export interface TrackContainerProps {
 
 export default function TrackContainer(props: TrackContainerProps) {
   const track = useSelector((state) => state.live.tracks[props.trackId]),
-    source = useSelector((state) => state.sources[props.trackId]),
+    source = useSelector((state) => state.sources[track.sourceId]),
     sample = useTrackTiming(props.trackId),
     dispatch = useDispatch(),
     wrapperRef = useRef(null),
@@ -404,7 +404,7 @@ export default function TrackContainer(props: TrackContainerProps) {
       else !track.selected && dispatch(Actions.selectTrackExclusive(props.trackId))
       if (hasMissingSource) dispatch(Actions.setModalRoute('relink'))
     }, [props.trackId, isSelecting, onSelect, hasMissingSource]),
-    isLoaded = useSelector((state) => Selectors.getTrackIsLoaded(state, props.trackId)),
+    isLoaded = useSelector((state) => Selectors.getTrackIsLoaded(state, track.sourceId)),
     trackScroll = useSelector((state) => state.settings.trackScroll),
     inferredSample = sample || track.playback.chunks[0],
     handleMouseLeave = useCallback(() => {

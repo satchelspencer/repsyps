@@ -15,7 +15,7 @@ export interface ClickPos {
 }
 
 /* click and drag to move a boundary */
-export function useResizeBounds(trackId: string) {
+export function useResizeBounds(sourceId: string) {
   const dispatch = useDispatch(),
     [boundIndex, setBoundIndex] = useState(-1)
 
@@ -43,7 +43,7 @@ export function useResizeBounds(trackId: string) {
           const sample = getTimeFromPosition(pos.x, view.snap, view),
             newBounds = [...bounds]
           newBounds[boundIndex] = sample
-          dispatch(Actions.setSourceBounds({ sourceId: trackId, bounds: newBounds }))
+          dispatch(Actions.setSourceBounds({ sourceId, bounds: newBounds }))
         }
         return boundIndex !== -1
       },
@@ -53,7 +53,7 @@ export function useResizeBounds(trackId: string) {
         return boundIndex !== -1
       },
     }),
-    [trackId, boundIndex]
+    [sourceId, boundIndex]
   )
 }
 

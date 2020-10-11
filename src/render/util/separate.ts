@@ -10,7 +10,7 @@ import { getPath } from 'render/loading/app-paths'
 
 export default async function separate(
   trackName: string,
-  trackId: string,
+  sourceId: string,
   dispatch: Dispatch<any>
 ) {
   const cacheDir = getPath('cache'),
@@ -22,20 +22,20 @@ export default async function separate(
     cacheHit = !!(await fs.promises.stat(vocalCachePath).catch((e) => false))
 
   if (cacheHit) {
-    await audio.loadSource(vocalCachePath, trackId + '_vocal')
-    await audio.loadSource(instruCachePath, trackId + '_instru')
+    await audio.loadSource(vocalCachePath, sourceId + '_vocal')
+    await audio.loadSource(instruCachePath, sourceId + '_instru')
   } else {
-    await audio.separateSource(trackId)
-    audio.exportSource(vocalCachePath, trackId + '_vocal')
-    audio.exportSource(instruCachePath, trackId + '_instru')
+    await audio.separateSource(sourceId)
+    audio.exportSource(vocalCachePath, sourceId + '_vocal')
+    audio.exportSource(instruCachePath, sourceId + '_instru')
   }
 
   dispatch(
     batchActions(
       [
         Actions.createTrackSource({
-          sourceId: trackId,
-          sourceTrackId: trackId + '_vocal',
+          sourceId,
+          sourceTrackId: sourceId + '_vocal',
           sourceTrack: {
             name: 'Vocal - ' + trackName,
             source: vocalCachePath,
@@ -46,8 +46,8 @@ export default async function separate(
           },
         }),
         Actions.createTrackSource({
-          sourceId: trackId,
-          sourceTrackId: trackId + '_instru',
+          sourceId,
+          sourceTrackId: sourceId + '_instru',
           sourceTrack: {
             name: 'Instru - ' + trackName,
             source: instruCachePath,

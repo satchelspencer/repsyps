@@ -92,6 +92,7 @@ interface SourceTrackProps {
 
 const SourceTrack = memo((props: SourceTrackProps) => {
   const dispatch = useDispatch(),
+    sourceId = useSelector((state) => state.live.tracks[props.trackId].sourceId),
     setVisible = useCallback(
       () =>
         dispatch(
@@ -106,7 +107,7 @@ const SourceTrack = memo((props: SourceTrackProps) => {
       () =>
         dispatch(
           Actions.removeTrackSource({
-            sourceId: props.trackId,
+            sourceId,
             sourceTrackId: props.sourceTrackId,
           })
         ),
@@ -196,7 +197,9 @@ const SourceTracks = (props: TrackVolumeProps) => {
     visibleSourceTrackId = useSelector(
       (state) => state.live.tracks[props.trackId].visibleSourceTrack
     ),
-    source = useSelector((state) => state.sources[props.trackId]),
+    source = useSelector(
+      (state) => state.sources[state.live.tracks[props.trackId].sourceId]
+    ),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId))
 

@@ -154,7 +154,7 @@ export default function init() {
           click: () => {
             const state = store.getState(),
               selectedTrackId = Selectors.getSelectedTrackId(state),
-              name = state.sources[selectedTrackId].name
+              name = state.sources[state.live.tracks[selectedTrackId].sourceId].name
             if (!selectedTrackId) return
             const path = showSaveDialog({
               nameFieldLabel: 'Track Name',
@@ -269,7 +269,7 @@ export default function init() {
           click: () =>
             dispatch(
               Actions.inferBounds({
-                sourceId: menuState.selectedTrackId,
+                sourceId: menuState.sourceId,
                 direction: 'both',
               })
             ),
@@ -279,7 +279,7 @@ export default function init() {
           click: () =>
             dispatch(
               Actions.inferBounds({
-                sourceId: menuState.selectedTrackId,
+                sourceId: menuState.sourceId,
                 direction: 'left',
               })
             ),
@@ -289,7 +289,7 @@ export default function init() {
           click: () =>
             dispatch(
               Actions.inferBounds({
-                sourceId: menuState.selectedTrackId,
+                sourceId: menuState.sourceId,
                 direction: 'right',
               })
             ),
@@ -299,7 +299,7 @@ export default function init() {
           click: () =>
             dispatch(
               Actions.setSourceBounds({
-                sourceId: menuState.selectedTrackId,
+                sourceId: menuState.sourceId,
                 bounds: [],
               })
             ),
@@ -1273,7 +1273,7 @@ export default function init() {
         return currentName || 'untitled'
       } else {
         const firstTrack = state.live.scenes[sceneIndex].trackIds[0],
-          firstTrackName = firstTrack && state.sources[firstTrack].name
+          firstTrackName = firstTrack && state.sources[state.live.tracks[firstTrack].sourceId].name
         return firstTrackName || 'untitled'
       }
     }

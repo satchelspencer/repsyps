@@ -162,7 +162,7 @@ export const makeGetControlAbsValue = () => {
       },
       (state: Types.State, control: Types.Control) => {
         const trackId = getControlTrackId(state, control)
-        return trackId && state.sources[trackId].sourceTracks
+        return trackId && state.sources[state.live.tracks[trackId].sourceId].sourceTracks
       },
       (state: Types.State) => state.playback,
       (_, control: Types.Control) => control,
@@ -269,7 +269,8 @@ export const makeGetTrackPlaybackSelector = () => {
       getTrackPrevIndex,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].playback,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].nextPlayback,
-      (state: Types.State, trackId: string) => state.sources[trackId].boundsAlpha,
+      (state: Types.State, trackId: string) =>
+        state.sources[state.live.tracks[trackId].sourceId].boundsAlpha,
       getControls,
       getPrevControls,
       getCurrentControlValues,
@@ -438,12 +439,12 @@ export const getBindings = createSelector(
 
 export const getTrackIsLoaded = (
   state: Types.State,
-  trackId: string,
+  sourceId: string,
   sourceTrackId?: string
 ) => {
-  sourceTrackId = sourceTrackId || trackId
-  const source = state.sources[trackId],
-    sourceTrack = source && state.sources[trackId].sourceTracks[sourceTrackId]
+  sourceTrackId = sourceTrackId || sourceId
+  const source = state.sources[sourceId],
+    sourceTrack = source && state.sources[sourceId].sourceTracks[sourceTrackId]
   return sourceTrack && sourceTrack.loaded
 }
 
@@ -606,6 +607,10 @@ export const getMenuState = createSelector(
       const track = getSelectedTrack(state)
       return track && track.playback.playing
     },
+    (state: Types.State) => {
+      const track = getSelectedTrack(state)
+      return track && track.sourceId
+    },
     (state: Types.State) => state.playback.playing,
   ],
   (
@@ -616,6 +621,7 @@ export const getMenuState = createSelector(
     selectedTrackId,
     editing,
     trackPlaying,
+    sourceId,
     playing
   ): Types.MenuState => {
     return {
@@ -626,6 +632,7 @@ export const getMenuState = createSelector(
       editing,
       trackPlaying,
       playing,
+      sourceId,
       settings,
     }
   }

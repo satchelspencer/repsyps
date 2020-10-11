@@ -130,7 +130,9 @@ const Recording = memo(
     const handleClick = useCallback(async () => {
         if (recLength) {
           const state = store.getState(),
-            fromSource = fromTrack ? state.sources[fromTrack] : null,
+            fromSource = fromTrack
+              ? state.sources[state.live.tracks[fromTrack].sourceId]
+              : null,
             fromSourceBounds = fromSource ? fromSource.bounds : [],
             isLoaded = fromSource && fromSource.sourceTracks[fromTrack].loaded
 

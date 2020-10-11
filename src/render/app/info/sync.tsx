@@ -23,7 +23,9 @@ const Sync = memo((props: SyncProps) => {
     if (chunkIndex !== -1) setIsLoop(!!chunks[chunkIndex + 1])
   }, [chunks, chunkIndex])
 
-  const { bounds, boundsAlpha } = useSelector((state) => state.sources[props.trackId]),
+  const { bounds, boundsAlpha } = useSelector(
+      (state) => state.sources[state.live.tracks[props.trackId].sourceId]
+    ),
     dispatch = useDispatch(),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),

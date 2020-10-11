@@ -306,15 +306,17 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.copyTrackBounds, (state, { payload }) => {
-    const from = state.sources[payload.src],
-      to = state.sources[payload.dest]
+    const fromSourceId = state.live.tracks[payload.src].sourceId,
+      toSourceId = state.live.tracks[payload.dest].sourceId,
+      from = state.sources[fromSourceId],
+      to = state.sources[toSourceId]
 
     if (from && to)
       return {
         ...state,
         sources: {
           ...state.sources,
-          [payload.dest]: {
+          [toSourceId]: {
             ...to,
             bounds: [...from.bounds],
           },
