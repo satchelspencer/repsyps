@@ -137,6 +137,7 @@ export interface NativeTrackChange {
 }
 
 export interface Track extends NativeTrack {
+  sourceId: string | null
   selected: boolean
   editing: boolean
   cues: Cue[]
@@ -149,6 +150,7 @@ export interface Track extends NativeTrack {
 }
 
 export interface PersistentTrack {
+  sourceId: string | null
   visibleSourceTrack: string
   playback: PersitentTrackPlayback
   cues: Cue[]

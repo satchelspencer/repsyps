@@ -180,6 +180,7 @@ const Recording = memo(
                   }),
                   Actions.addTrack({
                     trackId: sourceId,
+                    sourceId,
                     sourceTracksParams: {
                       [sourceId]: {
                         volume: 1,

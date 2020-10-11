@@ -53,7 +53,6 @@ export function scan(path: string) {
         const raw = await fs.promises.readFile(path, 'utf-8'),
           state = getProjectFromRaw(raw),
           libState = state && getLibraryProject(state, stat.mtimeMs)
-
         if (libState) newProjects[path] = libState
       }
       next()

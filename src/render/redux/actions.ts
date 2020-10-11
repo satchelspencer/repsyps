@@ -52,6 +52,7 @@ export const addLibraryProjects = createAction<Types.LibraryProjects>('ADD_LIB_P
 
 export const addTrack = createAction<{
   trackId: string
+  sourceId: string | null
   sourceTracksParams: Types.TrackSourcesParams
   editing?: boolean
 }>('ADD_TRACK')
@@ -74,6 +75,7 @@ export function addTrackAndSource(path: string) {
       }),
       addTrack({
         trackId: id,
+        sourceId: id,
         sourceTracksParams: { [id]: { volume: 1, offset: 0 } },
         editing: true,
       }),

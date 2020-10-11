@@ -38,6 +38,7 @@ export const defaultPlayback: Types.Playback = {
     nextCueIndex: -1,
     playLock: true,
     lastPeriod: 0,
+    sourceId: null
   },
   defaultBindings: Types.Bindings = {},
   defaultBinding: Types.Binding = {

@@ -9,22 +9,53 @@ import * as Actions from 'render/redux/actions'
 
 import { appendToLibrary } from './library'
 import { apply, version, Migration, Versioned } from './apply-migration'
+import * as PastTypes from './past-types'
 
-const migration: Migration<any, any> = null,
-  latest = '0.0.0'
+const addExplicitSourceId: Migration<
+  PastTypes.PersistentStateV0,
+  Types.PersistentState
+> = {
+  fromVersion: '0.0.0',
+  toVersion: '0.0.1',
+  apply: (state) => {
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        tracks: _.mapValues(state.live.tracks, (track, trackId) => {
+          return {
+            ...track,
+            sourceId: trackId,
+          }
+        }),
+      },
+    }
+  },
+}
+
+const persistentStateMigration = addExplicitSourceId,
+  latestPersistentState = '0.0.1'
+
+const localPersistentStateMigration: Migration<any, any> = null,
+  latestLocalPersistentState = '0.0.0'
 
 export function loadLocalStorage(store: Store<Types.State>) {
   const raw = localStorage.getItem('repsyps'),
     lraw = localStorage.getItem('repsyps:local')
   try {
-    const lstate = JSON.parse(lraw) as Versioned<Types.LocalPersistentState>
-    if (lstate.version === latest)
-      store.dispatch(Actions.loadLocalPersisted(lstate.state))
+    const lstate = JSON.parse(lraw),
+      migrated = apply(lstate, localPersistentStateMigration) as Versioned<
+        Types.LocalPersistentState
+      >
+    if (lstate.version === latestLocalPersistentState)
+      store.dispatch(Actions.loadLocalPersisted(migrated.state))
   } catch (e) {}
   try {
     const state = JSON.parse(raw),
-      migrated = apply(state, migration) as Versioned<Types.PersistentState>
-    if (migrated.version === latest)
+      migrated = apply(state, persistentStateMigration) as Versioned<
+        Types.PersistentState
+      >
+    if (migrated.version === latestPersistentState)
       store.dispatch(Actions.loadPersisted({ state: migrated.state, reset: true }))
   } catch (e) {}
 }
@@ -34,15 +65,23 @@ export function saveLocalStorage(store: Store<Types.State>) {
     persisted = Selectors.getPersistentState(state),
     lpersisted = Selectors.getLocalPersistentState(state)
 
-  localStorage.setItem('repsyps', JSON.stringify(version(persisted, latest)))
-  localStorage.setItem('repsyps:local', JSON.stringify(version(lpersisted, latest)))
+  localStorage.setItem(
+    'repsyps',
+    JSON.stringify(version(persisted, latestPersistentState))
+  )
+  localStorage.setItem(
+    'repsyps:local',
+    JSON.stringify(version(lpersisted, latestLocalPersistentState))
+  )
 }
 
 export function getProjectFromRaw(raw: string) {
   try {
     const state = JSON.parse(raw),
-      migrated = apply(state, migration) as Versioned<Types.PersistentState>
-    if (migrated.version === latest) {
+      migrated = apply(state, persistentStateMigration) as Versioned<
+        Types.PersistentState
+      >
+    if (migrated.version === latestPersistentState) {
       return migrated.state
     } else return null
   } catch (e) {
@@ -153,14 +192,14 @@ export function loadProjectScene(
 export function exportCurrentScene(path: string, store: Store<Types.State>) {
   const state = store.getState(),
     sceneState = Selectors.getSceneExport(state, state.live.sceneIndex, path)
-  fs.writeFileSync(path, JSON.stringify(version(sceneState, latest)))
+  fs.writeFileSync(path, JSON.stringify(version(sceneState, latestPersistentState)))
   appendToLibrary(store, path)
 }
 
 export function saveProject(path: string, store: Store<Types.State>) {
   store.dispatch(Actions.setSaveStatus({ saved: true, path: path }))
   const bindings = Selectors.getPersistentState(store.getState())
-  fs.writeFileSync(path, JSON.stringify(version(bindings, latest)))
+  fs.writeFileSync(path, JSON.stringify(version(bindings, latestPersistentState)))
   appendToLibrary(store, path)
 }
 
