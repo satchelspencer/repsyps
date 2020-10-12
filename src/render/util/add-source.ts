@@ -19,20 +19,21 @@ export default function useAddSource() {
       const id = getId(paths[0]),
         sourceId = store.getState().live.tracks[trackId].sourceId
 
-      store.dispatch(
-        Actions.createTrackSource({
-          sourceId,
-          sourceTrackId: id,
-          sourceTrack: {
-            name: pathUtils.basename(paths[0], pathUtils.extname(paths[0])),
-            source: paths[0],
-            loaded: false,
-            missing: false,
-            streamIndex: 0,
-            base: null,
-          },
-        })
-      )
+      if (sourceId)
+        store.dispatch(
+          Actions.createTrackSource({
+            sourceId,
+            sourceTrackId: id,
+            sourceTrack: {
+              name: pathUtils.basename(paths[0], pathUtils.extname(paths[0])),
+              source: paths[0],
+              loaded: false,
+              missing: false,
+              streamIndex: 0,
+              base: null,
+            },
+          })
+        )
     }
   }, [])
 }

@@ -64,13 +64,13 @@ if (!hasLock) app.quit()
 else {
   /* file association opening */
   let fileQueue: string[] = [],
-    renderer: Electron.WebContents = null
+    renderer: Electron.WebContents | null = null
 
   ipcMain.on('connect', (e: Electron.IpcMainEvent) => {
     console.log('ipc connected')
     mainWindow.webContents.setZoomFactor(1)
     renderer = e.sender
-    fileQueue.forEach((file) => renderer.send('openFile', file))
+    fileQueue.forEach((file) => renderer?.send('openFile', file))
     fileQueue = []
   })
 

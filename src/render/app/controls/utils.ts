@@ -63,9 +63,9 @@ export function getControlName(control: Types.Control) {
       : `Scene ${control.relativeSceneIndex < 0 ? '-' : ''}${control.relativeSceneIndex}`
   else if ('periodDelta' in control)
     return `Speed ${control.periodDelta < 0 ? 'Up' : 'Down'}`
-  else if ('trackStep' in control)
+  else if ('trackStep' in control && control.trackStep)
     return control.trackStep > 0 ? 'Next Track' : 'Prev Track'
-  else if ('sceneStep' in control)
+  else if ('sceneStep' in control && control.sceneStep)
     return control.sceneStep > 0 ? 'Next Scene' : 'Prev Scene'
   else if ('jog' in control) return `${trackIndex2Str(control.trackIndex)} Jog`
   else if ('playPause' in control)
@@ -81,7 +81,7 @@ const propIcons = {
   delayGain: 'echo',
 }
 
-export function getIcon(control: Types.Control): string {
+export function getIcon(control: Types.Control): string | null {
   if ('globalProp' in control) return control.globalProp === 'volume' ? 'volume' : 'timer'
   else if ('sourceTrackProp' in control) return 'wave'
   else if ('trackProp' in control) return propIcons[control.trackProp]

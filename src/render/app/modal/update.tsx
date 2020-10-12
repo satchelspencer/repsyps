@@ -39,7 +39,7 @@ const AboutWrapper = ctyled.div.styles({
 `
 
 export interface UpdateProps {
-  updateStatus: UpdateStatus
+  updateStatus: UpdateStatus | null
   autoUpdater: any
 }
 

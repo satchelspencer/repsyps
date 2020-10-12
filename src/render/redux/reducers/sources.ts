@@ -12,7 +12,7 @@ import inferTimeBase from 'render/util/infer-timebase'
 
 export function makeSourceTracksRelative(
   source: Types.Source,
-  path: string
+  path: string | null
 ): Types.Source {
   const base = path && pathUtils.dirname(path)
   return {
@@ -21,7 +21,7 @@ export function makeSourceTracksRelative(
       if (sourceTrack.source && pathUtils.isAbsolute(sourceTrack.source) && path)
         return {
           ...sourceTrack,
-          source: pathUtils.relative(base, sourceTrack.source),
+          source: pathUtils.relative(base ?? '', sourceTrack.source),
           base,
         }
       else return sourceTrack
@@ -32,12 +32,13 @@ export function makeSourceTracksRelative(
 export default createReducer(defaultState, (handle) => [
   handle(Actions.setTrackSourceParams, (state, { payload }) => {
     const trackId =
-        payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
+        payload.trackId ||
+        Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0),
       sourceTrackId =
         payload.sourceTrackId ||
         (trackId &&
           _.keys(state.live.tracks[trackId].playback.sourceTracksParams)[
-            payload.sourceTrackIndex
+            payload.sourceTrackIndex ?? 0
           ])
 
     if (!trackId || !sourceTrackId) return state
@@ -69,12 +70,13 @@ export default createReducer(defaultState, (handle) => [
   }),
   handle(Actions.soloTrackSource, (state, { payload }) => {
     const trackId =
-        payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex),
+        payload.trackId ||
+        Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0),
       sourceTrackId =
         payload.sourceTrackId ||
         (trackId &&
           _.keys(state.live.tracks[trackId].playback.sourceTracksParams)[
-            payload.sourceTrackIndex
+            payload.sourceTrackIndex ?? 0
           ])
 
     if (!trackId || !sourceTrackId) return state
@@ -308,10 +310,10 @@ export default createReducer(defaultState, (handle) => [
   handle(Actions.copyTrackBounds, (state, { payload }) => {
     const fromSourceId = state.live.tracks[payload.src].sourceId,
       toSourceId = state.live.tracks[payload.dest].sourceId,
-      from = state.sources[fromSourceId],
-      to = state.sources[toSourceId]
+      from = state.sources[fromSourceId ?? ''],
+      to = state.sources[toSourceId ?? '']
 
-    if (from && to)
+    if (fromSourceId && toSourceId)
       return {
         ...state,
         sources: {

@@ -253,7 +253,9 @@ const Cues = memo((props: CuesProps) => {
     ),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
-    { name } = useSelector((state) => state.sources[sourceId]),
+    name = useSelector((state) =>
+      sourceId === null ? null : state.sources[sourceId]?.name
+    ),
     dispatch = useDispatch(),
     handleAddCue = useCallback(() => {
       dispatch(

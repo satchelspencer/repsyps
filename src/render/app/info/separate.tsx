@@ -11,14 +11,18 @@ import { HeaderContent, FillButton } from 'render/components/misc'
 import SidebarItem from 'render/components/item'
 
 export interface SeparateProps {
-  sourceId: string
+  sourceId: string | null
 }
 
 const Separate = memo((props: SeparateProps) => {
-  const name = useSelector((state) => state.sources[props.sourceId].name),
+  const name =
+      useSelector((state) =>
+        props.sourceId === null ? null : state.sources[props.sourceId].name
+      ) ?? '??',
     dispatch = useDispatch(),
     [loading, setLoading] = useState(false),
     handleSeparate = useCallback(async () => {
+      if (!props.sourceId) return
       setLoading(true)
       await separate(name, props.sourceId, dispatch)
       setLoading(false)

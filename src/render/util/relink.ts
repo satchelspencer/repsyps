@@ -1,5 +1,5 @@
 import electron from 'electron'
-import { Store } from 'redux'
+import { Store, AnyAction } from 'redux'
 import * as _ from 'lodash'
 import pathUtils from 'path'
 import { batchActions } from 'redux-batched-actions'
@@ -24,7 +24,7 @@ export default function relink(
     })
   if (path && path[0]) {
     const oldPath = missingSource.path,
-      actions = []
+      actions: AnyAction[] = []
 
     missing.forEach((source) => {
       if (

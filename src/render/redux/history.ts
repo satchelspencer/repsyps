@@ -7,11 +7,11 @@ import * as Types from 'render/util/types'
 import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 
-let lastPersistent: Types.PersistentState = null,
-  lastPatched: Types.PersistentState = null,
+let lastPersistent: Types.PersistentState | null = null,
+  lastPatched: Types.PersistentState | null = null,
   history: any[] = [],
   index = 0,
-  store: Store<Types.State> = null,
+  store: Store<Types.State> | null = null,
   inSync = true
 
 export function undo() {
@@ -20,7 +20,7 @@ export function undo() {
     const newState = unpatch(clone(lastPatched, false), history[index - 1])
     lastPatched = newState
     index--
-    store.dispatch(Actions.loadPersisted({ state: newState }))
+    store?.dispatch(Actions.loadPersisted({ state: newState }))
   }
 }
 
@@ -30,7 +30,7 @@ export function redo() {
     const newState = patch(clone(lastPatched, false), history[index])
     lastPatched = newState
     index++
-    store.dispatch(Actions.loadPersisted({ state: newState }))
+    store?.dispatch(Actions.loadPersisted({ state: newState }))
   }
 }
 
@@ -46,6 +46,7 @@ export default function initHistory(s: Store<Types.State>) {
       lastPatched = persistent
     }, 500),
     handleUpdate = () => {
+      if (!store) return
       const state = store.getState(),
         persistent = Selectors.getPersistentState(state)
       if (persistent !== lastPersistent) {

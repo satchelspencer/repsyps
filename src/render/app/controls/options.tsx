@@ -48,7 +48,7 @@ export interface OptionsProps {
 function ControlsOptions(props: OptionsProps) {
   const enabled = useSelector((state) => state.live.controlsEnabled),
     dispatch = useDispatch(),
-    handleDisable = useCallback(() => dispatch(Actions.setControlsEnabled(null)), [
+    handleDisable = useCallback(() => dispatch(Actions.setControlsEnabled(false)), [
       enabled,
     ]),
     handleReplay = useResetScene(),

@@ -113,11 +113,11 @@ function Tracks() {
   const scenes = useSelector((state) => state.live.scenes),
     currentSceneIndex = useSelector((state) => state.live.sceneIndex),
     dispatch = useDispatch(),
-    wrapperRef = useRef(null),
+    wrapperRef = useRef<HTMLDivElement | null>(null),
     [vBounds, setVBounds] = useState<number[]>([0, 0]),
     updateVisible = useCallback(() => {
-      const vstart = wrapperRef.current.scrollTop,
-        vend = vstart + wrapperRef.current.offsetHeight
+      const vstart = wrapperRef.current?.scrollTop ?? 0,
+        vend = vstart + (wrapperRef.current?.offsetHeight ?? 0)
 
       setVBounds([vstart, vend])
     }, []),
@@ -146,7 +146,7 @@ function Tracks() {
   const scenesItems: (number | string)[] = scenes
       .reduce((memo, scene, sceneIndex) => {
         return [...memo, sceneIndex, ...scene.trackIds]
-      }, [])
+      }, [] as (number | string)[])
       .slice(1),
     handleSortEnd = useCallback(
       ({ oldIndex, newIndex }) => {

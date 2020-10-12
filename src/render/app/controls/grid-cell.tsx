@@ -54,8 +54,8 @@ const GridCell = memo((props: GridCellProps) => {
     isGlobal = useSelector(
       (state) => !!Selectors.getByPos(state.live.globalControls, position)
     ),
-    absValue = useSelector((state) =>
-      getControlAbsValue(state, control && control.controls[0])
+    absValue = useSelector(
+      (state) => control && getControlAbsValue(state, control.controls[0])
     ),
     normAbsValue = absValue === null ? value : absValue,
     binding = useSelector((state) => getBindingAtPos(state, position)),
@@ -68,7 +68,7 @@ const GridCell = memo((props: GridCellProps) => {
     displayValue = (control && control.absolute ? normAbsValue : value) || 0,
     handleChange = useCallback(
       (value) =>
-        dispatch(Actions.applyControlGroup(position, control, displayValue, value)),
+      control && dispatch(Actions.applyControlGroup(position, control, displayValue, value)),
       [position, control, displayValue, value]
     )
 

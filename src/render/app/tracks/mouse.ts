@@ -15,7 +15,7 @@ export interface ClickPos {
 }
 
 /* click and drag to move a boundary */
-export function useResizeBounds(sourceId: string) {
+export function useResizeBounds(sourceId: string | null) {
   const dispatch = useDispatch(),
     [boundIndex, setBoundIndex] = useState(-1)
 
@@ -38,7 +38,7 @@ export function useResizeBounds(sourceId: string) {
         pos: ClickPos,
         bounds: number[]
       ) {
-        if (!ctxt.editing) return false
+        if (!ctxt.editing || !sourceId) return false
         if (boundIndex !== -1) {
           const sample = getTimeFromPosition(pos.x, view.snap, view),
             newBounds = [...bounds]
@@ -61,7 +61,7 @@ export function useResizeBounds(sourceId: string) {
 export function useOffsetTrack(trackId: string) {
   const dispatch = useDispatch(),
     [startX, setStartX] = useState(-1),
-    [startingOffset, setStartingOffset] = useState(0)
+    [startingOffset, setStartingOffset] = useState<number>(0)
 
   return useMemo(
     () => ({
@@ -69,12 +69,12 @@ export function useOffsetTrack(trackId: string) {
         if (!ctxt.sourceTrackEditing || !shiftKey) return false
         else {
           setStartX(pos.x)
-          setStartingOffset(ctxt.currentEditingOffset)
+          setStartingOffset(ctxt.currentEditingOffset ?? 0)
           return true
         }
       },
       mouseMove(ctxt: ClickEventContext, pos: ClickPos, view: ViewContext) {
-        if (startX !== -1) {
+        if (startX !== -1 && ctxt.sourceTrackEditing) {
           const offset = (pos.x - startX) * canvasScale * view.scale
           dispatch(
             Actions.setTrackSourceParams({
@@ -194,7 +194,7 @@ export function useSelectPlayback(trackId: string) {
         chunks: number[],
         shiftKey: boolean
       ) {
-        if (!ctxt.aperiodic) return false
+        if (!ctxt.aperiodic || ctxt.clickSample === null) return false
         const xPos = getTimeFromPosition(pos.x, view.snap, view),
           dx = Math.abs(xPos - ctxt.clickSample)
 
@@ -268,7 +268,7 @@ export function useSelectBound(trackId: string) {
         view: ViewContext,
         bounds: number[]
       ) {
-        if (!ctxt.aperiodic) return false
+        if (!ctxt.aperiodic || ctxt.clickX === null) return false
         const closeBoundIndex = getBoundIndex(pos.x, view, bounds)
         if (Math.abs(ctxt.clickX - pos.x) < 3 && closeBoundIndex !== -1) {
           dispatch(
@@ -331,6 +331,7 @@ export function usePlaybackBound(trackId: string) {
         shiftKey: boolean,
         chunks: number[]
       ) {
+        if (ctxt.clickSample === null) return false
         const clickX = (ctxt.clickSample - view.start) / view.scale / canvasScale
         if (ctxt.aperiodic || bounds.length < 2 || (!selected && ctxt.clickX === pos.x))
           return false

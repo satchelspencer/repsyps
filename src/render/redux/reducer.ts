@@ -1,4 +1,5 @@
 import { enableBatching } from 'redux-batched-actions'
+import { Reducer } from 'redux'
 import reduceReducers from 'reduce-reducers'
 
 import controlsReducer from './reducers/controls'
@@ -10,11 +11,11 @@ import tracksReducer from './reducers/tracks'
 
 export default enableBatching(
   reduceReducers(
-    controlsReducer,
-    cuesReducer,
-    globalReducer,
-    scenesReducer,
-    sourcesReducer,
-    tracksReducer
+    controlsReducer as any,
+    cuesReducer as any,
+    globalReducer as any,
+    scenesReducer as any,
+    sourcesReducer as any,
+    tracksReducer as any
   )
 )

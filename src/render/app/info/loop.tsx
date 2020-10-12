@@ -48,7 +48,9 @@ function LoopButton(props: LoopButtonProps) {
 const Loop = memo((props: LoopProps) => {
   const { playback, sourceId } = useSelector((state) => state.live.tracks[props.trackId]),
     { chunks } = playback,
-    bounds = useSelector((state) => state.sources[sourceId].bounds),
+    bounds = useSelector((state) =>
+      sourceId === null ? [] : state.sources[sourceId].bounds
+    ),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch(),

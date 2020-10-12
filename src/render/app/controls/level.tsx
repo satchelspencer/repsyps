@@ -64,7 +64,7 @@ function Levels() {
   levels.current.push(maxLevel)
   if (levels.current.length > 20) levels.current.shift()
 
-  const max = Math.max(_.max(levels.current), maxLevel),
+  const max = Math.max(_.max(levels.current) ?? 0, maxLevel),
     clip = max > 1
 
   return (

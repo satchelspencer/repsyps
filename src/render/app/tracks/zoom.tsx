@@ -20,7 +20,7 @@ export default function useZoom(
   container: React.MutableRefObject<any>,
   center: number,
   setCenter: (center: number) => any,
-  setCenterSample: (sample: number) => any,
+  setCenterSample: (sample: number | null) => any,
   width: number,
   sample: number,
   playLocked: boolean,

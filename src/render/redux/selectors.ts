@@ -83,12 +83,12 @@ export const makeGetTrackPrevIndex = () =>
     }
   )
 
-export function defaultValue(value: number) {
+export function defaultValue(value?: number) {
   return value === undefined ? 1 : value
 }
 
 export function pos2str(pos: Types.Position) {
-  return pos ? pos.x + '.' + pos.y : null
+  return pos?.x + '.' + pos?.y
 }
 
 export function str2pos(str: string): Types.Position {
@@ -99,8 +99,9 @@ export function str2pos(str: string): Types.Position {
   }
 }
 
-export function getByPos<T>(grid: Types.Grid<T>, pos: Types.Position): T {
-  return grid[pos2str(pos)]
+export function getByPos<T>(grid: Types.Grid<T>, pos: Types.Position): T | undefined {
+  const key = pos2str(pos)
+  return key === undefined ? key : grid[key]
 }
 
 export const getCurrentControlValues = createSelector([getCurrentScene], (scene) =>
@@ -122,7 +123,7 @@ export const getPrevInitValues = createSelector([getPrevScene], (scene) =>
 export const makeGetControlAtPos = () =>
   createSelector(
     [getControls, getCurrentControlValues, (_, pos: Types.Position) => pos],
-    (controls, values, pos): [Types.ControlGroup, number] => {
+    (controls, values, pos): [Types.ControlGroup | undefined, number] => {
       return [getByPos(controls, pos), defaultValue(getByPos(values, pos))]
     }
   )
@@ -162,29 +163,31 @@ export const makeGetControlAbsValue = () => {
       },
       (state: Types.State, control: Types.Control) => {
         const trackId = getControlTrackId(state, control)
-        return trackId && state.sources[state.live.tracks[trackId].sourceId].sourceTracks
+        return getSourceByTrackId(state, trackId)?.sourceTracks
       },
       (state: Types.State) => state.playback,
       (_, control: Types.Control) => control,
     ],
     (trackPlayback, sourceTracks, playback, control) => {
-      let value = null,
-        prop = null
+      let value: number | null = null,
+        prop: string | null = null
       if (control && 'globalProp' in control) {
         value = playback[control.globalProp]
         prop = control.globalProp
       } else if (!sourceTracks) return value
       else if ('trackProp' in control) {
-        value = trackPlayback[control.trackProp]
+        value = trackPlayback && trackPlayback[control.trackProp]
         prop = control.trackProp
       } else if ('sourceTrackProp' in control) {
         const trackSourceId = _.keys(sourceTracks)[control.sourceTrackIndex]
         if (trackSourceId) {
-          value = trackPlayback.sourceTracksParams[trackSourceId][control.sourceTrackProp]
+          value =
+            trackPlayback &&
+            trackPlayback.sourceTracksParams[trackSourceId][control.sourceTrackProp]
           prop = control.sourceTrackProp
         }
       }
-      if (value !== null) value = mappings[prop].toStandard(value)
+      if (value !== null && prop !== null) value = mappings[prop].toStandard(value)
       return value
     }
   )
@@ -269,8 +272,7 @@ export const makeGetTrackPlaybackSelector = () => {
       getTrackPrevIndex,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].playback,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].nextPlayback,
-      (state: Types.State, trackId: string) =>
-        state.sources[state.live.tracks[trackId].sourceId].boundsAlpha,
+      getSourceByTrackId,
       getControls,
       getPrevControls,
       getCurrentControlValues,
@@ -288,7 +290,7 @@ export const makeGetTrackPlaybackSelector = () => {
       trackPrevIndex,
       playback,
       nextPlayback,
-      boundsAlpha,
+      source,
       controls,
       prevControls,
       values,
@@ -298,7 +300,9 @@ export const makeGetTrackPlaybackSelector = () => {
       enabled,
       selected
     ) => {
-      const relativeSceneIndex = trackIndex < 0 ? -1 : 0
+      const relativeSceneIndex = trackIndex < 0 ? -1 : 0,
+        boundsAlpha = source?.boundsAlpha ?? 1
+
       let newPlayback = applyControlsToPlayback(
           trackIndex,
           playback,
@@ -437,15 +441,23 @@ export const getBindings = createSelector(
   }
 )
 
-export const getTrackIsLoaded = (
+export const getSourceByTrackId = (
   state: Types.State,
-  sourceId: string,
+  trackId?: string
+): Types.Source | null => {
+  const sourceId = state.live.tracks[trackId ?? '']?.sourceId
+  return sourceId === null ? null : state.sources[sourceId]
+}
+
+export const getSourceIsLoaded = (
+  state: Types.State,
+  sourceId: string | null,
   sourceTrackId?: string
 ) => {
-  sourceTrackId = sourceTrackId || sourceId
-  const source = state.sources[sourceId],
-    sourceTrack = source && state.sources[sourceId].sourceTracks[sourceTrackId]
-  return sourceTrack && sourceTrack.loaded
+  if (!sourceId) return null
+  const source = state.sources[sourceId]
+  if (sourceTrackId) return !!source?.sourceTracks[sourceTrackId]?.loaded
+  else return source && _.every(source?.sourceTracks, (st) => st.loaded)
 }
 
 export const makeGetPersistentTrackPlayback = () =>
@@ -693,7 +705,7 @@ export const getAllSources = createSelector(
   (sources) => {
     const results: Types.SourceInfo[] = []
     _.each(sources, (source, sourceId) => {
-      _.each(source.sourceTracks, (sourceTrack, sourceTrackId) => {
+      _.each(source?.sourceTracks, (sourceTrack, sourceTrackId) => {
         if (sourceTrack.streamIndex === 0)
           results.push({
             sourceId,
@@ -735,7 +747,7 @@ export const getMcpFunctions = createSelector(
   (bindings) => {
     const mcps: { [upper: number]: boolean } = {}
     _.each(bindings, (binding) => {
-      if (binding.mcp) {
+      if (binding.mcp && binding.midi) {
         const upper =
           (binding.midi & 0xf000) >> 8 === 224 ? binding.midi & 0xff00 : binding.midi
         mcps[upper] = true

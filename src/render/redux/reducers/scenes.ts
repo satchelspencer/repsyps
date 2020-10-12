@@ -36,10 +36,11 @@ export function updateSceneIndex(
           prevScene.trackIds,
           (trackId) => state.live.tracks[trackId].playback.playing
         ),
-      firstTrack = scene.trackIds[0] && state.live.tracks[scene.trackIds[0]],
+      firstTrackId = _.first(scene.trackIds),
+      firstTrack =
+        firstTrackId === undefined ? undefined : state.live.tracks[firstTrackId],
       resetPeriod =
-        firstTrack &&
-        firstTrack.lastPeriod &&
+        firstTrack?.lastPeriod &&
         (forceReset ||
           sceneIndex !== state.live.sceneIndex + 1 ||
           !state.playback.playing ||
@@ -49,7 +50,10 @@ export function updateSceneIndex(
       ...state,
       playback: {
         ...state.playback,
-        period: resetPeriod ? firstTrack.lastPeriod : state.playback.period,
+        period:
+          resetPeriod && firstTrack?.lastPeriod
+            ? firstTrack.lastPeriod
+            : state.playback.period,
       },
       live: {
         ...state.live,
@@ -73,7 +77,7 @@ export function updateSceneIndex(
                   !cuedTrack.playback.aperiodic && !firstCue && forceReset
                     ? getChunksFromBounds(
                         0,
-                        state.sources[state.live.tracks[trackId].sourceId].bounds
+                        Selectors.getSourceByTrackId(state, trackId)?.bounds ?? []
                       )
                     : cuedTrack.playback.chunks,
                 playing: false,

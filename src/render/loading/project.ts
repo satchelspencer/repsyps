@@ -36,14 +36,14 @@ const addExplicitSourceId: Migration<
 const persistentStateMigration = addExplicitSourceId,
   latestPersistentState = '0.0.1'
 
-const localPersistentStateMigration: Migration<any, any> = null,
+const localPersistentStateMigration: Migration<any, any> | null = null,
   latestLocalPersistentState = '0.0.0'
 
 export function loadLocalStorage(store: Store<Types.State>) {
   const raw = localStorage.getItem('repsyps'),
     lraw = localStorage.getItem('repsyps:local')
   try {
-    const lstate = JSON.parse(lraw),
+    const lstate = JSON.parse(lraw ?? ''),
       migrated = apply(lstate, localPersistentStateMigration) as Versioned<
         Types.LocalPersistentState
       >
@@ -51,7 +51,7 @@ export function loadLocalStorage(store: Store<Types.State>) {
       store.dispatch(Actions.loadLocalPersisted(migrated.state))
   } catch (e) {}
   try {
-    const state = JSON.parse(raw),
+    const state = JSON.parse(raw ?? ''),
       migrated = apply(state, persistentStateMigration) as Versioned<
         Types.PersistentState
       >
@@ -130,8 +130,11 @@ export function loadProjectTrack(
   insertIndex?: number
 ) {
   const state = getPropjectFromFile(path),
-    wrapperScene = state.live.scenes.find((scene) => scene.trackIds.includes(trackId)),
-    singleTrackState: Types.PersistentState = {
+    wrapperScene =
+      state && state.live.scenes.find((scene) => scene.trackIds.includes(trackId))
+
+  if (state && wrapperScene) {
+    const singleTrackState: Types.PersistentState = {
       ...state,
       live: {
         ...state.live,
@@ -145,7 +148,7 @@ export function loadProjectTrack(
       },
       sources: _.pick(state.sources, trackId),
     }
-  if (state) {
+
     store.dispatch(
       Actions.loadScenes({
         state: singleTrackState,
@@ -164,20 +167,21 @@ export function loadProjectScene(
   tracksOnly: boolean,
   insertIndex?: number
 ) {
-  const state = getPropjectFromFile(path),
-    scene: Types.PersistentScene = state.live.scenes[sceneIndex],
-    singleTrackState: Types.PersistentState = {
-      ...state,
-      live: {
-        ...state.live,
-        tracks: _.pickBy(state.live.tracks, (_, trackId) =>
-          scene.trackIds.includes(trackId)
-        ),
-        scenes: state.live.scenes.slice(sceneIndex, sceneIndex + 1),
-      },
-      sources: _.pick(state.sources, scene.trackIds),
-    }
+  const state = getPropjectFromFile(path)
   if (state) {
+    const scene: Types.PersistentScene = state.live.scenes[sceneIndex],
+      singleTrackState: Types.PersistentState = {
+        ...state,
+        live: {
+          ...state.live,
+          tracks: _.pickBy(state.live.tracks, (_, trackId) =>
+            scene.trackIds.includes(trackId)
+          ),
+          scenes: state.live.scenes.slice(sceneIndex, sceneIndex + 1),
+        },
+        sources: _.pick(state.sources, scene.trackIds),
+      }
+
     store.dispatch(
       Actions.loadScenes({
         state: singleTrackState,

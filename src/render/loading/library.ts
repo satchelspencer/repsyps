@@ -23,15 +23,17 @@ export function getLibraryProject(
     tracks: _.mapValues(
       state.live.tracks,
       (track): Types.LibraryTrack => {
-        const source = state.sources[track.sourceId],
-          avgPeriod = Selectors.getAvgPeriod(source.bounds) * source.boundsAlpha
+        const source = track.sourceId === null ? null : state.sources[track.sourceId],
+          avgPeriod =
+            (Selectors.getAvgPeriod(source?.bounds ?? []) ?? 0) *
+            (source?.boundsAlpha ?? 0)
 
         periodSum += avgPeriod
         return {
-          name: source.name,
+          name: source?.name ?? '??',
           avgPeriod: avgPeriod,
           length:
-            source.bounds.length > 1
+            source && source.bounds.length > 1
               ? source.bounds[source.bounds.length - 1] - source.bounds[0]
               : null,
         }
@@ -65,8 +67,8 @@ export function scan(path: string) {
 }
 
 export async function initLibrary(store: Store<Types.State>) {
-  let lastScannedRoot: string = null
-  store.subscribe(async () => {
+  let lastScannedRoot: string | null = null
+  const handleUpdate = async () => {
     const newRoot = store.getState().library.root
     if (newRoot !== lastScannedRoot) {
       lastScannedRoot = newRoot
@@ -74,7 +76,9 @@ export async function initLibrary(store: Store<Types.State>) {
       const projects = await scan(newRoot)
       store.dispatch(Actions.setLibraryState({ scanning: false, projects }))
     }
-  })
+  }
+  store.subscribe(handleUpdate)
+  handleUpdate()
 }
 
 export async function appendToLibrary(store: Store<Types.State>, path: string) {

@@ -47,7 +47,7 @@ function Modal() {
     handleWrapperClick = useCallback(() => {
       dispatch(Actions.setModalRoute(null))
     }, [route]),
-    [updateStatus, setUpdateStatus] = useState<UpdateStatus>(null)
+    [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
 
   useEffect(() => {
     if (isDev) return
@@ -67,20 +67,18 @@ function Modal() {
     if (!playing && updateStatus === 'ready') dispatch(Actions.setModalRoute('update'))
   }, [playing, updateStatus])
 
-  return (
-    route !== null && (
-      <ModalWrapper onClick={handleWrapperClick}>
-        <ModalBody onClick={handleBodyClick}>
-          {route === 'relink' && <Relink />}
-          {route === 'about' && <About />}
-          {route === 'update' && (
-            <Update updateStatus={updateStatus} autoUpdater={autoUpdater} />
-          )}
-          {route === 'changelog' && <ChangeLog />}
-        </ModalBody>
-      </ModalWrapper>
-    )
-  )
+  return route !== null ? (
+    <ModalWrapper onClick={handleWrapperClick}>
+      <ModalBody onClick={handleBodyClick}>
+        {route === 'relink' && <Relink />}
+        {route === 'about' && <About />}
+        {route === 'update' && (
+          <Update updateStatus={updateStatus} autoUpdater={autoUpdater} />
+        )}
+        {route === 'changelog' && <ChangeLog />}
+      </ModalBody>
+    </ModalWrapper>
+  ) : null
 }
 
 export default memo(Modal)

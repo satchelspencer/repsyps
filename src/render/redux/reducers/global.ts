@@ -16,8 +16,8 @@ import { getCuePlayback } from './cues'
 
 export function updateSourcesPaths(
   sources: Types.Sources,
-  lastPath: string,
-  nextPath: string,
+  lastPath: string | null,
+  nextPath: string | null,
   force?: boolean
 ): Types.Sources {
   if (lastPath === nextPath && !force) return sources
@@ -170,7 +170,12 @@ export default createReducer(defaultState, (handle) => [
           track.playback.playing !== track.playback.playing,
         didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback
 
-      if (didAdvancePlayback && payload.commit && track.nextCueIndex !== -1) {
+      if (
+        didAdvancePlayback &&
+        payload.commit &&
+        track.nextCueIndex !== -1 &&
+        track.nextPlayback
+      ) {
         needsUpdate = true
         const appliedCue = track.cues[track.nextCueIndex],
           followingCue = track.cues[track.nextCueIndex + 1],
@@ -191,8 +196,8 @@ export default createReducer(defaultState, (handle) => [
           ...track,
           playback: {
             ...track.playback,
-            chunkIndex: trackTiming.playback.chunkIndex,
-            playing: trackTiming.playback.playing,
+            chunkIndex: trackTiming.playback.chunkIndex ?? -1,
+            playing: trackTiming.playback.playing ?? false,
           },
         }
       } else return track
@@ -210,7 +215,7 @@ export default createReducer(defaultState, (handle) => [
   }),
   handle(Actions.setSaveStatus, (state, { payload: saveStatus }) => {
     const lastPath = state.save.path ? pathUtils.dirname(state.save.path) : '',
-      nextPath = pathUtils.dirname(saveStatus.path)
+      nextPath = saveStatus.path && pathUtils.dirname(saveStatus.path)
 
     return {
       ...state,

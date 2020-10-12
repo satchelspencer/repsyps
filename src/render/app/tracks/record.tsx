@@ -15,6 +15,7 @@ import extend from 'render/util/extend'
 import uid from 'render/util/uid'
 import { waveformLine } from 'render/app/tracks/canvas'
 import * as Actions from 'render/redux/actions'
+import * as Selectors from 'render/redux/selectors'
 import { useTiming } from 'render/components/timing'
 
 import Icon from 'render/components/icon'
@@ -27,7 +28,7 @@ const RecordingWrapper = ctyled.div.attrs({ visible: false }).styles({
   lined: true,
   bg: true,
 }).extend`
-  ${(_, { visible }) => !visible && 'display:none;'}
+  ${(_, { visible }) => (visible ? '' : 'display:none;')}
   z-index:1;
   box-shadow:0 0 10px rgba(0,0,0,0.1);
 `
@@ -102,17 +103,20 @@ const Recording = memo(
       sampleWidth = scale * pwidth,
       start = recLength > sampleWidth ? recLength - sampleWidth : 0
 
-    const canvasRef = useRef(null),
-      ctxt = useRef(null)
+    const canvasRef = useRef<HTMLCanvasElement | null>(null),
+      ctxt = useRef<CanvasRenderingContext2D | null | undefined>(null)
 
     useEffect(() => {
-      ctxt.current = canvasRef.current.getContext('2d')
-      ctxt.current.scale(2, 2)
-      ctxt.current.imageSmoothingEnabled = false
+      ctxt.current = canvasRef.current?.getContext('2d')
+      if (ctxt.current) {
+        ctxt.current.scale(2, 2)
+        ctxt.current.imageSmoothingEnabled = false
+      }
     }, [])
 
     /* main waveform compute */
     useEffect(() => {
+      if (!ctxt.current) return
       if (pos.width) audio.getWaveform('_recording', start, scale, drawBuffer)
 
       ctxt.current.clearRect(0, 0, pwidth, pheight)
@@ -131,15 +135,16 @@ const Recording = memo(
         if (recLength) {
           const state = store.getState(),
             fromSource = fromTrack
-              ? state.sources[state.live.tracks[fromTrack].sourceId]
+              ? Selectors.getSourceByTrackId(state, fromTrack)
               : null,
             fromSourceBounds = fromSource ? fromSource.bounds : [],
-            isLoaded = fromSource && fromSource.sourceTracks[fromTrack].loaded
+            isLoaded =
+              fromSource && fromTrack && fromSource.sourceTracks[fromTrack].loaded
 
-          if (fromSource && !isLoaded) {
+          if (fromSource && fromTrack && !isLoaded) {
             const absPath = pathUtils.resolve(
               state.save.path || '',
-              fromSource.sourceTracks[fromTrack].source
+              fromSource.sourceTracks[fromTrack]?.source
             )
             await audio.loadSource(absPath, fromTrack)
           }
@@ -203,7 +208,7 @@ const Recording = memo(
             audio.removeSource(sourceId)
           }
           setStarted(false)
-        } else {
+        } else if (fromTrack) {
           setStarted(true)
           audio.startRecording(fromTrack)
           dispatch(Actions.updatePlayback({ playing: true }))
@@ -253,7 +258,6 @@ const Recording = memo(
 export default function RecordingContainer() {
   const { recTime, time } = useTiming(),
     enabled = useSelector((state) => state.recording.enabled)
-
   return useMemo(() => {
     return <Recording recLength={recTime} time={time} enabled={enabled} />
   }, [Math.floor(recTime / UPDATE_THRESH), Math.floor(time / UPDATE_THRESH), enabled])

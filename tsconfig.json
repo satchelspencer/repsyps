@@ -10,7 +10,7 @@
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "noEmit": true,
     "skipLibCheck": true,
     "paths": {

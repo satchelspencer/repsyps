@@ -26,10 +26,11 @@ const Delay = memo((props: DelayProps) => {
     getTrackPlayback = useMemo(() => Selectors.makeGetTrackPlayback(props.trackId), []),
     realPlayback = useSelector((state) => getTrackPlayback(state, props.trackId))
       .playback,
-    name = useSelector((state) => state.sources[sourceId].name),
+    name = useSelector((state) =>
+      sourceId === null ? null : state.sources[sourceId].name
+    ),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
-    period = useSelector((state) => state.playback).period,
     dispatch = useDispatch(),
     setGain = useCallback(
       (value) => {

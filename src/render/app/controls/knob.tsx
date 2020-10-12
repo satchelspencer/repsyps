@@ -41,7 +41,7 @@ const getD = (startValue: number, endValue: number, radius: number) => {
 export interface KnobProps {
   value: number
   center: number
-  badMidiValue: number
+  badMidiValue: number | null
   onChange: (newValue: number) => any
   throttle?: number
 }
@@ -52,7 +52,7 @@ export default function Knob(props: KnobProps) {
     [startPos, setStartPos] = useState([0, 0]),
     [startValue, setStartValue] = useState(0),
     [tempValue, setTempValue] = useState(0),
-    lastTempValue = useRef<number>(null),
+    lastTempValue = useRef<number | null>(null),
     displayValue = dragging ? tempValue : value,
     style = useContext(CtyledContext),
     radius = 45,

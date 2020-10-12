@@ -27,12 +27,12 @@ type TrackPlaybackState = {
 }
 
 export default function syncAudio(store: Store<Types.State>) {
-  let lastState: Types.State = null,
+  let lastState: Types.State | null = null,
     playbackSelectors: {
       [trackId: string]: (state: Types.State, trackId: string) => TrackPlaybackState
     } = {},
     lastTrackPlaybacks: { [trackId: string]: TrackPlaybackState } = {},
-    lastGlobalPlayback: Types.Playback = null,
+    lastGlobalPlayback: Types.Playback | null = null,
     loadingSources: { [sourceId: string]: boolean } = {}
 
   const appPath = isDev ? './' : remote.app.getAppPath() + '/'
@@ -60,7 +60,7 @@ export default function syncAudio(store: Store<Types.State>) {
       currentPath = currentState.save.path || ''
 
     if (!lastState || !isEqual(playback, lastGlobalPlayback)) {
-      const change = diff(!lastState ? {} : lastGlobalPlayback, playback)
+      const change = diff(lastGlobalPlayback === null ? {} : lastGlobalPlayback, playback)
       //console.log('update playback', change)
       audio.updatePlayback(change)
       lastGlobalPlayback = playback
@@ -69,84 +69,86 @@ export default function syncAudio(store: Store<Types.State>) {
     trackIds.forEach((trackId) => {
       const trackIsNew = !lastState || !lastTrackIds.includes(trackId),
         sourceId = currentState.live.tracks[trackId].sourceId,
-        source = currentState.sources[sourceId]
+        source = sourceId === null ? null : currentState.sources[sourceId]
 
       if (trackIsNew) playbackSelectors[trackId] = Selectors.makeGetTrackPlayback(trackId)
       const prev = lastTrackPlaybacks[trackId],
         current = playbackSelectors[trackId](currentState, trackId)
 
-      _.keys(current.playback.sourceTracksParams).forEach(async (sourceTrackId) => {
-        const sourceTrack = source.sourceTracks[sourceTrackId],
-          sourceTrackIsNew = !sourceTrack.loaded
+      if (source && sourceId) {
+        _.keys(current.playback.sourceTracksParams).forEach(async (sourceTrackId) => {
+          const sourceTrack = source.sourceTracks[sourceTrackId],
+            sourceTrackIsNew = !sourceTrack.loaded
 
-        if (
-          sourceTrackIsNew &&
-          !loadingSources[sourceTrackId] &&
-          !sourceTrack.missing &&
-          !sourceTrack.streamIndex
-        ) {
-          const trackName = source.name,
-            sourcePath = sourceTrack.source,
-            isAbsolute = sourcePath && pathUtils.isAbsolute(sourcePath),
-            absSorucePath =
-              sourcePath &&
-              (isAbsolute
-                ? sourcePath
-                : pathUtils.resolve(pathUtils.dirname(currentPath), sourcePath))
+          if (
+            sourceTrackIsNew &&
+            !loadingSources[sourceTrackId] &&
+            !sourceTrack.missing &&
+            !sourceTrack.streamIndex
+          ) {
+            const trackName = source.name,
+              sourcePath = sourceTrack.source,
+              isAbsolute = sourcePath && pathUtils.isAbsolute(sourcePath),
+              absSorucePath =
+                sourcePath &&
+                (isAbsolute
+                  ? sourcePath
+                  : pathUtils.resolve(pathUtils.dirname(currentPath), sourcePath))
 
-          loadingSources[sourceTrackId] = true
-          const loadedIds =
-            sourcePath && (await audio.loadSource(absSorucePath, sourceTrackId))
+            loadingSources[sourceTrackId] = true
+            const loadedIds =
+              sourcePath && (await audio.loadSource(absSorucePath, sourceTrackId))
 
-          if (loadedIds && loadedIds.length) {
-            const newTrackActions: Action<any>[] = []
-            loadedIds.forEach((sourceTrackId, index) => {
-              newTrackActions.push(
+            if (loadedIds && loadedIds.length) {
+              const newTrackActions: Action<any>[] = []
+              loadedIds.forEach((sourceTrackId, index) => {
+                newTrackActions.push(
+                  Actions.didLoadTrackSource({
+                    sourceId,
+                    sourceTrackId: sourceTrackId,
+                    loaded: true,
+                    missing: false,
+                  })
+                )
+                if (!source.sourceTracks[sourceTrackId]) {
+                  newTrackActions.push(
+                    Actions.createTrackSource({
+                      sourceId,
+                      sourceTrackId,
+                      sourceTrack: {
+                        name: index + ':' + trackName,
+                        source: sourcePath,
+                        loaded: true,
+                        missing: false,
+                        streamIndex: index, //only first source is primary
+                        base: null,
+                      },
+                    })
+                  )
+                }
+              })
+              store.dispatch(batchActions(newTrackActions, 'LOAD_TRACK'))
+              audio.setMixTrack(trackId, current)
+            } else {
+              store.dispatch(
                 Actions.didLoadTrackSource({
                   sourceId,
                   sourceTrackId: sourceTrackId,
-                  loaded: true,
-                  missing: false,
+                  loaded: false,
+                  missing: true,
                 })
               )
-              if (!source.sourceTracks[sourceTrackId]) {
-                newTrackActions.push(
-                  Actions.createTrackSource({
-                    sourceId,
-                    sourceTrackId,
-                    sourceTrack: {
-                      name: index + ':' + trackName,
-                      source: sourcePath,
-                      loaded: true,
-                      missing: false,
-                      streamIndex: index, //only first source is primary
-                      base: null,
-                    },
-                  })
-                )
-              }
-            })
-            store.dispatch(batchActions(newTrackActions, 'LOAD_TRACK'))
-            audio.setMixTrack(trackId, current)
-          } else {
-            store.dispatch(
-              Actions.didLoadTrackSource({
-                sourceId,
-                sourceTrackId: sourceTrackId,
-                loaded: false,
-                missing: true,
-              })
-            )
+            }
+            delete loadingSources[sourceTrackId]
           }
-          delete loadingSources[sourceTrackId]
-        }
-      })
+        })
+      }
 
       const trackPlaybackHasChanged =
           trackIsNew ||
           !isEqual(prev.playback, current.playback) ||
           prev.nextPlayback !== current.nextPlayback,
-        trackIsLoaded = _.every(source.sourceTracks, (st) => st.loaded)
+        trackIsLoaded = _.every(source?.sourceTracks, (st) => st.loaded)
 
       if (trackPlaybackHasChanged && trackIsLoaded) {
         const change: Types.NativeTrackChange = {
@@ -173,21 +175,23 @@ export default function syncAudio(store: Store<Types.State>) {
           removedIds.push(trackId)
 
           const track = currentState.live.tracks[trackId],
-            source = currentState.sources[track.sourceId]
+            sourceId = track?.sourceId
 
-          if (track)
+          if (track && sourceId) {
+            const source = currentState.sources[sourceId]
             _.keys(source.sourceTracks).forEach((sourceTrackId) => {
               if (source.sourceTracks[sourceTrackId].loaded) {
                 audio.removeSource(sourceTrackId)
                 unloadActions.push(
                   Actions.didLoadTrackSource({
-                    sourceId: track.sourceId,
+                    sourceId,
                     sourceTrackId,
                     loaded: false,
                   })
                 )
               }
             })
+          }
         }
       })
       if (unloadActions.length)
@@ -237,7 +241,7 @@ export default function syncAudio(store: Store<Types.State>) {
         const didAdvanceChunk =
             track.playback.chunkIndex !== trackTiming.playback.chunkIndex ||
             track.playback.playing !== track.playback.playing,
-          didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback
+          didAdvancePlayback = !!track.nextPlayback && !trackTiming.nextPlayback
 
         return didAdvanceChunk || (didAdvancePlayback && track.nextCueIndex !== -1)
       })
@@ -254,7 +258,8 @@ export default function syncAudio(store: Store<Types.State>) {
     setTimeout(
       update,
       Math.max(
-        UPDATE_PERIODS[lastState.settings.updateRate] - (new Date().getTime() - start),
+        UPDATE_PERIODS[lastState?.settings?.updateRate ?? 'medium'] -
+          (new Date().getTime() - start),
         0
       )
     )

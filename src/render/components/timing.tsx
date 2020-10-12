@@ -62,7 +62,9 @@ export function TimingContextProvider(props: any) {
 
   useEffect(() => {
     listeners[listenerId] = () => setTimingState(currentTiming)
-    return () => delete listeners[listenerId]
+    return () => {
+      delete listeners[listenerId]
+    }
   }, [])
 
   const context = useMemo<TimingContext>(

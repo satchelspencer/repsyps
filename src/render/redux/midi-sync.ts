@@ -26,11 +26,11 @@ const midiFunctions: { [byte: number]: Types.MidiFunctionName } = {
   absValueSelectors: {
     [controlId: string]: (state: Types.State, control: Types.Control) => any
   } = {}
-let lastControlIds = [],
+let lastControlIds: string[] = [],
   midiChanges: { [upperBytes: number]: number } = {},
   midiCounts: { [upperBytes: number]: number } = {},
   mcps: { [upper: number]: boolean } = {},
-  waitingBinding: Types.Binding = null
+  waitingBinding: Types.Binding | null = null
 
 export default async function init(store: Store<Types.State>) {
   const handleMessage = (portName) => {
@@ -42,8 +42,8 @@ export default async function init(store: Store<Types.State>) {
 
       let upper: any,
         leastNote = Infinity,
-        leastUpper: number = null,
-        leastFn: Types.MidiFunctionName = null
+        leastUpper: number | null = null,
+        leastFn: Types.MidiFunctionName | null = null
 
       for (upper in midiChanges) {
         upper = parseInt(upper, 10)
@@ -65,9 +65,9 @@ export default async function init(store: Store<Types.State>) {
       for (let posStr in state.live.bindings) {
         const binding = state.live.bindings[posStr],
           position = Selectors.str2pos(posStr),
-          normValue = midiChanges[binding.midi]
+          normValue = midiChanges[binding.midi ?? '']
 
-        if (binding.waiting) {
+        if (binding.waiting && leastFn && leastUpper) {
           store.dispatch(
             batchActions(
               [
@@ -119,7 +119,8 @@ export default async function init(store: Store<Types.State>) {
                     state.live,
                     control.trackIndex
                   )
-                  if (trackId) call(trackId, 'jog', midiCounts[binding.midi])
+                  if (trackId && binding.midi)
+                    call(trackId, 'jog', midiCounts[binding.midi])
                 } else if ('click' in control) {
                   const trackId = Selectors.getTrackIdByIndex(
                     state.live,

@@ -8,7 +8,7 @@ const SliderWrapper = ctyled.div
   .attrs<{ column?: boolean }>({ column: false })
   .styles({
     align: 'center',
-    column: (_, { column }) => column,
+    column: (_, { column }) => !!column,
     height: (_, { column }) => (column ? '100%' : 1.5),
     width: (_, { column }) => (column ? 1.5 : '100%'),
   }).extendSheet`
@@ -83,7 +83,12 @@ interface SliderProps {
   onChange: (value: number) => any
 }
 
-const getStyle = (column: boolean, range: number, dragOffset: number, value: number) => {
+const getStyle = (
+  column: boolean | undefined,
+  range: number,
+  dragOffset: number | null,
+  value: number
+) => {
   if (value > 1) value = 1
   if (value < 0) value = 0
   return {
@@ -94,10 +99,10 @@ const getStyle = (column: boolean, range: number, dragOffset: number, value: num
 }
 
 function Slider(props: SliderProps) {
-  const wrapper = useRef(null),
-    handle = useRef(null),
+  const wrapper = useRef<HTMLDivElement | null>(null),
+    handle = useRef<HTMLDivElement | null>(null),
     [size, setSize] = useState(0),
-    [dragOffset, setDragOffset] = useState(null),
+    [dragOffset, setDragOffset] = useState<number | null>(null),
     throttledOnChange = useCallback(_.throttle(props.onChange, props.throttle || 100), [
       props.onChange,
     ])
@@ -108,9 +113,9 @@ function Slider(props: SliderProps) {
       const { width, height } = entry.contentRect
       setSize(props.column ? height : width)
     })
-    ro.observe(wrapper.current)
+    if (wrapper.current) ro.observe(wrapper.current)
     return () => ro.disconnect()
-  }, [])
+  }, [wrapper.current])
 
   const handleOffset = handle.current
       ? Math.floor(handle.current[props.column ? 'offsetHeight' : 'offsetWidth'] / 2)
@@ -156,7 +161,7 @@ function Slider(props: SliderProps) {
       [props.column, range, props.value, dragOffset]
     ),
     ghostStyle = useMemo(() => {
-      return getStyle(props.column, range, null, props.ghost)
+      return getStyle(props.column, range, null, props.ghost ?? 0)
     }, [props.column, range, props.ghost])
 
   return (

@@ -59,7 +59,7 @@ export default function init() {
     }
 
     document.addEventListener('focusin', () => {
-      const nodeName = document.activeElement.nodeName,
+      const nodeName = document.activeElement?.nodeName,
         newInInput = nodeName === 'INPUT'
 
       if (inInput !== newInInput) {
@@ -154,7 +154,8 @@ export default function init() {
           click: () => {
             const state = store.getState(),
               selectedTrackId = Selectors.getSelectedTrackId(state),
-              name = state.sources[state.live.tracks[selectedTrackId].sourceId].name
+              name = Selectors.getSourceByTrackId(state, selectedTrackId)?.name ?? '??'
+
             if (!selectedTrackId) return
             const path = showSaveDialog({
               nameFieldLabel: 'Track Name',
@@ -267,6 +268,7 @@ export default function init() {
         },
         inferDivisions: {
           click: () =>
+            menuState.sourceId &&
             dispatch(
               Actions.inferBounds({
                 sourceId: menuState.sourceId,
@@ -277,6 +279,7 @@ export default function init() {
         },
         inferLeft: {
           click: () =>
+            menuState.sourceId &&
             dispatch(
               Actions.inferBounds({
                 sourceId: menuState.sourceId,
@@ -287,6 +290,7 @@ export default function init() {
         },
         inferRight: {
           click: () =>
+            menuState.sourceId &&
             dispatch(
               Actions.inferBounds({
                 sourceId: menuState.sourceId,
@@ -297,6 +301,7 @@ export default function init() {
         },
         clearDivisions: {
           click: () =>
+            menuState.sourceId &&
             dispatch(
               Actions.setSourceBounds({
                 sourceId: menuState.sourceId,
@@ -561,7 +566,7 @@ export default function init() {
           accelerator: 'Alt+Shift+B',
         },
         disableControls: {
-          click: () => dispatch(Actions.setControlsEnabled(null)),
+          click: () => dispatch(Actions.setControlsEnabled(false)),
           accelerator: 'CmdOrCtrl+B',
         },
         openBindings: {
@@ -694,7 +699,7 @@ export default function init() {
           },
         },
       },
-      isSingleKey = (accelerator: string) => {
+      isSingleKey = (accelerator: string | undefined | null) => {
         return (
           accelerator &&
           (accelerator.length === 1 ||
@@ -1273,7 +1278,7 @@ export default function init() {
         return currentName || 'untitled'
       } else {
         const firstTrack = state.live.scenes[sceneIndex].trackIds[0],
-          firstTrackName = firstTrack && state.sources[state.live.tracks[firstTrack].sourceId].name
+          firstTrackName = Selectors.getSourceByTrackId(state, firstTrack)?.name ?? ''
         return firstTrackName || 'untitled'
       }
     }

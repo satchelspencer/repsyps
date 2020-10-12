@@ -16,7 +16,7 @@ export interface SelectionContext {
 
 const selectionContext = createContext<SelectionContext>({
   state: defaultState,
-  setState: null,
+  setState: () => {},
 })
 
 const { Provider } = selectionContext
@@ -26,7 +26,7 @@ export function SelectionContextProvider(props: any) {
     context = useMemo<SelectionContext>(
       () => ({
         state: selState,
-        setState: state => {
+        setState: (state) => {
           setSelState({ ...selState, ...state })
         },
       }),
@@ -40,7 +40,7 @@ export function useSelection<T>(key: string) {
   return {
     isSelecting: !!ctx.state.callbacks[key],
     getSelection: async () => {
-      return new Promise<T>(res => {
+      return new Promise<T>((res) => {
         function cancel(e: KeyboardEvent) {
           if (e.key === 'Escape') {
             ctx.setState({ callbacks: _.omit(ctx.state.callbacks, key) })
@@ -52,7 +52,7 @@ export function useSelection<T>(key: string) {
         ctx.setState({
           callbacks: {
             ...ctx.state.callbacks,
-            [key]: value => {
+            [key]: (value) => {
               window.removeEventListener('keydown', cancel)
               res(value)
             },

@@ -59,7 +59,7 @@ const PeriodValue = SidebarValue.styles({ size: (s) => s * 0.95 })
 const ClearButton = FillButton.styles({ color: (c) => c.as(palette.red) })
 
 const SnapButton = WideButton.attrs({ enabled: false }).extend`
-  ${(_, { enabled }) => !enabled && `opacity:0.4;`}
+  ${(_, { enabled }) => (!enabled ? `opacity:0.4;` : '')}
 `
 
 const SourceTrack = ctyled.div.styles({
@@ -84,7 +84,7 @@ interface SourceTrackOffsetProps {
   trackId: string
   sourceTrackId: string
   sourceTrack: Types.TrackSource
-  sourceTrackEditing: string
+  sourceTrackEditing: string | null
   sourceTrackParams: Types.TrackSourceParams
 }
 
@@ -118,21 +118,26 @@ const BoundsControl = memo((props: BoundsControlProps) => {
   const { playback, editing, sourceTrackEditing, sourceId } = useSelector(
       (state) => state.live.tracks[props.trackId]
     ),
-    { bounds, sourceTracks } = useSelector((state) => state.sources[sourceId]),
+    source = useSelector((state) => (sourceId === null ? null : state.sources[sourceId])),
+    bounds = source?.bounds ?? [],
+    sourceTracks = source?.sourceTracks ?? {},
     dispatch = useDispatch(),
     { isSelecting, getSelection } = useSelection<string>('track'),
     snap = useSelector((state) => state.settings.snap),
     hasTimeBase = !!bounds.length,
     clength = playback.chunks[1],
-    inferPayload = useMemo(() => ({ sourceId }), [sourceId]),
+    inferPayload = useMemo(() => (sourceId === null ? null : { sourceId }), [sourceId]),
     inferLR = useCallback(() => {
-      dispatch(Actions.inferBounds({ ...inferPayload, direction: 'both' }))
+      inferPayload &&
+        dispatch(Actions.inferBounds({ ...inferPayload, direction: 'both' }))
     }, [inferPayload]),
     inferLeft = useCallback(() => {
-      dispatch(Actions.inferBounds({ ...inferPayload, direction: 'left' }))
+      inferPayload &&
+        dispatch(Actions.inferBounds({ ...inferPayload, direction: 'left' }))
     }, [inferPayload]),
     inferRight = useCallback(() => {
-      dispatch(Actions.inferBounds({ ...inferPayload, direction: 'right' }))
+      inferPayload &&
+        dispatch(Actions.inferBounds({ ...inferPayload, direction: 'right' }))
     }, [inferPayload]),
     avgBar = useMemo(() => {
       let sum = 0
@@ -160,6 +165,7 @@ const BoundsControl = memo((props: BoundsControlProps) => {
     ),
     handleClearBounds = useCallback(
       () =>
+        sourceId &&
         dispatch(
           Actions.setSourceBounds({
             sourceId,

@@ -16,14 +16,14 @@ export interface TrackSourcesParams {
 export interface PersistentTrackSource {
   name: string
   source: string
-  base: string
+  base: string | null
   streamIndex: number
 }
 
 export interface TrackSource {
   name: string
   source: string
-  base: string
+  base: string | null
   streamIndex: number
   loaded: boolean
   missing: boolean
@@ -128,12 +128,12 @@ export interface CueBasis {
 
 export interface NativeTrack {
   playback: TrackPlayback
-  nextPlayback: TrackPlayback
+  nextPlayback: TrackPlayback | null
 }
 
 export interface NativeTrackChange {
   playback: Partial<TrackPlayback>
-  nextPlayback: Partial<TrackPlayback>
+  nextPlayback: Partial<TrackPlayback> | null
 }
 
 export interface Track extends NativeTrack {
@@ -144,14 +144,14 @@ export interface Track extends NativeTrack {
   cueIndex: number
   nextCueIndex: number
   sourceTrackEditing: string | null
-  visibleSourceTrack: string
+  visibleSourceTrack: string | null
   playLock: boolean
   lastPeriod: number
 }
 
 export interface PersistentTrack {
   sourceId: string | null
-  visibleSourceTrack: string
+  visibleSourceTrack: string | null
   playback: PersitentTrackPlayback
   cues: Cue[]
   lastPeriod: number
@@ -283,7 +283,7 @@ export type MidiFunctionName =
 export type BindingType = 'note' | 'value' | 'jog'
 
 export interface PersistentBinding {
-  midi: number //first two bits of midi message
+  midi: number | null //first two bits of midi message
   twoway: boolean
   mcp: boolean
 }
@@ -356,7 +356,7 @@ export interface BindingsFile {
 
 export interface SaveStatus {
   saved: boolean
-  path: string
+  path: string | null
 }
 
 export type UpdateRate = 'high' | 'medium' | 'low'
@@ -373,12 +373,12 @@ export interface Settings {
   libOpen: boolean
   snap: boolean
   screencast: boolean
-  lastShownChangeLog: string
+  lastShownChangeLog: string | null
 }
 
 export interface Recording {
   enabled: boolean
-  fromTrack: string
+  fromTrack: string | null
 }
 
 export interface PersistentState {
@@ -402,14 +402,14 @@ export interface Output {
 
 export interface LocalPersistentOutputState {
   current: number
-  preview: number
+  preview: number | null
 }
 
 export interface OutputState {
   devices: Output[]
   default: number
   current: number
-  preview: number
+  preview: number | null
 }
 
 export interface MenuState {
@@ -426,8 +426,8 @@ export interface MenuState {
 
 export interface LibraryTrack {
   name: string
-  avgPeriod: number
-  length: number
+  avgPeriod: number | null
+  length: number | null
 }
 
 export interface LibraryProjectTracks {
@@ -463,6 +463,6 @@ export interface State {
   settings: Settings
   recording: Recording
   output: OutputState
-  modalRoute: string
+  modalRoute: string | null
   library: LibraryState
 }

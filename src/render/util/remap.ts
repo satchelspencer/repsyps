@@ -19,7 +19,8 @@ export function remap(input: Types.State, idMap: IdMap): Types.State {
       tracks: _.mapValues(state.live.tracks, (track) => {
         return {
           ...track,
-          visibleSourceTrack: idMap[track.visibleSourceTrack] || track.visibleSourceTrack,
+          visibleSourceTrack:
+            idMap[track.visibleSourceTrack ?? ''] || track.visibleSourceTrack,
         }
       }),
     },

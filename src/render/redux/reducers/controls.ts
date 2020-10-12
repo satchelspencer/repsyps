@@ -14,7 +14,7 @@ import { updateSceneIndex } from './scenes'
 
 function setGroup(
   grid: Types.Grid<Types.ControlGroup>,
-  group: Partial<Types.ControlGroup>,
+  group: Partial<Types.ControlGroup> | null,
   posStr: string
 ) {
   return group
@@ -30,10 +30,10 @@ function setGroup(
 
 function setControlGroup(
   state: Types.State,
-  controlGroup: Partial<Types.ControlGroup>,
-  pposition: Types.Position
+  controlGroup: Partial<Types.ControlGroup> | null,
+  pposition: Types.Position | undefined
 ) {
-  const position = pposition || state.live.selectedPosition
+  const position = pposition ?? state.live.selectedPosition
   if (!position) return state
 
   const posStr = Selectors.pos2str(position),

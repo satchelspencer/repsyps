@@ -15,7 +15,7 @@ export interface Migration<Old, New> {
 
 export function apply<Old, Final>(
   state: Versioned<Old>,
-  migration: Migration<Old, any>
+  migration: Migration<Old, any> | undefined | null
 ): Versioned<Final> {
   let currentMig = migration,
     currentState: Versioned<any> = state

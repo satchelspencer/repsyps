@@ -9,7 +9,7 @@ export default function inferTimeBase(
   snap: boolean
 ): number[] {
   const len = impulses[impulses.length - 1], //last impulse
-    bounds = [],
+    bounds: number[] = [],
     cstart = chunks[0],
     clength = chunks[1]
   for (

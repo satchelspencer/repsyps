@@ -8,7 +8,7 @@ import * as Actions from 'render/redux/actions'
 import { apply, version, Migration, Versioned } from './apply-migration'
 import defaultBindingsFile from './default-bindings'
 
-const migration: Migration<any, any> = null
+const migration: Migration<any, any> | null = null
 export const latest = '0.0.0'
 
 export function loadBindings(path: string, store: Store<Types.State>) {

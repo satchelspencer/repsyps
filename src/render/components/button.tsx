@@ -27,7 +27,7 @@ const StyledButton = ctyled(NonIndexButton)
     hover: true,
     align: 'center',
     gutter: 0.5,
-    alignSelf: (_, { inline }) => (inline ? 'flex-start' : undefined),
+    alignSelf: (_, { inline }) => (inline ? 'flex-start' : 'stretch'),
     size: (s, { inline }) => (inline ? s * 0.9 : s),
     borderColor: (c) => c.contrast(-0.1),
   }).extendSheet`

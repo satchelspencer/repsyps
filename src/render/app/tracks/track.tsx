@@ -74,7 +74,7 @@ const TrackCanvas = ctyled.canvas.attrs({ selected: false }).extend`
 export interface TrackProps {
   trackId: string
   track: Types.Track
-  source: Types.Source
+  source: Types.Source | null
   visible: boolean
   noClick: boolean
   sample: number
@@ -88,15 +88,15 @@ export interface ViewContext {
   scale: number
   start: number
   center: number
-  centerSample: number
+  centerSample: number | null
   impulses: number[]
   mouseDown: boolean
   snap: boolean
 }
 
 export interface DrawViewContext extends ViewContext {
-  clickX: number
-  clickSample: number
+  clickX: number | null
+  clickSample: number | null
   width: number
   height: number
 }
@@ -106,8 +106,8 @@ export interface BoundViewContext extends ViewContext {
 }
 
 export interface ClickEventContext {
-  clickX: number
-  clickSample: number
+  clickX: number | null
+  clickSample: number | null
   aperiodic: boolean
   editing: boolean
   selected: boolean
@@ -130,14 +130,17 @@ const Track = memo(
     trackScroll,
   }: TrackProps) {
     /* computed data */
-    const impulses = useMemo(() => loaded && getImpulses(trackId), [loaded, trackId]),
+    const impulses = useMemo(() => (loaded ? getImpulses(trackId) : []), [
+        loaded,
+        trackId,
+      ]),
       snap = useSelector((state) => state.settings.snap)
 
     /* react state */
     const [center, setCenter] = useState(0),
-      [clickX, setClickX] = useState(null),
-      [clickSample, setClickSample] = useState(null),
-      [centerSample, setCenterSample] = useState(null),
+      [clickX, setClickX] = useState<number | null>(null),
+      [clickSample, setClickSample] = useState<number | null>(null),
+      [centerSample, setCenterSample] = useState<number | null>(null),
       [mouseDown, setMouseDown] = useState(false)
 
     const container = useRef(null),
@@ -185,18 +188,20 @@ const Track = memo(
         clickSample,
         width,
         height,
-      }
+      },
+      bounds = source?.bounds ?? []
 
     /* click event contexts */
     const clickCtxt: ClickEventContext = {
         clickX,
         clickSample,
-        aperiodic: track.playback.aperiodic || !source.bounds.length,
+        aperiodic: track.playback.aperiodic || !bounds.length,
         editing: track.editing,
         sourceTrackEditing: track.sourceTrackEditing,
         currentEditingOffset:
-          track.sourceTrackEditing &&
-          track.playback.sourceTracksParams[track.sourceTrackEditing].offset,
+          track.sourceTrackEditing === null
+            ? null
+            : track.playback.sourceTracksParams[track.sourceTrackEditing].offset,
         selected: track.selected,
         height,
         width,
@@ -230,19 +235,19 @@ const Track = memo(
           }
           const pos = e ? getRelativePos(e, left, top) : { x: width / 2, y: 0 }
           resizePlaybackHandlers.mouseDown(clickCtxt, view, pos, track.playback.chunks)
-          boundHandlers.mouseDown(clickCtxt, view, pos, source.bounds)
+          boundHandlers.mouseDown(clickCtxt, view, pos, bounds)
           offsetTrackHandlers.mouseDown(clickCtxt, pos, e && e.shiftKey)
           setClickX(pos.x)
           setClickSample(getTimeFromPosition(pos.x, snap, view))
           setMouseDown(true)
           setPlayLock(false)
         },
-        [...clickCtxtValues, ...viewValues, track.playback.chunks, source.bounds]
+        [...clickCtxtValues, ...viewValues, track.playback.chunks, bounds]
       ),
       handleMouseMove = useCallback(
         (e) => {
           const pos = getRelativePos(e, left, top)
-          boundHandlers.mouseMove(clickCtxt, view, pos, source.bounds)
+          boundHandlers.mouseMove(clickCtxt, view, pos, bounds)
           resizePlaybackHandlers.mouseMove(clickCtxt, pos, view, track.playback.chunks)
           offsetTrackHandlers.mouseMove(clickCtxt, pos, view)
           setCenter(pos.x)
@@ -258,7 +263,7 @@ const Track = memo(
             clickCtxt,
             pos,
             view,
-            source.bounds,
+            bounds,
             track.selected,
             e && e.shiftKey,
             track.playback.chunks
@@ -268,7 +273,7 @@ const Track = memo(
               clickCtxt,
               pos,
               view,
-              source.bounds
+              bounds
             ),
             didResizeBound = boundHandlers.mouseUp(clickCtxt, pos, view),
             didResizePlayback = resizePlaybackHandlers.mouseUp(clickCtxt, pos, view),
@@ -286,21 +291,15 @@ const Track = memo(
           setClickSample(null)
           setMouseDown(false)
         },
-        [
-          ...clickCtxtValues,
-          ...viewValues,
-          source.bounds,
-          track.selected,
-          track.playback.chunks,
-        ]
+        [...clickCtxtValues, ...viewValues, bounds, track.selected, track.playback.chunks]
       ),
       handleDoubleClick = useCallback(
         (e) => {
           e.preventDefault()
           const pos = getRelativePos(e, left, top)
-          selectBoundHandlers.doubleClick(clickCtxt, pos, view, source.bounds)
+          selectBoundHandlers.doubleClick(clickCtxt, pos, view, bounds)
         },
-        [...clickCtxtValues, ...viewValues, source.bounds]
+        [...clickCtxtValues, ...viewValues, bounds]
       ),
       handleMouseLeave = useCallback(() => {
         setClickX(null)
@@ -319,7 +318,7 @@ const Track = memo(
     }, [])
 
     const cursorStyles = useMemo(() => {
-      const boundIndex = getBoundIndex(center, view, source.bounds),
+      const boundIndex = getBoundIndex(center, view, bounds),
         sample = getTimeFromPosition(center, view.snap, view),
         nearChunkIndex = _.findIndex(track.playback.chunks, (chunk, i) => {
           const csample = i % 2 === 0 ? chunk : chunk + track.playback.chunks[i - 1]
@@ -330,14 +329,7 @@ const Track = memo(
             ? 'col-resize'
             : 'crosshair'
       return { cursor }
-    }, [
-      center,
-      track.editing,
-      source.bounds,
-      track.playback.chunks,
-      view.scale,
-      view.start,
-    ])
+    }, [center, track.editing, bounds, track.playback.chunks, view.scale, view.start])
 
     return (
       <>
@@ -380,31 +372,34 @@ export interface TrackContainerProps {
   trackId: string
   index: number
   vBounds: number[]
-  listRef: MutableRefObject<HTMLDivElement>
+  listRef: MutableRefObject<HTMLDivElement | null>
 }
 
 export default function TrackContainer(props: TrackContainerProps) {
   const track = useSelector((state) => state.live.tracks[props.trackId]),
-    source = useSelector((state) => state.sources[track.sourceId]),
+    source = useSelector((state) => Selectors.getSourceByTrackId(state, props.trackId)),
     sample = useTrackTiming(props.trackId),
     dispatch = useDispatch(),
-    wrapperRef = useRef(null),
+    wrapperRef = useRef<HTMLDivElement | null>(null),
     [vstart, vend] = props.vBounds,
-    start = wrapperRef.current && wrapperRef.current.offsetTop,
-    end = wrapperRef.current && start + wrapperRef.current.offsetHeight,
+    start = (wrapperRef.current && wrapperRef.current.offsetTop) ?? 0,
+    end = start + (wrapperRef.current?.offsetHeight ?? 0),
     visible = !wrapperRef.current || (start < vend && end > vstart),
     offTop = start < vstart,
     offBottom = end > vend,
     wayOffScreen =
       !visible && (start - vend > OFFSCREEN_THRESH || vstart - end > OFFSCREEN_THRESH),
     { isSelecting, onSelect } = useSelectable<string>('track'),
-    hasMissingSource = _.some(_.values(source.sourceTracks), (track) => track.missing),
+    hasMissingSource =
+      !!source && _.some(_.values(source.sourceTracks), (track) => track.missing),
     handleClick = useCallback(() => {
       if (isSelecting) onSelect(props.trackId)
       else !track.selected && dispatch(Actions.selectTrackExclusive(props.trackId))
       if (hasMissingSource) dispatch(Actions.setModalRoute('relink'))
     }, [props.trackId, isSelecting, onSelect, hasMissingSource]),
-    isLoaded = useSelector((state) => Selectors.getTrackIsLoaded(state, track.sourceId)),
+    isLoaded = useSelector(
+      (state) => !!(track.sourceId && Selectors.getSourceIsLoaded(state, track.sourceId))
+    ),
     trackScroll = useSelector((state) => state.settings.trackScroll),
     inferredSample = sample || track.playback.chunks[0],
     handleMouseLeave = useCallback(() => {

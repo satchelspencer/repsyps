@@ -116,18 +116,21 @@ function Presets() {
       )
       setSelected(id)
     }, []),
-    [selected, setSelected] = useState<string>(null),
+    [selected, setSelected] = useState<string | null>(null),
     addPreset = useCallback(() => {
       setAdding(true)
       setNewName('')
     }, []),
     removePreset = useCallback(() => {
-      dispatch(Actions.deleteControlPreset(selected))
-      setSelected(null)
+      if (selected) {
+        dispatch(Actions.deleteControlPreset(selected))
+        setSelected(null)
+      }
     }, [selected]),
-    applyPreset = useCallback(() => dispatch(Actions.applyControlPreset(selected)), [
-      selected,
-    ]),
+    applyPreset = useCallback(
+      () => selected && dispatch(Actions.applyControlPreset(selected)),
+      [selected]
+    ),
     handleBlur = useCallback(() => {
       setAdding(false)
       handleCreatePreset(newName)

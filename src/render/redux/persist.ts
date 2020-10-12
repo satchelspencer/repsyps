@@ -7,8 +7,8 @@ import * as Selectors from 'render/redux/selectors'
 import { loadLocalStorage, saveLocalStorage } from 'render/loading/project'
 
 export default function initPersist(store: Store<Types.State>) {
-  let lastPersistent: Types.PersistentState = null,
-    lastLocalPersistent: Types.LocalPersistentState = null
+  let lastPersistent: Types.PersistentState | null = null,
+    lastLocalPersistent: Types.LocalPersistentState | null = null
 
   const throttleSave = _.throttle(() => saveLocalStorage(store), 1000, { leading: false })
 

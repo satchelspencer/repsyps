@@ -105,6 +105,7 @@ const SourceTrack = memo((props: SourceTrackProps) => {
     ),
     removeTrackSource = useCallback(
       () =>
+        sourceId &&
         dispatch(
           Actions.removeTrackSource({
             sourceId,
@@ -197,13 +198,11 @@ const SourceTracks = (props: TrackVolumeProps) => {
     visibleSourceTrackId = useSelector(
       (state) => state.live.tracks[props.trackId].visibleSourceTrack
     ),
-    source = useSelector(
-      (state) => state.sources[state.live.tracks[props.trackId].sourceId]
-    ),
+    source = useSelector((state) => Selectors.getSourceByTrackId(state, props.trackId)),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId))
 
-  const sourceTrackIds = _.keys(source.sourceTracks),
+  const sourceTrackIds = _.keys(source?.sourceTracks),
     many = sourceTrackIds.length > 1,
     addSource = useAddSource(),
     handleClick = useCallback(() => addSource(props.trackId), [props.trackId])
@@ -211,19 +210,22 @@ const SourceTracks = (props: TrackVolumeProps) => {
   return (
     <TracksWrapper>
       {sourceTrackIds.map((sourceTrackId, sourceTrackIndex) => {
+        const sourceTrack = source?.sourceTracks[sourceTrackId]
         return (
-          <SourceTrack
-            key={sourceTrackIndex}
-            trackId={props.trackId}
-            sourceTrackId={sourceTrackId}
-            sourceTrack={source.sourceTracks[sourceTrackId]}
-            trackIndex={trackIndex}
-            sourceTrackIndex={sourceTrackIndex}
-            params={sourceTracksParams[sourceTrackId]}
-            realParams={realParams[sourceTrackId]}
-            many={many}
-            visible={visibleSourceTrackId === sourceTrackId}
-          />
+          sourceTrack && (
+            <SourceTrack
+              key={sourceTrackIndex}
+              trackId={props.trackId}
+              sourceTrackId={sourceTrackId}
+              sourceTrack={sourceTrack}
+              trackIndex={trackIndex}
+              sourceTrackIndex={sourceTrackIndex}
+              params={sourceTracksParams[sourceTrackId]}
+              realParams={realParams[sourceTrackId]}
+              many={many}
+              visible={visibleSourceTrackId === sourceTrackId}
+            />
+          )
         )
       })}
       <WideButton onClick={handleClick}>+ add source</WideButton>

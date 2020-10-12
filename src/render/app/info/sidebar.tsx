@@ -58,8 +58,8 @@ const clip = (size: number) => Math.min(Math.max(size, 25.5), 35)
 function Sidebar() {
   const trackId = useSelector(Selectors.getSelectedTrackId),
     track = useSelector(Selectors.getSelectedTrack),
-    source = useSelector((state) => state.sources[track.sourceId]),
-    isLoaded = useSelector((state) => Selectors.getTrackIsLoaded(state, track.sourceId)),
+    source = useSelector((state) => Selectors.getSourceByTrackId(state, trackId)),
+    isLoaded = useSelector((state) => Selectors.getSourceIsLoaded(state, track?.sourceId)),
     size = useContext(CtyledContext).theme.size,
     sideBarSize = useSelector((state) => state.settings.sidebarSize),
     screencast = useSelector((state) => state.settings.screencast),

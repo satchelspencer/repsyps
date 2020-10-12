@@ -28,7 +28,7 @@ export const updateTime = createAction<{
   commit: boolean
 }>('UPDATE_TIMES')
 
-export const setSaveStatus = createAction<Partial<Types.SaveStatus>>('SET_SAVESTATUS')
+export const setSaveStatus = createAction<Types.SaveStatus>('SET_SAVESTATUS')
 
 export const setSettings = createAction<Partial<Types.Settings>>('SET_SETTINGS')
 
@@ -42,7 +42,7 @@ export const stopAll = createAction<void>('STOP_ALL')
 
 export const setOutputs = createAction<Partial<Types.OutputState>>('SET_OUTPUTS')
 
-export const setModalRoute = createAction<string>('SET_MODAL_ROUTE')
+export const setModalRoute = createAction<string | null>('SET_MODAL_ROUTE')
 
 export const setLibraryState = createAction<Partial<Types.LibraryState>>('SET_LIBRARY')
 
@@ -96,7 +96,7 @@ export const playPauseTrack = createAction<string | number>('PLAY_PAUSE_TRACK')
 
 export const toggleTrackLoop = createAction<string>('TOGGLE_TRACK_LOOP')
 
-export const selectTrackExclusive = createAction<string>('SELECT_TRACK_EX')
+export const selectTrackExclusive = createAction<string | null>('SELECT_TRACK_EX')
 
 export const stepSelectedTrack = createAction<number>('STEP_SELECTED_TRACK')
 
@@ -389,9 +389,9 @@ export function getApplyControlGroupActions(
       actions.push(setTrackSync({ trackIndex: control.trackIndex, sync: control.sync }))
     } else if ('periodDelta' in control && risingEdge) {
       actions.push(incrementPeriod(control.periodDelta))
-    } else if ('trackStep' in control && risingEdge) {
+    } else if ('trackStep' in control && risingEdge && control.trackStep) {
       actions.push(stepSelectedTrack(control.trackStep))
-    } else if ('sceneStep' in control && risingEdge) {
+    } else if ('sceneStep' in control && risingEdge && control.sceneStep) {
       actions.push(stepSceneIndex(control.sceneStep))
     }
   })

@@ -187,16 +187,17 @@ export interface LibraryProjectProps {
   match: LibraryMatchState
 }
 
-const getRatioStr = (ratio: number): string => {
-  if (ratio === 0) return '+0.0'
+const getRatioStr = (ratio: number | null): string => {
+  if (ratio === null) return '??'
+  else if (ratio === 0) return '+0.0'
   else {
     const rounded = _.round(ratio, Math.abs(ratio) > 10 ? 0 : 1)
     return (rounded > 0 ? '+' : '') + rounded
   }
 }
 
-const formatDate = (mTime: number) => {
-  return _.last(timeAgo.format(mTime, 'twitter').split(', '))
+const formatDate = (mTime: number): string => {
+  return _.last(timeAgo.format(mTime, 'twitter').split(', ')) ?? '?'
 }
 
 const LibraryProject = memo((props: LibraryProjectProps) => {
@@ -206,7 +207,7 @@ const LibraryProject = memo((props: LibraryProjectProps) => {
     root = getPath('library'),
     projectName = pathUtils.relative(root, props.path).replace(/\.syp$/g, ''),
     [open, setOpen] = useState(false),
-    clickTimeoutRef = useRef(null),
+    clickTimeoutRef = useRef<NodeJS.Timeout | null>(null),
     handleToggleOpen = useCallback(() => {
       if (!clickTimeoutRef.current)
         clickTimeoutRef.current = setTimeout(() => {
@@ -217,7 +218,7 @@ const LibraryProject = memo((props: LibraryProjectProps) => {
     store = useStore(),
     handleDoubleClick = useCallback(
       (e) => {
-        clearTimeout(clickTimeoutRef.current)
+        if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current)
         clickTimeoutRef.current = null
         loadProjectScenes(props.path, store, e.shiftKey)
       },
@@ -234,7 +235,7 @@ const LibraryProject = memo((props: LibraryProjectProps) => {
   useEffect(() => {
     setOpen(hasTrackMatch)
     setShowAll(false)
-  }, [props.match])
+  }, [hasTrackMatch])
 
   return (
     <ProjectWrapper>
@@ -268,7 +269,7 @@ const LibraryProject = memo((props: LibraryProjectProps) => {
               )}
               {scene.trackIds.map((trackId) => {
                 const track = props.project.tracks[trackId],
-                  ratio = (track.avgPeriod / props.period - 1) * 100
+                  ratio = track.avgPeriod && (track.avgPeriod / props.period - 1) * 100
                 return (
                   (showNotMatching || props.match.tracks[trackId]) && (
                     <LibItem
@@ -309,8 +310,8 @@ const LibraryProject = memo((props: LibraryProjectProps) => {
 })
 
 export interface LibraryFilter {
-  sortPeriod: number
-  filterText: string
+  sortPeriod: number | null
+  filterText: string | null
 }
 
 export interface LibraryMatchState {
@@ -395,7 +396,7 @@ function Library() {
       })
       if (path && path[0]) dispatch(Actions.setLibraryState({ root: path[0] }))
     }, []),
-    bodyRef = useRef(null),
+    bodyRef = useRef<HTMLDivElement | null>(null),
     [maxResults, setMaxResults] = useState(40),
     handleIncMaxResults = useCallback(() => {
       setMaxResults(maxResults + 20)
@@ -426,11 +427,15 @@ function Library() {
       allPaths = _.keys(library.projects),
       filtered = allPaths.filter((path) => {
         const trackMatches = {},
-          projectMatches = path.toLowerCase().includes(filterState.filterText),
+          projectMatches = !!(
+            filterState.filterText && path.toLowerCase().includes(filterState.filterText)
+          ),
           trackHasMatch = _.some(library.projects[path].tracks, (track, trackId) => {
-            const match = track.name.toLowerCase().includes(filterState.filterText)
+            const match =
+              filterState.filterText &&
+              track.name.toLowerCase().includes(filterState.filterText)
             if (match) trackMatches[trackId] = true
-            return match
+            return !!match
           }),
           anyMatch = !filterState.filterText || projectMatches || trackHasMatch
 
@@ -440,7 +445,7 @@ function Library() {
       sorted = _.sortBy(filtered, (path) => {
         const project = library.projects[path]
         if (sortBy === 'tempo')
-          return Math.abs(project.avgPeriod - filterState.sortPeriod)
+          return Math.abs(project.avgPeriod - (filterState.sortPeriod ?? 0))
         else if (sortBy === 'date') return project.mTime * -1
         else if (sortBy === 'name') return path
         else return 1
@@ -505,7 +510,7 @@ function Library() {
               return (
                 i < maxResults && (
                   <LibraryProject
-                    period={filterState.sortPeriod}
+                    period={filterState.sortPeriod ?? 0}
                     key={path}
                     path={path}
                     project={library.projects[path]}

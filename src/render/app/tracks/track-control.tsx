@@ -175,7 +175,9 @@ function TrackControls(props: TrackControlsProps) {
     track = useSelector((state) => state.live.tracks[props.trackId]),
     period = useSelector((state) => state.playback.period),
     isSolo = useSelector((state) => getTrackIsSolo(state, props.trackId)),
-    source = useSelector((state) => state.sources[track.sourceId]),
+    source = useSelector((state) =>
+      track.sourceId === null ? null : state.sources[track.sourceId]
+    ),
     hasPreview = useSelector((state) => state.output.preview !== null),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
@@ -223,7 +225,7 @@ function TrackControls(props: TrackControlsProps) {
     atStart = playing && activeCueIndex === 0,
     atEnd = playing && activeCueIndex === track.cues.length - 1,
     canPrev = atStart || activeCueIndex > 0,
-    boundsAlpha = track.playback.aperiodic ? 1 : source.boundsAlpha
+    boundsAlpha = track.playback.aperiodic ? 1 : source?.boundsAlpha ?? 1
 
   const handlePrevCue = useCallback(
       () =>
@@ -292,7 +294,7 @@ function TrackControls(props: TrackControlsProps) {
         <TrackHeaderWrapper>
           <TrackHeader params={volumeControlParams}>
             <TrackTitleWrapper>
-              <TrackTitle>{source.name}</TrackTitle>
+              <TrackTitle>{source?.name ?? '??'}</TrackTitle>
             </TrackTitleWrapper>
             {!isSelecting && (
               <PreviewButton disabled={!hasPreview} onClick={handlePreview}>

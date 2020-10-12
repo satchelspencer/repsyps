@@ -50,12 +50,10 @@ export function adder<P>(Component: CtyledComponent<any, P>) {
         },
         [props.params, isSelecting, props.onClick]
       )
-    return (
-      (isSelecting || !props.hideWhenInactive) && (
-        <CtyledContext.Provider value={childCtyle}>
-          <Mod {...(childProps as P)} selecting={isSelecting} onClick={handleClick} />
-        </CtyledContext.Provider>
-      )
-    )
+    return isSelecting || !props.hideWhenInactive ? (
+      <CtyledContext.Provider value={childCtyle}>
+        <Mod {...(childProps as P)} selecting={isSelecting} onClick={handleClick} />
+      </CtyledContext.Provider>
+    ) : null
   }
 }

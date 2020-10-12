@@ -7,7 +7,6 @@ import { findNearest } from 'render/util/impulse-detect'
 import audio from 'render/util/audio'
 import { DrawViewContext } from './track'
 import { canvasScale } from 'render/util/env'
-import { getTimeFromPosition } from './utils'
 
 const lineWidth = canvasScale === 1 ? 1 : 3,
   thickLine = canvasScale === 1 ? 3 : 5
@@ -15,17 +14,19 @@ const lineWidth = canvasScale === 1 ? 1 : 3,
 export default function useWaveformCanvas(
   view: DrawViewContext,
   track: Types.Track,
-  source: Types.Source,
+  source: Types.Source | null,
   sample: number,
   playLocked: boolean,
   scroll: boolean,
   jogging: boolean
 ) {
-  const canvasRef = useRef(null),
-    ctxt = useRef(null),
+  const canvasRef = useRef<HTMLCanvasElement | null>(null),
+    ctxt = useRef<CanvasRenderingContext2D | null | undefined>(undefined),
     ctyledContext = useContext(CtyledContext),
-    visibleLoaded = source.sourceTracks[track.visibleSourceTrack].loaded,
-    visibleOffset = track.playback.sourceTracksParams[track.visibleSourceTrack].offset,
+    visId = track.visibleSourceTrack,
+    visibleLoaded = !!(source && visId && source.sourceTracks[visId].loaded),
+    visibleOffset =
+      visId === null ? null : track.playback.sourceTracksParams[visId].offset,
     effectivePos = track.playback.playing ? 0 /* position */ : 0,
     {
       scale,
@@ -38,18 +39,23 @@ export default function useWaveformCanvas(
       mouseDown,
     } = view,
     pwidth = width * canvasScale,
-    isSTEditing = !!track.sourceTrackEditing,
-    editTrackLoaded = isSTEditing && source.sourceTracks[track.sourceTrackEditing].loaded,
+    editTrackLoaded =
+      !!track.sourceTrackEditing &&
+      !!source &&
+      source.sourceTracks[track.sourceTrackEditing].loaded,
     editTrackOffset =
-      isSTEditing && track.playback.sourceTracksParams[track.sourceTrackEditing].offset,
+      !!track.sourceTrackEditing &&
+      track.playback.sourceTracksParams[track.sourceTrackEditing].offset,
     chunks = useMemo(() => track.playback.chunks, [
       track.playback.playing ? sample : track.playback.chunks,
-    ])
-
+    ]),
+    bounds = source?.bounds ?? []
   useEffect(() => {
-    ctxt.current = canvasRef.current.getContext('2d')
-    ctxt.current.scale(2, 2)
-    ctxt.current.imageSmoothingEnabled = canvasScale === 1
+    ctxt.current = canvasRef.current?.getContext('2d')
+    if (ctxt.current) {
+      ctxt.current.scale(2, 2)
+      ctxt.current.imageSmoothingEnabled = canvasScale === 1
+    }
   }, [])
 
   const bufferRes = pwidth,
@@ -60,19 +66,14 @@ export default function useWaveformCanvas(
 
   /* main waveform compute */
   useEffect(() => {
-    if (visibleLoaded && width)
-      audio.getWaveform(
-        track.visibleSourceTrack,
-        start - visibleOffset,
-        scale,
-        drawBuffers[0]
-      )
+    if (visibleLoaded && width && visId)
+      audio.getWaveform(visId, start - (visibleOffset ?? 0), scale, drawBuffers[0])
   }, [drawBuffers, track.visibleSourceTrack, start, scale, visibleLoaded])
   useEffect(() => {
-    if (editTrackLoaded && width) {
+    if (editTrackLoaded && width && track.sourceTrackEditing) {
       return audio.getWaveform(
         track.sourceTrackEditing,
-        start - editTrackOffset,
+        start - (editTrackOffset || 0),
         scale,
         drawBuffers[1]
       )
@@ -87,7 +88,7 @@ export default function useWaveformCanvas(
   ])
 
   useEffect(() => {
-    if (!width) return
+    if (!width || !ctxt.current) return
     const pwidth = width * canvasScale,
       pheight = height * canvasScale,
       ctx = ctxt.current,
@@ -121,7 +122,7 @@ export default function useWaveformCanvas(
     drawGutter(drawContext)
     drawPlayback(drawContext, track, chunks)
     drawCues(drawContext, track)
-    drawBounds(drawContext, source.bounds, track.editing)
+    drawBounds(drawContext, bounds, track.editing)
     drawDrag(drawContext)
 
     if (jogging) drawCursor(drawContext)
@@ -134,7 +135,7 @@ export default function useWaveformCanvas(
     sample,
     track.sourceTrackEditing,
     track.visibleSourceTrack,
-    source.bounds,
+    bounds,
     playLocked,
     track.cues,
     ctyledContext.theme.color,
@@ -155,8 +156,8 @@ export interface DrawingContext {
   color: Color
   size: number
   sample: number
-  clickX: number
-  center: number
+  clickX: number | null
+  center: number | null
   mouseDown: boolean
   playLocked: boolean
   scroll: boolean

@@ -84,7 +84,7 @@ function App() {
     handleKeyDown = useCallback((e: React.KeyboardEvent) => {
       if (
         (preventKeys.includes(e.key) && !e.metaKey && !e.altKey && !e.shiftKey) ||
-        document.activeElement.nodeName === 'INPUT'
+        document.activeElement?.nodeName === 'INPUT'
       )
         e.preventDefault()
     }, [])
