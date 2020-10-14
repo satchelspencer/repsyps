@@ -5,7 +5,7 @@
   "scripts": {
     "start": "electron-webpack dev",
     "build": "node-gyp configure build",
-    "tsck": "tsc",
+    "tsck": "tsc --noEmit",
     "install": "node-gyp configure build",
     "test-native": "node src/native/test",
     "clean": "node-gyp clean",
