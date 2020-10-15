@@ -12,6 +12,7 @@ import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import { defaultState } from 'render/redux/defaults'
 import useAddSource from 'render/util/add-source'
+import uid from 'render/util/uid'
 
 import { useSelection } from 'render/components/selection'
 import { useDispatch, useStore } from 'render/redux/react'
@@ -416,6 +417,16 @@ export default function init() {
         addTrackSource: {
           click: () => addSource(menuState.selectedTrackId),
           accelerator: 'CmdOrCtrl+A',
+        },
+        newTrack: {
+          click: () =>
+            dispatch(
+              Actions.addTrack({
+                trackId: uid(),
+                sourceId: null,
+                sourceTracksParams: {},
+              })
+            ),
         },
         playPauseTrack: {
           click: () => dispatch(Actions.playPauseTrack(menuState.selectedTrackId)),
@@ -888,6 +899,10 @@ export default function init() {
         {
           label: 'Scene',
           submenu: [
+            {
+              label: 'New Track',
+              ...menuCommands.newTrack,
+            },
             {
               label: 'Reset Scene',
               ...menuCommands.resetScene,
