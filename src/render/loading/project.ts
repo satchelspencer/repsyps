@@ -11,9 +11,34 @@ import { appendToLibrary } from './library'
 import { apply, version, Migration, Versioned } from './apply-migration'
 import * as PastTypes from './past-types'
 
+const moveCuesToSource: Migration<PastTypes.PersistentStateV2, Types.PersistentState> = {
+  fromVersion: '2',
+  toVersion: '3',
+  apply: (state) => {
+    const cuesBySourceId: { [sourceId: string]: Types.Cue[] } = {},
+      newTracks = _.mapValues(state.live.tracks, (track) => {
+        if (track.sourceId) cuesBySourceId[track.sourceId] = track.cues
+        return _.omit(track, 'cues')
+      })
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        tracks: newTracks,
+      },
+      sources: _.mapValues(state.sources, (source, sourceId) => {
+        return {
+          ...source,
+          cues: cuesBySourceId[sourceId] ?? [],
+        }
+      }),
+    }
+  },
+}
+
 const cueIsOnlyChunksNow: Migration<
   PastTypes.PersistentStateV1,
-  Types.PersistentState
+  PastTypes.PersistentStateV2
 > = {
   fromVersion: '0.0.1',
   toVersion: '2',
@@ -35,6 +60,7 @@ const cueIsOnlyChunksNow: Migration<
       },
     }
   },
+  next: moveCuesToSource,
 }
 
 const addExplicitSourceId: Migration<
@@ -61,7 +87,7 @@ const addExplicitSourceId: Migration<
 }
 
 const persistentStateMigration = addExplicitSourceId,
-  latestPersistentState = '2'
+  latestPersistentState = '3'
 
 const localPersistentStateMigration: Migration<any, any> | null = null,
   latestLocalPersistentState = '0.0.0'

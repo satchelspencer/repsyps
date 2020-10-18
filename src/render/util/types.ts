@@ -45,6 +45,7 @@ export interface PersistentSource {
   bounds: Bounds
   boundsAlpha: number
   sourceTracks: { [sourceTrackId: string]: PersistentTrackSource }
+  cues: Cue[]
 }
 
 export interface Source {
@@ -52,6 +53,7 @@ export interface Source {
   bounds: Bounds
   boundsAlpha: number
   sourceTracks: TrackSources
+  cues: Cue[]
 }
 
 export interface PersistentSources {
@@ -130,7 +132,6 @@ export interface Track extends NativeTrack {
   sourceId: string | null
   selected: boolean
   editing: boolean
-  cues: Cue[]
   cueIndex: number
   nextCueIndex: number
   sourceTrackEditing: string | null
@@ -143,7 +144,6 @@ export interface PersistentTrack {
   sourceId: string | null
   visibleSourceTrack: string | null
   playback: PersitentTrackPlayback
-  cues: Cue[]
   lastPeriod: number
 }
 

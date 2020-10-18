@@ -2,6 +2,7 @@ import * as Types from 'render/util/types'
 
 export type Assign<T, R> = Omit<T, keyof R> & R
 
+/* v0 */
 export type PersistentStateV0 = Assign<
   PersistentStateV1,
   {
@@ -15,6 +16,8 @@ export type PersistentStateV0 = Assign<
     >
   }
 >
+
+/* v1 */
 
 export type PersistentStateV1 = Assign<
   Types.PersistentState,
@@ -46,3 +49,33 @@ export type CueV1 = Assign<
     used: (keyof Types.TrackPlayback)[]
   }
 >
+
+/* v2 */
+
+export type PersistentStateV2 = Assign<
+  Types.PersistentState,
+  {
+    live: PersistentLiveV2
+    sources: {
+      [sourceId: string]: PersistentSourceV2
+    }
+  }
+>
+
+export type PersistentLiveV2 = Assign<
+  Types.PersistentLive,
+  {
+    tracks: {
+      [trackId: string]: PersistentTrackV2
+    }
+  }
+>
+
+export type PersistentTrackV2 = Assign<
+  Types.PersistentTrack,
+  {
+    cues: Types.Cue[]
+  }
+>
+
+export type PersistentSourceV2 = Omit<Types.PersistentSource, 'cues'>
