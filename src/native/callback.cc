@@ -88,11 +88,6 @@ int paCallbackMethod(
         bool hasEnd = chunkLength != 0;
         bool periodic = hasEnd && !playback->aperiodic;
         double chunkEndPosition = getSamplePosition(playback, 1);
-        bool hasNext = mixTrack->hasNext && (playback->chunkIndex == 0 || playback->nextAtChunk);
-        int nextChunkIndex = (playback->chunkIndex + 1) % chunkCount;
-        double nextChunkStart = hasNext ?
-          mixTrack->nextPlayback->chunks[0] : 
-          playback->chunks[nextChunkIndex * 2];
 
         float invAlpha = periodic ?
           chunkLength / (float)state->playback->period * playback->alpha :
@@ -144,11 +139,16 @@ int paCallbackMethod(
         mixTrack->sample += WINDOW_STEP;
         if(hasEnd && mixTrack->sample > chunkEndPosition){ //chunk boundary
           playback->chunkIndex = (playback->chunkIndex + 1) % chunkCount;
+          bool hasNext = mixTrack->hasNext && (playback->chunkIndex == 0 || playback->nextAtChunk);
+          double nextChunkStart = hasNext ?
+            mixTrack->nextPlayback->chunks[0] : 
+            playback->chunks[playback->chunkIndex * 2];
+
           if(!mixTrack->hasNext && playback->chunkIndex == 0 && !playback->loop){
             playback->playing = false;
             playback->chunkIndex = -1;
           }else{
-            mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition); //???????????
+            mixTrack->sample = nextChunkStart + (mixTrack->sample - chunkEndPosition);
             if(mixTrack->hasNext && (playback->chunkIndex == 0 || playback->nextAtChunk)){
               applyNextPlayback(mixTrackPair.first, state);
               playback->chunkIndex = 0;

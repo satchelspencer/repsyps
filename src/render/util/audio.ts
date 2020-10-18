@@ -23,7 +23,7 @@ interface AudioAPI {
   getImpulses(sourceId: string): number[]
   loadSource(path: string, sourceId: string): Promise<string[]>
   exportSource(path: string, sourceId: string): boolean
-  startRecording(fromSourceId: string)
+  startRecording(fromSourceId: string | null)
   stopRecording(destSourceId: string): number[]
   syncToTrack(trackId: string, start: number, end: number)
 }

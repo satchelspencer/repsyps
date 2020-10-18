@@ -226,7 +226,7 @@ export const moveSourceTrack = createAction<{
 
 export const addCue = createAction<{
   trackId: string
-  cue: Types.CueBasis
+  cue: Partial<Types.Cue>
   index?: number
 }>('ADD_CUE')
 

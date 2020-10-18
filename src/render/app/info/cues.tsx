@@ -28,7 +28,7 @@ const CueWrapper = adder(ctyled.div
     height: 2,
     flex: 1,
     borderColor: (c) => c.contrast(-0.1),
-  }).extend`
+  }).extendSheet`
   padding-right:0px !important;
   background:${({ color }, { active, next }) =>
     active ? color.nudge(-0.2).bg : next ? color.nudge(-0.1).bg : color.bg};
@@ -110,35 +110,6 @@ interface CueProps {
   children?: any
 }
 
-interface CueUsePickerProps extends CueProps {
-  props: (keyof Types.TrackPlayback)[]
-  icon: string
-}
-
-const CueUsePicker = (props: CueUsePickerProps) => {
-  const isUsed = _.every(props.props, (prop) => props.cue.used.includes(prop)),
-    dispatch = useDispatch(),
-    handleClick = useCallback(() => {
-      dispatch(
-        Actions.addCue({
-          trackId: props.trackId,
-          cue: {
-            ...props.cue,
-            used: isUsed
-              ? _.without(props.cue.used, ...props.props)
-              : [...props.cue.used, ...props.props],
-          },
-          index: props.cueIndex,
-        })
-      )
-    }, [props.trackId, props.cueIndex, props.cue, props.props])
-  return (
-    <CueBehavior onClick={handleClick} off={!isUsed}>
-      <Icon name={props.icon} />
-    </CueBehavior>
-  )
-}
-
 const startBehaviors: Types.CueStartBehavior[] = ['on-chunk', 'on-end', 'immediate'],
   endBehaviors: Types.CueEndBehavior[] = ['loop', 'next', 'stop']
 
@@ -201,13 +172,7 @@ const Cue = SortableElement((xprops: any) => {
       dispatch(
         Actions.addCue({
           trackId: props.trackId,
-          cue: {
-            ...props.cue,
-            playback: {
-              chunkIndex: -1,
-              playing: true,
-            },
-          },
+          cue: _.omit(props.cue, 'chunks'),
           index: props.cueIndex,
         })
       )
@@ -223,13 +188,11 @@ const Cue = SortableElement((xprops: any) => {
       >
         <CueTitle>
           <CueNumber>{props.cueIndex + 1}</CueNumber>
-          <span>at {_.round(props.cue.playback.chunks[0] / RATE, 2)}s</span>
+          <span>at {_.round(props.cue.chunks[0] / RATE, 2)}s</span>
         </CueTitle>
       </CueWrapper>
 
       <BehaviorWrapper>
-        <CueUsePicker {...props} icon="volume" props={['sourceTracksParams', 'volume']} />
-        <CueUsePicker {...props} icon="spectrum" props={['filter']} />
         <CueBehavior onClick={setStartBehavior}>
           <Icon name={props.cue.startBehavior} />
         </CueBehavior>
@@ -262,10 +225,6 @@ const Cues = memo((props: CuesProps) => {
         Actions.addCue({
           trackId: props.trackId,
           cue: {
-            playback: {
-              chunkIndex: -1,
-              playing: true,
-            },
             startBehavior: 'immediate',
             endBehavior: playback.loop ? 'loop' : 'stop',
           },

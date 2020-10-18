@@ -5,29 +5,7 @@ import arrayMove from 'array-move'
 import * as Types from 'render/util/types'
 import * as Actions from '../actions'
 import * as Selectors from '../selectors'
-import { defaultState } from '../defaults'
-
-/* if a cue doesnt esist in the new sources, just set its volume in the old to 0. */
-function mergeTrackSourcesParams(
-  dest: Types.TrackSourcesParams,
-  src: Types.TrackSourcesParams
-) {
-  return _.mapValues(
-    {
-      ...dest,
-      ...src,
-    },
-    (srcConfig, sourceId) => {
-      if (!src[sourceId])
-        return {
-          ...srcConfig,
-          volume: 0,
-          offset: 0,
-        }
-      else return srcConfig
-    }
-  )
-}
+import { defaultState, defaultCue } from '../defaults'
 
 export function getCuePlayback(
   cue: Types.Cue,
@@ -35,15 +13,11 @@ export function getCuePlayback(
 ): Types.TrackPlayback {
   return {
     ...playback,
-    ..._.pick(cue.playback, cue.used),
     unpause: false,
+    playing: true,
     loop: cue.endBehavior !== 'stop',
-    sourceTracksParams: cue.used.includes('sourceTracksParams')
-      ? mergeTrackSourcesParams(
-          playback.sourceTracksParams,
-          cue.playback.sourceTracksParams
-        )
-      : playback.sourceTracksParams,
+    chunkIndex: -1,
+    chunks: cue.chunks,
   }
 }
 
@@ -55,8 +29,7 @@ export function applyCue(
   const cue = track.cues[cueIndex]
   if (!cue) return track
   const followingCue = track.cues[cueIndex + 1],
-    isUnpausing = !track.playback.playing && cue.playback.playing,
-    lastPeriod = isUnpausing && currentPeriod ? currentPeriod : track.lastPeriod
+    lastPeriod = currentPeriod ?? track.lastPeriod
 
   if (cue.startBehavior === 'immediate') {
     const hasFollowing = cue.endBehavior === 'next' && followingCue
@@ -83,25 +56,15 @@ export function applyCue(
   } else return track
 }
 
-const defaultUsed: (keyof Types.TrackPlayback)[] = [
-  'chunks',
-  'playing',
-  'chunkIndex',
-  'aperiodic',
-]
-
 export default createReducer(defaultState, (handle) => [
   handle(Actions.addCue, (state, { payload }) => {
     const track = state.live.tracks[payload.trackId],
       newCues = [...track.cues]
-    newCues[payload.index === undefined ? newCues.length : payload.index] = {
+    newCues[payload.index ?? newCues.length] = {
+      ...defaultCue,
+      chunks: track.playback.chunks,
+      endBehavior: track.playback.loop ? 'loop' : 'stop',
       ...payload.cue,
-      used: _.uniq([...defaultUsed, ...(payload.cue.used || [])]),
-      playback: {
-        ...track.playback,
-        ...payload.cue.playback,
-      },
-      endBehavior: payload.cue.endBehavior || (track.playback.loop ? 'loop' : 'stop'),
     }
     return {
       ...state,

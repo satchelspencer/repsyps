@@ -516,10 +516,6 @@ export default function init() {
               Actions.addCue({
                 trackId: menuState.selectedTrackId,
                 cue: {
-                  playback: {
-                    chunkIndex: -1,
-                    playing: true,
-                  },
                   startBehavior: 'immediate',
                 },
               })

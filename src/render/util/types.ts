@@ -104,8 +104,6 @@ export interface Times {
   recTime: number
 }
 
-export type Channels = Float32Array[] //array of arrays... 1 per channel
-
 export type Bounds = number[]
 
 export type CueStartBehavior = 'immediate' | 'on-chunk' | 'on-end'
@@ -113,17 +111,9 @@ export type CueStartBehavior = 'immediate' | 'on-chunk' | 'on-end'
 export type CueEndBehavior = 'loop' | 'next' | 'stop'
 
 export interface Cue {
-  playback: TrackPlayback
-  used: (keyof TrackPlayback)[]
+  chunks: Chunks
   startBehavior: CueStartBehavior
   endBehavior: CueEndBehavior
-}
-
-export interface CueBasis {
-  playback: Partial<TrackPlayback>
-  used?: (keyof TrackPlayback)[]
-  startBehavior: CueStartBehavior
-  endBehavior?: CueEndBehavior
 }
 
 export interface NativeTrack {

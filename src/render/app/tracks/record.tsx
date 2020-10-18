@@ -208,7 +208,7 @@ const Recording = memo(
             audio.removeSource(sourceId)
           }
           setStarted(false)
-        } else if (fromTrack) {
+        } else {
           setStarted(true)
           audio.startRecording(fromTrack)
           dispatch(Actions.updatePlayback({ playing: true }))

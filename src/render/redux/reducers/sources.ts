@@ -266,20 +266,6 @@ export default createReducer(defaultState, (handle) => [
           ...state.live.tracks,
           [payload.sourceId]: {
             ...state.live.tracks[payload.sourceId],
-            cues: state.live.tracks[payload.sourceId].cues.map((cue) => {
-              if (cue.playback.sourceTracksParams[payload.sourceTrackId]) {
-                return {
-                  ...cue,
-                  playback: {
-                    ...cue.playback,
-                    sourceTracksParams: _.omit(
-                      cue.playback.sourceTracksParams,
-                      payload.sourceTrackId
-                    ),
-                  },
-                }
-              } else return cue
-            }),
             sourceTrackEditing:
               currentEditing === payload.sourceTrackId ? null : currentEditing,
             visibleSourceTrack:

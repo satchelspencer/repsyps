@@ -282,7 +282,7 @@ export function drawCues(context: DrawingContext, track: Types.Track) {
 
   for (let cueIndex = 0; cueIndex < track.cues.length; cueIndex++) {
     const cue = track.cues[cueIndex],
-      [chunksStartX, chunksEndX] = getChunkEdges(cue.playback.chunks, context)
+      [chunksStartX, chunksEndX] = getChunkEdges(cue.chunks, context)
 
     if (isVisible([chunksStartX, chunksEndX], context)) {
       /* vertical marker */
