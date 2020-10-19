@@ -49,7 +49,7 @@ const Wrapper = ctyled.div.attrs({ invert: false }).styles({
 const Body = ctyled.div.styles({
   flex: 1,
   lined: true,
-}).extend`
+}).extendInline`
   margin-top:1px;
   overflow: hidden;
 `

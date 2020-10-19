@@ -53,7 +53,7 @@ const MissingSourceWrapper = ctyled.div.class(active).styles({
 const MissingSourceNameWrapper = ctyled.div.styles({ flex: 1, height: 1.2 }),
   MissingSourceName = ctyled.div.styles({
     justify: 'flex-end',
-  }).extend`
+  }).extendInline`
     width:100%;
     height:100%;
     display:block;

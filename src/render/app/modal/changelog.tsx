@@ -24,7 +24,7 @@ const InlineStatus = Status.class(inline).styles({ size: (s) => s })
 
 const Title = ctyled.div.styles({
   size: (s) => s * 1.2,
-}).extend`
+}).extendInline`
   font-weight:bold;
 `
 

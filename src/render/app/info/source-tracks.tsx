@@ -45,7 +45,7 @@ const TrackWrapper = ctyled.div.attrs({ loaded: false }).styles({
   rounded: true,
   border: true,
   borderColor: (c) => c.contrast(-0.1),
-}).extend`
+}).extendInline`
   opacity:${(_, { loaded }) => (loaded ? 1 : 0)};
 `
 

@@ -6,7 +6,7 @@ const obj = {}
 context.keys().forEach(function(key) {
   obj[path.basename(key).replace('.svg', '')] = ctyled(context(key).default).attrs({
     style: {},
-  }).extend`
+  }).extendInline`
       display: inline-flex;
       fill: currentColor;
       width:${({ size }) => round(size)}px;

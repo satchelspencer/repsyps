@@ -27,7 +27,7 @@ const RecordingWrapper = ctyled.div.attrs({ visible: false }).styles({
   height: 3,
   lined: true,
   bg: true,
-}).extend`
+}).extendInline`
   ${(_, { visible }) => (visible ? '' : 'display:none;')}
   z-index:1;
   box-shadow:0 0 10px rgba(0,0,0,0.1);
@@ -59,7 +59,7 @@ const TimeCode = ctyled.div.styles({
   font-family:monospace;
 `
 
-const RecCanvas = ctyled.canvas.extend`
+const RecCanvas = ctyled.canvas.extendInline`
   position:absolute;
   width:100%;
   height:100%;

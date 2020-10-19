@@ -40,7 +40,7 @@ const SceneNumber = ctyled.div.class(inline).styles({
   width: 7,
   lined: true,
   borderColor: (c) => c.contrast(-0.3),
-}).extend`
+}).extendInline`
   overflow:hidden;
 `
 

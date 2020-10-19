@@ -48,7 +48,7 @@ const Credit = ctyled.div.styles({
   color: (c) => c.contrast(-0.1),
 })
 
-const Moi = ctyled.div.class(active).styles({}).extend`
+const Moi = ctyled.div.class(active).styles({}).extendInline`
   text-decoration:underline;
 `
 

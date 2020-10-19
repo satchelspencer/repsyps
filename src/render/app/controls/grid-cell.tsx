@@ -24,7 +24,7 @@ const CellMidi = ctyled.div.class(inline).styles({
   right:0;
 `
 
-const CellTL = CellMidi.extend`
+const CellTL = CellMidi.extendInline`
   left: 0;
   right: initial;
 `

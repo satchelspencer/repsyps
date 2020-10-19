@@ -15,7 +15,7 @@ import Library from './library'
 const TrackWrapper = ctyled.div.styles({
   flex: 1,
   lined: true,
-}).extend`
+}).extendInline`
   overflow:hidden;
 `
 

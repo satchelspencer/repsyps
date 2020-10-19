@@ -34,13 +34,13 @@ const PeriodValue = Value.styles({
   padd: 0,
   height: 1.8,
   align: 'center',
-}).extend`overflow:hidden;`
+}).extendInline`overflow:hidden;`
 
 const IncButton = adder(ctyled.div.class(active).styles({
   bg: true,
   align: 'center',
   hover: 0.5
-}).extend`
+}).extendInline`
   padding:${({ size }) => size / 8}px;
   margin:-${({ size }) => size / 8}px;
   cursor:pointer;

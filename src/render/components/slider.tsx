@@ -24,7 +24,7 @@ const SliderGuide = ctyled.div
     border: true,
     rounded: true,
     flex: 1,
-  }).extend`
+  }).extendInline`
     height:${({ size }, { column }) => (column ? 'auto' : Math.ceil(0.5 * size) + 'px')};
     width:${({ size }, { column }) => (!column ? 'auto' : Math.ceil(0.5 * size) + 'px')};
   `
@@ -40,7 +40,7 @@ const Handle = ctyled.div
     border: true,
     flex: 1,
     color: (c) => c.invert().contrast(-0.2),
-  }).extend`
+  }).extendInline`
   height:${({ size }, { column }) =>
     Math.ceil((column ? HANDLE_MINOR : HANDLE_MAJOR) * size) + 'px'};
   width:${({ size }, { column }) =>
@@ -67,7 +67,7 @@ const Marker = ctyled.div
     color: (c) => c.invert().contrast(-0.3),
     height: (_, { column }) => (column ? '1px' : HANDLE_MAJOR * 1.4),
     width: (_, { column }) => (column ? HANDLE_MAJOR * 1.4 : '1px'),
-  }).extend`
+  }).extendInline`
   position:absolute;
   ${(_, { column, position }) => `${column ? 'bottom' : 'left'}:${position}px;`}
 `

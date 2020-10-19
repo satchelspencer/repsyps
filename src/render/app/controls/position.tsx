@@ -76,7 +76,7 @@ const ControlBloc = ctyled.div
 const ControlWrapper = ctyled.div.attrs({ ignored: false }).styles({
   gutter: 1,
   align: 'center',
-}).extend`
+}).extendInline`
   ${(_, { ignored }) => ignored && `opacity:0.5;`}
 `
 

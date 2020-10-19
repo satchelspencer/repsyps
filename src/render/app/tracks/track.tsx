@@ -59,12 +59,12 @@ const TrackCanvasWrapper = ctyled.div.attrs({ dim: false, disabled: false }).sty
   flex: 1,
   bg: true,
   color: (c) => c.contrast(-0.1),
-}).extend`
+}).extendInline`
   ${(_, { dim }) => dim && `opacity:0.5;`}
   ${(_, { disabled }) => disabled && `pointer-events:none;`}
 `
 
-const TrackCanvas = ctyled.canvas.attrs({ selected: false }).extend`
+const TrackCanvas = ctyled.canvas.attrs({ selected: false }).extendInline`
   position:absolute;
   width:100%;
   height:100%;

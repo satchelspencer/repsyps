@@ -127,7 +127,7 @@ const LibItem = ctyled.div
     hover: 0.4,
     color: (c, { depth }) => c.nudge(-0.05 - depth * 0.09),
     bgColor: (c, { hilight }) => c.as(hilight ? palette.green : palette.gray),
-  }).extend`
+  }).extendInline`
   padding-left:${({ size }, { depth }) => size / 2 + (size / 1.5) * depth}px;
   padding-right:${({ size }) => size / 2}px;
 `

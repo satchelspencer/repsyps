@@ -58,7 +58,7 @@ const PeriodValue = SidebarValue.styles({ size: (s) => s * 0.95 })
 
 const ClearButton = FillButton.styles({ color: (c) => c.as(palette.red) })
 
-const SnapButton = WideButton.attrs({ enabled: false }).extend`
+const SnapButton = WideButton.attrs({ enabled: false }).extendInline`
   ${(_, { enabled }) => (!enabled ? `opacity:0.4;` : '')}
 `
 

@@ -64,7 +64,7 @@ const GridCellWrapper = ctyled.div
       exited ? 'inherit' : selected ? '#ff00000d' : color.nudge(0.05).bg};
     ${(_, { exited }) => exited && `box-shadow:0 0 2px 5px inset #ff000012;`}
   }
-`.extend`
+`.extendInline`
 ${(_, { cellSize }) => `width:${cellSize}px;height:${cellSize}px;`}
 `
 

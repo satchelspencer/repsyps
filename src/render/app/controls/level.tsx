@@ -19,9 +19,7 @@ const LevelBarWrapper = ctyled.div.styles({
   flex: 1,
   bg: true,
   color: (c) => c.contrast(0.15),
-}).extend`overflow:hidden;`
-
-const red = ['red', 'red']
+}).extendInline`overflow:hidden;`
 
 const ClipIndicator = ctyled.div.attrs({ clip: false }).styles({
   width: 1,
@@ -30,7 +28,7 @@ const ClipIndicator = ctyled.div.attrs({ clip: false }).styles({
   border: 1,
   rounded: 1,
   color: (c) => c.contrast(0.15),
-}).extend`
+}).extendInline`
   background:${(_, { clip }) => (clip ? 'rgba(255,0,0,0.5)' : 'rgba(0,220,0,0.5)')};
   transition:0.2s all;
 `
@@ -38,7 +36,7 @@ const ClipIndicator = ctyled.div.attrs({ clip: false }).styles({
 const LevelBarInner = ctyled.div.attrs({ clip: false }).styles({
   bg: true,
   color: (c) => c.contrast(-0.3).nudge(-0.1),
-}).extend`
+}).extendInline`
   position:absolute;
   left:0;
   right:0;
@@ -49,7 +47,7 @@ const LevelBarInner = ctyled.div.attrs({ clip: false }).styles({
 const MaxLevelBar = ctyled.div.styles({
   bg: true,
   color: (c) => c.invert().contrast(-0.5),
-}).extend`
+}).extendInline`
   position:absolute;
   left:0;
   right:0;

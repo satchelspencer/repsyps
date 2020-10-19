@@ -22,7 +22,7 @@ const TrackControlsWrapper = ctyled.div.styles({
 
 const TrackHandle = SortableHandle(ctyled.div
   .attrs({ selected: false })
-  .styles({ color: (c) => c.nudge(0.2), width: 1 }).extend`
+  .styles({ color: (c) => c.nudge(0.2), width: 1 }).extendInline`
   position:absolute;
   left:0;
   height:100%;
@@ -34,7 +34,7 @@ const TrackControlsBody = ctyled.div.styles({
   flex: 1,
   lined: true,
   borderColor: (c) => c.contrast(-0.2),
-}).extend`
+}).extendInline`
   position:absolute;
   right:0;
   height:100%;
@@ -54,7 +54,7 @@ const TrackHeader = adder(ctyled.div.styles({
   align: 'center',
   gutter: 0.8,
   bg: true,
-}).extend`
+}).extendInline`
   padding-right:${({ size }) => size / 1.8}px;
 `)
 
@@ -74,7 +74,7 @@ const TrackTitleWrapper = ctyled.div.styles({
   height: 1.3,
 })
 
-const TrackTitle = ctyled.div.styles({}).extend`  
+const TrackTitle = ctyled.div.styles({}).extendInline`  
   position:absolute;
   top:0;
   left:0;
@@ -157,7 +157,7 @@ const CuesWrapper = ctyled.div.styles({
 
 const TrackIndex = ctyled.div.styles({
   size: (s) => s * 1.2,
-}).extend`
+}).extendInline`
   font-weight:bold;
 `
 

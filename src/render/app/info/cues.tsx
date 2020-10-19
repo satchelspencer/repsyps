@@ -15,7 +15,7 @@ import { adder } from 'render/components/control-adder'
 
 import SidebarItem from 'render/components/item'
 
-const CueWrapper = adder(ctyled.div
+const CueWrapperAdder = adder(ctyled.div
   .attrs<{ active?: boolean; next?: boolean }>({ active: false, next: false })
   .class(inline)
   .styles({
@@ -28,11 +28,11 @@ const CueWrapper = adder(ctyled.div
     height: 2,
     flex: 1,
     borderColor: (c) => c.contrast(-0.1),
-  }).extendSheet`
-  padding-right:0px !important;
-  background:${({ color }, { active, next }) =>
-    active ? color.nudge(-0.2).bg : next ? color.nudge(-0.1).bg : color.bg};
-`)
+  }).extendInline`
+    padding-right:0px !important;
+    background:${({ color }, { active, next }) =>
+      active ? color.nudge(-0.2).bg : next ? color.nudge(-0.1).bg : color.bg};
+  `)
 
 const CuesListWrapper = ctyled.div.styles({
   column: true,
@@ -65,7 +65,7 @@ const JumpButton = adder(
 
 const CueNumber = ctyled.div.styles({
   size: (s) => s * 1.2,
-}).extend`
+}).extendInline`
   font-weight:bold;
 `
 
@@ -87,7 +87,7 @@ const CueBehavior = ctyled.div
     color: (c) => c.nudge(0.05),
     height: 1.8,
     bg: true,
-  }).extend`
+  }).extendInline`
   ${(_, { off }) =>
     off &&
     `
@@ -180,7 +180,7 @@ const Cue = SortableElement((xprops: any) => {
 
   return (
     <CueH>
-      <CueWrapper
+      <CueWrapperAdder
         params={cueParams}
         active={props.active}
         next={props.next}
@@ -190,7 +190,7 @@ const Cue = SortableElement((xprops: any) => {
           <CueNumber>{props.cueIndex + 1}</CueNumber>
           <span>at {_.round(props.cue.chunks[0] / RATE, 2)}s</span>
         </CueTitle>
-      </CueWrapper>
+      </CueWrapperAdder>
 
       <BehaviorWrapper>
         <CueBehavior onClick={setStartBehavior}>

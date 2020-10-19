@@ -72,14 +72,11 @@ export default createReducer(defaultState, (handle) => [
     }
     return {
       ...state,
-      live: {
-        ...state.live,
-        tracks: {
-          ...state.live.tracks,
-          [payload.trackId]: {
-            ...track,
-            cues: newCues,
-          },
+      sources: {
+        ...state.sources,
+        [track.sourceId ?? '']: {
+          ...source,
+          cues: newCues,
         },
       },
     }
@@ -93,14 +90,11 @@ export default createReducer(defaultState, (handle) => [
     newCues.splice(payload.index, 1)
     return {
       ...state,
-      live: {
-        ...state.live,
-        tracks: {
-          ...state.live.tracks,
-          [payload.trackId]: {
-            ...track,
-            cues: newCues,
-          },
+      sources: {
+        ...state.sources,
+        [track.sourceId ?? '']: {
+          ...source,
+          cues: newCues,
         },
       },
     }
@@ -114,14 +108,11 @@ export default createReducer(defaultState, (handle) => [
 
     return {
       ...state,
-      live: {
-        ...state.live,
-        tracks: {
-          ...state.live.tracks,
-          [payload.trackId]: {
-            ...track,
-            cues: newCues,
-          },
+      sources: {
+        ...state.sources,
+        [track.sourceId ?? '']: {
+          ...source,
+          cues: newCues,
         },
       },
     }
