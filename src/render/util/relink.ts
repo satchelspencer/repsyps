@@ -9,20 +9,21 @@ import * as Actions from 'render/redux/actions'
 import * as Selectors from 'render/redux/selectors'
 import * as Types from 'render/util/types'
 
-export default function relink(
+export default async function relink(
   missingSource: Types.SourceInfo,
   store: Store<Types.State>
 ) {
   const state = store.getState(),
     missing = Selectors.getMissingSources(state),
-    path = electron.remote.dialog.showOpenDialog({
+    pathRes = await electron.remote.dialog.showOpenDialog({
       defaultPath: undefined,
       title: 'replace',
       properties: ['openFile'],
       message: `Find ${pathUtils.basename(missingSource.path)}`,
       buttonLabel: 'Relink File',
-    })
-  if (path && path[0]) {
+    }),
+    newPath = _.first(pathRes.filePaths)
+  if (newPath) {
     const oldPath = missingSource.path,
       actions: AnyAction[] = []
 
@@ -32,7 +33,7 @@ export default function relink(
         source.sourceTrackId !== missingSource.sourceTrackId
       ) {
         const pathGuess = pathUtils.resolve(
-          pathUtils.dirname(path[0]),
+          pathUtils.dirname(newPath),
           pathUtils.relative(pathUtils.dirname(oldPath), pathUtils.dirname(source.path)),
           pathUtils.basename(source.path)
         )
@@ -52,7 +53,7 @@ export default function relink(
           Actions.relinkTrackSource({
             sourceId: source.sourceId,
             sourceTrackId: source.sourceTrackId,
-            newSource: path[0],
+            newSource: newPath,
           })
         )
       }
