@@ -151,6 +151,7 @@ export default createReducer(defaultState, (handle) => [
           base: null,
         },
       },
+      cues: []
     }
     return {
       ...state,

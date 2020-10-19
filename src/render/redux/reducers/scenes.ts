@@ -60,15 +60,17 @@ export function updateSceneIndex(
         tracks: _.mapValues(state.live.tracks, (track, trackId) => {
           let newTrack = track
           if (forceReset || noLongerActive.includes(trackId)) {
-            const firstCue = track.cues[0],
-              cuedTrack: Types.Track = firstCue
-                ? applyCue(track, 0)
-                : {
-                    ...track,
-                    nextPlayback: null,
-                    nextCueIndex: -1,
-                    cueIndex: -1,
-                  }
+            const source = track.sourceId === null ? null : state.sources[track.sourceId],
+              firstCue = _.first(source?.cues),
+              cuedTrack: Types.Track =
+                firstCue && source
+                  ? applyCue(track, source, 0)
+                  : {
+                      ...track,
+                      nextPlayback: null,
+                      nextCueIndex: -1,
+                      cueIndex: -1,
+                    }
             newTrack = {
               ...cuedTrack,
               playback: {

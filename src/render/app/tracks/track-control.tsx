@@ -178,6 +178,7 @@ function TrackControls(props: TrackControlsProps) {
     source = useSelector((state) =>
       track.sourceId === null ? null : state.sources[track.sourceId]
     ),
+    cues = source?.cues ?? [],
     hasPreview = useSelector((state) => state.output.preview !== null),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
@@ -221,9 +222,9 @@ function TrackControls(props: TrackControlsProps) {
     baseSpeed = barLen && !track.playback.aperiodic ? barLen / period : 1,
     activeCueIndex = track.cueIndex,
     playing = track.playback.playing,
-    hasCues = !!track.cues.length,
+    hasCues = !!cues.length,
     atStart = playing && activeCueIndex === 0,
-    atEnd = playing && activeCueIndex === track.cues.length - 1,
+    atEnd = playing && activeCueIndex === cues.length - 1,
     canPrev = atStart || activeCueIndex > 0,
     boundsAlpha = track.playback.aperiodic ? 1 : source?.boundsAlpha ?? 1
 

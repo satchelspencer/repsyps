@@ -211,14 +211,14 @@ const Cue = SortableElement((xprops: any) => {
 })
 
 const Cues = memo((props: CuesProps) => {
-  const { playback, cues, cueIndex, nextCueIndex, sourceId } = useSelector(
+  const { playback, cueIndex, nextCueIndex, sourceId } = useSelector(
       (state) => state.live.tracks[props.trackId]
     ),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
-    name = useSelector((state) =>
-      sourceId === null ? null : state.sources[sourceId]?.name
-    ),
+    source = useSelector((state) => (sourceId === null ? null : state.sources[sourceId])),
+    name = source?.name,
+    cues = source?.cues ?? [],
     dispatch = useDispatch(),
     handleAddCue = useCallback(() => {
       dispatch(

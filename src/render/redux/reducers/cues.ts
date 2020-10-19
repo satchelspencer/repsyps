@@ -23,12 +23,13 @@ export function getCuePlayback(
 
 export function applyCue(
   track: Types.Track,
+  source: Types.Source,
   cueIndex: number,
   currentPeriod?: number
 ): Types.Track {
-  const cue = track.cues[cueIndex]
+  const cue = source.cues[cueIndex]
   if (!cue) return track
-  const followingCue = track.cues[cueIndex + 1],
+  const followingCue = source.cues[cueIndex + 1],
     lastPeriod = currentPeriod ?? track.lastPeriod
 
   if (cue.startBehavior === 'immediate') {
@@ -59,7 +60,10 @@ export function applyCue(
 export default createReducer(defaultState, (handle) => [
   handle(Actions.addCue, (state, { payload }) => {
     const track = state.live.tracks[payload.trackId],
-      newCues = [...track.cues]
+      source = track?.sourceId === null ? null : state.sources[track.sourceId]
+    if (!source) return state
+
+    const newCues = [...source.cues]
     newCues[payload.index ?? newCues.length] = {
       ...defaultCue,
       chunks: track.playback.chunks,
@@ -82,7 +86,10 @@ export default createReducer(defaultState, (handle) => [
   }),
   handle(Actions.deleteCue, (state, { payload }) => {
     const track = state.live.tracks[payload.trackId],
-      newCues = [...track.cues]
+      source = track?.sourceId === null ? null : state.sources[track.sourceId]
+    if (!source) return state
+
+    const newCues = [...source.cues]
     newCues.splice(payload.index, 1)
     return {
       ...state,
@@ -100,7 +107,11 @@ export default createReducer(defaultState, (handle) => [
   }),
   handle(Actions.reorderCue, (state, { payload }) => {
     const track = state.live.tracks[payload.trackId],
-      newCues = arrayMove(track.cues, payload.oldIndex, payload.newIndex)
+      source = track?.sourceId === null ? null : state.sources[track.sourceId]
+
+    if (!source) return state
+    const newCues = arrayMove(source.cues, payload.oldIndex, payload.newIndex)
+
     return {
       ...state,
       live: {
@@ -123,7 +134,10 @@ export default createReducer(defaultState, (handle) => [
     if (trackId) {
       const track = state.live.tracks[trackId],
         currentIndex = track.cueIndex,
-        nextIndex = currentIndex + payload.cueStep
+        nextIndex = currentIndex + payload.cueStep,
+        source = track?.sourceId === null ? null : state.sources[track.sourceId]
+
+      if (!source) return state
 
       if (!track.playback.playing && track.cueIndex !== -1) {
         newLive = {
@@ -140,12 +154,12 @@ export default createReducer(defaultState, (handle) => [
             },
           },
         }
-      } else if (nextIndex >= 0 && nextIndex < track.cues.length) {
+      } else if (nextIndex >= 0 && nextIndex < source.cues.length) {
         newLive = {
           ...state.live,
           tracks: {
             ...state.live.tracks,
-            [trackId]: applyCue(track, nextIndex, state.playback.period),
+            [trackId]: applyCue(track, source, nextIndex, state.playback.period),
           },
         }
       } else
@@ -178,6 +192,11 @@ export default createReducer(defaultState, (handle) => [
   handle(Actions.setTrackCue, (state, { payload }) => {
     const trackId =
       payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0)
+    if (!trackId) return state
+
+    const track = state.live.tracks[trackId],
+      source = track?.sourceId === null ? null : state.sources[track.sourceId]
+    if (!source) return state
 
     return {
       ...state,
@@ -188,6 +207,7 @@ export default createReducer(defaultState, (handle) => [
               ...state.live.tracks,
               [trackId]: applyCue(
                 state.live.tracks[trackId],
+                source,
                 payload.cueIndex,
                 state.playback.period
               ),

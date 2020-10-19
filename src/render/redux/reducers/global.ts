@@ -4,6 +4,7 @@ import pathUtils from 'path'
 
 import * as Actions from '../actions'
 import * as Types from 'render/util/types'
+import * as Selectors from '../selectors'
 import {
   defaultState,
   defaultTrack,
@@ -168,17 +169,18 @@ export default createReducer(defaultState, (handle) => [
       const didAdvanceChunk =
           track.playback.chunkIndex !== trackTiming.playback.chunkIndex ||
           track.playback.playing !== track.playback.playing,
-        didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback
+        didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback,
+      source = Selectors.getSourceByTrackId(state, trackId)
 
       if (
         didAdvancePlayback &&
         payload.commit &&
         track.nextCueIndex !== -1 &&
-        track.nextPlayback
+        track.nextPlayback && source
       ) {
         needsUpdate = true
-        const appliedCue = track.cues[track.nextCueIndex],
-          followingCue = track.cues[track.nextCueIndex + 1],
+        const appliedCue = source.cues[track.nextCueIndex],
+          followingCue = source.cues[track.nextCueIndex + 1],
           hasFollowing = appliedCue.endBehavior === 'next' && followingCue
 
         return {

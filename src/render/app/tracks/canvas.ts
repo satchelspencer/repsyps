@@ -49,7 +49,9 @@ export default function useWaveformCanvas(
     chunks = useMemo(() => track.playback.chunks, [
       track.playback.playing ? sample : track.playback.chunks,
     ]),
-    bounds = source?.bounds ?? []
+    bounds = source?.bounds ?? [],
+    cues = source?.cues ?? []
+
   useEffect(() => {
     ctxt.current = canvasRef.current?.getContext('2d')
     if (ctxt.current) {
@@ -121,7 +123,7 @@ export default function useWaveformCanvas(
 
     drawGutter(drawContext)
     drawPlayback(drawContext, track, chunks)
-    drawCues(drawContext, track)
+    drawCues(drawContext, cues)
     drawBounds(drawContext, bounds, track.editing)
     drawDrag(drawContext)
 
@@ -137,7 +139,7 @@ export default function useWaveformCanvas(
     track.visibleSourceTrack,
     bounds,
     playLocked,
-    track.cues,
+    cues,
     ctyledContext.theme.color,
     jogging,
     ..._.values(view),
@@ -273,15 +275,15 @@ function isVisible(xs: number[], context: DrawingContext) {
   return !(_.every(xs, (x) => x < 0) || _.every(xs, (x) => x > context.pwidth))
 }
 
-export function drawCues(context: DrawingContext, track: Types.Track) {
+export function drawCues(context: DrawingContext, cues: Types.Cue[]) {
   const { ctx, size } = context,
     gsize = size * GUTTER_SIZE
 
   ctx.strokeStyle = 'rgba(255,0,130,0.5)'
   ctx.fillStyle = 'rgba(255,0,130,0.8)'
 
-  for (let cueIndex = 0; cueIndex < track.cues.length; cueIndex++) {
-    const cue = track.cues[cueIndex],
+  for (let cueIndex = 0; cueIndex < cues.length; cueIndex++) {
+    const cue = cues[cueIndex],
       [chunksStartX, chunksEndX] = getChunkEdges(cue.chunks, context)
 
     if (isVisible([chunksStartX, chunksEndX], context)) {

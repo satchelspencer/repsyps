@@ -33,7 +33,6 @@ export const defaultPlayback: Types.Playback = {
     selected: false,
     editing: false,
     sourceTrackEditing: null,
-    cues: [],
     cueIndex: -1,
     nextCueIndex: -1,
     playLock: true,
@@ -73,6 +72,7 @@ export const defaultPlayback: Types.Playback = {
   defaultSource: Types.Source = {
     name: '',
     bounds: [],
+    cues: [],
     boundsAlpha: 1,
     sourceTracks: {},
   },

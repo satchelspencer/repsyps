@@ -473,15 +473,13 @@ export const makeGetPersistentTrack = () => {
   return createShallowSelector(
     [
       getPlayback,
-      (track: Types.Track) => track.cues,
       (track: Types.Track) => track.visibleSourceTrack,
       (track: Types.Track) => track.lastPeriod,
       (track: Types.Track) => track.sourceId,
     ],
-    (playback, cues, visibleSourceTrack, lastPeriod, sourceId): Types.PersistentTrack => {
+    (playback, visibleSourceTrack, lastPeriod, sourceId): Types.PersistentTrack => {
       return {
         visibleSourceTrack,
-        cues,
         playback,
         lastPeriod,
         sourceId,
