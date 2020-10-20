@@ -6,7 +6,6 @@ import * as Selectors from 'render/redux/selectors'
 import * as Actions from 'render/redux/actions'
 
 import { apply, version, Migration, Versioned } from './apply-migration'
-import defaultBindingsFile from './default-bindings'
 
 const migration: Migration<any, any> | null = null
 export const latest = '0.0.0'
@@ -21,13 +20,6 @@ export function loadBindings(path: string, store: Store<Types.State>) {
     }
   } catch (e) {
     console.log('load err', e)
-  }
-}
-
-export function loadDefaultBindings(store: Store<Types.State>) {
-  const migrated = apply(defaultBindingsFile, migration) as Versioned<Types.BindingsFile>
-  if (migrated.version === latest) {
-    store.dispatch(Actions.loadBindings(migrated.state))
   }
 }
 

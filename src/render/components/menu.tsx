@@ -18,7 +18,7 @@ import { useSelection } from 'render/components/selection'
 import { useDispatch, useStore } from 'render/redux/react'
 
 import { getPath, getAppPath } from 'render/loading/app-paths'
-import { loadBindings, saveBindings, loadDefaultBindings } from 'render/loading/bindings'
+import { loadBindings, saveBindings } from 'render/loading/bindings'
 import {
   loadProject,
   saveProject,
@@ -606,9 +606,6 @@ export default function init() {
         clearBindings: {
           click: () => dispatch(Actions.resetBindings()),
         },
-        loadDefaultPresets: {
-          click: () => loadDefaultBindings(store),
-        },
         library: {
           click: () => {
             dispatch(Actions.setSettings({ libOpen: !menuState.settings.libOpen }))
@@ -1102,10 +1099,6 @@ export default function init() {
             {
               label: 'Clear Bindings',
               ...menuCommands.clearBindings,
-            },
-            {
-              label: 'Load Default Presets',
-              ...menuCommands.loadDefaultPresets,
             },
           ],
         },
