@@ -50,7 +50,6 @@ export default createReducer(defaultState, (handle) => [
       live: {
         ...defaultState.live,
         bindings: state.live.bindings,
-        controlPresets: state.live.controlPresets,
         globalControls: state.live.globalControls,
       },
       settings: state.settings,
@@ -154,10 +153,6 @@ export default createReducer(defaultState, (handle) => [
       live: {
         ...state.live,
         ...localPersisted.live,
-        controlPresets: {
-          ...state.live.controlPresets,
-          ...localPersisted.live.controlPresets,
-        },
       },
     }
   }),
@@ -170,13 +165,14 @@ export default createReducer(defaultState, (handle) => [
           track.playback.chunkIndex !== trackTiming.playback.chunkIndex ||
           track.playback.playing !== track.playback.playing,
         didAdvancePlayback = track.nextPlayback && !trackTiming.nextPlayback,
-      source = Selectors.getSourceByTrackId(state, trackId)
+        source = Selectors.getSourceByTrackId(state, trackId)
 
       if (
         didAdvancePlayback &&
         payload.commit &&
         track.nextCueIndex !== -1 &&
-        track.nextPlayback && source
+        track.nextPlayback &&
+        source
       ) {
         needsUpdate = true
         const appliedCue = source.cues[track.nextCueIndex],

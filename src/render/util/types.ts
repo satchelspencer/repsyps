@@ -306,15 +306,6 @@ export type Bindings = Grid<Binding>
 
 export type PersistentBindings = Grid<PersistentBinding>
 
-export interface ControlPreset {
-  name: string
-  controls: Controls
-}
-
-export interface ControlPresets {
-  [presetId: string]: ControlPreset
-}
-
 export interface PersistentLive {
   scenes: PersistentScene[]
   bindings: PersistentBindings
@@ -326,7 +317,6 @@ export interface Live {
   scenes: Scene[]
   tracks: Tracks
   bindings: Bindings
-  controlPresets: ControlPresets
   globalControls: Controls
   controlsEnabled: boolean
   selectedPosition: Position
@@ -334,13 +324,11 @@ export interface Live {
 
 export interface LocalPersistentLive {
   bindings: Bindings
-  controlPresets: ControlPresets
   globalControls: Controls
 }
 
 export interface BindingsFile {
   bindings: Bindings
-  controlPresets: ControlPresets
   globalControls: Controls
 }
 

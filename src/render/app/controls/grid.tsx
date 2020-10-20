@@ -19,7 +19,6 @@ import useMeasure from 'render/components/measure'
 import GridCell from './grid-cell'
 import PositionDetail from './position'
 import ControlsOptions from './options'
-import Presets from './presets'
 import Levels from './level'
 import isEqual from 'src/render/util/is-equal'
 
@@ -211,7 +210,6 @@ function ControlsGrid() {
             })}
           </GridInner>
         </ControlsGridWrapper>
-        <Presets />
         <Levels />
       </ControlsIH>
     </ControlsH>

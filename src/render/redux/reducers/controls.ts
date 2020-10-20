@@ -231,53 +231,6 @@ export default createReducer(defaultState, (handle) => [
     const position = payload || state.live.selectedPosition
     return setControlGroup(state, null, position)
   }),
-  handle(Actions.addControlPreset, (state, { payload }) => {
-    //only uses per-scene controls
-    return {
-      ...state,
-      live: {
-        ...state.live,
-        controlPresets: {
-          ...state.live.controlPresets,
-          [payload.presetId]: {
-            name: payload.name,
-            controls: { ...state.live.scenes[state.live.sceneIndex].controls },
-          },
-        },
-      },
-    }
-  }),
-  handle(Actions.deleteControlPreset, (state, { payload: presetId }) => {
-    return {
-      ...state,
-      live: {
-        ...state.live,
-        controlPresets: _.omit(state.live.controlPresets, presetId),
-      },
-    }
-  }),
-  handle(Actions.applyControlPreset, (state, { payload: presetId }) => {
-    const preset = state.live.controlPresets[presetId]
-    if (!preset) return state
-    else
-      return {
-        ...state,
-        live: {
-          ...state.live,
-          scenes: state.live.scenes.map((scene, sceneIndex) => {
-            if (sceneIndex === state.live.sceneIndex) {
-              return {
-                ...scene,
-                controls: {
-                  ...scene.controls,
-                  ...preset.controls, //MERGING CONTROLS?
-                },
-              }
-            } else return scene
-          }),
-        },
-      }
-  }),
   handle(Actions.setControlsEnabled, (state, { payload: enabled }) => {
     return {
       ...state,
@@ -336,10 +289,6 @@ export default createReducer(defaultState, (handle) => [
       live: {
         ...state.live,
         ...bindingsFile,
-        controlPresets: {
-          ...state.live.controlPresets,
-          ...bindingsFile.controlPresets,
-        },
         globalControls: {
           ...state.live.globalControls,
           ...bindingsFile.globalControls,

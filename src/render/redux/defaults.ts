@@ -1,6 +1,5 @@
 import * as Types from 'render/util/types'
 import { RATE } from 'render/util/audio'
-import defaultBindingsFile from 'render/loading/default-bindings'
 import { getPath } from 'render/loading/app-paths'
 
 export const defaultPlayback: Types.Playback = {
@@ -58,13 +57,11 @@ export const defaultPlayback: Types.Playback = {
     controlValues: {},
     initValues: {},
   },
-  defaultControlPresets: Types.ControlPresets = defaultBindingsFile.state.controlPresets,
   defaultLive: Types.Live = {
     sceneIndex: 0,
     scenes: [defaultScene],
     tracks: {},
     bindings: defaultBindings,
-    controlPresets: defaultControlPresets,
     controlsEnabled: true,
     selectedPosition: { x: 0, y: 0 },
     globalControls: {},
