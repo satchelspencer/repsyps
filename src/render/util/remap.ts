@@ -37,5 +37,6 @@ export function applyIdMap<T>(obj: T, idMap: IdMap): T {
     return res as T
   } else if (_.isArray(obj)) {
     return obj.map((v) => applyIdMap(v, idMap)) as any
-  } else return obj
+  } else if (_.isString(obj)) return idMap[obj] || (obj as any)
+  else return obj
 }

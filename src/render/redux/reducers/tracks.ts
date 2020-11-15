@@ -536,7 +536,6 @@ export default createReducer(defaultState, (handle) => [
           ),
           [newTrackId]: {
             ...newTrack,
-            visibleSourceTrack: newTrack.visibleSourceTrack + suffix,
             selected: true,
           },
         },
