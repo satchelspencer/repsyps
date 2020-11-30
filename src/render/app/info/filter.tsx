@@ -42,10 +42,10 @@ const Filter = memo((props: FilterProps) => {
     ),
     controlParams = useMemo(
       () => ({
-        trackIndex,
+        trackId: props.trackId,
         trackProp: 'filter',
       }),
-      [trackIndex]
+      [props.trackId]
     )
 
   return (

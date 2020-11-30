@@ -87,12 +87,11 @@ export function addTrackAndSource(path: string) {
 }
 
 export const setTrackPlayback = createAction<{
-  trackId?: string
-  trackIndex?: number
+  trackId: string | null
   playback: Partial<Types.TrackPlayback>
 }>('SET_TRACK_PLAYBACK')
 
-export const playPauseTrack = createAction<string | number>('PLAY_PAUSE_TRACK')
+export const playPauseTrack = createAction<string | null>('PLAY_PAUSE_TRACK')
 
 export const toggleTrackLoop = createAction<string>('TOGGLE_TRACK_LOOP')
 
@@ -124,14 +123,12 @@ export const togglePreviewTrack = createAction<string>('TOGGLE_TRACK_PREVIEW')
 export const clearPreview = createAction<void>('CLEAR_PREVIEW')
 
 export const loopTrack = createAction<{
-  trackId?: string
-  trackIndex?: number
+  trackId: string | null
   loop: number
 }>('LOOP_TRACK')
 
 export const setTrackSync = createAction<{
-  trackId?: string
-  trackIndex?: number
+  trackId: string | null
   sync?: Types.SyncControlState
 }>('SET_TRACK_SYNC')
 
@@ -140,16 +137,14 @@ export const stopPrevTracks = createAction<void>('STOP_PREV_TRACKS')
 /* source actions */
 
 export const setTrackSourceParams = createAction<{
-  trackId?: string
-  trackIndex?: number
+  trackId: string | null
   sourceTrackId?: string
   sourceTrackIndex?: number
   sourceTrackParams: Partial<Types.TrackSourceParams>
 }>('SET_TRACK_SOURCE')
 
 export const soloTrackSource = createAction<{
-  trackId?: string
-  trackIndex?: number
+  trackId: string | null
   sourceTrackId?: string
   sourceTrackIndex?: number
 }>('SOLO_TRACKSOURCE')
@@ -242,14 +237,12 @@ export const reorderCue = createAction<{
 }>('REORDER_CUE')
 
 export const stepTrackCue = createAction<{
-  trackId?: string
-  trackIndex?: number
+  trackId: string | null
   cueStep: number
 }>('STEP_TRACK_CUE')
 
 export const setTrackCue = createAction<{
-  trackId?: string
-  trackIndex?: number
+  trackId: string | null
   cueIndex: number
 }>('SET_TRACK_CUE')
 
@@ -335,7 +328,7 @@ export function getApplyControlGroupActions(
     else if (controlGroup.absolute && 'trackProp' in control)
       actions.push(
         setTrackPlayback({
-          trackIndex: control.trackIndex,
+          trackId: control.trackId,
           playback: {
             [control.trackProp]: mappings[control.trackProp].fromStandard(value),
           },
@@ -344,7 +337,7 @@ export function getApplyControlGroupActions(
     else if (controlGroup.absolute && 'sourceTrackProp' in control)
       actions.push(
         setTrackSourceParams({
-          trackIndex: control.trackIndex,
+          trackId: control.trackId,
           sourceTrackIndex: control.sourceTrackIndex,
           sourceTrackParams: {
             [control.sourceTrackProp]: mappings[control.sourceTrackProp].fromStandard(
@@ -356,28 +349,28 @@ export function getApplyControlGroupActions(
     else if ('cueStep' in control && risingEdge)
       actions.push(
         stepTrackCue({
-          trackIndex: control.trackIndex,
+          trackId: control.trackId,
           cueStep: control.cueStep,
         })
       )
     else if ('cueIndex' in control && risingEdge)
       actions.push(
         setTrackCue({
-          trackIndex: control.trackIndex,
+          trackId: control.trackId,
           cueIndex: control.cueIndex,
         })
       )
     else if ('loop' in control && risingEdge) {
       actions.push(
         loopTrack({
-          trackIndex: control.trackIndex,
+          trackId: control.trackId,
           loop: control.loop,
         })
       )
     } else if ('playPause' in control && risingEdge) {
-      actions.push(playPauseTrack(control.trackIndex))
+      actions.push(playPauseTrack(control.trackId))
     } else if ('sync' in control && risingEdge) {
-      actions.push(setTrackSync({ trackIndex: control.trackIndex, sync: control.sync }))
+      actions.push(setTrackSync({ trackId: control.trackId, sync: control.sync }))
     } else if ('periodDelta' in control && risingEdge) {
       actions.push(incrementPeriod(control.periodDelta))
     } else if ('trackStep' in control && risingEdge && control.trackStep) {

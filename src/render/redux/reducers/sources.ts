@@ -31,9 +31,7 @@ export function makeSourceTracksRelative(
 
 export default createReducer(defaultState, (handle) => [
   handle(Actions.setTrackSourceParams, (state, { payload }) => {
-    const trackId =
-        payload.trackId ||
-        Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0),
+    const trackId = Selectors.getTrackId(state.live, payload.trackId),
       sourceTrackId =
         payload.sourceTrackId ||
         (trackId &&
@@ -69,9 +67,7 @@ export default createReducer(defaultState, (handle) => [
       }
   }),
   handle(Actions.soloTrackSource, (state, { payload }) => {
-    const trackId =
-        payload.trackId ||
-        Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0),
+    const trackId = Selectors.getTrackId(state.live, payload.trackId),
       sourceTrackId =
         payload.sourceTrackId ||
         (trackId &&
@@ -151,7 +147,7 @@ export default createReducer(defaultState, (handle) => [
           base: null,
         },
       },
-      cues: []
+      cues: [],
     }
     return {
       ...state,

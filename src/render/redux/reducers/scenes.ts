@@ -14,6 +14,35 @@ import { remap } from 'render/util/remap'
 import globalReducer, { updateSourcesPaths } from './global'
 import { getChunksFromBounds } from './tracks'
 
+export function removeUnusedControls(scenes: Types.Scene[]) {
+  return scenes.map((scene) => {
+    let changed = false
+    const newControls = _.pickBy(
+      _.mapValues(scene.controls, (group) => {
+        return {
+          ...group,
+          controls: group.controls.filter((control) => {
+            const keep =
+              !('trackId' in control) ||
+              !control.trackId ||
+              scene.trackIds.includes(control.trackId)
+            if (!keep) changed = true
+            return keep
+          }),
+        }
+      }),
+      (group) => group.controls.length
+    )
+
+    return changed
+      ? {
+          ...scene,
+          controls: newControls,
+        }
+      : scene
+  })
+}
+
 export function updateSceneIndex(
   state: Types.State,
   sceneIndex: number,
@@ -108,6 +137,7 @@ export function updateSceneIndex(
           else
             return {
               ...scene,
+
               controlValues: _.mapValues(controls, (control, pos) => {
                 const binding = state.live.bindings[pos],
                   rvalue = controlValues[pos],
@@ -194,7 +224,7 @@ export default createReducer(defaultState, (handle) => [
         ...state,
         live: {
           ...state.live,
-          scenes: newScenes,
+          scenes: removeUnusedControls(newScenes),
           tracks: newTracks,
         },
       }

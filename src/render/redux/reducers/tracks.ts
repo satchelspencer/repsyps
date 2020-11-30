@@ -11,6 +11,8 @@ import uid from 'src/render/util/uid'
 import { IdMap, applyIdMap } from 'render/util/remap'
 import { getTiming } from 'render/components/timing'
 
+import { removeUnusedControls } from './scenes'
+
 export function getChunksFromBounds(
   startSample: number,
   bounds: number[],
@@ -244,18 +246,15 @@ export default createReducer(defaultState, (handle) => [
         sources: _.omit(state.sources, trackId),
         live: {
           ...state.live,
-          scenes: newScenes,
+          scenes: removeUnusedControls(newScenes),
           tracks: _.omit(state.live.tracks, trackId),
         },
       },
       newSceneIndex
     )
   }),
-  handle(Actions.playPauseTrack, (state, { payload: trackIdOrIndex }) => {
-    const trackId =
-        typeof trackIdOrIndex !== 'string'
-          ? Selectors.getTrackIdByIndex(state.live, trackIdOrIndex)
-          : trackIdOrIndex,
+  handle(Actions.playPauseTrack, (state, { payload }) => {
+    const trackId = Selectors.getTrackId(state.live, payload),
       track = state.live.tracks[trackId ?? ''],
       isPlaying = state.playback.playing
     if (!track || !trackId) return state
@@ -274,8 +273,7 @@ export default createReducer(defaultState, (handle) => [
       })
   }),
   handle(Actions.setTrackPlayback, (state, { payload }) => {
-    const trackId =
-      payload.trackId ?? Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0)
+    const trackId = Selectors.getTrackId(state.live, payload.trackId)
     return trackId ? applyTrackPlayback(state, trackId, payload.playback) : state
   }),
   handle(Actions.stopAll, (state) => {
@@ -301,8 +299,7 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.setTrackSync, (state, { payload }) => {
-    const trackId =
-      payload.trackId ?? Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0)
+    const trackId = Selectors.getTrackId(state.live, payload.trackId)
     return trackId ? setTrackSync(state, trackId, payload.sync) : state
   }),
   handle(Actions.selectTrackExclusive, (state, { payload: trackId }) => {
@@ -442,9 +439,7 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.loopTrack, (state, { payload }) => {
-    const trackId =
-        payload.trackId ||
-        Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0),
+    const trackId = Selectors.getTrackId(state.live, payload.trackId),
       track = trackId === undefined ? trackId : state.live.tracks[trackId],
       source = Selectors.getSourceByTrackId(state, trackId)
 

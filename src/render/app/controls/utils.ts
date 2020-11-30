@@ -31,6 +31,7 @@ function trackIndex2Str(index: number) {
   else return `Track ${normIndex(index)}`
 }
 
+//TODO: MAKE IT PASS TRACK NAMES?
 export function getControlName(control: Types.Control) {
   if ('globalProp' in control) return 'Global ' + _.startCase(control.globalProp)
   else if ('sourceTrackProp' in control)
@@ -38,23 +39,19 @@ export function getControlName(control: Types.Control) {
       control.sourceTrackProp === 'volume'
         ? ''
         : _.startCase(control.sourceTrackProp) + ''
-    }${trackIndex2Str(control.trackIndex)} - Source ${normIndex(
-      control.sourceTrackIndex
-    )}`
+    }${control.trackId} - Source ${normIndex(control.sourceTrackIndex)}`
   else if ('trackProp' in control)
-    return `${trackIndex2Str(control.trackIndex)} ${_.startCase(control.trackProp)}`
+    return `${control.trackId} ${_.startCase(control.trackProp)}`
   else if ('cueStep' in control)
-    return `${control.cueStep > 0 ? 'Next' : 'Prev'} ${trackIndex2Str(
-      control.trackIndex
-    )}`
+    return `${control.cueStep > 0 ? 'Next' : 'Prev'} ${control.trackId}`
   else if ('cueIndex' in control)
-    return `Cue ${normIndex(control.cueIndex)} ${trackIndex2Str(control.trackIndex)}`
+    return `Cue ${normIndex(control.cueIndex)} ${control.trackId}`
   else if ('loop' in control)
     return control.loop === -1
-      ? `To End ${trackIndex2Str(control.trackIndex)}`
-      : `Loop ${control.loop} ${trackIndex2Str(control.trackIndex)}`
+      ? `To End ${control.trackId}`
+      : `Loop ${control.loop} ${control.trackId}`
   else if ('sync' in control)
-    return `Sync ${_.startCase(control.sync)} ${trackIndex2Str(control.trackIndex)}`
+    return `Sync ${_.startCase(control.sync)} ${control.trackId}`
   else if ('relativeSceneIndex' in control)
     return !control.relativeSceneIndex
       ? 'Current Scene'
@@ -67,10 +64,9 @@ export function getControlName(control: Types.Control) {
     return control.trackStep > 0 ? 'Next Track' : 'Prev Track'
   else if ('sceneStep' in control && control.sceneStep)
     return control.sceneStep > 0 ? 'Next Scene' : 'Prev Scene'
-  else if ('jog' in control) return `${trackIndex2Str(control.trackIndex)} Jog`
-  else if ('playPause' in control)
-    return `${trackIndex2Str(control.trackIndex)} Play/Pause`
-  else if ('click' in control) return `${trackIndex2Str(control.trackIndex)} Click`
+  else if ('jog' in control) return `${control.trackId} Jog`
+  else if ('playPause' in control) return `${control.trackId} Play/Pause`
+  else if ('click' in control) return `${control.trackId} Click`
   else return '???'
 }
 

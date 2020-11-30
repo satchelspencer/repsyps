@@ -11,7 +11,63 @@ import { appendToLibrary } from './library'
 import { apply, version, Migration, Versioned } from './apply-migration'
 import * as PastTypes from './past-types'
 
-const moveCuesToSource: Migration<PastTypes.PersistentStateV2, Types.PersistentState> = {
+export const globalControlsIndex2Ids = (
+  controls: PastTypes.ControlsV3
+): Types.Controls => {
+  return _.mapValues(controls, (group) => {
+    return {
+      ...group,
+      controls: group.controls.map((control) => {
+        if ('trackIndex' in control)
+          return {
+            ..._.omit(control, 'trackIndex'),
+            trackId: null,
+          }
+        else return control
+      }),
+    }
+  })
+}
+
+const controlIndicies2Ids: Migration<
+  PastTypes.PersistentStateV3,
+  Types.PersistentState
+> = {
+  fromVersion: '3',
+  toVersion: '4',
+  apply: (state) => {
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        globalControls: globalControlsIndex2Ids(state.live.globalControls),
+        scenes: state.live.scenes.map((scene) => {
+          return {
+            ...scene,
+            controls: _.mapValues(scene.controls, (group) => {
+              return {
+                ...group,
+                controls: group.controls.map((control) => {
+                  if ('trackIndex' in control)
+                    return {
+                      ..._.omit(control, 'trackIndex'),
+                      trackId: scene.trackIds[control.trackIndex] ?? null,
+                    }
+                  else return control
+                }),
+              }
+            }),
+          }
+        }),
+      },
+    }
+  },
+}
+
+const moveCuesToSource: Migration<
+  PastTypes.PersistentStateV2,
+  PastTypes.PersistentStateV3
+> = {
   fromVersion: '2',
   toVersion: '3',
   apply: (state) => {
@@ -34,6 +90,7 @@ const moveCuesToSource: Migration<PastTypes.PersistentStateV2, Types.PersistentS
       }),
     }
   },
+  next: controlIndicies2Ids,
 }
 
 const cueIsOnlyChunksNow: Migration<
@@ -87,27 +144,46 @@ const addExplicitSourceId: Migration<
 }
 
 const persistentStateMigration = addExplicitSourceId,
-  latestPersistentState = '3'
+  latestPersistentState = '4'
 
-const localPersistentStateMigration: Migration<any, any> | null = null,
-  latestLocalPersistentState = '0.0.0'
+const localGlobalControlsIndicies2Ids: Migration<
+  PastTypes.LocalPersistentStateV3,
+  Types.LocalPersistentState
+> = {
+  fromVersion: '0.0.0',
+  toVersion: '4',
+  apply: (state) => {
+    return {
+      ...state,
+      live: {
+        ...state.live,
+        globalControls: globalControlsIndex2Ids(state.live.globalControls),
+      },
+    }
+  },
+}
+
+const localPersistentStateMigration = localGlobalControlsIndicies2Ids,
+  latestLocalPersistentState = '4'
 
 export function loadLocalStorage(store: Store<Types.State>) {
   const raw = localStorage.getItem('repsyps'),
     lraw = localStorage.getItem('repsyps:local')
   try {
     const lstate = JSON.parse(lraw ?? ''),
-      migrated = apply(lstate, localPersistentStateMigration) as Versioned<
-        Types.LocalPersistentState
-      >
+      migrated = apply(
+        lstate,
+        localPersistentStateMigration
+      ) as Versioned<Types.LocalPersistentState>
     if (lstate.version === latestLocalPersistentState)
       store.dispatch(Actions.loadLocalPersisted(migrated.state))
   } catch (e) {}
   try {
     const state = JSON.parse(raw ?? ''),
-      migrated = apply(state, persistentStateMigration) as Versioned<
-        Types.PersistentState
-      >
+      migrated = apply(
+        state,
+        persistentStateMigration
+      ) as Versioned<Types.PersistentState>
     if (migrated.version === latestPersistentState)
       store.dispatch(Actions.loadPersisted({ state: migrated.state, reset: true }))
   } catch (e) {}
@@ -131,9 +207,10 @@ export function saveLocalStorage(store: Store<Types.State>) {
 export function getProjectFromRaw(raw: string) {
   try {
     const state = JSON.parse(raw),
-      migrated = apply(state, persistentStateMigration) as Versioned<
-        Types.PersistentState
-      >
+      migrated = apply(
+        state,
+        persistentStateMigration
+      ) as Versioned<Types.PersistentState>
     if (migrated.version === latestPersistentState) {
       return migrated.state
     } else return null

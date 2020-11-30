@@ -114,19 +114,14 @@ export default async function init(store: Store<Types.State>) {
                 Actions.applyControlGroupMidi(position, control, lastValue, normValue)
               )
               control.controls.forEach((control) => {
-                if ('jog' in control) {
-                  const trackId = Selectors.getTrackIdByIndex(
-                    state.live,
-                    control.trackIndex
-                  )
-                  if (trackId && binding.midi)
-                    call(trackId, 'jog', midiCounts[binding.midi])
-                } else if ('click' in control) {
-                  const trackId = Selectors.getTrackIdByIndex(
-                    state.live,
-                    control.trackIndex
-                  )
-                  if (trackId) call(trackId, 'click', normValue > 0)
+                if ('trackId' in control) {
+                  const trackId = Selectors.getTrackId(state.live, control.trackId)
+                  if ('jog' in control) {
+                    if (trackId && binding.midi)
+                      call(trackId, 'jog', midiCounts[binding.midi])
+                  } else if ('click' in control) {
+                    if (trackId) call(trackId, 'click', normValue > 0)
+                  }
                 }
               })
             } else if (binding.badMidiValue) {

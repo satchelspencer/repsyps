@@ -171,35 +171,35 @@ export interface ControlMapping {
 }
 
 export interface LoopControl extends ControlMapping {
-  trackIndex: number
+  trackId: string | null
   loop: number
 }
 
 export type SyncControlState = 'on' | 'off' | 'lock'
 
 export interface SyncControl extends ControlMapping {
-  trackIndex: number
+  trackId: string | null
   sync: SyncControlState
 }
 
 export interface CueControl extends ControlMapping {
-  trackIndex: number
+  trackId: string | null
   cueIndex: number
 }
 
 export interface CueStepControl extends ControlMapping {
-  trackIndex: number
+  trackId: string | null
   cueStep: number
 }
 
 export interface SourceTrackValueControl extends ControlMapping {
-  trackIndex: number
+  trackId: string | null
   sourceTrackIndex: number
   sourceTrackProp: SourceTrackValueProp
 }
 
 export interface TrackValueControl extends ControlMapping {
-  trackIndex: number
+  trackId: string | null
   trackProp: TrackValueProp
 }
 
@@ -221,17 +221,17 @@ export interface GlobalValueControl extends ControlMapping {
 }
 
 export interface JogWheelControl extends ControlMapping {
-  trackIndex: number
+  trackId: string | null
   jog: true
 }
 
 export interface TrackClickControl extends ControlMapping {
-  trackIndex: number
+  trackId: string | null
   click: true
 }
 
 export interface TrackPlayPauseControl extends ControlMapping {
-  trackIndex: number
+  trackId: string | null
   playPause: true
 }
 

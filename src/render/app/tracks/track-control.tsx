@@ -182,37 +182,38 @@ function TrackControls(props: TrackControlsProps) {
     hasPreview = useSelector((state) => state.output.preview !== null),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
     trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
+    trackId = props.trackId,
     { isSelecting } = useSelectable<Partial<Types.Control>>('control'),
     dispatch = useDispatch(),
     volumeControlParams = useMemo(
       () => ({
-        trackIndex,
+        trackId,
         trackProp: 'volume',
       }),
-      [trackIndex]
+      [trackId]
     ),
     jogControlParams = useMemo(
       () => ({
-        trackIndex,
+        trackId,
         jog: true,
       }),
-      [trackIndex]
+      [trackId]
     ),
     clickControlParams = useMemo(
       () => ({
-        trackIndex,
+        trackId,
         click: true,
         invert: true,
       }),
-      [trackIndex]
+      [trackId]
     ),
     playPauseParams = useMemo(
       () => ({
-        trackIndex,
+        trackId,
         playPause: true,
         invert: true,
       }),
-      [trackIndex]
+      [trackId]
     )
 
   const barLen =

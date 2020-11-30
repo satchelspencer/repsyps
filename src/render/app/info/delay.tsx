@@ -30,7 +30,6 @@ const Delay = memo((props: DelayProps) => {
       sourceId === null ? null : state.sources[sourceId].name
     ),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
-    trackIndex = useSelector((state) => getTrackIndex(state, props.trackId)),
     dispatch = useDispatch(),
     setGain = useCallback(
       (value) => {
@@ -56,17 +55,17 @@ const Delay = memo((props: DelayProps) => {
     ),
     controlDelayParams = useMemo(
       () => ({
-        trackIndex,
+        trackId: props.trackId,
         trackProp: 'delay',
       }),
-      [trackIndex]
+      [props.trackId]
     ),
     controlGainParams = useMemo(
       () => ({
-        trackIndex,
+        trackId: props.trackId,
         trackProp: 'delayGain',
       }),
-      [trackIndex]
+      [props.trackId]
     )
 
   return (

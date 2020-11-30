@@ -84,9 +84,7 @@ export function getDefaultBindingType(control: Types.Control): Types.BindingType
 }
 
 export function getDefaultAbsolute(control: Types.Control) {
-  return (
-    'globalProp' in control || ('trackIndex' in control && control.trackIndex === null)
-  )
+  return 'globalProp' in control || ('trackId' in control && control.trackId === null)
 }
 
 export default createReducer(defaultState, (handle) => [

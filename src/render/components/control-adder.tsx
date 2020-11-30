@@ -42,9 +42,7 @@ export function adder<P>(Component: CtyledComponent<any, P>) {
         (e) => {
           e.preventDefault()
           const indexedParams =
-            'trackIndex' in params && e.shiftKey
-              ? { ...params, trackIndex: null }
-              : params
+            'trackId' in params && e.shiftKey ? { ...params, trackId: null } : params
           if (isSelecting && !props.noSelect) onSelect(indexedParams)
           else props.onClick && props.onClick(e)
         },

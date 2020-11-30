@@ -22,10 +22,10 @@ function TrackVolume(props: TrackVolumeProps) {
     dispatch = useDispatch(),
     volumeControlParams = useMemo(
       () => ({
-        trackIndex,
+        trackId: props.trackId,
         trackProp: 'volume',
       }),
-      [trackIndex]
+      [props.trackId]
     ),
     handleVolumeChange = useCallback(
       (v) =>

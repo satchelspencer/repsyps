@@ -146,10 +146,14 @@ export const getTrackIdByIndex = (live: Types.Live, index: number) => {
   }
 }
 
+export const getTrackId = (live: Types.Live, id?: string | null) => {
+  return id || _.keys(live.tracks).find((trackId) => live.tracks[trackId].selected)
+}
+
 export const makeGetControlTrackId = () =>
   createSelector([getLive, (_, control: Types.Control) => control], (live, control) => {
-    if (control && 'trackIndex' in control) {
-      return getTrackIdByIndex(live, control.trackIndex)
+    if (control && 'trackId' in control) {
+      return getTrackId(live, control.trackId)
     } else return undefined
   })
 
@@ -194,7 +198,7 @@ export const makeGetControlAbsValue = () => {
 }
 
 function applyControlsToPlayback(
-  trackIndex: number,
+  trackId: string,
   playback: Types.TrackPlayback,
   controls: Types.Controls,
   values: Types.ControlValues,
@@ -220,8 +224,8 @@ function applyControlsToPlayback(
       controlGroup.controls.forEach((control) => {
         const controlValue = Math.pow(control.invert ? 1 - invValue : invValue, 1 / 1.6)
         if (
-          'trackIndex' in control &&
-          (control.trackIndex === trackIndex || (control.trackIndex === null && selected))
+          'trackId' in control &&
+          (control.trackId === trackId || (control.trackId === null && selected))
         ) {
           if ('trackProp' in control) {
             outPlayback = {
@@ -268,6 +272,7 @@ export const makeGetTrackPlaybackSelector = () => {
   const getTrackIndex = makeGetTrackIndex(),
     getTrackPrevIndex = makeGetTrackPrevIndex(),
     deps: ((state: Types.State, trackId: string) => any)[] = [
+      (state: Types.State, trackId: string) => trackId,
       getTrackIndex,
       getTrackPrevIndex,
       (state: Types.State, trackId: string) => state.live.tracks[trackId].playback,
@@ -286,6 +291,7 @@ export const makeGetTrackPlaybackSelector = () => {
   return createSelector(
     deps,
     (
+      trackId,
       trackIndex,
       trackPrevIndex,
       playback,
@@ -304,7 +310,7 @@ export const makeGetTrackPlaybackSelector = () => {
         boundsAlpha = source?.boundsAlpha ?? 1
 
       let newPlayback = applyControlsToPlayback(
-          trackIndex,
+          trackId,
           playback,
           controls,
           values,
@@ -317,7 +323,7 @@ export const makeGetTrackPlaybackSelector = () => {
         newNextPlayback =
           nextPlayback &&
           applyControlsToPlayback(
-            trackIndex,
+            trackId,
             nextPlayback,
             controls,
             values,
@@ -331,7 +337,7 @@ export const makeGetTrackPlaybackSelector = () => {
       if (trackIndex < 0) {
         //in previous scene
         newPlayback = applyControlsToPlayback(
-          trackPrevIndex,
+          trackId,
           newPlayback,
           prevControls,
           prevValues,
@@ -344,7 +350,7 @@ export const makeGetTrackPlaybackSelector = () => {
         newNextPlayback =
           newNextPlayback &&
           applyControlsToPlayback(
-            trackPrevIndex,
+            trackId,
             newNextPlayback,
             prevControls,
             prevValues,

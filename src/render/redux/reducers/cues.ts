@@ -118,8 +118,7 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.stepTrackCue, (state, { payload }) => {
-    const trackId =
-      payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0)
+    const trackId = Selectors.getTrackId(state.live, payload.trackId)
     let newLive = state.live
 
     if (trackId) {
@@ -181,8 +180,7 @@ export default createReducer(defaultState, (handle) => [
     }
   }),
   handle(Actions.setTrackCue, (state, { payload }) => {
-    const trackId =
-      payload.trackId || Selectors.getTrackIdByIndex(state.live, payload.trackIndex ?? 0)
+    const trackId = Selectors.getTrackId(state.live, payload.trackId)
     if (!trackId) return state
 
     const track = state.live.tracks[trackId],

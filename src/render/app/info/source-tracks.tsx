@@ -116,11 +116,11 @@ const SourceTrack = memo((props: SourceTrackProps) => {
     ),
     volumeControlParams = useMemo(
       () => ({
-        trackIndex: props.trackIndex,
+        trackId: props.trackId,
         sourceTrackIndex: props.sourceTrackIndex,
         sourceTrackProp: 'volume',
       }),
-      [props.trackIndex, props.sourceTrackIndex]
+      [props.trackId, props.sourceTrackIndex]
     ),
     handleVolumeChange = useCallback(
       (v) =>
