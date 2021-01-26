@@ -176,7 +176,7 @@
     "source-map-support": "^0.5.12",
     "svgo": "^1.2.2",
     "walk": "^2.3.14",
-    "ytdl-core": "^4.0.3"
+    "ytdl-core": "4.1.4"
   },
   "devDependencies": {
     "@babel/preset-react": "^7.0.0",
