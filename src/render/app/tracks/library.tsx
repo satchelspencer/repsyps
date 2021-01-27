@@ -23,7 +23,7 @@ import { palette } from 'render/components/theme'
 
 import ResizableBorder from 'render/components/rborder'
 import Icon from 'render/components/icon'
-import { FillMessage, SelectableButton } from 'render/components/misc'
+import { FillMessage, SelectableButton, SearchInput } from 'render/components/misc'
 
 import {
   loadProjectScenes,
@@ -76,21 +76,6 @@ const SearchInner = ctyled.div.styles({
   align: 'center',
   gutter: 1,
 })
-
-const SearchInput = ctyled.input.styles({
-  rounded: true,
-  flex: 1,
-  border: 1,
-  bg: true,
-  height: 1.9,
-  color: (c) => c.nudge(0.15),
-}).extendSheet`
-  outline-color: #f59797;
-  outline-width: 2px;
-  padding:${({ size }) => `0px ${size / 2}px`};
-  color:${({ color }) => color.fg} !important;
-  min-width:0px;
-`
 
 const ClosedLibWrapper = ctyled.div.class(active).styles({
   column: true,

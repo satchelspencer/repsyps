@@ -11,12 +11,20 @@ import useAddSource from 'render/util/add-source'
 import { adder } from 'render/components/control-adder'
 import Volume from 'render/components/volume'
 import Icon from 'render/components/icon'
-import { WideButton } from 'render/components/misc'
+import { WideButton, Horizontal, SidebarValue } from 'render/components/misc'
 import SidebarItem from 'render/components/item'
 
-const TracksWrapper = ctyled.div.styles({
+const SourcesWrapper = ctyled.div.styles({
+  column: true,
+  lined: true,
+  bg: true,
+  color: (c) => c.nudge(0.1),
+})
+
+const SourcesBody = ctyled.div.styles({
   gutter: 1,
   column: true,
+  padd: 1,
 })
 
 const TrackName = ctyled.div.attrs({ selected: false }).styles({
@@ -74,6 +82,18 @@ const SoloButton = ctyled.div.class(active).styles({
   justify: 'center',
 })
 
+const OffsetValue = SidebarValue.attrs({ active: false }).styles({
+  width: 'auto',
+  size: (s) => s * 0.9,
+  alignSelf: 'flex-start',
+}).extendSheet`
+  outline:none;
+  border:1px solid ${({ color }, { active }) =>
+    active ? 'rgba(255,0,0,0.5)' : color.bq};
+  background:${({ color }, { active }) =>
+    active ? 'rgba(255,0,0,0.1) !important' : color.bg};
+`
+
 export interface TrackVolumeProps {
   trackId: string
 }
@@ -88,6 +108,16 @@ interface SourceTrackProps {
   realParams: Types.TrackSourceParams
   many: boolean
   visible: boolean
+  offsetEditing: boolean
+}
+
+const getOffsetStr = (offset: number): string => {
+  if (Math.abs(offset) < 100) offset = 0
+  if (offset === 0) return '+0.00'
+  else {
+    const rounded = _.round(offset / 44100, 2)
+    return _.padEnd((rounded > 0 ? '+' : '') + rounded, 5, '0')
+  }
 }
 
 const SourceTrack = memo((props: SourceTrackProps) => {
@@ -148,31 +178,41 @@ const SourceTrack = memo((props: SourceTrackProps) => {
               })
         ),
       [props.trackId, props.sourceTrackId]
+    ),
+    handleMute = useCallback(() => {
+      dispatch(
+        Actions.setTrackSourceParams({
+          trackId: props.trackId,
+          sourceTrackId: props.sourceTrackId,
+          sourceTrackParams: { volume: 0 },
+        })
+      )
+    }, [props.trackId, props.sourceTrackId]),
+    toggleEditing = useCallback(
+      () =>
+        dispatch(
+          Actions.editSourceTrack({
+            trackId: props.trackId,
+            sourceTrackEditing: props.offsetEditing ? null : props.sourceTrackId,
+          })
+        ),
+      [props.offsetEditing, props.sourceTrackId]
     )
   return (
     <SidebarItem
       key={props.sourceTrackId}
       title={
-        <TrackWrapper loaded={props.sourceTrack.loaded}>
+        <TrackWrapper onDoubleClick={setVisible} loaded={props.sourceTrack.loaded}>
           <TrackHead>
-            <Icon name="repsyps" scale={1} />
-            {props.many && (
-              <>
-                <Icon
-                  asButton
-                  name={props.visible ? 'show' : 'hide'}
-                  onClick={setVisible}
-                  scale={1.2}
-                />
-                <SoloButton onClick={handleSolo}>S</SoloButton>
-              </>
-            )}
             <TrackName selected={false}>
               <TrackNameInner>{props.sourceTrack.name}</TrackNameInner>
             </TrackName>
-            {props.sourceTrackId !== props.trackId && (
-              <Icon onClick={removeTrackSource} asButton name="close-thin" />
-            )}
+            <SoloButton onClick={handleMute}>M</SoloButton>
+            <SoloButton onClick={handleSolo}>S</SoloButton>
+            <OffsetValue onClick={toggleEditing} active={props.offsetEditing}>
+              {getOffsetStr(props.params.offset) + 's'}
+            </OffsetValue>
+            <Icon onClick={removeTrackSource} asButton name="close-thin" />
           </TrackHead>
           <TrackH params={volumeControlParams}>
             <Volume
@@ -195,8 +235,8 @@ const SourceTracks = (props: TrackVolumeProps) => {
     getTrackPlayback = useMemo(() => Selectors.makeGetTrackPlayback(props.trackId), []),
     realParams = useSelector((state) => getTrackPlayback(state, props.trackId)).playback
       .sourceTracksParams,
-    visibleSourceTrackId = useSelector(
-      (state) => state.live.tracks[props.trackId].visibleSourceTrack
+    { visibleSourceTrack, sourceTrackEditing } = useSelector(
+      (state) => state.live.tracks[props.trackId]
     ),
     source = useSelector((state) => Selectors.getSourceByTrackId(state, props.trackId)),
     getTrackIndex = useMemo(() => Selectors.makeGetTrackIndex(), []),
@@ -208,28 +248,31 @@ const SourceTracks = (props: TrackVolumeProps) => {
     handleClick = useCallback(() => addSource(props.trackId), [props.trackId])
 
   return (
-    <TracksWrapper>
-      {sourceTrackIds.map((sourceTrackId, sourceTrackIndex) => {
-        const sourceTrack = source?.sourceTracks[sourceTrackId]
-        return (
-          sourceTrack && (
-            <SourceTrack
-              key={sourceTrackIndex}
-              trackId={props.trackId}
-              sourceTrackId={sourceTrackId}
-              sourceTrack={sourceTrack}
-              trackIndex={trackIndex}
-              sourceTrackIndex={sourceTrackIndex}
-              params={sourceTracksParams[sourceTrackId]}
-              realParams={realParams[sourceTrackId]}
-              many={many}
-              visible={visibleSourceTrackId === sourceTrackId}
-            />
+    <SourcesWrapper>
+      <SourcesBody>
+        {sourceTrackIds.map((sourceTrackId, sourceTrackIndex) => {
+          const sourceTrack = source?.sourceTracks[sourceTrackId]
+          return (
+            sourceTrack && (
+              <SourceTrack
+                key={sourceTrackIndex}
+                trackId={props.trackId}
+                sourceTrackId={sourceTrackId}
+                sourceTrack={sourceTrack}
+                trackIndex={trackIndex}
+                sourceTrackIndex={sourceTrackIndex}
+                params={sourceTracksParams[sourceTrackId]}
+                realParams={realParams[sourceTrackId]}
+                many={many}
+                visible={visibleSourceTrack === sourceTrackId}
+                offsetEditing={sourceTrackId === sourceTrackEditing}
+              />
+            )
           )
-        )
-      })}
-      <WideButton onClick={handleClick}>+ add source</WideButton>
-    </TracksWrapper>
+        })}
+        <WideButton onClick={handleClick}>+ add source</WideButton>
+      </SourcesBody>
+    </SourcesWrapper>
   )
 }
 

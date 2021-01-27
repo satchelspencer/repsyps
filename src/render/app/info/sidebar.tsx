@@ -59,7 +59,9 @@ function Sidebar() {
   const trackId = useSelector(Selectors.getSelectedTrackId),
     track = useSelector(Selectors.getSelectedTrack),
     source = useSelector((state) => Selectors.getSourceByTrackId(state, trackId)),
-    isLoaded = useSelector((state) => Selectors.getSourceIsLoaded(state, track?.sourceId)),
+    isLoaded = useSelector((state) =>
+      Selectors.getSourceIsLoaded(state, track?.sourceId)
+    ),
     size = useContext(CtyledContext).theme.size,
     sideBarSize = useSelector((state) => state.settings.sidebarSize),
     screencast = useSelector((state) => state.settings.screencast),
@@ -87,11 +89,11 @@ function Sidebar() {
   return useMemo(
     () => (
       <SidebarWrapper widthp={widthp}>
-        <SidebarScroller>
-          {!!track ? (
-            <>
+        {!!track ? (
+          <>
+            <SourceTracks trackId={trackId} />
+            <SidebarScroller>
               <TrackDetailsWrapper disabled={!isLoaded}>
-                <SourceTracks trackId={trackId} />
                 <TrackVolume trackId={trackId} />
                 <Filter trackId={trackId} />
                 <Delay trackId={trackId} />
@@ -102,11 +104,11 @@ function Sidebar() {
                 <Separate sourceId={track.sourceId} />
                 <Cues trackId={trackId} />
               </TrackDetailsWrapper>
-            </>
-          ) : (
-            <FillMessage>No Track Selected</FillMessage>
-          )}
-        </SidebarScroller>
+            </SidebarScroller>
+          </>
+        ) : (
+          <FillMessage>No Track Selected</FillMessage>
+        )}
         {screencast && <VideoWrapper heightp={widthp / VIDEO_ASPECT} />}
         <ResizableBorder
           onMove={handleMove}

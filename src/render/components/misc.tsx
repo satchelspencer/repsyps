@@ -42,6 +42,21 @@ export const FillButton = WideButton.styles({
   flex: 1,
 })
 
+export const SearchInput = ctyled.input.styles({
+  rounded: true,
+  flex: 1,
+  border: 1,
+  bg: true,
+  height: 1.9,
+  color: (c) => c.nudge(0.15),
+}).extendSheet`
+  outline-color: #f59797;
+  outline-width: 2px;
+  padding:${({ size }) => `0px ${size / 2}px`};
+  color:${({ color }) => color.fg} !important;
+  min-width:0px;
+`
+
 export const SelectableButton = WideButton.attrs<{
   selected: boolean
   compact?: boolean
