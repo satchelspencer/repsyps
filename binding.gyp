@@ -97,10 +97,10 @@
             "<@(libsdir)/ffmpeg-4.2.2/libavformat/libavformat.a",
             "<@(libsdir)/ffmpeg-4.2.2/libswresample/libswresample.a",
             "<@(libsdir)/fftw-3.3.8/.libs/libfftw3.a",
-            "<@(libsdir)/rubberband-1.9.0/lib/librubberband.a",
+            "<@(libsdir)/rubberband-3.0.0/build/librubberband.a",
             "<@(libsdir)/libsamplerate-0.1.9/lib/libsamplerate.a",
             "<@(libsdir)/DSPFilters/shared/DSPFilters/libDSPFilters.a",
-		        "-L../lib/libtensorflow/lib -ltensorflow -Wl,-rpath,@loader_path/../../lib/libtensorflow/lib"
+            "-framework CoreAudio"
 		      ],
           "include_dirs": [
             "src/native",
@@ -108,7 +108,7 @@
             "<@(libsdir)/libtensorflow/include",
             "<@(libsdir)/fftw-3.3.8/api",
             "<@(libsdir)/ffmpeg-4.2.2",
-            "<@(libsdir)/rubberband-1.9.0",
+            "<@(libsdir)/rubberband-3.0.0",
             "<@(libsdir)/libsamplerate-0.1.9/include",
             "<@(libsdir)/DSPFilters/shared/DSPFilters/include",
             "<!@(node -p \"require('node-addon-api').include\")"

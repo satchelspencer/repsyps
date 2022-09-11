@@ -16,6 +16,7 @@ repsyps depends on native libraries that must be installed manually for developm
 - Xcode, [homebrew](https://brew.sh/) all of that
 - autoconf `brew install autoconf automake`
 - gfortran `brew cask install gfortran`
+- unzip `brew install unzip`
 - nodejs 10+ [see installer](https://nodejs.org/en/download/)
 - yarn `npm install -g yarn`
 
@@ -32,18 +33,18 @@ cd lib
 export REPSYPS_LIBS=$(pwd)
 
 # portaudio indtallation
-wget http://portaudio.com/archives/pa_stable_v190600_20161030.tgz
-tar xvzf pa_stable_v190600_20161030.tgz portaudio
-rm pa_stable_v190600_20161030.tgz
+wget http://files.portaudio.com/archives/pa_stable_v190700_20210406.tgz
+tar xvzf pa_stable_v190700_20210406.tgz portaudio
+rm pa_stable_v190700_20210406.tgz
 cd portaudio
 ./configure --disable-mac-universal && make
 cd ..
 
 # download precompiled tensorflow binaries
 mkdir libtensorflow && cd libtensorflow
-wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-darwin-x86_64-1.15.0.tar.gz
-tar xvzf libtensorflow-cpu-darwin-x86_64-1.15.0.tar.gz
-rm libtensorflow-cpu-darwin-x86_64-1.15.0.tar.gz
+wget https://github.com/vodianyk/libtensorflow-cpu-darwin-arm64/raw/main/libtensorflow-cpu-darwin-arm64-2.5.0.tar.gz
+tar xvzf libtensorflow-cpu-darwin-arm64-2.5.0.tar.gz
+rm libtensorflow-cpu-darwin-arm64-2.5.0.tar.gz
 cd ..
 
 # install ffmpeg
@@ -51,8 +52,9 @@ wget http://ffmpeg.org/releases/ffmpeg-4.2.2.tar.xz
 tar xf ffmpeg-4.2.2.tar.xz
 rm ffmpeg-4.2.2.tar.xz
 cd ffmpeg-4.2.2
-./configure --disable-autodetect
+./configure --disable-autodetect --disable-x86asm
 make
+mv VERSION VERSION.txt
 cd ..
 
 # install fftw
@@ -65,12 +67,12 @@ make
 cd ..
 
 # install rubber-band
-wget https://breakfastquay.com/files/releases/rubberband-1.9.0.tar.bz2
-tar xf rubberband-1.9.0.tar.bz2
-rm rubberband-1.9.0.tar.bz2
-cd rubberband-1.9.0
-mkdir lib
-make -f Makefile.osx static
+wget https://breakfastquay.com/files/releases/rubberband-3.0.0.tar.bz2
+tar xf rubberband-3.0.0.tar.bz2
+rm rubberband-3.0.0.tar.bz2
+cd rubberband-3.0.0
+brew install meson
+meson build && ninja -C build
 cd ..
 
 ## install libsamplerate

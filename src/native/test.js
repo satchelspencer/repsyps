@@ -1,29 +1,32 @@
-const path = require('path')
-const fs = require('fs')
-const _ = require('lodash')
-const audio = require(path.resolve(__dirname, '../../build/Release/audio.node'))
+const path = require("path");
+const fs = require("fs");
+const _ = require("lodash");
+const audio = require(path.resolve(
+  __dirname,
+  "../../build/Release/audio.node"
+));
 
-const RATE = 44100
+const RATE = 44100;
 
 const sources = {
-    mp3: './lib/test/silent.mp3',
-    stem: './lib/test/stem.stem.mp4',
-    mono: './lib/test/mono.wav',
-    short: './lib/test/bench.wav',
-    tone: './lib/test/tone.wav',
-    aac: './lib/test/test_out.aac',
-    broken: './lib/test/invalid.mp3',
+    mp3: "./lib/test/silent.mp3",
+    stem: "./lib/test/stem.stem.mp4",
+    mono: "./lib/test/mono.wav",
+    short: "./lib/test/bench.wav",
+    tone: "./lib/test/tone.wav",
+    aac: "./lib/test/test_out.aac",
+    broken: "./lib/test/invalid.mp3",
   },
   ssize = (5.41 * RATE) / 2,
-  source = sources[process.argv[3] || 'short']
+  source = sources[process.argv[3] || "short"];
 
 const tests = {
   default: async () => {
-    audio.init('./')
-    console.log('outputs', audio.getOutputs())
-    await audio.loadSource(source, 'mysource')
+    audio.init("./");
+    console.log("outputs", audio.getOutputs());
+    await audio.loadSource(source, "mysource");
 
-    audio.setMixTrack('mytrack', {
+    audio.setMixTrack("mytrack", {
       playback: {
         chunks: [0, ssize, ssize, ssize],
         playing: true,
@@ -35,7 +38,7 @@ const tests = {
         },
       },
       nextPlayback: null,
-    })
+    });
 
     audio.updatePlayback({
       period: ssize * 1.5,
@@ -47,10 +50,10 @@ const tests = {
     audio.start(audio.getDefaultOutput(), true)
   },
   delay: async () => {
-    audio.init('./')
-    await audio.loadSource(source, 'mysource')
+    audio.init("./");
+    await audio.loadSource(source, "mysource");
 
-    audio.setMixTrack('mytrack', {
+    audio.setMixTrack("mytrack", {
       playback: {
         chunks: [0, ssize],
         playing: true,
@@ -64,34 +67,36 @@ const tests = {
         delayGain: 0.2,
       },
       nextPlayback: null,
-    })
+    });
 
     audio.updatePlayback({
       period: ssize * 1.2,
       volume: 0.5,
       playing: true,
-    })
+    });
 
-    let i = true
+    let i = true;
     setInterval(() => {
-      audio.setMixTrack('mytrack', {
+      audio.setMixTrack("mytrack", {
         playback: {
           volume: i ? 0 : 1,
         },
         nextPlayback: null,
-      })
-      i = !i
-    }, 2000)
+      });
+      i = !i;
+    }, 2000);
 
-    audio.start(audio.getDefaultOutput(), true)
+    audio.start(audio.getDefaultOutput(), true);
   },
   sep: async () => {
-    audio.init('./')
-    await audio.loadSource(source, 'mysource')
-    console.log('separating...')
-    await audio.separateSource('mysource')
+    audio.init("./");
+    await audio.loadSource(source, "mysource");
+    console.log("separating...");
+    await audio.separateSource("mysource");
+    console.log("done...");
 
-    audio.setMixTrack('mytrack', {
+
+    audio.setMixTrack("mytrack", {
       playback: {
         chunks: [0, ssize, ssize, ssize],
         playing: true,
@@ -103,34 +108,34 @@ const tests = {
         },
       },
       nextPlayback: null,
-    })
+    });
 
     audio.updatePlayback({
       period: ssize * 1.2,
       volume: 0.5,
       playing: true,
-    })
+    });
 
-    audio.start(audio.getDefaultOutput(), true)
+    audio.start(audio.getDefaultOutput(), true);
   },
   wave: async () => {
-    audio.init('./')
-    await audio.loadSource(source, 'mysource')
-    const dest = new Float32Array(256)
-    audio.getWaveform('mysource', -2000, 200, dest)
-    console.log(dest)
+    audio.init("./");
+    await audio.loadSource(source, "mysource");
+    const dest = new Float32Array(256);
+    audio.getWaveform("mysource", -2000, 200, dest);
+    console.log(dest);
   },
   imp: async () => {
-    audio.init('./')
-    await audio.loadSource(source, 'mysource')
-    console.log(audio.getImpulses('mysource'))
+    audio.init("./");
+    await audio.loadSource(source, "mysource");
+    console.log(audio.getImpulses("mysource"));
   },
   next: async () => {
-    audio.init('./')
-    console.log('outputs', audio.getOutputs())
-    await audio.loadSource(source, 'mysource')
+    audio.init("./");
+    console.log("outputs", audio.getOutputs());
+    await audio.loadSource(source, "mysource");
 
-    audio.setMixTrack('mytrack', {
+    audio.setMixTrack("mytrack", {
       playback: {
         chunks: [0, ssize, ssize, ssize],
         playing: true,
@@ -154,25 +159,25 @@ const tests = {
           },
         },
       },
-    })
+    });
 
     audio.updatePlayback({
       period: ssize * 0.8,
       volume: 0.5,
       playing: true,
-    })
+    });
 
-    audio.start(audio.getDefaultOutput(), true)
+    audio.start(audio.getDefaultOutput(), true);
   },
   rm: async () => {
-    audio.init('./')
+    audio.init("./");
 
-    let i = 0
+    let i = 0;
     async function reload() {
-      console.log(i++)
+      console.log(i++);
       const sourceId = Math.random().toString(16).substr(2),
-        trackId = Math.random().toString(16).substr(2)
-      await audio.loadSource(source, sourceId)
+        trackId = Math.random().toString(16).substr(2);
+      await audio.loadSource(source, sourceId);
       audio.setMixTrack(trackId, {
         playback: {
           chunks: [0, ssize, ssize, ssize],
@@ -189,29 +194,29 @@ const tests = {
           },
         },
         nextPlayback: null,
-      })
+      });
       setTimeout(() => {
-        audio.removeMixTrack(trackId)
-        audio.removeSource(sourceId)
-        reload()
-      }, 200)
+        audio.removeMixTrack(trackId);
+        audio.removeSource(sourceId);
+        reload();
+      }, 200);
     }
-    reload()
+    reload();
 
     audio.updatePlayback({
       period: ssize * 1.2,
       volume: 0.5,
       playing: true,
-    })
+    });
 
-    audio.start(audio.getDefaultOutput(), true)
+    audio.start(audio.getDefaultOutput(), true);
   },
   restart: async () => {
-    audio.init('./')
-    console.log('outputs', audio.getOutputs())
-    await audio.loadSource(source, 'mysource')
+    audio.init("./");
+    console.log("outputs", audio.getOutputs());
+    await audio.loadSource(source, "mysource");
 
-    audio.setMixTrack('mytrack', {
+    audio.setMixTrack("mytrack", {
       playback: {
         chunks: [0, ssize, ssize, ssize],
         playing: true,
@@ -223,27 +228,27 @@ const tests = {
         },
       },
       nextPlayback: null,
-    })
+    });
 
     audio.updatePlayback({
       period: ssize * 1.2,
       volume: 0.5,
       playing: true,
-    })
+    });
 
-    audio.start(audio.getDefaultOutput(), true)
+    audio.start(audio.getDefaultOutput(), true);
 
-    let def = false
+    let def = false;
     setInterval(() => {
-      audio.start(def ? audio.getDefaultOutput() : 6)
-      def = !def
-    }, 1000)
+      audio.start(def ? audio.getDefaultOutput() : 6);
+      def = !def;
+    }, 1000);
   },
-}
+};
 
-const test = tests[process.argv[2] || 'default']
-if (!test) console.log('UNKNOWN TEST:', process.argv[2])
+const test = tests[process.argv[2] || "default"];
+if (!test) console.log("UNKNOWN TEST:", process.argv[2]);
 else {
-  test()
-  setInterval(() => console.log(audio.getTiming()), 1000)
+  test();
+  setInterval(() => console.log(audio.getTiming()), 1000);
 }
