@@ -184,7 +184,7 @@
     "@types/react": "^16.8.23",
     "@types/react-dom": "^16.8.4",
     "devtron": "^1.4.0",
-    "electron": "^11.0.1",
+    "electron": "^15.5.5",
     "electron-builder": "^22.7.0",
     "electron-webpack-ts": "^4.0.1",
     "typescript": "^4.0.3",
